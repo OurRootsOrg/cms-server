@@ -1,0 +1,213 @@
+basePath: /
+definitions:
+  model.Category:
+    properties:
+      csvHeading:
+        type: string
+      fieldDefs:
+        $ref: '#/definitions/model.FieldDefSet'
+        type: object
+      id:
+        type: string
+      name:
+        type: string
+    type: object
+  model.CategoryInput:
+    properties:
+      csvHeading:
+        type: string
+      fieldDefs:
+        $ref: '#/definitions/model.FieldDefSet'
+        type: object
+      name:
+        type: string
+    type: object
+  model.Error:
+    properties:
+      code:
+        type: integer
+      message:
+        type: string
+    type: object
+  model.FieldDefSet:
+    additionalProperties:
+      $ref: '#/definitions/model.fieldType'
+    type: object
+  model.fieldType:
+    type: string
+host: api.ourroots.org
+info:
+  contact:
+    email: jim@anconafamily.com
+    name: Jim Ancona
+    url: https://github.com/jancona
+  description: This is the OurRoots API
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  title: OurRoots API
+  version: 0.1.0
+paths:
+  /categories:
+    delete:
+      operationId: deleteAll
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.Category'
+            type: array
+        "500":
+          description: Server error
+          schema:
+            $ref: '#/definitions/model.Error'
+      summary: deletes all Categories
+      tags:
+      - categories
+    get:
+      operationId: find
+      parameters:
+      - description: Dummy
+        in: body
+        name: dummy
+        schema:
+          $ref: '#/definitions/model.FieldDefSet'
+      - description: Dummy
+        in: body
+        name: dummy
+        schema:
+          $ref: '#/definitions/model.fieldType'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.Category'
+            type: array
+        "500":
+          description: Server error
+          schema:
+            $ref: '#/definitions/model.Error'
+      summary: returns all categories
+      tags:
+      - categories
+    post:
+      consumes:
+      - application/json
+      operationId: addOne
+      parameters:
+      - description: Add Category
+        in: body
+        name: category
+        required: true
+        schema:
+          $ref: '#/definitions/model.CategoryInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Category'
+        "415":
+          description: Bad Content-Type
+          schema:
+            $ref: '#/definitions/model.Error'
+        "500":
+          description: Server error
+          schema:
+            $ref: '#/definitions/model.Error'
+      summary: adds a new Category
+      tags:
+      - categories
+  /categories/{id}:
+    delete:
+      operationId: delete
+      parameters:
+      - description: Category ID
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Category'
+        "500":
+          description: Server error
+          schema:
+            $ref: '#/definitions/model.Error'
+      summary: deletes a Category
+      tags:
+      - categories
+    get:
+      operationId: getOne
+      parameters:
+      - description: Category ID
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Category'
+        "404":
+          description: Not found
+          schema:
+            $ref: '#/definitions/model.Error'
+        "500":
+          description: Server error
+          schema:
+            $ref: '#/definitions/model.Error'
+      summary: gets a Category
+      tags:
+      - categories
+    patch:
+      consumes:
+      - application/json
+      operationId: update
+      parameters:
+      - description: Category ID
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Update Category
+        in: body
+        name: category
+        required: true
+        schema:
+          $ref: '#/definitions/model.CategoryInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Category'
+        "415":
+          description: Bad Content-Type
+          schema:
+            $ref: '#/definitions/model.Error'
+        "500":
+          description: Server error
+          schema:
+            $ref: '#/definitions/model.Error'
+      summary: updates a Category
+      tags:
+      - categories
+schemes:
+- http
+- https
+swagger: "2.0"
