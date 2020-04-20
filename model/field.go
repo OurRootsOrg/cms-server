@@ -8,11 +8,11 @@ import (
 )
 
 // fieldType represents the type of an attribute value
-type fieldType string
+type fieldType string // `enums:"Int,String,Image,Location,Time"`
 
 const (
 	// IntType indicates a field of type int
-	IntType fieldType = "Int"
+	IntType = "Int"
 	// StringType indicates a field of type string
 	StringType = "String"
 	// ImageType indicates a field of type image.Image
@@ -48,7 +48,7 @@ func makeFieldType(s string) (fieldType, error) {
 // FieldDef defines a name and type of a field
 type FieldDef struct {
 	name      string
-	fieldType fieldType
+	fieldType fieldType `swaggertype:"string" enums:"Int,String,Image,Location,Time"`
 }
 
 // NewFieldDef constructs a FieldDef
@@ -146,17 +146,30 @@ type FieldTyper interface {
 // FieldDefSet represents a set of field definitions
 type FieldDefSet map[string]fieldType
 
+// NewFieldDefSet constructs a FieldDefSet
+func NewFieldDefSet() FieldDefSet {
+	return FieldDefSet(make(map[string]fieldType))
+}
+
 // Add adds a FieldDef to a FieldDefSet
-func (fds FieldDefSet) Add(fieldDef FieldDef) error {
+func (fds FieldDefSet) Add(fieldDef FieldDef) bool {
 	if fds[fieldDef.name] != "" {
-		return fmt.Errorf("Error adding duplicate FieldDef (%v) to set", fieldDef)
+		return false
 	}
 	fds[fieldDef.name] = fieldDef.fieldType
-	return nil
+	return true
+}
+
+// Contains indicates whether a FieldDefSet contains a FieldDef
+func (fds FieldDefSet) Contains(fieldDef FieldDef) bool {
+	return fds[fieldDef.name] == fieldDef.fieldType
 }
 
 // UnmarshalJSON unmarshals JSON to a FieldDefSet
-func (fds FieldDefSet) UnmarshalJSON(b []byte) error {
+func (fds *FieldDefSet) UnmarshalJSON(b []byte) error {
+	if *fds == nil {
+		*fds = NewFieldDefSet()
+	}
 	fieldDefs := make(map[string]fieldType)
 	err := json.Unmarshal(b, &fieldDefs)
 	if err != nil {
@@ -171,9 +184,8 @@ func (fds FieldDefSet) UnmarshalJSON(b []byte) error {
 			name:      key,
 			fieldType: value,
 		}
-		err = fds.Add(fd)
-		if err != nil {
-			return err
+		if !fds.Add(fd) {
+			return fmt.Errorf("Attempt to add duplicate FieldDef: %#v", fd)
 		}
 	}
 	return nil

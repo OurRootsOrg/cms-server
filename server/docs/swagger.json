@@ -30,25 +30,7 @@
                     "categories"
                 ],
                 "summary": "returns all categories",
-                "operationId": "find",
-                "parameters": [
-                    {
-                        "description": "Dummy",
-                        "name": "dummy",
-                        "in": "body",
-                        "schema": {
-                            "$ref": "#/definitions/model.FieldDefSet"
-                        }
-                    },
-                    {
-                        "description": "Dummy",
-                        "name": "dummy",
-                        "in": "body",
-                        "schema": {
-                            "$ref": "#/definitions/model.fieldType"
-                        }
-                    }
-                ],
+                "operationId": "getCategories",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -78,7 +60,7 @@
                     "categories"
                 ],
                 "summary": "adds a new Category",
-                "operationId": "addOne",
+                "operationId": "addCategory",
                 "parameters": [
                     {
                         "description": "Add Category",
@@ -110,30 +92,6 @@
                         }
                     }
                 }
-            },
-            "delete": {
-                "tags": [
-                    "categories"
-                ],
-                "summary": "deletes all Categories",
-                "operationId": "deleteAll",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/model.Category"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Server error",
-                        "schema": {
-                            "$ref": "#/definitions/model.Error"
-                        }
-                    }
-                }
             }
         },
         "/categories/{id}": {
@@ -145,7 +103,7 @@
                     "categories"
                 ],
                 "summary": "gets a Category",
-                "operationId": "getOne",
+                "operationId": "getCategory",
                 "parameters": [
                     {
                         "type": "string",
@@ -182,7 +140,7 @@
                     "categories"
                 ],
                 "summary": "deletes a Category",
-                "operationId": "delete",
+                "operationId": "deleteCategory",
                 "parameters": [
                     {
                         "type": "string",
@@ -219,7 +177,7 @@
                     "categories"
                 ],
                 "summary": "updates a Category",
-                "operationId": "update",
+                "operationId": "updateCategory",
                 "parameters": [
                     {
                         "type": "string",
@@ -260,17 +218,215 @@
                     }
                 }
             }
+        },
+        "/collections": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "collections"
+                ],
+                "summary": "returns all collections",
+                "operationId": "getCollections",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.Collection"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "collections"
+                ],
+                "summary": "adds a new Collection",
+                "operationId": "addCollection",
+                "parameters": [
+                    {
+                        "description": "Add Collection",
+                        "name": "collection",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.CollectionInput"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.Collection"
+                        }
+                    },
+                    "415": {
+                        "description": "Bad Content-Type",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/collections/{id}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "collections"
+                ],
+                "summary": "gets a Collection",
+                "operationId": "getCollection",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "Collection ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.Collection"
+                        }
+                    },
+                    "404": {
+                        "description": "Not found",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "collections"
+                ],
+                "summary": "deletes a Collection",
+                "operationId": "deleteCollection",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "Collection ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.Collection"
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "collections"
+                ],
+                "summary": "updates a Collection",
+                "operationId": "updateCollection",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "Collection ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Update Collection",
+                        "name": "collection",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.CollectionInput"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.Collection"
+                        }
+                    },
+                    "415": {
+                        "description": "Bad Content-Type",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
         "model.Category": {
             "type": "object",
             "properties": {
-                "csvHeading": {
+                "csv_heading": {
                     "type": "string"
                 },
-                "fieldDefs": {
-                    "type": "object",
+                "field_defs": {
+                    "description": "swaggertype:\"map[string]string\" example:\"{\\\"int_field\\\":\\\"Int\\\", \\\"string_field\\\":\\\"String\\\"}\"",
                     "$ref": "#/definitions/model.FieldDefSet"
                 },
                 "id": {
@@ -278,18 +434,55 @@
                 },
                 "name": {
                     "type": "string"
+                },
+                "type": {
+                    "type": "string"
                 }
             }
         },
         "model.CategoryInput": {
             "type": "object",
             "properties": {
-                "csvHeading": {
+                "csv_heading": {
                     "type": "string"
                 },
-                "fieldDefs": {
-                    "type": "object",
+                "field_defs": {
+                    "description": "swaggertype:\"map[string]string\" example:\"{\\\"int_field\\\":\\\"Int\\\", \\\"string_field\\\":\\\"String\\\"}\"",
                     "$ref": "#/definitions/model.FieldDefSet"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.Collection": {
+            "type": "object",
+            "properties": {
+                "category": {
+                    "$ref": "#/definitions/model.Category"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "location": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.CollectionInput": {
+            "type": "object",
+            "properties": {
+                "category": {
+                    "$ref": "#/definitions/model.Category"
+                },
+                "location": {
+                    "type": "string"
                 },
                 "name": {
                     "type": "string"
@@ -310,11 +503,8 @@
         "model.FieldDefSet": {
             "type": "object",
             "additionalProperties": {
-                "$ref": "#/definitions/model.fieldType"
+                "type": "string"
             }
-        },
-        "model.fieldType": {
-            "type": "string"
         }
     }
 }

@@ -2,23 +2,49 @@ basePath: /
 definitions:
   model.Category:
     properties:
-      csvHeading:
+      csv_heading:
         type: string
-      fieldDefs:
+      field_defs:
         $ref: '#/definitions/model.FieldDefSet'
-        type: object
+        description: swaggertype:"map[string]string" example:"{\"int_field\":\"Int\",
+          \"string_field\":\"String\"}"
       id:
         type: string
       name:
         type: string
+      type:
+        type: string
     type: object
   model.CategoryInput:
     properties:
-      csvHeading:
+      csv_heading:
         type: string
-      fieldDefs:
+      field_defs:
         $ref: '#/definitions/model.FieldDefSet'
-        type: object
+        description: swaggertype:"map[string]string" example:"{\"int_field\":\"Int\",
+          \"string_field\":\"String\"}"
+      name:
+        type: string
+    type: object
+  model.Collection:
+    properties:
+      category:
+        $ref: '#/definitions/model.Category'
+      id:
+        type: string
+      location:
+        type: string
+      name:
+        type: string
+      type:
+        type: string
+    type: object
+  model.CollectionInput:
+    properties:
+      category:
+        $ref: '#/definitions/model.Category'
+      location:
+        type: string
       name:
         type: string
     type: object
@@ -31,10 +57,8 @@ definitions:
     type: object
   model.FieldDefSet:
     additionalProperties:
-      $ref: '#/definitions/model.fieldType'
+      type: string
     type: object
-  model.fieldType:
-    type: string
 host: api.ourroots.org
 info:
   contact:
@@ -49,35 +73,8 @@ info:
   version: 0.1.0
 paths:
   /categories:
-    delete:
-      operationId: deleteAll
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/model.Category'
-            type: array
-        "500":
-          description: Server error
-          schema:
-            $ref: '#/definitions/model.Error'
-      summary: deletes all Categories
-      tags:
-      - categories
     get:
-      operationId: find
-      parameters:
-      - description: Dummy
-        in: body
-        name: dummy
-        schema:
-          $ref: '#/definitions/model.FieldDefSet'
-      - description: Dummy
-        in: body
-        name: dummy
-        schema:
-          $ref: '#/definitions/model.fieldType'
+      operationId: getCategories
       produces:
       - application/json
       responses:
@@ -97,7 +94,7 @@ paths:
     post:
       consumes:
       - application/json
-      operationId: addOne
+      operationId: addCategory
       parameters:
       - description: Add Category
         in: body
@@ -125,7 +122,7 @@ paths:
       - categories
   /categories/{id}:
     delete:
-      operationId: delete
+      operationId: deleteCategory
       parameters:
       - description: Category ID
         format: uuid
@@ -146,7 +143,7 @@ paths:
       tags:
       - categories
     get:
-      operationId: getOne
+      operationId: getCategory
       parameters:
       - description: Category ID
         format: uuid
@@ -175,7 +172,7 @@ paths:
     patch:
       consumes:
       - application/json
-      operationId: update
+      operationId: updateCategory
       parameters:
       - description: Category ID
         format: uuid
@@ -207,6 +204,138 @@ paths:
       summary: updates a Category
       tags:
       - categories
+  /collections:
+    get:
+      operationId: getCollections
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.Collection'
+            type: array
+        "500":
+          description: Server error
+          schema:
+            $ref: '#/definitions/model.Error'
+      summary: returns all collections
+      tags:
+      - collections
+    post:
+      consumes:
+      - application/json
+      operationId: addCollection
+      parameters:
+      - description: Add Collection
+        in: body
+        name: collection
+        required: true
+        schema:
+          $ref: '#/definitions/model.CollectionInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Collection'
+        "415":
+          description: Bad Content-Type
+          schema:
+            $ref: '#/definitions/model.Error'
+        "500":
+          description: Server error
+          schema:
+            $ref: '#/definitions/model.Error'
+      summary: adds a new Collection
+      tags:
+      - collections
+  /collections/{id}:
+    delete:
+      operationId: deleteCollection
+      parameters:
+      - description: Collection ID
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Collection'
+        "500":
+          description: Server error
+          schema:
+            $ref: '#/definitions/model.Error'
+      summary: deletes a Collection
+      tags:
+      - collections
+    get:
+      operationId: getCollection
+      parameters:
+      - description: Collection ID
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Collection'
+        "404":
+          description: Not found
+          schema:
+            $ref: '#/definitions/model.Error'
+        "500":
+          description: Server error
+          schema:
+            $ref: '#/definitions/model.Error'
+      summary: gets a Collection
+      tags:
+      - collections
+    patch:
+      consumes:
+      - application/json
+      operationId: updateCollection
+      parameters:
+      - description: Collection ID
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Update Collection
+        in: body
+        name: collection
+        required: true
+        schema:
+          $ref: '#/definitions/model.CollectionInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Collection'
+        "415":
+          description: Bad Content-Type
+          schema:
+            $ref: '#/definitions/model.Error'
+        "500":
+          description: Server error
+          schema:
+            $ref: '#/definitions/model.Error'
+      summary: updates a Collection
+      tags:
+      - collections
 schemes:
 - http
 - https
