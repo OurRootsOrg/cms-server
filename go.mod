@@ -19,3 +19,4 @@ require (
 	golang.org/x/tools v0.0.0-20200416061724-5744cfde56ed // indirect
 	gopkg.in/yaml.v2 v2.2.8 // indirect
 )
+replace github.com/awslabs/aws-lambda-go-api-proxy => /Users/jim/jimprojects/aws-lambda-go-api-proxy

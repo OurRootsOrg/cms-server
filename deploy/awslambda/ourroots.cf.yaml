@@ -1,0 +1,152 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Ourroots Server
+Transform: AWS::Serverless-2016-10-31
+Parameters:
+  DomainName:
+    Type: String
+    Description: FQDN the app will be hosted at
+    # This assumes that the DNS for this domain is configured elsewhere
+    # TODO: Allow for various delegation and Route 53 scenarios
+  CertificateArn:
+    Type: String
+    Description: ARN of the Certificate Manager cert to use for the domain
+    # TODO: Optionally create the certificate
+Resources:
+  # SiteBucket:
+  #   # Bucket to hold static site assets
+  #   Type: AWS::S3::Bucket
+  #   Properties:
+  #     BucketName: !Sub "${AWS::StackName}-site"
+  #     AccessControl: PublicRead
+  #     WebsiteConfiguration:
+  #       IndexDocument: index.html
+  #   # DeletionPolicy: Retain
+  # SiteBucketPolicy:
+  #   # Allow reads from the bucket
+  #   Type: AWS::S3::BucketPolicy
+  #   Properties:
+  #     Bucket: !Ref SiteBucket
+  #     PolicyDocument:
+  #       Id: SiteBucketPolicy
+  #       Version: 2012-10-17
+  #       Statement:
+  #         - Sid: ReadForGetBucketObjects
+  #           Effect: Allow
+  #           Principal: '*' 
+  #           Action: 
+  #             - 's3:GetObject'
+  #           Resource: !Join [ '', [ Fn::GetAtt: [ SiteBucket , Arn ] , '/*' ] ]
+
+  OurRootsApi:
+    Type: "AWS::ApiGatewayV2::Api"
+    Properties:
+      Name: !Ref AWS::StackName
+      ProtocolType: HTTP
+      Version: "0.1"
+
+  ApiStage:
+    Type: "AWS::ApiGatewayV2::Stage"
+    Properties:
+      StageName: "$default"
+      AutoDeploy: true
+      ApiId: !Ref OurRootsApi
+      AccessLogSettings:
+        DestinationArn:
+          Fn::GetAtt: [ ApiLogGroup , Arn ]
+        Format: '$context.identity.sourceIp - - [$context.requestTime] "$context.httpMethod $context.path $context.protocol" $context.status $context.responseLength - "$context.identity.userAgent" $context.requestId' # Common Log Format plus a couple extra fields
+      # DefaultRouteSettings:
+      #   DetailedMetricsEnabled: true
+      #   ThrottlingBurstLimit: 10
+      #   ThrottlingRateLimit: 10
+
+  ApiLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "${AWS::StackName}/API-Gateway/access-logs"
+      RetentionInDays: 7
+
+  ApiRoute:
+    Type: "AWS::ApiGatewayV2::Route"
+    Properties:
+      ApiId: !Ref OurRootsApi
+      RouteKey: "ANY /api/{proxy+}"
+      # RouteKey: "$default"
+      AuthorizationType: NONE
+      Target: !Join
+        - /
+        - - integrations
+          - !Ref APIIntegration
+
+  APIIntegration:
+    Type: "AWS::ApiGatewayV2::Integration"
+    Properties:
+      ApiId: !Ref OurRootsApi
+      Description: Lambda Integration
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !Sub "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${OurRootsFunction.Arn}/invocations"
+      PayloadFormatVersion: "1.0"
+
+  # GETs to /wasm/* go to the /wasm/ bucket path
+  # WasmRoute:
+  #   Type: "AWS::ApiGatewayV2::Route"
+  #   Properties:
+  #     ApiId: !Ref OurRootsApi
+  #     RouteKey: "GET /wasm/{proxy+}"
+  #     AuthorizationType: NONE
+  #     Target: !Join
+  #       - /
+  #       - - integrations
+  #         - !Ref WasmIntegration
+
+  # WasmIntegration:
+  #   Type: "AWS::ApiGatewayV2::Integration"
+  #   Properties:
+  #     ApiId: !Ref OurRootsApi
+  #     Description: WASM Site Bucket Integration
+  #     IntegrationType: HTTP_PROXY
+  #     IntegrationUri: !Join [ '/', [ Fn::GetAtt: [ SiteBucket , WebsiteURL ] , 'wasm/{proxy}' ] ]
+  #     IntegrationMethod: GET
+  #     PayloadFormatVersion: "1.0"
+
+  # Map the domain name passed as a parameter to the API Gateway API
+  OurRootsDomainName:
+    Type: "AWS::ApiGatewayV2::DomainName"
+    Properties:
+      DomainName: !Ref DomainName
+      DomainNameConfigurations:
+        - EndpointType: REGIONAL
+          CertificateArn: !Ref CertificateArn
+
+  OurRootsApiMapping:
+    Type: "AWS::ApiGatewayV2::ApiMapping"
+    Properties:
+      DomainName: !Ref OurRootsDomainName
+      ApiId: !Ref OurRootsApi
+      Stage: !Ref ApiStage
+
+  # Define the Lambda function
+  OurRootsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: server/main.lambda
+      CodeUri: main.lambda.zip
+      Runtime: go1.x
+      MemorySize: 128
+      Policies: AWSLambdaBasicExecutionRole
+      Timeout: 3
+      Environment:
+        Variables:
+          # This variable tells our server code what domain name and path prefix is in use
+          BASE_URL: !Sub "https://${DomainName}/api"
+          # BASE_URL: !Sub "https://${DomainName}"
+          # This variable tells aws-lambda-go-api-proxy what domain name is in use
+          GO_API_HOST: !Sub "https://${DomainName}"
+
+  # Give the API permission to call the Lambda
+  OurRootsFunctionPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: 'lambda:InvokeFunction'
+      FunctionName: !Ref OurRootsFunction
+      Principal: 'apigateway.amazonaws.com'
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${OurRootsApi}/*/*"

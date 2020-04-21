@@ -69,12 +69,14 @@ func main() {
 		Categories:  make(map[string]model.Category),
 		Collections: make(map[string]model.Collection),
 		BaseURL:     baseURL,
+		PathPrefix:  reqURL.Path,
 	})
 	docs.SwaggerInfo.Host = reqURL.Hostname()
 	if reqURL.Port() != "" {
 		docs.SwaggerInfo.Host += ":" + reqURL.Port()
 	}
-	r.PathPrefix("/swagger/").Handler(httpSwagger.Handler(
+	docs.SwaggerInfo.BasePath = reqURL.Path
+	r.PathPrefix(reqURL.Path + "/swagger/").Handler(httpSwagger.Handler(
 		httpSwagger.URL(baseURL+"/swagger/doc.json"), //The url pointing to API definition
 		httpSwagger.DeepLinking(true),
 		httpSwagger.DocExpansion("none"),
@@ -116,26 +118,27 @@ func main() {
 // NewRouter builds a router for handling requests
 func NewRouter(app App) *mux.Router {
 	r := mux.NewRouter()
-	r.HandleFunc("/", app.GetIndex).Methods("GET")
-	r.HandleFunc("/index.html", app.GetIndex).Methods("GET")
+	r.HandleFunc(app.PathPrefix+"/", app.GetIndex).Methods("GET")
+	r.HandleFunc(app.PathPrefix+"/index.html", app.GetIndex).Methods("GET")
 
-	r.HandleFunc("/categories", app.GetAllCategories).Methods("GET")
-	r.HandleFunc("/categories", app.PostCategory).Methods("POST")
-	r.HandleFunc("/categories/{id}", app.GetCategory).Methods("GET")
-	r.HandleFunc("/categories/{id}", app.PatchCategory).Methods("PATCH")
-	r.HandleFunc("/categories/{id}", app.DeleteCategory).Methods("DELETE")
+	r.HandleFunc(app.PathPrefix+"/categories", app.GetAllCategories).Methods("GET")
+	r.HandleFunc(app.PathPrefix+"/categories", app.PostCategory).Methods("POST")
+	r.HandleFunc(app.PathPrefix+"/categories/{id}", app.GetCategory).Methods("GET")
+	r.HandleFunc(app.PathPrefix+"/categories/{id}", app.PatchCategory).Methods("PATCH")
+	r.HandleFunc(app.PathPrefix+"/categories/{id}", app.DeleteCategory).Methods("DELETE")
 
-	r.HandleFunc("/collections", app.GetAllCollections).Methods("GET")
-	r.HandleFunc("/collections", app.PostCollection).Methods("POST")
-	r.HandleFunc("/collections/{id}", app.GetCollection).Methods("GET")
-	r.HandleFunc("/collections/{id}", app.PatchCollection).Methods("PATCH")
-	r.HandleFunc("/collections/{id}", app.DeleteCollection).Methods("DELETE")
+	r.HandleFunc(app.PathPrefix+"/collections", app.GetAllCollections).Methods("GET")
+	r.HandleFunc(app.PathPrefix+"/collections", app.PostCollection).Methods("POST")
+	r.HandleFunc(app.PathPrefix+"/collections/{id}", app.GetCollection).Methods("GET")
+	r.HandleFunc(app.PathPrefix+"/collections/{id}", app.PatchCollection).Methods("PATCH")
+	r.HandleFunc(app.PathPrefix+"/collections/{id}", app.DeleteCollection).Methods("DELETE")
 	return r
 }
 
 // App is the container for the application
 type App struct {
-	BaseURL string
+	BaseURL    string
+	PathPrefix string
 	// Dummy "database".
 	// (Note that this behaves really strangely when multiple Lambda are running
 	// because which database you see depends on which Lamda instance you're routed to.)

@@ -1,10 +1,12 @@
 # Binaries for programs and plugins
 server/server
+server/main.lambda
 *.exe
 *.exe~
 *.dll
 *.so
 *.dylib
+output-ourroots.cf.yaml
 
 # Test binary, built with `go test -c`
 *.test
