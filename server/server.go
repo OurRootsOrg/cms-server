@@ -27,12 +27,6 @@ import (
 const (
 	contentType = "application/json"
 	defaultURL  = "http://localhost:3000"
-	indexHTML   = `<html>
-	<body>
-		<a href='/swagger/'>Swagger API Documentation</a><br/>
-	</body>
-</html>
-`
 )
 
 // @title OurRoots API
@@ -62,11 +56,11 @@ func main() {
 	if baseURL == "" {
 		baseURL = defaultURL
 	}
-	log.Printf("BaseURL: %s", baseURL)
 	reqURL, err := url.ParseRequestURI(baseURL)
 	if err != nil {
 		log.Fatalf("Error parsing base URL '%s': %v", baseURL, err)
 	}
+	log.Printf("BaseURL: %s, reqURL.Path: %s", baseURL, reqURL.Path)
 	app := App{
 		BaseURL: *reqURL,
 	}
@@ -141,6 +135,7 @@ func main() {
 // NewRouter builds a router for handling requests
 func NewRouter(app App) *mux.Router {
 	r := mux.NewRouter()
+	r.StrictSlash(true)
 	r.HandleFunc(app.BaseURL.Path+"/", app.GetIndex).Methods("GET")
 	r.HandleFunc(app.BaseURL.Path+"/index.html", app.GetIndex).Methods("GET")
 
@@ -166,10 +161,9 @@ type App struct {
 	// PathPrefix          string
 }
 
-// GetIndex returns an HTML index page
+// GetIndex redirects to the Swagger documentation
 func (app App) GetIndex(w http.ResponseWriter, req *http.Request) {
-	w.Header().Set("Content-Type", "text/html")
-	w.Write([]byte(indexHTML))
+	http.Redirect(w, req, app.BaseURL.Path+"/swagger/", http.StatusTemporaryRedirect)
 }
 
 func serverError(w http.ResponseWriter, err error) {
