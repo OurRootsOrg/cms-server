@@ -2,47 +2,70 @@ basePath: /
 definitions:
   model.Category:
     properties:
-      csv_heading:
-        type: string
       field_defs:
         $ref: '#/definitions/model.FieldDefSet'
-        description: swaggertype:"map[string]string" example:"{\"int_field\":\"Int\",
-          \"string_field\":\"String\"}"
+        description: example:"{\"int_field\":\"Int\", \"string_field\":\"String\"}"
+        type: object
       id:
+        example: /categories/999
+        type: string
+      insert_time:
+        type: string
+      last_update_time:
         type: string
       name:
         type: string
       type:
+        example: category
         type: string
     type: object
-  model.CategoryInput:
+  model.CategoryIn:
     properties:
-      csv_heading:
-        type: string
       field_defs:
         $ref: '#/definitions/model.FieldDefSet'
-        description: swaggertype:"map[string]string" example:"{\"int_field\":\"Int\",
-          \"string_field\":\"String\"}"
+        description: example:"{\"int_field\":\"Int\", \"string_field\":\"String\"}"
+        type: object
       name:
+        type: string
+    type: object
+  model.CategoryRef:
+    properties:
+      id:
+        example: /categories/999
+        type: string
+      type:
+        example: category
         type: string
     type: object
   model.Collection:
     properties:
       category:
-        $ref: '#/definitions/model.Category'
+        $ref: '#/definitions/model.CategoryRef'
+        type: object
+      citation_template:
+        type: string
       id:
+        example: /collections/999
+        type: string
+      insert_time:
+        type: string
+      last_update_time:
         type: string
       location:
         type: string
       name:
         type: string
       type:
+        example: collection
         type: string
     type: object
-  model.CollectionInput:
+  model.CollectionIn:
     properties:
       category:
-        $ref: '#/definitions/model.Category'
+        $ref: '#/definitions/model.CategoryRef'
+        type: object
+      citation_template:
+        type: string
       location:
         type: string
       name:
@@ -55,10 +78,25 @@ definitions:
       message:
         type: string
     type: object
-  model.FieldDefSet:
-    additionalProperties:
-      type: string
+  model.FieldDef:
+    properties:
+      csv_heading:
+        type: string
+      name:
+        type: string
+      type:
+        enum:
+        - Int
+        - String
+        - Image
+        - Location
+        - Time
+        type: string
     type: object
+  model.FieldDefSet:
+    items:
+      $ref: '#/definitions/model.FieldDef'
+    type: array
 host: api.ourroots.org
 info:
   contact:
@@ -101,7 +139,7 @@ paths:
         name: category
         required: true
         schema:
-          $ref: '#/definitions/model.CategoryInput'
+          $ref: '#/definitions/model.CategoryIn'
       produces:
       - application/json
       responses:
@@ -125,16 +163,13 @@ paths:
       operationId: deleteCategory
       parameters:
       - description: Category ID
-        format: uuid
         in: path
         name: id
         required: true
-        type: string
+        type: integer
       responses:
         "204":
           description: OK
-          schema:
-            $ref: '#/definitions/model.Category'
         "500":
           description: Server error
           schema:
@@ -146,11 +181,10 @@ paths:
       operationId: getCategory
       parameters:
       - description: Category ID
-        format: uuid
         in: path
         name: id
         required: true
-        type: string
+        type: integer
       produces:
       - application/json
       responses:
@@ -175,17 +209,16 @@ paths:
       operationId: updateCategory
       parameters:
       - description: Category ID
-        format: uuid
         in: path
         name: id
         required: true
-        type: string
+        type: integer
       - description: Update Category
         in: body
         name: category
         required: true
         schema:
-          $ref: '#/definitions/model.CategoryInput'
+          $ref: '#/definitions/model.CategoryIn'
       produces:
       - application/json
       responses:
@@ -233,7 +266,7 @@ paths:
         name: collection
         required: true
         schema:
-          $ref: '#/definitions/model.CollectionInput'
+          $ref: '#/definitions/model.CollectionIn'
       produces:
       - application/json
       responses:
@@ -317,7 +350,7 @@ paths:
         name: collection
         required: true
         schema:
-          $ref: '#/definitions/model.CollectionInput'
+          $ref: '#/definitions/model.CollectionIn'
       produces:
       - application/json
       responses:

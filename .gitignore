@@ -1,6 +1,7 @@
 # Binaries for programs and plugins
 server/server
 server/main.lambda
+deploy/awslambda/main.lambda.zip
 *.exe
 *.exe~
 *.dll

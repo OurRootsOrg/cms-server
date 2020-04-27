@@ -79,7 +79,7 @@ var doc = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/model.CategoryInput"
+                            "$ref": "#/definitions/model.CategoryIn"
                         }
                     }
                 ],
@@ -117,8 +117,7 @@ var doc = `{
                 "operationId": "getCategory",
                 "parameters": [
                     {
-                        "type": "string",
-                        "format": "uuid",
+                        "type": "integer",
                         "description": "Category ID",
                         "name": "id",
                         "in": "path",
@@ -154,8 +153,7 @@ var doc = `{
                 "operationId": "deleteCategory",
                 "parameters": [
                     {
-                        "type": "string",
-                        "format": "uuid",
+                        "type": "integer",
                         "description": "Category ID",
                         "name": "id",
                         "in": "path",
@@ -164,10 +162,7 @@ var doc = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/model.Category"
-                        }
+                        "description": "OK"
                     },
                     "500": {
                         "description": "Server error",
@@ -191,8 +186,7 @@ var doc = `{
                 "operationId": "updateCategory",
                 "parameters": [
                     {
-                        "type": "string",
-                        "format": "uuid",
+                        "type": "integer",
                         "description": "Category ID",
                         "name": "id",
                         "in": "path",
@@ -204,7 +198,7 @@ var doc = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/model.CategoryInput"
+                            "$ref": "#/definitions/model.CategoryIn"
                         }
                     }
                 ],
@@ -277,7 +271,7 @@ var doc = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/model.CollectionInput"
+                            "$ref": "#/definitions/model.CollectionIn"
                         }
                     }
                 ],
@@ -402,7 +396,7 @@ var doc = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/model.CollectionInput"
+                            "$ref": "#/definitions/model.CollectionIn"
                         }
                     }
                 ],
@@ -433,36 +427,53 @@ var doc = `{
         "model.Category": {
             "type": "object",
             "properties": {
-                "csv_heading": {
-                    "type": "string"
-                },
                 "field_defs": {
-                    "description": "swaggertype:\"map[string]string\" example:\"{\\\"int_field\\\":\\\"Int\\\", \\\"string_field\\\":\\\"String\\\"}\"",
+                    "description": "example:\"{\\\"int_field\\\":\\\"Int\\\", \\\"string_field\\\":\\\"String\\\"}\"",
+                    "type": "object",
                     "$ref": "#/definitions/model.FieldDefSet"
                 },
                 "id": {
+                    "type": "string",
+                    "example": "/categories/999"
+                },
+                "insert_time": {
+                    "type": "string"
+                },
+                "last_update_time": {
                     "type": "string"
                 },
                 "name": {
                     "type": "string"
                 },
                 "type": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "category"
                 }
             }
         },
-        "model.CategoryInput": {
+        "model.CategoryIn": {
             "type": "object",
             "properties": {
-                "csv_heading": {
-                    "type": "string"
-                },
                 "field_defs": {
-                    "description": "swaggertype:\"map[string]string\" example:\"{\\\"int_field\\\":\\\"Int\\\", \\\"string_field\\\":\\\"String\\\"}\"",
+                    "description": "example:\"{\\\"int_field\\\":\\\"Int\\\", \\\"string_field\\\":\\\"String\\\"}\"",
+                    "type": "object",
                     "$ref": "#/definitions/model.FieldDefSet"
                 },
                 "name": {
                     "type": "string"
+                }
+            }
+        },
+        "model.CategoryRef": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "example": "/categories/999"
+                },
+                "type": {
+                    "type": "string",
+                    "example": "category"
                 }
             }
         },
@@ -470,9 +481,20 @@ var doc = `{
             "type": "object",
             "properties": {
                 "category": {
-                    "$ref": "#/definitions/model.Category"
+                    "type": "object",
+                    "$ref": "#/definitions/model.CategoryRef"
+                },
+                "citation_template": {
+                    "type": "string"
                 },
                 "id": {
+                    "type": "string",
+                    "example": "/collections/999"
+                },
+                "insert_time": {
+                    "type": "string"
+                },
+                "last_update_time": {
                     "type": "string"
                 },
                 "location": {
@@ -482,15 +504,20 @@ var doc = `{
                     "type": "string"
                 },
                 "type": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "collection"
                 }
             }
         },
-        "model.CollectionInput": {
+        "model.CollectionIn": {
             "type": "object",
             "properties": {
                 "category": {
-                    "$ref": "#/definitions/model.Category"
+                    "type": "object",
+                    "$ref": "#/definitions/model.CategoryRef"
+                },
+                "citation_template": {
+                    "type": "string"
                 },
                 "location": {
                     "type": "string"
@@ -511,10 +538,31 @@ var doc = `{
                 }
             }
         },
-        "model.FieldDefSet": {
+        "model.FieldDef": {
             "type": "object",
-            "additionalProperties": {
-                "type": "string"
+            "properties": {
+                "csv_heading": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string",
+                    "enum": [
+                        "Int",
+                        "String",
+                        "Image",
+                        "Location",
+                        "Time"
+                    ]
+                }
+            }
+        },
+        "model.FieldDefSet": {
+            "type": "array",
+            "items": {
+                "$ref": "#/definitions/model.FieldDef"
             }
         }
     }

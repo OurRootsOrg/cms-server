@@ -12,15 +12,15 @@ type fieldType string // `enums:"Int,String,Image,Location,Time"`
 
 const (
 	// IntType indicates a field of type int
-	IntType = "Int"
+	IntType fieldType = "Int"
 	// StringType indicates a field of type string
-	StringType = "String"
+	StringType fieldType = "String"
 	// ImageType indicates a field of type image.Image
-	ImageType = "Image"
+	ImageType fieldType = "Image"
 	// LocationType indicates a field of type Location
-	LocationType = "Location"
+	LocationType fieldType = "Location"
 	// TimeType indicates a field of type time.Time
-	TimeType = "Time"
+	TimeType fieldType = "Time"
 )
 
 // fieldTypes returns a map of the valid field types
@@ -28,7 +28,7 @@ func fieldTypes() map[fieldType]bool {
 	return map[fieldType]bool{IntType: true, StringType: true, ImageType: true, LocationType: true, TimeType: true}
 }
 
-// makeFieldType makes a fieldType from a string, but returns an error if the string isn't a valid type
+// isValidFieldType returns an error if a fieldType isn't valid
 func isValidFieldType(ft fieldType) error {
 	if fieldTypes()[ft] {
 		return nil
@@ -36,38 +36,29 @@ func isValidFieldType(ft fieldType) error {
 	return errors.New("'" + string(ft) + "' is not a valid fieldType")
 }
 
-func makeFieldType(s string) (fieldType, error) {
-	ft := fieldType(s)
-	err := isValidFieldType(ft)
-	if err != nil {
-		return fieldType(""), err
-	}
-	return ft, nil
-}
+// func makeFieldType(s string) (fieldType, error) {
+// 	ft := fieldType(s)
+// 	err := isValidFieldType(ft)
+// 	if err != nil {
+// 		return fieldType(""), err
+// 	}
+// 	return ft, nil
+// }
 
 // FieldDef defines a name and type of a field
 type FieldDef struct {
-	name      string
-	fieldType fieldType `swaggertype:"string" enums:"Int,String,Image,Location,Time"`
+	Name       string    `json:"name"`
+	Type       fieldType `json:"type,omitempty" swaggertype:"string" enums:"Int,String,Image,Location,Time"`
+	CSVHeading string    `json:"csv_heading,omitempty"`
 }
 
 // NewFieldDef constructs a FieldDef
-func NewFieldDef(name string, fieldType string) (FieldDef, error) {
-	ft, err := makeFieldType(fieldType)
+func NewFieldDef(name string, ft fieldType, csvHeading string) (FieldDef, error) {
+	err := isValidFieldType(ft)
 	if err != nil {
 		return FieldDef{}, err
 	}
-	return FieldDef{name: name, fieldType: ft}, nil
-}
-
-// Name returns the name of a field
-func (f FieldDef) Name() string {
-	return f.name
-}
-
-// Type returns the type of a StringDef
-func (f FieldDef) Type() string {
-	return string(f.fieldType)
+	return FieldDef{Name: name, Type: ft, CSVHeading: csvHeading}, nil
 }
 
 // StringField represent a string field
@@ -143,49 +134,61 @@ type FieldTyper interface {
 	Type() string
 }
 
-// FieldDefSet represents a set of field definitions
-type FieldDefSet map[string]fieldType
+// FieldDefSet represents a set of field definitions which must have both
+// unigue names and unique CSV header names.
+type FieldDefSet []FieldDef
 
 // NewFieldDefSet constructs a FieldDefSet
 func NewFieldDefSet() FieldDefSet {
-	return FieldDefSet(make(map[string]fieldType))
+	return FieldDefSet(make([]FieldDef, 0))
 }
 
 // Add adds a FieldDef to a FieldDefSet
-func (fds FieldDefSet) Add(fieldDef FieldDef) bool {
-	if fds[fieldDef.name] != "" {
+func (fds *FieldDefSet) Add(fd FieldDef) bool {
+	if fds.Contains(fd) {
 		return false
 	}
-	fds[fieldDef.name] = fieldDef.fieldType
+	*fds = append(*fds, fd)
 	return true
 }
 
 // Contains indicates whether a FieldDefSet contains a FieldDef
-func (fds FieldDefSet) Contains(fieldDef FieldDef) bool {
-	return fds[fieldDef.name] == fieldDef.fieldType
+func (fds *FieldDefSet) Contains(fd FieldDef) bool {
+	for _, f := range *fds {
+		if f.Name == fd.Name || f.CSVHeading == fd.CSVHeading {
+			return true
+		}
+	}
+	return false
 }
+
+// // MarshalJSON marshals a FieldDefSet to JSON
+// func (fds FieldDefSet) MarshalJSON() ([]byte, error) {
+// 	fieldDefs := make([]FieldDef, 0, len(fds.byName))
+// 	for _, fd := range fds.byName {
+// 		fieldDefs = append(fieldDefs, *fd)
+// 	}
+// 	log.Printf("fds.MarshalJSON, fieldDefs: %#v", fieldDefs)
+// 	return json.Marshal(fieldDefs)
+// }
 
 // UnmarshalJSON unmarshals JSON to a FieldDefSet
 func (fds *FieldDefSet) UnmarshalJSON(b []byte) error {
-	if *fds == nil {
+	if fds == nil {
 		*fds = NewFieldDefSet()
 	}
-	fieldDefs := make(map[string]fieldType)
+	var fieldDefs []FieldDef
 	err := json.Unmarshal(b, &fieldDefs)
 	if err != nil {
 		return err
 	}
-	for key, value := range fieldDefs {
-		err = isValidFieldType(value)
+	for _, value := range fieldDefs {
+		err = isValidFieldType(value.Type)
 		if err != nil {
 			return err
 		}
-		fd := FieldDef{
-			name:      key,
-			fieldType: value,
-		}
-		if !fds.Add(fd) {
-			return fmt.Errorf("Attempt to add duplicate FieldDef: %#v", fd)
+		if !fds.Add(value) {
+			return fmt.Errorf("Attempt to add duplicate FieldDef: %#v", value)
 		}
 	}
 	return nil

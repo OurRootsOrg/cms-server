@@ -1,5 +1,9 @@
 {
   "go.coverOnSave": true,
   "go.coverOnSingleTest": true,
-  "go.coverOnSingleTestFile": true
+  "go.coverOnSingleTestFile": true,
+  "go.testTags": "test",
+  "[Log]": {
+    "editor.wordWrap": "on"
+  }
 }

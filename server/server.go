@@ -3,6 +3,7 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -16,8 +17,10 @@ import (
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/jancona/ourroots/model"
+	"github.com/jancona/ourroots/persist"
 	"github.com/jancona/ourroots/server/docs"
 
+	_ "github.com/jackc/pgx/v4/stdlib"
 	httpSwagger "github.com/swaggo/http-swagger"
 )
 
@@ -64,13 +67,32 @@ func main() {
 	if err != nil {
 		log.Fatalf("Error parsing base URL '%s': %v", baseURL, err)
 	}
-	log.Printf("BaseURL: %s, url: %s", baseURL, reqURL)
-	r := NewRouter(App{
-		Categories:  make(map[string]model.Category),
-		Collections: make(map[string]model.Collection),
-		BaseURL:     baseURL,
-		PathPrefix:  reqURL.Path,
-	})
+	app := App{
+		BaseURL: *reqURL,
+	}
+	model.Initialize(app.BaseURL.Path)
+	switch os.Getenv("PERSISTER") {
+	case "sql":
+		db, err := sql.Open("pgx", os.Getenv("DATABASE_URL"))
+		if err != nil {
+			log.Fatalf("Error opening database connection: %v\n  DATABASE_URL: %s",
+				err,
+				os.Getenv("DATABASE_URL"),
+			)
+		}
+		p := persist.NewPostgresPersister(app.BaseURL.Path, db)
+		app.CategoryPersister = p
+		app.CollectionPersister = p
+		log.Print("Using PostgresPersister")
+	case "memory":
+		p := persist.NewMemoryPersister(app.BaseURL.Path)
+		app.CategoryPersister = p
+		app.CollectionPersister = p
+		log.Print("Using MemoryPersister")
+	default:
+		log.Fatalf("Invalid PERSISTER: '%s'. Valid choices are 'sql' or 'memory'.", os.Getenv("PERSISTER"))
+	}
+	r := NewRouter(app)
 	docs.SwaggerInfo.Host = reqURL.Hostname()
 	if reqURL.Port() != "" {
 		docs.SwaggerInfo.Host += ":" + reqURL.Port()
@@ -118,32 +140,29 @@ func main() {
 // NewRouter builds a router for handling requests
 func NewRouter(app App) *mux.Router {
 	r := mux.NewRouter()
-	r.HandleFunc(app.PathPrefix+"/", app.GetIndex).Methods("GET")
-	r.HandleFunc(app.PathPrefix+"/index.html", app.GetIndex).Methods("GET")
+	r.HandleFunc(app.BaseURL.Path+"/", app.GetIndex).Methods("GET")
+	r.HandleFunc(app.BaseURL.Path+"/index.html", app.GetIndex).Methods("GET")
 
-	r.HandleFunc(app.PathPrefix+"/categories", app.GetAllCategories).Methods("GET")
-	r.HandleFunc(app.PathPrefix+"/categories", app.PostCategory).Methods("POST")
-	r.HandleFunc(app.PathPrefix+"/categories/{id}", app.GetCategory).Methods("GET")
-	r.HandleFunc(app.PathPrefix+"/categories/{id}", app.PatchCategory).Methods("PATCH")
-	r.HandleFunc(app.PathPrefix+"/categories/{id}", app.DeleteCategory).Methods("DELETE")
+	r.HandleFunc(app.BaseURL.Path+"/categories", app.GetAllCategories).Methods("GET")
+	r.HandleFunc(app.BaseURL.Path+"/categories", app.PostCategory).Methods("POST")
+	r.HandleFunc(app.BaseURL.Path+"/categories/{id}", app.GetCategory).Methods("GET")
+	r.HandleFunc(app.BaseURL.Path+"/categories/{id}", app.PatchCategory).Methods("PATCH")
+	r.HandleFunc(app.BaseURL.Path+"/categories/{id}", app.DeleteCategory).Methods("DELETE")
 
-	r.HandleFunc(app.PathPrefix+"/collections", app.GetAllCollections).Methods("GET")
-	r.HandleFunc(app.PathPrefix+"/collections", app.PostCollection).Methods("POST")
-	r.HandleFunc(app.PathPrefix+"/collections/{id}", app.GetCollection).Methods("GET")
-	r.HandleFunc(app.PathPrefix+"/collections/{id}", app.PatchCollection).Methods("PATCH")
-	r.HandleFunc(app.PathPrefix+"/collections/{id}", app.DeleteCollection).Methods("DELETE")
+	r.HandleFunc(app.BaseURL.Path+"/collections", app.GetAllCollections).Methods("GET")
+	r.HandleFunc(app.BaseURL.Path+"/collections", app.PostCollection).Methods("POST")
+	r.HandleFunc(app.BaseURL.Path+"/collections/{id}", app.GetCollection).Methods("GET")
+	r.HandleFunc(app.BaseURL.Path+"/collections/{id}", app.PatchCollection).Methods("PATCH")
+	r.HandleFunc(app.BaseURL.Path+"/collections/{id}", app.DeleteCollection).Methods("DELETE")
 	return r
 }
 
 // App is the container for the application
 type App struct {
-	BaseURL    string
-	PathPrefix string
-	// Dummy "database".
-	// (Note that this behaves really strangely when multiple Lambda are running
-	// because which database you see depends on which Lamda instance you're routed to.)
-	Categories  map[string]model.Category
-	Collections map[string]model.Collection
+	CategoryPersister   model.CategoryPersister
+	CollectionPersister model.CollectionPersister
+	BaseURL             url.URL
+	// PathPrefix          string
 }
 
 // GetIndex returns an HTML index page
