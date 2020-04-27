@@ -72,7 +72,12 @@ func (app App) PostCollection(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	collection, err := app.CollectionPersister.InsertCollection(in)
-	if err != nil {
+	if err == persist.ErrForeignKeyViolation {
+		msg := fmt.Sprintf("Invalid category reference: %v", err.Error())
+		log.Print(msg)
+		errorResponse(w, http.StatusBadRequest, msg)
+		return
+	} else if err != nil {
 		serverError(w, err)
 		return
 	}

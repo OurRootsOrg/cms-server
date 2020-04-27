@@ -6,6 +6,7 @@ import (
 	"log"
 
 	"github.com/jancona/ourroots/model"
+	"github.com/lib/pq"
 )
 
 // PostgresPersister persists the model objects to Postgresql
@@ -33,8 +34,18 @@ func translateError(err error) error {
 	case nil:
 		return nil
 	default:
-		log.Printf("Untranslated error: %v", err)
-		return err
+		pqErr, ok := err.(*pq.Error)
+		if !ok {
+			log.Printf("Untranslated error: %#v", err)
+			return err
+		}
+		switch pqErr.Code.Name() {
+		case "foreign_key_violation":
+			return ErrForeignKeyViolation
+		default:
+			log.Printf("Untranslated PQ error: %#v", err)
+			return err
+		}
 	}
 }
 

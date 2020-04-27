@@ -3,7 +3,6 @@ package main
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -19,8 +18,9 @@ import (
 	"github.com/jancona/ourroots/model"
 	"github.com/jancona/ourroots/persist"
 	"github.com/jancona/ourroots/server/docs"
+	"gocloud.dev/postgres"
 
-	_ "github.com/jackc/pgx/v4/stdlib"
+	// _ "github.com/jackc/pgx/v4/stdlib"
 	httpSwagger "github.com/swaggo/http-swagger"
 )
 
@@ -73,7 +73,8 @@ func main() {
 	model.Initialize(app.BaseURL.Path)
 	switch os.Getenv("PERSISTER") {
 	case "sql":
-		db, err := sql.Open("pgx", os.Getenv("DATABASE_URL"))
+		// db, err := sql.Open("pgx", os.Getenv("DATABASE_URL"))
+		db, err := postgres.Open(context.TODO(), os.Getenv("DATABASE_URL"))
 		if err != nil {
 			log.Fatalf("Error opening database connection: %v\n  DATABASE_URL: %s",
 				err,
