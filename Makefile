@@ -8,7 +8,7 @@ BINARY_NAME=main.lambda
     
 all: clean test build package
 build: 
-	cd server && go generate && GOOS=linux $(GOBUILD) -o $(BINARY_NAME)
+	cd server && go generate && $(GOBUILD) && GOOS=linux $(GOBUILD) -o $(BINARY_NAME)
 package:
 	zip -r deploy/awslambda/$(BINARY_NAME).zip server/$(BINARY_NAME) 
 test: 
