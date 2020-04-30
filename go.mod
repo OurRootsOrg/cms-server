@@ -9,9 +9,12 @@ require (
 	github.com/awslabs/aws-lambda-go-api-proxy v0.6.0
 	github.com/go-openapi/spec v0.19.7 // indirect
 	github.com/go-openapi/swag v0.19.9 // indirect
+	github.com/go-playground/validator/v10 v10.2.0
 	github.com/golang/protobuf v1.4.0 // indirect
 	github.com/gorilla/handlers v1.4.2
 	github.com/gorilla/mux v1.7.4
+	github.com/hashicorp/logutils v1.0.0
+	github.com/labstack/gommon v0.2.8
 	github.com/lib/pq v1.2.0
 	github.com/mailru/easyjson v0.7.1 // indirect
 	github.com/onsi/ginkgo v1.7.0 // indirect

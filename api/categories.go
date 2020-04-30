@@ -1,9 +1,8 @@
-package main
+package api
 
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"mime"
 	"net/http"
 
@@ -18,16 +17,44 @@ import (
 // @id getCategories
 // @produce application/json
 // @success 200 {array} model.Category "OK"
-// @failure 500 {object} model.Error "Server error"
+// @failure 500 {object} model.Errors "Server error"
 func (app App) GetAllCategories(w http.ResponseWriter, req *http.Request) {
 	enc := json.NewEncoder(w)
 	w.Header().Set("Content-Type", contentType)
-	cats, err := app.CategoryPersister.SelectCategories()
+	cats, err := app.categoryPersister.SelectCategories()
 	if err != nil {
 		serverError(w, err)
 		return
 	}
 	err = enc.Encode(cats)
+	if err != nil {
+		serverError(w, err)
+		return
+	}
+}
+
+// GetCategory gets a Category from the database
+// @summary gets a Category
+// @router /categories/{id} [get]
+// @tags categories
+// @id getCategory
+// @Param id path integer true "Category ID"
+// @produce application/json
+// @success 200 {object} model.Category "OK"
+// @failure 404 {object} model.Errors "Not found"
+// @failure 500 {object} model.Errors "Server error"
+func (app App) GetCategory(w http.ResponseWriter, req *http.Request) {
+	enc := json.NewEncoder(w)
+	w.Header().Set("Content-Type", contentType)
+	category, err := app.categoryPersister.SelectOneCategory(req.URL.String())
+	if err == persist.ErrNoRows {
+		NotFound(w, req)
+		return
+	} else if err != nil {
+		serverError(w, err)
+		return
+	}
+	err = enc.Encode(category)
 	if err != nil {
 		serverError(w, err)
 		return
@@ -43,31 +70,33 @@ func (app App) GetAllCategories(w http.ResponseWriter, req *http.Request) {
 // @accept application/json
 // @produce application/json
 // @success 201 {object} model.Category "OK"
-// @failure 415 {object} model.Error "Bad Content-Type"
-// @failure 500 {object} model.Error "Server error"
+// @failure 415 {object} model.Errors "Bad Content-Type"
+// @failure 500 {object} model.Errors "Server error"
 func (app App) PostCategory(w http.ResponseWriter, req *http.Request) {
 	mt, _, err := mime.ParseMediaType(req.Header.Get("Content-Type"))
 	if err != nil {
 		msg := fmt.Sprintf("Bad Content-Type '%s'", mt)
-		log.Print(msg)
-		errorResponse(w, http.StatusUnsupportedMediaType, fmt.Sprintf("Bad MIME type '%s'", mt))
+		OtherErrorResponse(w, http.StatusUnsupportedMediaType, msg)
 		return
 	}
 	if mt != contentType {
 		msg := fmt.Sprintf("Bad Content-Type '%s'", mt)
-		log.Print(msg)
-		errorResponse(w, http.StatusUnsupportedMediaType, fmt.Sprintf("Bad MIME type '%s'", mt))
+		OtherErrorResponse(w, http.StatusUnsupportedMediaType, msg)
 		return
 	}
-	ci := model.CategoryIn{}
-	err = json.NewDecoder(req.Body).Decode(&ci)
+	in := model.CategoryIn{}
+	err = json.NewDecoder(req.Body).Decode(&in)
 	if err != nil {
 		msg := fmt.Sprintf("Bad request: %v", err.Error())
-		log.Print(msg)
-		errorResponse(w, http.StatusBadRequest, msg)
+		OtherErrorResponse(w, http.StatusBadRequest, msg)
 		return
 	}
-	category, err := app.CategoryPersister.InsertCategory(ci)
+	err = app.validate.Struct(in)
+	if err != nil {
+		ValidationErrorResponse(w, 400, err)
+		return
+	}
+	category, err := app.categoryPersister.InsertCategory(in)
 	if err != nil {
 		serverError(w, err)
 		return
@@ -75,34 +104,6 @@ func (app App) PostCategory(w http.ResponseWriter, req *http.Request) {
 	w.Header().Set("Content-Type", contentType)
 	w.WriteHeader(http.StatusCreated)
 	enc := json.NewEncoder(w)
-	err = enc.Encode(category)
-	if err != nil {
-		serverError(w, err)
-		return
-	}
-}
-
-// GetCategory gets a Category from the database
-// @summary gets a Category
-// @router /categories/{id} [get]
-// @tags categories
-// @id getCategory
-// @Param id path integer true "Category ID"
-// @produce application/json
-// @success 200 {object} model.Category "OK"
-// @failure 404 {object} model.Error "Not found"
-// @failure 500 {object} model.Error "Server error"
-func (app App) GetCategory(w http.ResponseWriter, req *http.Request) {
-	enc := json.NewEncoder(w)
-	w.Header().Set("Content-Type", contentType)
-	category, err := app.CategoryPersister.SelectOneCategory(req.URL.String())
-	if err == persist.ErrNoRows {
-		notFound(w, req)
-		return
-	} else if err != nil {
-		serverError(w, err)
-		return
-	}
 	err = enc.Encode(category)
 	if err != nil {
 		serverError(w, err)
@@ -120,29 +121,32 @@ func (app App) GetCategory(w http.ResponseWriter, req *http.Request) {
 // @accept application/json
 // @produce application/json
 // @success 200 {object} model.Category "OK"
-// @failure 415 {object} model.Error "Bad Content-Type"
-// @failure 500 {object} model.Error "Server error"
+// @failure 415 {object} model.Errors "Bad Content-Type"
+// @failure 500 {object} model.Errors "Server error"
 func (app App) PatchCategory(w http.ResponseWriter, req *http.Request) {
 	mt, _, err := mime.ParseMediaType(req.Header.Get("Content-Type"))
 	if err != nil || mt != contentType {
 		msg := fmt.Sprintf("Bad Content-Type '%s'", mt)
-		log.Print(msg)
-		errorResponse(w, http.StatusUnsupportedMediaType, fmt.Sprintf("Bad MIME type '%s'", mt))
+		OtherErrorResponse(w, http.StatusUnsupportedMediaType, msg)
 		return
 	}
 
-	var cb model.CategoryIn
-	err = json.NewDecoder(req.Body).Decode(&cb)
+	var in model.CategoryIn
+	err = json.NewDecoder(req.Body).Decode(&in)
 	if err != nil {
 		msg := fmt.Sprintf("Bad request: %v", err.Error())
-		log.Print(msg)
-		errorResponse(w, http.StatusBadRequest, msg)
+		OtherErrorResponse(w, http.StatusBadRequest, msg)
 		return
 	}
-	category, err := app.CategoryPersister.UpdateCategory(req.URL.String(), cb)
+	err = app.validate.Struct(in)
+	if err != nil {
+		ValidationErrorResponse(w, 400, err)
+		return
+	}
+	category, err := app.categoryPersister.UpdateCategory(req.URL.String(), in)
 	if err == persist.ErrNoRows {
 		// Not allowed to add a Category with PATCH
-		notFound(w, req)
+		NotFound(w, req)
 		return
 	} else if err != nil {
 		serverError(w, err)
@@ -164,9 +168,9 @@ func (app App) PatchCategory(w http.ResponseWriter, req *http.Request) {
 // @id deleteCategory
 // @Param id path integer true "Category ID"
 // @success 204 "OK"
-// @failure 500 {object} model.Error "Server error"
+// @failure 500 {object} model.Errors "Server error"
 func (app App) DeleteCategory(w http.ResponseWriter, req *http.Request) {
-	err := app.CategoryPersister.DeleteCategory(req.URL.String())
+	err := app.categoryPersister.DeleteCategory(req.URL.String())
 	if err != nil {
 		serverError(w, err)
 		return

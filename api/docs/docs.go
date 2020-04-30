@@ -55,7 +55,7 @@ var doc = `{
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/model.Error"
+                            "$ref": "#/definitions/model.Errors"
                         }
                     }
                 }
@@ -93,13 +93,13 @@ var doc = `{
                     "415": {
                         "description": "Bad Content-Type",
                         "schema": {
-                            "$ref": "#/definitions/model.Error"
+                            "$ref": "#/definitions/model.Errors"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/model.Error"
+                            "$ref": "#/definitions/model.Errors"
                         }
                     }
                 }
@@ -134,13 +134,13 @@ var doc = `{
                     "404": {
                         "description": "Not found",
                         "schema": {
-                            "$ref": "#/definitions/model.Error"
+                            "$ref": "#/definitions/model.Errors"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/model.Error"
+                            "$ref": "#/definitions/model.Errors"
                         }
                     }
                 }
@@ -167,7 +167,7 @@ var doc = `{
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/model.Error"
+                            "$ref": "#/definitions/model.Errors"
                         }
                     }
                 }
@@ -212,13 +212,13 @@ var doc = `{
                     "415": {
                         "description": "Bad Content-Type",
                         "schema": {
-                            "$ref": "#/definitions/model.Error"
+                            "$ref": "#/definitions/model.Errors"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/model.Error"
+                            "$ref": "#/definitions/model.Errors"
                         }
                     }
                 }
@@ -247,7 +247,7 @@ var doc = `{
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/model.Error"
+                            "$ref": "#/definitions/model.Errors"
                         }
                     }
                 }
@@ -285,13 +285,13 @@ var doc = `{
                     "415": {
                         "description": "Bad Content-Type",
                         "schema": {
-                            "$ref": "#/definitions/model.Error"
+                            "$ref": "#/definitions/model.Errors"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/model.Error"
+                            "$ref": "#/definitions/model.Errors"
                         }
                     }
                 }
@@ -310,7 +310,7 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "format": "uuid",
+                        "format": "url",
                         "description": "Collection ID",
                         "name": "id",
                         "in": "path",
@@ -327,13 +327,13 @@ var doc = `{
                     "404": {
                         "description": "Not found",
                         "schema": {
-                            "$ref": "#/definitions/model.Error"
+                            "$ref": "#/definitions/model.Errors"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/model.Error"
+                            "$ref": "#/definitions/model.Errors"
                         }
                     }
                 }
@@ -347,7 +347,7 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "format": "uuid",
+                        "format": "url",
                         "description": "Collection ID",
                         "name": "id",
                         "in": "path",
@@ -364,7 +364,7 @@ var doc = `{
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/model.Error"
+                            "$ref": "#/definitions/model.Errors"
                         }
                     }
                 }
@@ -384,7 +384,7 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "format": "uuid",
+                        "format": "url",
                         "description": "Collection ID",
                         "name": "id",
                         "in": "path",
@@ -410,13 +410,13 @@ var doc = `{
                     "415": {
                         "description": "Bad Content-Type",
                         "schema": {
-                            "$ref": "#/definitions/model.Error"
+                            "$ref": "#/definitions/model.Errors"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/model.Error"
+                            "$ref": "#/definitions/model.Errors"
                         }
                     }
                 }
@@ -426,6 +426,11 @@ var doc = `{
     "definitions": {
         "model.Category": {
             "type": "object",
+            "required": [
+                "id",
+                "name",
+                "type"
+            ],
             "properties": {
                 "field_defs": {
                     "description": "example:\"{\\\"int_field\\\":\\\"Int\\\", \\\"string_field\\\":\\\"String\\\"}\"",
@@ -453,6 +458,9 @@ var doc = `{
         },
         "model.CategoryIn": {
             "type": "object",
+            "required": [
+                "name"
+            ],
             "properties": {
                 "field_defs": {
                     "description": "example:\"{\\\"int_field\\\":\\\"Int\\\", \\\"string_field\\\":\\\"String\\\"}\"",
@@ -466,6 +474,10 @@ var doc = `{
         },
         "model.CategoryRef": {
             "type": "object",
+            "required": [
+                "id",
+                "type"
+            ],
             "properties": {
                 "id": {
                     "type": "string",
@@ -479,6 +491,12 @@ var doc = `{
         },
         "model.Collection": {
             "type": "object",
+            "required": [
+                "category",
+                "id",
+                "name",
+                "type"
+            ],
             "properties": {
                 "category": {
                     "type": "object",
@@ -511,6 +529,10 @@ var doc = `{
         },
         "model.CollectionIn": {
             "type": "object",
+            "required": [
+                "category",
+                "name"
+            ],
             "properties": {
                 "category": {
                     "type": "object",
@@ -531,11 +553,23 @@ var doc = `{
             "type": "object",
             "properties": {
                 "code": {
-                    "type": "integer"
+                    "type": "string"
                 },
                 "message": {
                     "type": "string"
+                },
+                "params": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 }
+            }
+        },
+        "model.Errors": {
+            "type": "array",
+            "items": {
+                "$ref": "#/definitions/model.Error"
             }
         },
         "model.FieldDef": {

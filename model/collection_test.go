@@ -11,12 +11,12 @@ import (
 
 func TestCollection(t *testing.T) {
 	in := model.CollectionIn{}
-	in.Name = "Collection"
+	n := "Collection"
+	in.Name = n
 	js, err := json.Marshal(in)
 	assert.NoError(t, err)
 	// log.Printf("CollectionBody JSON: %s", string(js))
 	in = model.CollectionIn{}
-	assert.NoError(t, err)
 	c := model.NewCollection(int32(rand.Int31()), in)
 	err = json.Unmarshal(js, &c)
 	assert.NoError(t, err)

@@ -1,4 +1,4 @@
-package main
+package api
 
 import (
 	"bytes"
@@ -14,10 +14,8 @@ import (
 )
 
 func TestCategories(t *testing.T) {
-	app := App{
-		CategoryPersister: persist.NewMemoryPersister(""),
-	}
-	r := NewRouter(app)
+	app := NewApp().CategoryPersister(persist.NewMemoryPersister(""))
+	r := app.NewRouter()
 
 	request, _ := http.NewRequest("GET", "/categories", nil)
 	response := httptest.NewRecorder()
@@ -64,7 +62,7 @@ func TestCategories(t *testing.T) {
 	request.Header.Add("Content-Type", "application/notjson")
 	response = httptest.NewRecorder()
 	r.ServeHTTP(response, request)
-	assert.Equal(t, http.StatusUnsupportedMediaType, response.Code)
+	assert.Equal(t, http.StatusUnsupportedMediaType, response.Code, "Response: %s", string(response.Body.Bytes()))
 	assert.Contains(t, response.Result().Header, "Content-Type", "Should have Content-Type header")
 	assert.Equal(t,
 		contentType,
@@ -79,9 +77,10 @@ func TestCategories(t *testing.T) {
 	// correct MIME type
 	request, _ = http.NewRequest("POST", "/categories", buf)
 	request.Header.Add("Content-Type", contentType)
+
 	response = httptest.NewRecorder()
 	r.ServeHTTP(response, request)
-	assert.Equal(t, http.StatusCreated, response.Code)
+	assert.Equal(t, http.StatusCreated, response.Code, "Response: %s", string(response.Body.Bytes()))
 	assert.Contains(t, response.Result().Header, "Content-Type", "Should have Content-Type header")
 	assert.Equal(t,
 		contentType,
@@ -156,7 +155,7 @@ func TestCategories(t *testing.T) {
 	request.Header.Add("Content-Type", contentType)
 	response = httptest.NewRecorder()
 	r.ServeHTTP(response, request)
-	assert.Equal(t, http.StatusOK, response.Code)
+	assert.Equal(t, http.StatusOK, response.Code, "Response: %s", string(response.Body.Bytes()))
 	assert.Contains(t, response.Result().Header, "Content-Type", "Should have Content-Type header")
 	assert.Equal(t,
 		contentType,
@@ -179,7 +178,7 @@ func TestCategories(t *testing.T) {
 	request, _ = http.NewRequest("PATCH", created.ID, buf)
 	response = httptest.NewRecorder()
 	r.ServeHTTP(response, request)
-	assert.Equal(t, http.StatusUnsupportedMediaType, response.Code)
+	assert.Equal(t, http.StatusUnsupportedMediaType, response.Code, "Response: %s", string(response.Body.Bytes()))
 	// Bad MIME type
 	buf = new(bytes.Buffer)
 	enc = json.NewEncoder(buf)
@@ -191,7 +190,7 @@ func TestCategories(t *testing.T) {
 	request.Header.Add("Content-Type", "application/notjson")
 	response = httptest.NewRecorder()
 	r.ServeHTTP(response, request)
-	assert.Equal(t, http.StatusUnsupportedMediaType, response.Code)
+	assert.Equal(t, http.StatusUnsupportedMediaType, response.Code, "Response: %s", string(response.Body.Bytes()))
 
 	// PATCH non-existant
 	buf = new(bytes.Buffer)
@@ -204,18 +203,18 @@ func TestCategories(t *testing.T) {
 	request.Header.Add("Content-Type", contentType)
 	response = httptest.NewRecorder()
 	r.ServeHTTP(response, request)
-	assert.Equal(t, http.StatusNotFound, response.Code)
+	assert.Equal(t, http.StatusNotFound, response.Code, "Response: %s", string(response.Body.Bytes()))
 
 	// Bad request
 	request, _ = http.NewRequest("PATCH", created.ID, strings.NewReader("{x}"))
 	request.Header.Add("Content-Type", contentType)
 	response = httptest.NewRecorder()
 	r.ServeHTTP(response, request)
-	assert.Equal(t, http.StatusBadRequest, response.Code)
+	assert.Equal(t, http.StatusBadRequest, response.Code, "Response: %s", string(response.Body.Bytes()))
 
 	// DELETE
 	request, _ = http.NewRequest("DELETE", created.ID, nil)
 	response = httptest.NewRecorder()
 	r.ServeHTTP(response, request)
-	assert.Equal(t, http.StatusNoContent, response.Code)
+	assert.Equal(t, http.StatusNoContent, response.Code, "Response: %s", string(response.Body.Bytes()))
 }

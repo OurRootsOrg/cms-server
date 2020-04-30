@@ -135,7 +135,7 @@ func TestSelectCollections(t *testing.T) {
 	in := makeCollectionIn(t)
 	js, err := json.Marshal(in.CollectionBody)
 	assert.NoError(t, err)
-	log.Printf("json: %s", string(js))
+	log.Printf("[DEBUG] json: %s", string(js))
 
 	now := time.Now()
 

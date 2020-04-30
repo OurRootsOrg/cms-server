@@ -8,6 +8,6 @@ import (
 )
 
 func TestError(t *testing.T) {
-	e := model.Error{Code: 200, Message: "Error message"}
+	e := model.NewError(model.ErrRequired, "some_field")
 	assert.NotNil(t, e)
 }

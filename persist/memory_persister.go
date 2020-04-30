@@ -100,7 +100,7 @@ func (p MemoryPersister) SelectOneCollection(id string) (model.Collection, error
 // InsertCollection inserts a new collection
 func (p MemoryPersister) InsertCollection(in model.CollectionIn) (model.Collection, error) {
 	col := model.NewCollection(int32(rand.Int31()), in)
-	col.Type = "collection"
+	col.Type = model.CollectionName
 	now := time.Now()
 	col.InsertTime = now
 	col.LastUpdateTime = now
@@ -117,10 +117,11 @@ func (p MemoryPersister) UpdateCollection(id string, in model.CollectionIn) (mod
 		return col, ErrNoRows
 	}
 	col.ID = id
-	col.Type = "collection"
+	col.Type = model.CollectionName
 	col.CollectionBody = in.CollectionBody
 	col.Category = in.Category
-	col.LastUpdateTime = time.Now()
+	now := time.Now()
+	col.LastUpdateTime = now
 	p.collections[col.ID] = col
 	return col, nil
 }

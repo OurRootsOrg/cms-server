@@ -1,4 +1,4 @@
-package main
+package api
 
 import (
 	"encoding/json"
@@ -18,11 +18,11 @@ import (
 // @id getCollections
 // @produce application/json
 // @success 200 {array} model.Collection "OK"
-// @failure 500 {object} model.Error "Server error"
+// @failure 500 {object} model.Errors "Server error"
 func (app App) GetAllCollections(w http.ResponseWriter, req *http.Request) {
 	enc := json.NewEncoder(w)
 	w.Header().Set("Content-Type", contentType)
-	cols, err := app.CollectionPersister.SelectCollections()
+	cols, err := app.collectionPersister.SelectCollections()
 	if err != nil {
 		serverError(w, err)
 		return
@@ -38,6 +38,34 @@ func (app App) GetAllCollections(w http.ResponseWriter, req *http.Request) {
 	}
 }
 
+// GetCollection gets a Collection from the database
+// @summary gets a Collection
+// @router /collections/{id} [get]
+// @tags collections
+// @id getCollection
+// @Param id path string true "Collection ID" format(url)
+// @produce application/json
+// @success 200 {object} model.Collection "OK"
+// @failure 404 {object} model.Errors "Not found"
+// @failure 500 {object} model.Errors "Server error"
+func (app App) GetCollection(w http.ResponseWriter, req *http.Request) {
+	enc := json.NewEncoder(w)
+	w.Header().Set("Content-Type", contentType)
+	collection, err := app.collectionPersister.SelectOneCollection(req.URL.String())
+	if err == persist.ErrNoRows {
+		NotFound(w, req)
+		return
+	} else if err != nil {
+		serverError(w, err)
+		return
+	}
+	err = enc.Encode(collection)
+	if err != nil {
+		serverError(w, err)
+		return
+	}
+}
+
 // PostCollection adds a new Collection to the database
 // @summary adds a new Collection
 // @router /collections [post]
@@ -47,35 +75,37 @@ func (app App) GetAllCollections(w http.ResponseWriter, req *http.Request) {
 // @accept application/json
 // @produce application/json
 // @success 201 {object} model.Collection "OK"
-// @failure 415 {object} model.Error "Bad Content-Type"
-// @failure 500 {object} model.Error "Server error"
+// @failure 415 {object} model.Errors "Bad Content-Type"
+// @failure 500 {object} model.Errors "Server error"
 func (app App) PostCollection(w http.ResponseWriter, req *http.Request) {
 	mt, _, err := mime.ParseMediaType(req.Header.Get("Content-Type"))
 	if err != nil {
 		msg := fmt.Sprintf("Bad Content-Type '%s'", mt)
-		log.Print(msg)
-		errorResponse(w, http.StatusUnsupportedMediaType, fmt.Sprintf("Bad MIME type '%s'", mt))
+		OtherErrorResponse(w, http.StatusUnsupportedMediaType, msg)
 		return
 	}
 	if mt != contentType {
 		msg := fmt.Sprintf("Bad Content-Type '%s'", mt)
-		log.Print(msg)
-		errorResponse(w, http.StatusUnsupportedMediaType, fmt.Sprintf("Bad MIME type '%s'", mt))
+		OtherErrorResponse(w, http.StatusUnsupportedMediaType, msg)
 		return
 	}
 	in := model.CollectionIn{}
 	err = json.NewDecoder(req.Body).Decode(&in)
 	if err != nil {
-		msg := fmt.Sprintf("Bad request: %v", err.Error())
-		log.Print(msg)
-		errorResponse(w, http.StatusBadRequest, msg)
+		msg := fmt.Sprintf("Bad request: %v", err)
+		OtherErrorResponse(w, http.StatusBadRequest, msg)
 		return
 	}
-	collection, err := app.CollectionPersister.InsertCollection(in)
+	err = app.validate.Struct(in)
+	if err != nil {
+		ValidationErrorResponse(w, 400, err)
+		return
+	}
+	collection, err := app.collectionPersister.InsertCollection(in)
 	if err == persist.ErrForeignKeyViolation {
-		msg := fmt.Sprintf("Invalid category reference: %v", err.Error())
-		log.Print(msg)
-		errorResponse(w, http.StatusBadRequest, msg)
+		msg := fmt.Sprintf("Invalid category reference: %v", err)
+		log.Print("[ERROR] " + msg)
+		OtherErrorResponse(w, http.StatusBadRequest, msg)
 		return
 	} else if err != nil {
 		serverError(w, err)
@@ -91,66 +121,41 @@ func (app App) PostCollection(w http.ResponseWriter, req *http.Request) {
 	}
 }
 
-// GetCollection gets a Collection from the database
-// @summary gets a Collection
-// @router /collections/{id} [get]
-// @tags collections
-// @id getCollection
-// @Param id path string true "Collection ID" format(uuid)
-// @produce application/json
-// @success 200 {object} model.Collection "OK"
-// @failure 404 {object} model.Error "Not found"
-// @failure 500 {object} model.Error "Server error"
-func (app App) GetCollection(w http.ResponseWriter, req *http.Request) {
-	enc := json.NewEncoder(w)
-	w.Header().Set("Content-Type", contentType)
-	collection, err := app.CollectionPersister.SelectOneCollection(req.URL.String())
-	if err == persist.ErrNoRows {
-		notFound(w, req)
-		return
-	} else if err != nil {
-		serverError(w, err)
-		return
-	}
-	err = enc.Encode(collection)
-	if err != nil {
-		serverError(w, err)
-		return
-	}
-}
-
 // PatchCollection updates a Collection in the database
 // @summary updates a Collection
 // @router /collections/{id} [patch]
 // @tags collections
 // @id updateCollection
-// @Param id path string true "Collection ID" format(uuid)
+// @Param id path string true "Collection ID" format(url)
 // @Param collection body model.CollectionIn true "Update Collection"
 // @accept application/json
 // @produce application/json
 // @success 200 {object} model.Collection "OK"
-// @failure 415 {object} model.Error "Bad Content-Type"
-// @failure 500 {object} model.Error "Server error"
+// @failure 415 {object} model.Errors "Bad Content-Type"
+// @failure 500 {object} model.Errors "Server error"
 func (app App) PatchCollection(w http.ResponseWriter, req *http.Request) {
 	mt, _, err := mime.ParseMediaType(req.Header.Get("Content-Type"))
 	if err != nil || mt != contentType {
 		msg := fmt.Sprintf("Bad Content-Type '%s'", mt)
-		log.Print(msg)
-		errorResponse(w, http.StatusUnsupportedMediaType, fmt.Sprintf("Bad MIME type '%s'", mt))
+		OtherErrorResponse(w, http.StatusUnsupportedMediaType, msg)
 		return
 	}
 	var in model.CollectionIn
 	err = json.NewDecoder(req.Body).Decode(&in)
 	if err != nil {
-		msg := fmt.Sprintf("Bad request: %v", err.Error())
-		log.Print(msg)
-		errorResponse(w, http.StatusBadRequest, msg)
+		msg := fmt.Sprintf("Bad request: %v", err)
+		OtherErrorResponse(w, http.StatusBadRequest, msg)
 		return
 	}
-	collection, err := app.CollectionPersister.UpdateCollection(req.URL.String(), in)
+	// err = app.validate.Struct(in)
+	// if err != nil {
+	// 	ValidationErrorResponse(w, 400, err)
+	// 	return
+	// }
+	collection, err := app.collectionPersister.UpdateCollection(req.URL.String(), in)
 	if err == persist.ErrNoRows {
 		// Not allowed to add a Collection with PATCH
-		notFound(w, req)
+		NotFound(w, req)
 		return
 	} else if err != nil {
 		serverError(w, err)
@@ -170,11 +175,11 @@ func (app App) PatchCollection(w http.ResponseWriter, req *http.Request) {
 // @router /collections/{id} [delete]
 // @tags collections
 // @id deleteCollection
-// @Param id path string true "Collection ID" format(uuid)
+// @Param id path string true "Collection ID" format(url)
 // @success 204 {object} model.Collection "OK"
-// @failure 500 {object} model.Error "Server error"
+// @failure 500 {object} model.Errors "Server error"
 func (app App) DeleteCollection(w http.ResponseWriter, req *http.Request) {
-	err := app.CollectionPersister.DeleteCollection(req.URL.String())
+	err := app.collectionPersister.DeleteCollection(req.URL.String())
 	if err != nil {
 		serverError(w, err)
 		return

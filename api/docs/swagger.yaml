@@ -18,6 +18,10 @@ definitions:
       type:
         example: category
         type: string
+    required:
+    - id
+    - name
+    - type
     type: object
   model.CategoryIn:
     properties:
@@ -27,6 +31,8 @@ definitions:
         type: object
       name:
         type: string
+    required:
+    - name
     type: object
   model.CategoryRef:
     properties:
@@ -36,6 +42,9 @@ definitions:
       type:
         example: category
         type: string
+    required:
+    - id
+    - type
     type: object
   model.Collection:
     properties:
@@ -58,6 +67,11 @@ definitions:
       type:
         example: collection
         type: string
+    required:
+    - category
+    - id
+    - name
+    - type
     type: object
   model.CollectionIn:
     properties:
@@ -70,14 +84,25 @@ definitions:
         type: string
       name:
         type: string
+    required:
+    - category
+    - name
     type: object
   model.Error:
     properties:
       code:
-        type: integer
+        type: string
       message:
         type: string
+      params:
+        items:
+          type: string
+        type: array
     type: object
+  model.Errors:
+    items:
+      $ref: '#/definitions/model.Error'
+    type: array
   model.FieldDef:
     properties:
       csv_heading:
@@ -125,7 +150,7 @@ paths:
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/model.Error'
+            $ref: '#/definitions/model.Errors'
       summary: returns all categories
       tags:
       - categories
@@ -150,11 +175,11 @@ paths:
         "415":
           description: Bad Content-Type
           schema:
-            $ref: '#/definitions/model.Error'
+            $ref: '#/definitions/model.Errors'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/model.Error'
+            $ref: '#/definitions/model.Errors'
       summary: adds a new Category
       tags:
       - categories
@@ -173,7 +198,7 @@ paths:
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/model.Error'
+            $ref: '#/definitions/model.Errors'
       summary: deletes a Category
       tags:
       - categories
@@ -195,11 +220,11 @@ paths:
         "404":
           description: Not found
           schema:
-            $ref: '#/definitions/model.Error'
+            $ref: '#/definitions/model.Errors'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/model.Error'
+            $ref: '#/definitions/model.Errors'
       summary: gets a Category
       tags:
       - categories
@@ -229,11 +254,11 @@ paths:
         "415":
           description: Bad Content-Type
           schema:
-            $ref: '#/definitions/model.Error'
+            $ref: '#/definitions/model.Errors'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/model.Error'
+            $ref: '#/definitions/model.Errors'
       summary: updates a Category
       tags:
       - categories
@@ -252,7 +277,7 @@ paths:
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/model.Error'
+            $ref: '#/definitions/model.Errors'
       summary: returns all collections
       tags:
       - collections
@@ -277,11 +302,11 @@ paths:
         "415":
           description: Bad Content-Type
           schema:
-            $ref: '#/definitions/model.Error'
+            $ref: '#/definitions/model.Errors'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/model.Error'
+            $ref: '#/definitions/model.Errors'
       summary: adds a new Collection
       tags:
       - collections
@@ -290,7 +315,7 @@ paths:
       operationId: deleteCollection
       parameters:
       - description: Collection ID
-        format: uuid
+        format: url
         in: path
         name: id
         required: true
@@ -303,7 +328,7 @@ paths:
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/model.Error'
+            $ref: '#/definitions/model.Errors'
       summary: deletes a Collection
       tags:
       - collections
@@ -311,7 +336,7 @@ paths:
       operationId: getCollection
       parameters:
       - description: Collection ID
-        format: uuid
+        format: url
         in: path
         name: id
         required: true
@@ -326,11 +351,11 @@ paths:
         "404":
           description: Not found
           schema:
-            $ref: '#/definitions/model.Error'
+            $ref: '#/definitions/model.Errors'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/model.Error'
+            $ref: '#/definitions/model.Errors'
       summary: gets a Collection
       tags:
       - collections
@@ -340,7 +365,7 @@ paths:
       operationId: updateCollection
       parameters:
       - description: Collection ID
-        format: uuid
+        format: url
         in: path
         name: id
         required: true
@@ -361,11 +386,11 @@ paths:
         "415":
           description: Bad Content-Type
           schema:
-            $ref: '#/definitions/model.Error'
+            $ref: '#/definitions/model.Errors'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/model.Error'
+            $ref: '#/definitions/model.Errors'
       summary: updates a Collection
       tags:
       - collections

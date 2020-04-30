@@ -36,14 +36,14 @@ func translateError(err error) error {
 	default:
 		pqErr, ok := err.(*pq.Error)
 		if !ok {
-			log.Printf("Untranslated error: %#v", err)
+			log.Printf("[INFO] Untranslated error: %#v", err)
 			return err
 		}
 		switch pqErr.Code.Name() {
 		case "foreign_key_violation":
 			return ErrForeignKeyViolation
 		default:
-			log.Printf("Untranslated PQ error: %#v", err)
+			log.Printf("[INFO] Untranslated PQ error: %#v", err)
 			return err
 		}
 	}
@@ -76,7 +76,7 @@ func (p PostgresPersister) SelectOneCategory(id string) (model.Category, error) 
 	var dbid int32
 	fmt.Sscanf(id, p.pathPrefix+model.CategoryIDFormat, &dbid)
 	var cat model.Category
-	log.Printf("id: %s, dbid: %d", id, dbid)
+	log.Printf("[DEBUG] id: %s, dbid: %d", id, dbid)
 	err := p.db.QueryRow("SELECT id, body, insert_time, last_update_time FROM category WHERE id=$1", dbid).Scan(
 		&dbid,
 		&cat.CategoryBody,

@@ -15,4 +15,5 @@ test:
 	$(GOTEST) -v ./...
 clean: 
 	rm -f server/$(BINARY_NAME)
+	rm -f server/server
 	rm -f deploy/awslambda/$(BINARY_NAME).zip

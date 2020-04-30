@@ -34,7 +34,7 @@ type CategoryIn struct {
 
 // CategoryBody is the JSON part of the Category object
 type CategoryBody struct {
-	Name      string      `json:"name,omitempty"`
+	Name      string      `json:"name,omitempty" validate:"required"`
 	FieldDefs FieldDefSet `json:"field_defs,omitempty"` //   example:"{\"int_field\":\"Int\", \"string_field\":\"String\"}"
 	//IndexMapping
 }
@@ -75,8 +75,8 @@ func (cb *CategoryBody) Scan(value interface{}) error {
 
 // CategoryRef is a reference to a Category
 type CategoryRef struct {
-	ID   string `json:"id,omitempty" example:"/categories/999"`
-	Type string `json:"type,omitempty" example:"category"`
+	ID   string `json:"id,omitempty" example:"/categories/999" validate:"required,omitempty"`
+	Type string `json:"type,omitempty" example:"category" validate:"required,omitempty"`
 }
 
 // NewCategoryRef constructs a CategoryRef from an id
