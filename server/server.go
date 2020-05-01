@@ -1,4 +1,5 @@
-//go:generate sh -c "swag init --dir $(greadlink -f $(dirname $GOFILE)/../) --output $(greadlink -f $(dirname $GOFILE)/../api/docs) --generalInfo server/$(basename $GOFILE)"
+//go:generate sh -c swag init --dir $(cd "$(dirname $GOFILE)/../" && pwd -P) --output $(cd "$(dirname $GOFILE)/../api/docs" && pwd -P) --generalInfo server/$(basename $GOFILE)
+
 package main
 
 import (
