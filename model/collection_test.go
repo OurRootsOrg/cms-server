@@ -5,7 +5,7 @@ import (
 	"math/rand"
 	"testing"
 
-	"github.com/jancona/ourroots/model"
+	"github.com/ourrootsorg/cms-server/model"
 	"github.com/stretchr/testify/assert"
 )
 

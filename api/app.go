@@ -11,7 +11,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gorilla/mux"
-	"github.com/jancona/ourroots/model"
+	"github.com/ourrootsorg/cms-server/model"
 )
 
 const contentType = "application/json"

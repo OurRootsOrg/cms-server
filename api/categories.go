@@ -6,8 +6,8 @@ import (
 	"mime"
 	"net/http"
 
-	"github.com/jancona/ourroots/model"
-	"github.com/jancona/ourroots/persist"
+	"github.com/ourrootsorg/cms-server/model"
+	"github.com/ourrootsorg/cms-server/persist"
 )
 
 // GetAllCategories returns all categories in the database

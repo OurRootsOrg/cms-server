@@ -4,7 +4,7 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/jancona/ourroots/model"
+	"github.com/ourrootsorg/cms-server/model"
 )
 
 // MemoryPersister "persists" the model objects to an in-memory map.

@@ -7,8 +7,8 @@ import (
 	"mime"
 	"net/http"
 
-	"github.com/jancona/ourroots/model"
-	"github.com/jancona/ourroots/persist"
+	"github.com/ourrootsorg/cms-server/model"
+	"github.com/ourrootsorg/cms-server/persist"
 )
 
 // GetAllCollections returns all collections in the database

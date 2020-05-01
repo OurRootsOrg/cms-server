@@ -3,7 +3,7 @@ package model_test
 import (
 	"testing"
 
-	"github.com/jancona/ourroots/model"
+	"github.com/ourrootsorg/cms-server/model"
 	"github.com/stretchr/testify/assert"
 )
 

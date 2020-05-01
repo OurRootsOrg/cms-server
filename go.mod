@@ -1,4 +1,4 @@
-module github.com/jancona/ourroots
+module github.com/ourrootsorg/cms-server
 
 go 1.14
 
@@ -29,4 +29,4 @@ require (
 	gopkg.in/yaml.v2 v2.2.8 // indirect
 )
 
-replace github.com/awslabs/aws-lambda-go-api-proxy => /Users/jim/jimprojects/aws-lambda-go-api-proxy
+// replace github.com/awslabs/aws-lambda-go-api-proxy => /Users/jim/jimprojects/aws-lambda-go-api-proxy

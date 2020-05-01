@@ -14,7 +14,7 @@ To use with a real database:
 
 Clone the repo:
 ```
-git clone https://github.com/jancona/ourroots.git
+git clone https://github.com/ourrootsorg/cms-server.git
 ```
 In the `ourroots` directory, run `make` to run unit tests and build.
 

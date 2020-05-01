@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/jancona/ourroots/model"
+	"github.com/ourrootsorg/cms-server/model"
 	"github.com/lib/pq"
 )
 

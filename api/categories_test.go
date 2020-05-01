@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jancona/ourroots/model"
-	"github.com/jancona/ourroots/persist"
+	"github.com/ourrootsorg/cms-server/model"
+	"github.com/ourrootsorg/cms-server/persist"
 	"github.com/stretchr/testify/assert"
 )
 

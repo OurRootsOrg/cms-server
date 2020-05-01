@@ -5,7 +5,7 @@ import (
 	"log"
 	"testing"
 
-	"github.com/jancona/ourroots/model"
+	"github.com/ourrootsorg/cms-server/model"
 	"github.com/stretchr/testify/assert"
 )
 
