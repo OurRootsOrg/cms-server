@@ -168,10 +168,10 @@ func TestSelectOneCollection(t *testing.T) {
 	assert.NoError(t, err)
 
 	now := time.Now()
-	mock.ExpectQuery("SELECT id, body, insert_time, last_update_time FROM collection WHERE id=$1").
+	mock.ExpectQuery("SELECT id, category_id, body, insert_time, last_update_time FROM collection WHERE id=$1").
 		WithArgs(1).
-		WillReturnRows(sqlmock.NewRows([]string{"id", "body", "insert_time", "last_update_time"}).
-			AddRow(1, js, now, now))
+		WillReturnRows(sqlmock.NewRows([]string{"id", "category_id", "body", "insert_time", "last_update_time"}).
+			AddRow(1, 1, js, now, now))
 
 	c, err := p.SelectOneCollection("/collections/1")
 	assert.NoError(t, err)

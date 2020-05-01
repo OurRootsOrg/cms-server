@@ -1,3 +1,4 @@
 #!/bin/bash
-psql -U postgres -f create_db.sql
-migrate -database postgres://localhost:5432/ourroots?sslmode=disable -path migrations up
+port=${1:-5432} # can override port from command line
+PGPASSWORD=postgres psql -U postgres -h localhost -p $port -f create_db.sql
+migrate -database "postgres://postgres:postgres@localhost:$port/ourroots?sslmode=disable" -path migrations up

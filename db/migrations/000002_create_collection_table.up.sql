@@ -6,4 +6,5 @@ CREATE TABLE IF NOT EXISTS collection (
   last_update_time TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 CREATE INDEX idx_collection_body ON collection USING GIN (body);
-GRANT SELECT, INSERT, UPDATE, DELETE ON collection TO ourroots; 
+GRANT SELECT, INSERT, UPDATE, DELETE ON collection TO ourroots;
+GRANT USAGE, SELECT on SEQUENCE collection_id_seq to ourroots;

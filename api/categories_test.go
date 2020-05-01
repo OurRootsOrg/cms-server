@@ -2,9 +2,13 @@ package api
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
+	"gocloud.dev/postgres"
+	"log"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strings"
 	"testing"
 
@@ -14,7 +18,14 @@ import (
 )
 
 func TestCategories(t *testing.T) {
-	app := NewApp().CategoryPersister(persist.NewMemoryPersister(""))
+	db, err := postgres.Open(context.TODO(), os.Getenv("DATABASE_URL"))
+	if err != nil {
+		log.Fatalf("Error opening database connection: %v\n  DATABASE_URL: %s",
+			err,
+			os.Getenv("DATABASE_URL"),
+		)
+	}
+	app := NewApp().CategoryPersister(persist.NewPostgresPersister("", db))
 	r := app.NewRouter()
 
 	request, _ := http.NewRequest("GET", "/categories", nil)
@@ -22,7 +33,7 @@ func TestCategories(t *testing.T) {
 	r.ServeHTTP(response, request)
 	assert.Equal(t, 200, response.Code, "OK response is expected")
 	var empty []model.Category
-	err := json.NewDecoder(response.Body).Decode(&empty)
+	err = json.NewDecoder(response.Body).Decode(&empty)
 	if err != nil {
 		t.Errorf("Error parsing JSON: %v", err)
 	}
@@ -137,7 +148,7 @@ func TestCategories(t *testing.T) {
 	assert.Equal(t, http.StatusBadRequest, response.Code, "400 response is expected")
 
 	// Category not found
-	request, _ = http.NewRequest("GET", created.ID+"x", nil)
+	request, _ = http.NewRequest("GET", created.ID+"999", nil)
 	response = httptest.NewRecorder()
 	r.ServeHTTP(response, request)
 	assert.Equal(t, http.StatusNotFound, response.Code, "404 response is expected")
@@ -199,7 +210,7 @@ func TestCategories(t *testing.T) {
 	if err != nil {
 		t.Errorf("Error encoding CategoryIn: %v", err)
 	}
-	request, _ = http.NewRequest("PATCH", created.ID+"x", buf)
+	request, _ = http.NewRequest("PATCH", created.ID+"999", buf)
 	request.Header.Add("Content-Type", contentType)
 	response = httptest.NewRecorder()
 	r.ServeHTTP(response, request)

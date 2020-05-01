@@ -95,8 +95,8 @@ func (p PostgresPersister) SelectOneCategory(id string) (model.Category, error) 
 func (p PostgresPersister) InsertCategory(in model.CategoryIn) (model.Category, error) {
 	var dbid int32
 	var cat model.Category
-	err := p.db.QueryRow("INSERT INTO category (body) VALUES ($1) RETURNING id, body, insert_time, last_update_time", in).
-		Scan(
+	row := p.db.QueryRow("INSERT INTO category (body) VALUES ($1) RETURNING id, body, insert_time, last_update_time", in)
+	err := row.Scan(
 			&dbid,
 			&cat.CategoryBody,
 			&cat.InsertTime,
@@ -162,10 +162,12 @@ func (p PostgresPersister) SelectCollections() ([]model.Collection, error) {
 // SelectOneCollection selects a single collection
 func (p PostgresPersister) SelectOneCollection(id string) (model.Collection, error) {
 	var dbid int32
+	var catid int32
 	fmt.Sscanf(id, p.pathPrefix+model.CollectionIDFormat, &dbid)
 	var collection model.Collection
-	err := p.db.QueryRow("SELECT id, body, insert_time, last_update_time FROM collection WHERE id=$1", dbid).Scan(
+	err := p.db.QueryRow("SELECT id, category_id, body, insert_time, last_update_time FROM collection WHERE id=$1", dbid).Scan(
 		&dbid,
+		&catid,
 		&collection.CollectionBody,
 		&collection.InsertTime,
 		&collection.LastUpdateTime,
@@ -174,6 +176,8 @@ func (p PostgresPersister) SelectOneCollection(id string) (model.Collection, err
 		return collection, translateError(err)
 	}
 	collection.ID = p.pathPrefix + fmt.Sprintf(model.CollectionIDFormat, dbid)
+	collection.Category.ID = p.pathPrefix + fmt.Sprintf(model.CategoryIDFormat, catid)
+	collection.Category.Type = "category"
 	collection.Type = "collection"
 	return collection, nil
 }
