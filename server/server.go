@@ -1,5 +1,4 @@
-//go:generate sh -c swag init --dir $(cd "$(dirname $GOFILE)/../" && pwd -P) --output $(cd "$(dirname $GOFILE)/../api/docs" && pwd -P) --generalInfo server/$(basename $GOFILE)
-
+//go:generate sh -c "swag init --dir $(dirname $(pwd)) --output ../api/docs --generalInfo server/$GOFILE"
 package main
 
 import (
