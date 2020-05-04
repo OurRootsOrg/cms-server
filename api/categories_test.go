@@ -4,13 +4,14 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"gocloud.dev/postgres"
 	"log"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"strings"
 	"testing"
+
+	"gocloud.dev/postgres"
 
 	"github.com/ourrootsorg/cms-server/model"
 	"github.com/ourrootsorg/cms-server/persist"
@@ -156,7 +157,7 @@ func TestCategories(t *testing.T) {
 	r.ServeHTTP(response, request)
 	assert.Equal(t, http.StatusNotFound, response.Code, "404 response is expected")
 
-	// PATCH
+	// PUT
 	in.Name = "Updated"
 	buf = new(bytes.Buffer)
 	enc = json.NewEncoder(buf)
@@ -165,7 +166,7 @@ func TestCategories(t *testing.T) {
 		t.Errorf("Error encoding CategoryIn: %v", err)
 	}
 	// correct MIME type
-	request, _ = http.NewRequest("PATCH", created.ID, buf)
+	request, _ = http.NewRequest("PUT", created.ID, buf)
 	request.Header.Add("Content-Type", contentType)
 	response = httptest.NewRecorder()
 	r.ServeHTTP(response, request)
@@ -189,7 +190,7 @@ func TestCategories(t *testing.T) {
 	if err != nil {
 		t.Errorf("Error encoding CategoryIn: %v", err)
 	}
-	request, _ = http.NewRequest("PATCH", created.ID, buf)
+	request, _ = http.NewRequest("PUT", created.ID, buf)
 	response = httptest.NewRecorder()
 	r.ServeHTTP(response, request)
 	assert.Equal(t, http.StatusUnsupportedMediaType, response.Code, "Response: %s", string(response.Body.Bytes()))
@@ -200,27 +201,27 @@ func TestCategories(t *testing.T) {
 	if err != nil {
 		t.Errorf("Error encoding CategoryIn: %v", err)
 	}
-	request, _ = http.NewRequest("PATCH", created.ID, buf)
+	request, _ = http.NewRequest("PUT", created.ID, buf)
 	request.Header.Add("Content-Type", "application/notjson")
 	response = httptest.NewRecorder()
 	r.ServeHTTP(response, request)
 	assert.Equal(t, http.StatusUnsupportedMediaType, response.Code, "Response: %s", string(response.Body.Bytes()))
 
-	// PATCH non-existant
+	// PUT non-existant
 	buf = new(bytes.Buffer)
 	enc = json.NewEncoder(buf)
 	err = enc.Encode(in)
 	if err != nil {
 		t.Errorf("Error encoding CategoryIn: %v", err)
 	}
-	request, _ = http.NewRequest("PATCH", created.ID+"999", buf)
+	request, _ = http.NewRequest("PUT", created.ID+"999", buf)
 	request.Header.Add("Content-Type", contentType)
 	response = httptest.NewRecorder()
 	r.ServeHTTP(response, request)
 	assert.Equal(t, http.StatusNotFound, response.Code, "Response: %s", string(response.Body.Bytes()))
 
 	// Bad request
-	request, _ = http.NewRequest("PATCH", created.ID, strings.NewReader("{x}"))
+	request, _ = http.NewRequest("PUT", created.ID, strings.NewReader("{x}"))
 	request.Header.Add("Content-Type", contentType)
 	response = httptest.NewRecorder()
 	r.ServeHTTP(response, request)

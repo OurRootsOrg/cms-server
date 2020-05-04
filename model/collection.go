@@ -12,6 +12,7 @@ import (
 // CollectionIDFormat is the format for Collection IDs
 const CollectionIDFormat = "/collections/%d"
 
+// CollectionName is the name use in the JSON type field
 var CollectionName = "collection"
 
 // CollectionPersister defines methods needed to persist categories

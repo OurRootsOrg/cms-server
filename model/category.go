@@ -90,8 +90,8 @@ func NewCategoryRef(id int32) CategoryRef {
 // Value makes CategoryRef implement the driver.Valuer interface.
 func (cr CategoryRef) Value() (driver.Value, error) {
 	var catID int64
-	fmt.Sscanf(cr.ID, pathPrefix+CategoryIDFormat, &catID)
-	return catID, nil
+	_, err := fmt.Sscanf(cr.ID, pathPrefix+CategoryIDFormat, &catID)
+	return catID, err
 }
 
 // Scan makes CategoryRef implement the sql.Scanner interface.

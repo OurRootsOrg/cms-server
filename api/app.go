@@ -81,13 +81,13 @@ func (app App) NewRouter() *mux.Router {
 	r.HandleFunc(app.baseURL.Path+"/categories", app.GetAllCategories).Methods("GET")
 	r.HandleFunc(app.baseURL.Path+"/categories", app.PostCategory).Methods("POST")
 	r.HandleFunc(app.baseURL.Path+"/categories/{id}", app.GetCategory).Methods("GET")
-	r.HandleFunc(app.baseURL.Path+"/categories/{id}", app.PatchCategory).Methods("PATCH")
+	r.HandleFunc(app.baseURL.Path+"/categories/{id}", app.PutCategory).Methods("PUT")
 	r.HandleFunc(app.baseURL.Path+"/categories/{id}", app.DeleteCategory).Methods("DELETE")
 
 	r.HandleFunc(app.baseURL.Path+"/collections", app.GetAllCollections).Methods("GET")
 	r.HandleFunc(app.baseURL.Path+"/collections", app.PostCollection).Methods("POST")
 	r.HandleFunc(app.baseURL.Path+"/collections/{id}", app.GetCollection).Methods("GET")
-	r.HandleFunc(app.baseURL.Path+"/collections/{id}", app.PatchCollection).Methods("PATCH")
+	r.HandleFunc(app.baseURL.Path+"/collections/{id}", app.PutCollection).Methods("PUT")
 	r.HandleFunc(app.baseURL.Path+"/collections/{id}", app.DeleteCollection).Methods("DELETE")
 	return r
 }
@@ -111,7 +111,7 @@ func OtherErrorResponse(w http.ResponseWriter, code int, message string) {
 	w.WriteHeader(code)
 	enc := json.NewEncoder(w)
 	e := model.NewError(model.ErrOther, message)
-	err := enc.Encode(model.Errors{e})
+	err := enc.Encode([]model.Error{e})
 	if err != nil {
 		log.Printf("[ERROR] Failure encoding error response: '%v'", err)
 	}
@@ -119,26 +119,23 @@ func OtherErrorResponse(w http.ResponseWriter, code int, message string) {
 
 // ValidationErrorResponse returns a validation error response
 func ValidationErrorResponse(w http.ResponseWriter, code int, er error) {
-	// func ValidationErrorResponse(w http.ResponseWriter, code int, errorCode model.ErrorCode, params ...string) {
 	w.Header().Set("Content-Type", contentType)
 	w.WriteHeader(code)
 	enc := json.NewEncoder(w)
-	errors := make(model.Errors, 0)
-	if ves, ok := er.(validator.ValidationErrors); ok {
-		for _, fe := range ves {
-			if fe.Tag() == "required" {
-				name := strings.SplitN(fe.Namespace(), ".", 2)
-				// log.Printf("name: %v", name)
-				errors = append(errors, model.NewError(model.ErrRequired, name[1]))
-			} else {
-				errors = append(errors, model.NewError(model.ErrOther, fmt.Sprintf("Key: '%s' Error:Field validation for '%s' failed on the '%s' tag", fe.Namespace(), fe.Field(), fe.Tag())))
-			}
-		}
-	} else {
-		errors = append(errors, model.NewError(model.ErrOther, er.Error()))
-	}
+	errors := model.NewErrors(http.StatusBadRequest, er)
 	log.Printf("[DEBUG] errBody: %#v", errors)
-	err := enc.Encode(errors)
+	err := enc.Encode(errors.Errs())
+	if err != nil {
+		log.Printf("[ERROR] Failure encoding error response: '%v'", err)
+	}
+}
+
+// ErrorsResponse returns an HTTP response from a model.Errors
+func ErrorsResponse(w http.ResponseWriter, errors *model.Errors) {
+	w.Header().Set("Content-Type", contentType)
+	w.WriteHeader(errors.HTTPStatus())
+	enc := json.NewEncoder(w)
+	err := enc.Encode(errors.Errs())
 	if err != nil {
 		log.Printf("[ERROR] Failure encoding error response: '%v'", err)
 	}

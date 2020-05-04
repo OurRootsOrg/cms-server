@@ -88,21 +88,8 @@ definitions:
     - category
     - name
     type: object
-  model.Error:
-    properties:
-      code:
-        type: string
-      message:
-        type: string
-      params:
-        items:
-          type: string
-        type: array
-    type: object
   model.Errors:
-    items:
-      $ref: '#/definitions/model.Error'
-    type: array
+    type: object
   model.FieldDef:
     properties:
       csv_heading:
@@ -228,7 +215,7 @@ paths:
       summary: gets a Category
       tags:
       - categories
-    patch:
+    put:
       consumes:
       - application/json
       operationId: updateCategory
@@ -359,7 +346,7 @@ paths:
       summary: gets a Collection
       tags:
       - collections
-    patch:
+    put:
       consumes:
       - application/json
       operationId: updateCollection

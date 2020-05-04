@@ -111,9 +111,9 @@ func (app App) PostCategory(w http.ResponseWriter, req *http.Request) {
 	}
 }
 
-// PatchCategory updates a Category in the database
+// PutCategory updates a Category in the database
 // @summary updates a Category
-// @router /categories/{id} [patch]
+// @router /categories/{id} [put]
 // @tags categories
 // @id updateCategory
 // @Param id path integer true "Category ID"
@@ -123,7 +123,7 @@ func (app App) PostCategory(w http.ResponseWriter, req *http.Request) {
 // @success 200 {object} model.Category "OK"
 // @failure 415 {object} model.Errors "Bad Content-Type"
 // @failure 500 {object} model.Errors "Server error"
-func (app App) PatchCategory(w http.ResponseWriter, req *http.Request) {
+func (app App) PutCategory(w http.ResponseWriter, req *http.Request) {
 	mt, _, err := mime.ParseMediaType(req.Header.Get("Content-Type"))
 	if err != nil || mt != contentType {
 		msg := fmt.Sprintf("Bad Content-Type '%s'", mt)
@@ -145,7 +145,7 @@ func (app App) PatchCategory(w http.ResponseWriter, req *http.Request) {
 	}
 	category, err := app.categoryPersister.UpdateCategory(req.URL.String(), in)
 	if err == persist.ErrNoRows {
-		// Not allowed to add a Category with PATCH
+		// Not allowed to add a Category with PUT
 		NotFound(w, req)
 		return
 	} else if err != nil {

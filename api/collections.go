@@ -79,12 +79,7 @@ func (app App) GetCollection(w http.ResponseWriter, req *http.Request) {
 // @failure 500 {object} model.Errors "Server error"
 func (app App) PostCollection(w http.ResponseWriter, req *http.Request) {
 	mt, _, err := mime.ParseMediaType(req.Header.Get("Content-Type"))
-	if err != nil {
-		msg := fmt.Sprintf("Bad Content-Type '%s'", mt)
-		OtherErrorResponse(w, http.StatusUnsupportedMediaType, msg)
-		return
-	}
-	if mt != contentType {
+	if err != nil || mt != contentType {
 		msg := fmt.Sprintf("Bad Content-Type '%s'", mt)
 		OtherErrorResponse(w, http.StatusUnsupportedMediaType, msg)
 		return
@@ -96,19 +91,10 @@ func (app App) PostCollection(w http.ResponseWriter, req *http.Request) {
 		OtherErrorResponse(w, http.StatusBadRequest, msg)
 		return
 	}
-	err = app.validate.Struct(in)
-	if err != nil {
-		ValidationErrorResponse(w, 400, err)
-		return
-	}
-	collection, err := app.collectionPersister.InsertCollection(in)
-	if err == persist.ErrForeignKeyViolation {
-		msg := fmt.Sprintf("Invalid category reference: %v", err)
-		log.Print("[ERROR] " + msg)
-		OtherErrorResponse(w, http.StatusBadRequest, msg)
-		return
-	} else if err != nil {
-		serverError(w, err)
+
+	collection, errors := app.AddCollection(in)
+	if errors != nil {
+		ErrorsResponse(w, errors)
 		return
 	}
 	w.Header().Set("Content-Type", contentType)
@@ -121,9 +107,26 @@ func (app App) PostCollection(w http.ResponseWriter, req *http.Request) {
 	}
 }
 
-// PatchCollection updates a Collection in the database
+// AddCollection holds the business logic around adding a Collection
+func (app App) AddCollection(in model.CollectionIn) (*model.Collection, *model.Errors) {
+	err := app.validate.Struct(in)
+	if err != nil {
+		return nil, model.NewErrors(http.StatusBadRequest, err)
+	}
+	collection, err := app.collectionPersister.InsertCollection(in)
+	if err == persist.ErrForeignKeyViolation {
+		msg := fmt.Sprintf("Invalid category reference: %v", err)
+		log.Print("[ERROR] " + msg)
+		return nil, model.NewErrors(http.StatusBadRequest, err)
+	} else if err != nil {
+		return nil, model.NewErrors(http.StatusInternalServerError, err)
+	}
+	return &collection, nil
+}
+
+// PutCollection updates a Collection in the database
 // @summary updates a Collection
-// @router /collections/{id} [patch]
+// @router /collections/{id} [put]
 // @tags collections
 // @id updateCollection
 // @Param id path string true "Collection ID" format(url)
@@ -133,7 +136,7 @@ func (app App) PostCollection(w http.ResponseWriter, req *http.Request) {
 // @success 200 {object} model.Collection "OK"
 // @failure 415 {object} model.Errors "Bad Content-Type"
 // @failure 500 {object} model.Errors "Server error"
-func (app App) PatchCollection(w http.ResponseWriter, req *http.Request) {
+func (app App) PutCollection(w http.ResponseWriter, req *http.Request) {
 	mt, _, err := mime.ParseMediaType(req.Header.Get("Content-Type"))
 	if err != nil || mt != contentType {
 		msg := fmt.Sprintf("Bad Content-Type '%s'", mt)
@@ -147,14 +150,14 @@ func (app App) PatchCollection(w http.ResponseWriter, req *http.Request) {
 		OtherErrorResponse(w, http.StatusBadRequest, msg)
 		return
 	}
-	// err = app.validate.Struct(in)
-	// if err != nil {
-	// 	ValidationErrorResponse(w, 400, err)
-	// 	return
-	// }
+	err = app.validate.Struct(in)
+	if err != nil {
+		ValidationErrorResponse(w, 400, err)
+		return
+	}
 	collection, err := app.collectionPersister.UpdateCollection(req.URL.String(), in)
 	if err == persist.ErrNoRows {
-		// Not allowed to add a Collection with PATCH
+		// Not allowed to add a Collection with PUT
 		NotFound(w, req)
 		return
 	} else if err != nil {

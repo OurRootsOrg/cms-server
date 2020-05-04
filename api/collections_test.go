@@ -5,14 +5,15 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"github.com/gorilla/mux"
-	"gocloud.dev/postgres"
 	"log"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"strings"
 	"testing"
+
+	"github.com/gorilla/mux"
+	"gocloud.dev/postgres"
 
 	"github.com/ourrootsorg/cms-server/model"
 	"github.com/ourrootsorg/cms-server/persist"
@@ -56,10 +57,9 @@ func TestCollections(t *testing.T) {
 		response.Result().Header["Content-Type"][0])
 
 	// Add a Collection
-	n := "Test Collection"
 	in := model.CollectionIn{
 		CollectionBody: model.CollectionBody{
-			Name: n,
+			Name: "Test Collection",
 		},
 		Category: testCategory.CategoryRef,
 	}
@@ -183,18 +183,16 @@ func TestCollections(t *testing.T) {
 	r.ServeHTTP(response, request)
 	assert.Equal(t, http.StatusNotFound, response.Code, "Response: %s", string(response.Body.Bytes()))
 
-	// PATCH
-	n = "Updated"
-	in.Name = n
-	in.Category = testCategory.CategoryRef
+	// PUT
+	ret2.Name = "Updated"
 	buf = new(bytes.Buffer)
 	enc = json.NewEncoder(buf)
-	err = enc.Encode(in)
+	err = enc.Encode(ret2)
 	if err != nil {
 		t.Errorf("Error encoding CollectionIn: %v", err)
 	}
 	// correct MIME type
-	request, _ = http.NewRequest("PATCH", created.ID, buf)
+	request, _ = http.NewRequest("PUT", created.ID, buf)
 	request.Header.Add("Content-Type", contentType)
 	response = httptest.NewRecorder()
 	r.ServeHTTP(response, request)
@@ -208,7 +206,7 @@ func TestCollections(t *testing.T) {
 	if err != nil {
 		t.Errorf("Error parsing JSON: %v", err)
 	}
-	assert.Equal(t, in.Name, updated.Name, "Expected Name to match")
+	assert.Equal(t, ret2.Name, updated.Name, "Expected Name to match")
 
 	// Missing MIME type
 	buf = new(bytes.Buffer)
@@ -217,7 +215,7 @@ func TestCollections(t *testing.T) {
 	if err != nil {
 		t.Errorf("Error encoding CollectionIn: %v", err)
 	}
-	request, _ = http.NewRequest("PATCH", created.ID, buf)
+	request, _ = http.NewRequest("PUT", created.ID, buf)
 	response = httptest.NewRecorder()
 	r.ServeHTTP(response, request)
 	assert.Equal(t, http.StatusUnsupportedMediaType, response.Code, "Response: %s", string(response.Body.Bytes()))
@@ -228,27 +226,27 @@ func TestCollections(t *testing.T) {
 	if err != nil {
 		t.Errorf("Error encoding CollectionIn: %v", err)
 	}
-	request, _ = http.NewRequest("PATCH", created.ID, buf)
+	request, _ = http.NewRequest("PUT", created.ID, buf)
 	request.Header.Add("Content-Type", "application/notjson")
 	response = httptest.NewRecorder()
 	r.ServeHTTP(response, request)
 	assert.Equal(t, http.StatusUnsupportedMediaType, response.Code, "Response: %s", string(response.Body.Bytes()))
 
-	// PATCH non-existant
+	// PUT non-existant
 	buf = new(bytes.Buffer)
 	enc = json.NewEncoder(buf)
-	err = enc.Encode(in)
+	err = enc.Encode(ret2)
 	if err != nil {
 		t.Errorf("Error encoding CollectionIn: %v", err)
 	}
-	request, _ = http.NewRequest("PATCH", created.ID+"999", buf)
+	request, _ = http.NewRequest("PUT", created.ID+"x", buf)
 	request.Header.Add("Content-Type", contentType)
 	response = httptest.NewRecorder()
 	r.ServeHTTP(response, request)
 	assert.Equal(t, http.StatusNotFound, response.Code, "Response: %s", string(response.Body.Bytes()))
 
 	// Bad request
-	request, _ = http.NewRequest("PATCH", created.ID, strings.NewReader("{x}"))
+	request, _ = http.NewRequest("PUT", created.ID, strings.NewReader("{x}"))
 	request.Header.Add("Content-Type", contentType)
 	response = httptest.NewRecorder()
 	r.ServeHTTP(response, request)

@@ -122,7 +122,7 @@ func main() {
 			handlers.LoggingHandler(os.Stdout,
 				handlers.CORS(
 					handlers.AllowedHeaders([]string{"X-Requested-With", "Content-Type", "Authorization"}),
-					handlers.AllowedMethods([]string{"GET", "POST", "PATCH", "DELETE", "HEAD", "OPTIONS"}),
+					handlers.AllowedMethods([]string{"GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS"}),
 					handlers.AllowedOrigins([]string{"*"}))(r))))
 	}
 }
@@ -152,7 +152,6 @@ func ParseEnv() (*Env, error) {
 	})
 	err := validate.Struct(env)
 	if err != nil {
-		// log.Printf("[DEBUG] validation error: %v", err)
 		errs := "Error parsing environment variables:\n"
 		for _, fe := range err.(validator.ValidationErrors) {
 			switch fe.Field() {

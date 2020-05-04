@@ -145,34 +145,7 @@ var doc = `{
                     }
                 }
             },
-            "delete": {
-                "tags": [
-                    "categories"
-                ],
-                "summary": "deletes a Category",
-                "operationId": "deleteCategory",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Category ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": "OK"
-                    },
-                    "500": {
-                        "description": "Server error",
-                        "schema": {
-                            "$ref": "#/definitions/model.Errors"
-                        }
-                    }
-                }
-            },
-            "patch": {
+            "put": {
                 "consumes": [
                     "application/json"
                 ],
@@ -214,6 +187,33 @@ var doc = `{
                         "schema": {
                             "$ref": "#/definitions/model.Errors"
                         }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "$ref": "#/definitions/model.Errors"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "categories"
+                ],
+                "summary": "deletes a Category",
+                "operationId": "deleteCategory",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Category ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "OK"
                     },
                     "500": {
                         "description": "Server error",
@@ -338,38 +338,7 @@ var doc = `{
                     }
                 }
             },
-            "delete": {
-                "tags": [
-                    "collections"
-                ],
-                "summary": "deletes a Collection",
-                "operationId": "deleteCollection",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "format": "url",
-                        "description": "Collection ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/model.Collection"
-                        }
-                    },
-                    "500": {
-                        "description": "Server error",
-                        "schema": {
-                            "$ref": "#/definitions/model.Errors"
-                        }
-                    }
-                }
-            },
-            "patch": {
+            "put": {
                 "consumes": [
                     "application/json"
                 ],
@@ -411,6 +380,37 @@ var doc = `{
                         "description": "Bad Content-Type",
                         "schema": {
                             "$ref": "#/definitions/model.Errors"
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "$ref": "#/definitions/model.Errors"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "collections"
+                ],
+                "summary": "deletes a Collection",
+                "operationId": "deleteCollection",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "format": "url",
+                        "description": "Collection ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.Collection"
                         }
                     },
                     "500": {
@@ -549,28 +549,8 @@ var doc = `{
                 }
             }
         },
-        "model.Error": {
-            "type": "object",
-            "properties": {
-                "code": {
-                    "type": "string"
-                },
-                "message": {
-                    "type": "string"
-                },
-                "params": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                }
-            }
-        },
         "model.Errors": {
-            "type": "array",
-            "items": {
-                "$ref": "#/definitions/model.Error"
-            }
+            "type": "object"
         },
         "model.FieldDef": {
             "type": "object",
