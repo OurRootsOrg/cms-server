@@ -1,179 +1,77 @@
 package api
 
 import (
-	"encoding/json"
 	"fmt"
-	"mime"
+	"log"
 	"net/http"
 
 	"github.com/ourrootsorg/cms-server/model"
 	"github.com/ourrootsorg/cms-server/persist"
 )
 
-// GetAllCategories returns all categories in the database
-// @summary returns all categories
-// @router /categories [get]
-// @tags categories
-// @id getCategories
-// @produce application/json
-// @success 200 {array} model.Category "OK"
-// @failure 500 {object} model.Errors "Server error"
-func (app App) GetAllCategories(w http.ResponseWriter, req *http.Request) {
-	enc := json.NewEncoder(w)
-	w.Header().Set("Content-Type", contentType)
-	cats, err := app.categoryPersister.SelectCategories()
-	if err != nil {
-		serverError(w, err)
-		return
-	}
-	err = enc.Encode(cats)
-	if err != nil {
-		serverError(w, err)
-		return
-	}
+// CategoryResult is a paged Category result
+type CategoryResult struct {
+	Categories []model.Category `json:"collections"`
+	NextPage   string           `json:"next_page"`
 }
 
-// GetCategory gets a Category from the database
-// @summary gets a Category
-// @router /categories/{id} [get]
-// @tags categories
-// @id getCategory
-// @Param id path integer true "Category ID"
-// @produce application/json
-// @success 200 {object} model.Category "OK"
-// @failure 404 {object} model.Errors "Not found"
-// @failure 500 {object} model.Errors "Server error"
-func (app App) GetCategory(w http.ResponseWriter, req *http.Request) {
-	enc := json.NewEncoder(w)
-	w.Header().Set("Content-Type", contentType)
-	category, err := app.categoryPersister.SelectOneCategory(req.URL.String())
+// GetCategories holds the business logic around getting many Categories
+func (api API) GetCategories( /* filter/search criteria */ ) (*CategoryResult, *Errors) {
+	// TODO: handle search criteria and paged results
+	cols, err := api.categoryPersister.SelectCategories()
+	if err != nil {
+		return nil, NewErrors(http.StatusInternalServerError, err)
+	}
+	return &CategoryResult{Categories: cols}, nil
+}
+
+// GetCategory holds the business logic around getting a Category
+func (api API) GetCategory(id string) (*model.Category, *Errors) {
+	collection, err := api.categoryPersister.SelectOneCategory(id)
 	if err == persist.ErrNoRows {
-		NotFound(w, req)
-		return
+		msg := fmt.Sprintf("Not Found: %v", err)
+		log.Print("[ERROR] " + msg)
+		return nil, NewErrors(http.StatusNotFound, err)
 	} else if err != nil {
-		serverError(w, err)
-		return
+		return nil, NewErrors(http.StatusInternalServerError, err)
 	}
-	err = enc.Encode(category)
-	if err != nil {
-		serverError(w, err)
-		return
-	}
+	return &collection, nil
 }
 
-// PostCategory adds a new Category to the database
-// @summary adds a new Category
-// @router /categories [post]
-// @tags categories
-// @id addCategory
-// @Param category body model.CategoryIn true "Add Category"
-// @accept application/json
-// @produce application/json
-// @success 201 {object} model.Category "OK"
-// @failure 415 {object} model.Errors "Bad Content-Type"
-// @failure 500 {object} model.Errors "Server error"
-func (app App) PostCategory(w http.ResponseWriter, req *http.Request) {
-	mt, _, err := mime.ParseMediaType(req.Header.Get("Content-Type"))
+// AddCategory holds the business logic around adding a Category
+func (api API) AddCategory(in model.CategoryIn) (*model.Category, *Errors) {
+	err := api.validate.Struct(in)
 	if err != nil {
-		msg := fmt.Sprintf("Bad Content-Type '%s'", mt)
-		OtherErrorResponse(w, http.StatusUnsupportedMediaType, msg)
-		return
+		return nil, NewErrors(http.StatusBadRequest, err)
 	}
-	if mt != contentType {
-		msg := fmt.Sprintf("Bad Content-Type '%s'", mt)
-		OtherErrorResponse(w, http.StatusUnsupportedMediaType, msg)
-		return
-	}
-	in := model.CategoryIn{}
-	err = json.NewDecoder(req.Body).Decode(&in)
+	collection, err := api.categoryPersister.InsertCategory(in)
 	if err != nil {
-		msg := fmt.Sprintf("Bad request: %v", err.Error())
-		OtherErrorResponse(w, http.StatusBadRequest, msg)
-		return
+		return nil, NewErrors(http.StatusInternalServerError, err)
 	}
-	err = app.validate.Struct(in)
-	if err != nil {
-		ValidationErrorResponse(w, 400, err)
-		return
-	}
-	category, err := app.categoryPersister.InsertCategory(in)
-	if err != nil {
-		serverError(w, err)
-		return
-	}
-	w.Header().Set("Content-Type", contentType)
-	w.WriteHeader(http.StatusCreated)
-	enc := json.NewEncoder(w)
-	err = enc.Encode(category)
-	if err != nil {
-		serverError(w, err)
-		return
-	}
+	return &collection, nil
 }
 
-// PutCategory updates a Category in the database
-// @summary updates a Category
-// @router /categories/{id} [put]
-// @tags categories
-// @id updateCategory
-// @Param id path integer true "Category ID"
-// @Param category body model.CategoryIn true "Update Category"
-// @accept application/json
-// @produce application/json
-// @success 200 {object} model.Category "OK"
-// @failure 415 {object} model.Errors "Bad Content-Type"
-// @failure 500 {object} model.Errors "Server error"
-func (app App) PutCategory(w http.ResponseWriter, req *http.Request) {
-	mt, _, err := mime.ParseMediaType(req.Header.Get("Content-Type"))
-	if err != nil || mt != contentType {
-		msg := fmt.Sprintf("Bad Content-Type '%s'", mt)
-		OtherErrorResponse(w, http.StatusUnsupportedMediaType, msg)
-		return
-	}
-
-	var in model.CategoryIn
-	err = json.NewDecoder(req.Body).Decode(&in)
+// UpdateCategory holds the business logic around updating a Category
+func (api API) UpdateCategory(id string, in model.CategoryIn) (*model.Category, *Errors) {
+	err := api.validate.Struct(in)
 	if err != nil {
-		msg := fmt.Sprintf("Bad request: %v", err.Error())
-		OtherErrorResponse(w, http.StatusBadRequest, msg)
-		return
+		return nil, NewErrors(http.StatusBadRequest, err)
 	}
-	err = app.validate.Struct(in)
-	if err != nil {
-		ValidationErrorResponse(w, 400, err)
-		return
-	}
-	category, err := app.categoryPersister.UpdateCategory(req.URL.String(), in)
+	collection, err := api.categoryPersister.UpdateCategory(id, in)
 	if err == persist.ErrNoRows {
 		// Not allowed to add a Category with PUT
-		NotFound(w, req)
-		return
+		return nil, NewErrors(http.StatusNotFound, NewError(ErrNotFound, "collection"))
 	} else if err != nil {
-		serverError(w, err)
-		return
+		return nil, NewErrors(http.StatusInternalServerError, err)
 	}
-	w.Header().Set("Content-Type", contentType)
-	enc := json.NewEncoder(w)
-	err = enc.Encode(category)
-	if err != nil {
-		serverError(w, err)
-		return
-	}
+	return &collection, nil
 }
 
-// DeleteCategory deletes a Category from the database
-// @summary deletes a Category
-// @router /categories/{id} [delete]
-// @tags categories
-// @id deleteCategory
-// @Param id path integer true "Category ID"
-// @success 204 "OK"
-// @failure 500 {object} model.Errors "Server error"
-func (app App) DeleteCategory(w http.ResponseWriter, req *http.Request) {
-	err := app.categoryPersister.DeleteCategory(req.URL.String())
+// DeleteCategory holds the business logic around deleting a Category
+func (api API) DeleteCategory(id string) *Errors {
+	err := api.categoryPersister.DeleteCategory(id)
 	if err != nil {
-		serverError(w, err)
-		return
+		return NewErrors(http.StatusInternalServerError, err)
 	}
-	w.WriteHeader(http.StatusNoContent)
+	return nil
 }

@@ -1,4 +1,4 @@
-package model
+package api
 
 import (
 	"fmt"
@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/ourrootsorg/cms-server/persist"
 )
 
 // ErrorCode is one of the valid error codes the API can return
@@ -14,11 +15,13 @@ type ErrorCode string
 // Standard error codes
 const (
 	ErrRequired ErrorCode = "REQUIRED"
+	ErrNotFound ErrorCode = "NOT_FOUND"
 	ErrOther    ErrorCode = "OTHER"
 )
 
 var errorMessages = map[ErrorCode]string{
 	ErrRequired: "Field '%s' is required",
+	ErrNotFound: "Instance of type '%s' was not found",
 	ErrOther:    "Unknown error: %s",
 }
 
@@ -44,14 +47,22 @@ func NewError(code ErrorCode, params ...string) Error {
 	}
 }
 
+func (e Error) Error() string {
+	params := make([]interface{}, len(e.Params))
+	for i, p := range e.Params {
+		params[i] = p
+	}
+	return fmt.Sprintf("Error %s: "+e.Message, params...)
+}
+
 // Errors is an ordered collection of errors
 type Errors struct {
 	errs       []Error
 	httpStatus int
 }
 
-// NewErrors buids an Errors collection from an error, which may actually be a ValidationErrors colletion
-func NewErrors(httpStatus int, err error) *Errors {
+// NewErrors builds an Errors collection from an `error`, which may actually be a ValidationErrors collection
+func NewErrors(httpStatus int, err error, params ...string) *Errors {
 	errors := Errors{
 		errs:       make([]Error, 0),
 		httpStatus: httpStatus,
@@ -66,6 +77,10 @@ func NewErrors(httpStatus int, err error) *Errors {
 				errors.errs = append(errors.errs, NewError(ErrOther, fmt.Sprintf("Key: '%s' Error:Field validation for '%s' failed on the '%s' tag", fe.Namespace(), fe.Field(), fe.Tag())))
 			}
 		}
+	} else if er, ok := err.(Error); ok {
+		errors.errs = append(errors.errs, er)
+	} else if err == persist.ErrNoRows {
+		errors.errs = append(errors.errs, NewError(ErrNotFound, err.Error()))
 	} else {
 		errors.errs = append(errors.errs, NewError(ErrOther, err.Error()))
 	}

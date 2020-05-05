@@ -44,7 +44,7 @@
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/model.Errors"
+                            "$ref": "#/definitions/api.Errors"
                         }
                     }
                 }
@@ -82,13 +82,13 @@
                     "415": {
                         "description": "Bad Content-Type",
                         "schema": {
-                            "$ref": "#/definitions/model.Errors"
+                            "$ref": "#/definitions/api.Errors"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/model.Errors"
+                            "$ref": "#/definitions/api.Errors"
                         }
                     }
                 }
@@ -123,13 +123,13 @@
                     "404": {
                         "description": "Not found",
                         "schema": {
-                            "$ref": "#/definitions/model.Errors"
+                            "$ref": "#/definitions/api.Errors"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/model.Errors"
+                            "$ref": "#/definitions/api.Errors"
                         }
                     }
                 }
@@ -174,13 +174,13 @@
                     "415": {
                         "description": "Bad Content-Type",
                         "schema": {
-                            "$ref": "#/definitions/model.Errors"
+                            "$ref": "#/definitions/api.Errors"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/model.Errors"
+                            "$ref": "#/definitions/api.Errors"
                         }
                     }
                 }
@@ -207,7 +207,7 @@
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/model.Errors"
+                            "$ref": "#/definitions/api.Errors"
                         }
                     }
                 }
@@ -236,7 +236,7 @@
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/model.Errors"
+                            "$ref": "#/definitions/api.Errors"
                         }
                     }
                 }
@@ -274,13 +274,13 @@
                     "415": {
                         "description": "Bad Content-Type",
                         "schema": {
-                            "$ref": "#/definitions/model.Errors"
+                            "$ref": "#/definitions/api.Errors"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/model.Errors"
+                            "$ref": "#/definitions/api.Errors"
                         }
                     }
                 }
@@ -316,13 +316,13 @@
                     "404": {
                         "description": "Not found",
                         "schema": {
-                            "$ref": "#/definitions/model.Errors"
+                            "$ref": "#/definitions/api.Errors"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/model.Errors"
+                            "$ref": "#/definitions/api.Errors"
                         }
                     }
                 }
@@ -368,13 +368,13 @@
                     "415": {
                         "description": "Bad Content-Type",
                         "schema": {
-                            "$ref": "#/definitions/model.Errors"
+                            "$ref": "#/definitions/api.Errors"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/model.Errors"
+                            "$ref": "#/definitions/api.Errors"
                         }
                     }
                 }
@@ -405,7 +405,7 @@
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/model.Errors"
+                            "$ref": "#/definitions/api.Errors"
                         }
                     }
                 }
@@ -413,6 +413,9 @@
         }
     },
     "definitions": {
+        "api.Errors": {
+            "type": "object"
+        },
         "model.Category": {
             "type": "object",
             "required": [
@@ -499,6 +502,7 @@
                     "example": "/collections/999"
                 },
                 "insert_time": {
+                    "description": "CollectionBody\nCategory       CategoryRef `json:\"category\" validate:\"required\"`",
                     "type": "string"
                 },
                 "last_update_time": {
@@ -537,9 +541,6 @@
                     "type": "string"
                 }
             }
-        },
-        "model.Errors": {
-            "type": "object"
         },
         "model.FieldDef": {
             "type": "object",

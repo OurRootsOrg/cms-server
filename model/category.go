@@ -108,7 +108,7 @@ func (cr *CategoryRef) Scan(value interface{}) error {
 // Category represents a set of collections that all contain the same fields
 type Category struct {
 	CategoryRef
-	CategoryBody
+	CategoryIn
 	InsertTime     time.Time `json:"insert_time,omitempty"`
 	LastUpdateTime time.Time `json:"last_update_time,omitempty"`
 }
@@ -116,7 +116,9 @@ type Category struct {
 // NewCategory constructs a Category from an id and body
 func NewCategory(id int32, in CategoryIn) Category {
 	return Category{
-		CategoryRef:  NewCategoryRef(id),
-		CategoryBody: in.CategoryBody,
+		CategoryRef: NewCategoryRef(id),
+		CategoryIn: CategoryIn{
+			CategoryBody: in.CategoryBody,
+		},
 	}
 }

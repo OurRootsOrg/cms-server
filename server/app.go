@@ -1,4 +1,4 @@
-package api
+package main
 
 import (
 	"encoding/json"
@@ -6,40 +6,25 @@ import (
 	"log"
 	"net/http"
 	"net/url"
-	"reflect"
-	"strings"
 
-	"github.com/go-playground/validator/v10"
 	"github.com/gorilla/mux"
-	"github.com/ourrootsorg/cms-server/model"
+	"github.com/ourrootsorg/cms-server/api"
 )
 
 const contentType = "application/json"
 
 // App is the container for the application
 type App struct {
-	categoryPersister   model.CategoryPersister
-	collectionPersister model.CollectionPersister
-	baseURL             url.URL
-	validate            *validator.Validate
+	baseURL url.URL
+	api     *api.API
 }
 
 // NewApp builds an App
 func NewApp() *App {
-	validate := validator.New()
-	// Return JSON tag name as Field() in errors
-	validate.RegisterTagNameFunc(func(fld reflect.StructField) string {
-		name := strings.SplitN(fld.Tag.Get("json"), ",", 2)[0]
-		if name == "-" {
-			return ""
-		}
-		return name
-	})
-
-	return &App{
-		baseURL:  url.URL{},
-		validate: validate,
+	app := &App{
+		baseURL: url.URL{},
 	}
+	return app
 }
 
 // BaseURL sets the base URL for the app
@@ -48,21 +33,10 @@ func (app *App) BaseURL(url url.URL) *App {
 	return app
 }
 
-// Validate sets the validate object for the app
-func (app *App) Validate(validate *validator.Validate) *App {
-	app.validate = validate
-	return app
-}
-
-// CategoryPersister sets the CategoryPersister for the app
-func (app *App) CategoryPersister(cp model.CategoryPersister) *App {
-	app.categoryPersister = cp
-	return app
-}
-
-// CollectionPersister sets the CollectionPersister for the app
-func (app *App) CollectionPersister(cp model.CollectionPersister) *App {
-	app.collectionPersister = cp
+// API sets the API object for the app
+func (app *App) API(api *api.API) *App {
+	log.Printf("[DEBUG] api: %#v", app.api)
+	app.api = api
 	return app
 }
 
@@ -84,7 +58,7 @@ func (app App) NewRouter() *mux.Router {
 	r.HandleFunc(app.baseURL.Path+"/categories/{id}", app.PutCategory).Methods("PUT")
 	r.HandleFunc(app.baseURL.Path+"/categories/{id}", app.DeleteCategory).Methods("DELETE")
 
-	r.HandleFunc(app.baseURL.Path+"/collections", app.GetAllCollections).Methods("GET")
+	r.HandleFunc(app.baseURL.Path+"/collections", app.GetCollections).Methods("GET")
 	r.HandleFunc(app.baseURL.Path+"/collections", app.PostCollection).Methods("POST")
 	r.HandleFunc(app.baseURL.Path+"/collections/{id}", app.GetCollection).Methods("GET")
 	r.HandleFunc(app.baseURL.Path+"/collections/{id}", app.PutCollection).Methods("PUT")
@@ -110,8 +84,8 @@ func OtherErrorResponse(w http.ResponseWriter, code int, message string) {
 	w.Header().Set("Content-Type", contentType)
 	w.WriteHeader(code)
 	enc := json.NewEncoder(w)
-	e := model.NewError(model.ErrOther, message)
-	err := enc.Encode([]model.Error{e})
+	e := api.NewError(api.ErrOther, message)
+	err := enc.Encode([]api.Error{e})
 	if err != nil {
 		log.Printf("[ERROR] Failure encoding error response: '%v'", err)
 	}
@@ -122,7 +96,7 @@ func ValidationErrorResponse(w http.ResponseWriter, code int, er error) {
 	w.Header().Set("Content-Type", contentType)
 	w.WriteHeader(code)
 	enc := json.NewEncoder(w)
-	errors := model.NewErrors(http.StatusBadRequest, er)
+	errors := api.NewErrors(http.StatusBadRequest, er)
 	log.Printf("[DEBUG] errBody: %#v", errors)
 	err := enc.Encode(errors.Errs())
 	if err != nil {
@@ -130,8 +104,8 @@ func ValidationErrorResponse(w http.ResponseWriter, code int, er error) {
 	}
 }
 
-// ErrorsResponse returns an HTTP response from a model.Errors
-func ErrorsResponse(w http.ResponseWriter, errors *model.Errors) {
+// ErrorsResponse returns an HTTP response from a api.Errors
+func ErrorsResponse(w http.ResponseWriter, errors *api.Errors) {
 	w.Header().Set("Content-Type", contentType)
 	w.WriteHeader(errors.HTTPStatus())
 	enc := json.NewEncoder(w)

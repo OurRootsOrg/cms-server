@@ -45,16 +45,6 @@ func (cb *CollectionBody) Scan(value interface{}) error {
 	return json.Unmarshal(b, &cb)
 }
 
-// NewCollectionBody builds a CollectionBody
-// func NewCollectionBody(name string, category Category, location string, template template.Template) CollectionBody {
-// 	// TODO: validation
-// 	return CollectionBody{
-// 		Name:             name,
-// 		Location:         location,
-// 		CitationTemplate: template,
-// 	}
-// }
-
 // CollectionIn is the payload to create or update a Collection
 type CollectionIn struct {
 	CollectionBody
@@ -79,19 +69,22 @@ func NewCollectionRef(id int32) CollectionRef {
 // Collection represents a set of related Records
 type Collection struct {
 	CollectionRef
-	CollectionBody
-	Category       CategoryRef `json:"category" validate:"required"`
-	InsertTime     time.Time   `json:"insert_time,omitempty"`
-	LastUpdateTime time.Time   `json:"last_update_time,omitempty"`
+	CollectionIn
+	// CollectionBody
+	// Category       CategoryRef `json:"category" validate:"required"`
+	InsertTime     time.Time `json:"insert_time,omitempty"`
+	LastUpdateTime time.Time `json:"last_update_time,omitempty"`
 }
 
 // NewCollection constructs a Collection from a CollectionIn
 func NewCollection(id int32, ci CollectionIn) Collection {
 	now := time.Now()
 	c := Collection{
-		CollectionRef:  NewCollectionRef(id),
-		CollectionBody: ci.CollectionBody,
-		Category:       ci.Category,
+		CollectionRef: NewCollectionRef(id),
+		CollectionIn: CollectionIn{
+			CollectionBody: ci.CollectionBody,
+			Category:       ci.Category,
+		},
 		InsertTime:     now,
 		LastUpdateTime: now,
 	}
