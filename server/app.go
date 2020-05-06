@@ -1,45 +1,31 @@
-package api
+package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"net/url"
-	"reflect"
-	"strings"
 
-	"github.com/go-playground/validator/v10"
 	"github.com/gorilla/mux"
-	"github.com/ourrootsorg/cms-server/model"
+	"github.com/ourrootsorg/cms-server/api"
 )
 
 const contentType = "application/json"
 
 // App is the container for the application
 type App struct {
-	categoryPersister   model.CategoryPersister
-	collectionPersister model.CollectionPersister
-	baseURL             url.URL
-	validate            *validator.Validate
+	baseURL url.URL
+	api     *api.API
 }
 
 // NewApp builds an App
 func NewApp() *App {
-	validate := validator.New()
-	// Return JSON tag name as Field() in errors
-	validate.RegisterTagNameFunc(func(fld reflect.StructField) string {
-		name := strings.SplitN(fld.Tag.Get("json"), ",", 2)[0]
-		if name == "-" {
-			return ""
-		}
-		return name
-	})
-
-	return &App{
-		baseURL:  url.URL{},
-		validate: validate,
+	app := &App{
+		baseURL: url.URL{},
 	}
+	return app
 }
 
 // BaseURL sets the base URL for the app
@@ -48,21 +34,10 @@ func (app *App) BaseURL(url url.URL) *App {
 	return app
 }
 
-// Validate sets the validate object for the app
-func (app *App) Validate(validate *validator.Validate) *App {
-	app.validate = validate
-	return app
-}
-
-// CategoryPersister sets the CategoryPersister for the app
-func (app *App) CategoryPersister(cp model.CategoryPersister) *App {
-	app.categoryPersister = cp
-	return app
-}
-
-// CollectionPersister sets the CollectionPersister for the app
-func (app *App) CollectionPersister(cp model.CollectionPersister) *App {
-	app.collectionPersister = cp
+// API sets the API object for the app
+func (app *App) API(api *api.API) *App {
+	log.Printf("[DEBUG] api: %#v", app.api)
+	app.api = api
 	return app
 }
 
@@ -81,15 +56,20 @@ func (app App) NewRouter() *mux.Router {
 	r.HandleFunc(app.baseURL.Path+"/categories", app.GetAllCategories).Methods("GET")
 	r.HandleFunc(app.baseURL.Path+"/categories", app.PostCategory).Methods("POST")
 	r.HandleFunc(app.baseURL.Path+"/categories/{id}", app.GetCategory).Methods("GET")
-	r.HandleFunc(app.baseURL.Path+"/categories/{id}", app.PatchCategory).Methods("PATCH")
+	r.HandleFunc(app.baseURL.Path+"/categories/{id}", app.PutCategory).Methods("PUT")
 	r.HandleFunc(app.baseURL.Path+"/categories/{id}", app.DeleteCategory).Methods("DELETE")
 
-	r.HandleFunc(app.baseURL.Path+"/collections", app.GetAllCollections).Methods("GET")
+	r.HandleFunc(app.baseURL.Path+"/collections", app.GetCollections).Methods("GET")
 	r.HandleFunc(app.baseURL.Path+"/collections", app.PostCollection).Methods("POST")
 	r.HandleFunc(app.baseURL.Path+"/collections/{id}", app.GetCollection).Methods("GET")
-	r.HandleFunc(app.baseURL.Path+"/collections/{id}", app.PatchCollection).Methods("PATCH")
+	r.HandleFunc(app.baseURL.Path+"/collections/{id}", app.PutCollection).Methods("PUT")
 	r.HandleFunc(app.baseURL.Path+"/collections/{id}", app.DeleteCollection).Methods("DELETE")
 	return r
+}
+
+// Context returns a `Context` for use processing an HTTP request
+func (app App) Context() context.Context {
+	return context.Background()
 }
 
 // NotFound returns an http.StatusNotFound response
@@ -110,8 +90,8 @@ func OtherErrorResponse(w http.ResponseWriter, code int, message string) {
 	w.Header().Set("Content-Type", contentType)
 	w.WriteHeader(code)
 	enc := json.NewEncoder(w)
-	e := model.NewError(model.ErrOther, message)
-	err := enc.Encode(model.Errors{e})
+	e := api.NewError(api.ErrOther, message)
+	err := enc.Encode([]api.Error{e})
 	if err != nil {
 		log.Printf("[ERROR] Failure encoding error response: '%v'", err)
 	}
@@ -119,26 +99,23 @@ func OtherErrorResponse(w http.ResponseWriter, code int, message string) {
 
 // ValidationErrorResponse returns a validation error response
 func ValidationErrorResponse(w http.ResponseWriter, code int, er error) {
-	// func ValidationErrorResponse(w http.ResponseWriter, code int, errorCode model.ErrorCode, params ...string) {
 	w.Header().Set("Content-Type", contentType)
 	w.WriteHeader(code)
 	enc := json.NewEncoder(w)
-	errors := make(model.Errors, 0)
-	if ves, ok := er.(validator.ValidationErrors); ok {
-		for _, fe := range ves {
-			if fe.Tag() == "required" {
-				name := strings.SplitN(fe.Namespace(), ".", 2)
-				// log.Printf("name: %v", name)
-				errors = append(errors, model.NewError(model.ErrRequired, name[1]))
-			} else {
-				errors = append(errors, model.NewError(model.ErrOther, fmt.Sprintf("Key: '%s' Error:Field validation for '%s' failed on the '%s' tag", fe.Namespace(), fe.Field(), fe.Tag())))
-			}
-		}
-	} else {
-		errors = append(errors, model.NewError(model.ErrOther, er.Error()))
-	}
+	errors := api.NewErrors(http.StatusBadRequest, er)
 	log.Printf("[DEBUG] errBody: %#v", errors)
-	err := enc.Encode(errors)
+	err := enc.Encode(errors.Errs())
+	if err != nil {
+		log.Printf("[ERROR] Failure encoding error response: '%v'", err)
+	}
+}
+
+// ErrorsResponse returns an HTTP response from a api.Errors
+func ErrorsResponse(w http.ResponseWriter, errors *api.Errors) {
+	w.Header().Set("Content-Type", contentType)
+	w.WriteHeader(errors.HTTPStatus())
+	enc := json.NewEncoder(w)
+	err := enc.Encode(errors.Errs())
 	if err != nil {
 		log.Printf("[ERROR] Failure encoding error response: '%v'", err)
 	}

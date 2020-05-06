@@ -1,4 +1,4 @@
-//go:generate sh -c "swag init --dir $(dirname $(pwd)) --output ../api/docs --generalInfo server/$GOFILE"
+//go:generate sh -c "swag init --dir $(dirname $(pwd)) --output ./docs --generalInfo server/$GOFILE"
 package main
 
 import (
@@ -18,9 +18,9 @@ import (
 	"github.com/gorilla/handlers"
 	"github.com/hashicorp/logutils"
 	"github.com/ourrootsorg/cms-server/api"
-	"github.com/ourrootsorg/cms-server/api/docs"
 	"github.com/ourrootsorg/cms-server/model"
 	"github.com/ourrootsorg/cms-server/persist"
+	"github.com/ourrootsorg/cms-server/server/docs"
 	"gocloud.dev/postgres"
 
 	// _ "github.com/jackc/pgx/v4/stdlib"
@@ -61,7 +61,9 @@ func main() {
 	log.SetOutput(filter)
 	log.Printf("[INFO] env.BaseURLString: %s, env.BaseURL.Path: %s", env.BaseURLString, env.BaseURL.Path)
 	model.Initialize(env.BaseURL.Path)
-	app := api.NewApp().BaseURL(*env.BaseURL)
+	ap := api.NewAPI().BaseURL(*env.BaseURL)
+	app := NewApp().BaseURL(*env.BaseURL).API(ap)
+
 	switch env.Persister {
 	case "sql":
 		db, err := postgres.Open(context.TODO(), env.DatabaseURL)
@@ -72,11 +74,11 @@ func main() {
 			)
 		}
 		p := persist.NewPostgresPersister(env.BaseURL.Path, db)
-		app.CategoryPersister(p).CollectionPersister(p)
+		ap.CategoryPersister(p).CollectionPersister(p)
 		log.Print("[INFO] Using PostgresPersister")
 	case "memory":
 		p := persist.NewMemoryPersister(env.BaseURL.Path)
-		app.CategoryPersister(p).CollectionPersister(p)
+		ap.CategoryPersister(p).CollectionPersister(p)
 		log.Print("[INFO] Using MemoryPersister")
 	default:
 		// Should never happen
@@ -94,7 +96,7 @@ func main() {
 		httpSwagger.DocExpansion("none"),
 		httpSwagger.DomID("#swagger-ui"),
 	))
-	r.NotFoundHandler = http.HandlerFunc(api.NotFound)
+	r.NotFoundHandler = http.HandlerFunc(NotFound)
 
 	if env.IsLambda {
 		// Lambda-specific setup
@@ -122,7 +124,7 @@ func main() {
 			handlers.LoggingHandler(os.Stdout,
 				handlers.CORS(
 					handlers.AllowedHeaders([]string{"X-Requested-With", "Content-Type", "Authorization"}),
-					handlers.AllowedMethods([]string{"GET", "POST", "PATCH", "DELETE", "HEAD", "OPTIONS"}),
+					handlers.AllowedMethods([]string{"GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS"}),
 					handlers.AllowedOrigins([]string{"*"}))(r))))
 	}
 }
@@ -152,7 +154,6 @@ func ParseEnv() (*Env, error) {
 	})
 	err := validate.Struct(env)
 	if err != nil {
-		// log.Printf("[DEBUG] validation error: %v", err)
 		errs := "Error parsing environment variables:\n"
 		for _, fe := range err.(validator.ValidationErrors) {
 			switch fe.Field() {

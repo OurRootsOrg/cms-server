@@ -1,6 +1,7 @@
 package model
 
 import (
+	"context"
 	"database/sql/driver"
 	"encoding/json"
 	"errors"
@@ -20,11 +21,11 @@ const CategoryIDFormat = "/categories/%d"
 
 // CategoryPersister defines methods needed to persist categories
 type CategoryPersister interface {
-	SelectCategories() ([]Category, error)
-	SelectOneCategory(id string) (Category, error)
-	InsertCategory(in CategoryIn) (Category, error)
-	UpdateCategory(id string, body CategoryIn) (Category, error)
-	DeleteCategory(id string) error
+	SelectCategories(ctx context.Context) ([]Category, error)
+	SelectOneCategory(ctx context.Context, id string) (Category, error)
+	InsertCategory(ctx context.Context, in CategoryIn) (Category, error)
+	UpdateCategory(ctx context.Context, id string, body CategoryIn) (Category, error)
+	DeleteCategory(ctx context.Context, id string) error
 }
 
 // CategoryIn is the payload to create or update a category
@@ -90,8 +91,8 @@ func NewCategoryRef(id int32) CategoryRef {
 // Value makes CategoryRef implement the driver.Valuer interface.
 func (cr CategoryRef) Value() (driver.Value, error) {
 	var catID int64
-	fmt.Sscanf(cr.ID, pathPrefix+CategoryIDFormat, &catID)
-	return catID, nil
+	_, err := fmt.Sscanf(cr.ID, pathPrefix+CategoryIDFormat, &catID)
+	return catID, err
 }
 
 // Scan makes CategoryRef implement the sql.Scanner interface.
@@ -108,7 +109,7 @@ func (cr *CategoryRef) Scan(value interface{}) error {
 // Category represents a set of collections that all contain the same fields
 type Category struct {
 	CategoryRef
-	CategoryBody
+	CategoryIn
 	InsertTime     time.Time `json:"insert_time,omitempty"`
 	LastUpdateTime time.Time `json:"last_update_time,omitempty"`
 }
@@ -116,7 +117,9 @@ type Category struct {
 // NewCategory constructs a Category from an id and body
 func NewCategory(id int32, in CategoryIn) Category {
 	return Category{
-		CategoryRef:  NewCategoryRef(id),
-		CategoryBody: in.CategoryBody,
+		CategoryRef: NewCategoryRef(id),
+		CategoryIn: CategoryIn{
+			CategoryBody: in.CategoryBody,
+		},
 	}
 }

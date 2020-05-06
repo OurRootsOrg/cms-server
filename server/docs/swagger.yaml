@@ -1,5 +1,7 @@
 basePath: /
 definitions:
+  api.Errors:
+    type: object
   model.Category:
     properties:
       field_defs:
@@ -57,6 +59,9 @@ definitions:
         example: /collections/999
         type: string
       insert_time:
+        description: |-
+          CollectionBody
+          Category       CategoryRef `json:"category" validate:"required"`
         type: string
       last_update_time:
         type: string
@@ -88,21 +93,6 @@ definitions:
     - category
     - name
     type: object
-  model.Error:
-    properties:
-      code:
-        type: string
-      message:
-        type: string
-      params:
-        items:
-          type: string
-        type: array
-    type: object
-  model.Errors:
-    items:
-      $ref: '#/definitions/model.Error'
-    type: array
   model.FieldDef:
     properties:
       csv_heading:
@@ -150,7 +140,7 @@ paths:
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/model.Errors'
+            $ref: '#/definitions/api.Errors'
       summary: returns all categories
       tags:
       - categories
@@ -175,11 +165,11 @@ paths:
         "415":
           description: Bad Content-Type
           schema:
-            $ref: '#/definitions/model.Errors'
+            $ref: '#/definitions/api.Errors'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/model.Errors'
+            $ref: '#/definitions/api.Errors'
       summary: adds a new Category
       tags:
       - categories
@@ -198,7 +188,7 @@ paths:
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/model.Errors'
+            $ref: '#/definitions/api.Errors'
       summary: deletes a Category
       tags:
       - categories
@@ -220,15 +210,15 @@ paths:
         "404":
           description: Not found
           schema:
-            $ref: '#/definitions/model.Errors'
+            $ref: '#/definitions/api.Errors'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/model.Errors'
+            $ref: '#/definitions/api.Errors'
       summary: gets a Category
       tags:
       - categories
-    patch:
+    put:
       consumes:
       - application/json
       operationId: updateCategory
@@ -254,11 +244,11 @@ paths:
         "415":
           description: Bad Content-Type
           schema:
-            $ref: '#/definitions/model.Errors'
+            $ref: '#/definitions/api.Errors'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/model.Errors'
+            $ref: '#/definitions/api.Errors'
       summary: updates a Category
       tags:
       - categories
@@ -277,7 +267,7 @@ paths:
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/model.Errors'
+            $ref: '#/definitions/api.Errors'
       summary: returns all collections
       tags:
       - collections
@@ -302,11 +292,11 @@ paths:
         "415":
           description: Bad Content-Type
           schema:
-            $ref: '#/definitions/model.Errors'
+            $ref: '#/definitions/api.Errors'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/model.Errors'
+            $ref: '#/definitions/api.Errors'
       summary: adds a new Collection
       tags:
       - collections
@@ -328,7 +318,7 @@ paths:
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/model.Errors'
+            $ref: '#/definitions/api.Errors'
       summary: deletes a Collection
       tags:
       - collections
@@ -351,15 +341,15 @@ paths:
         "404":
           description: Not found
           schema:
-            $ref: '#/definitions/model.Errors'
+            $ref: '#/definitions/api.Errors'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/model.Errors'
+            $ref: '#/definitions/api.Errors'
       summary: gets a Collection
       tags:
       - collections
-    patch:
+    put:
       consumes:
       - application/json
       operationId: updateCollection
@@ -386,11 +376,11 @@ paths:
         "415":
           description: Bad Content-Type
           schema:
-            $ref: '#/definitions/model.Errors'
+            $ref: '#/definitions/api.Errors'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/model.Errors'
+            $ref: '#/definitions/api.Errors'
       summary: updates a Collection
       tags:
       - collections

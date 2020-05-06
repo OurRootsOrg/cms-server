@@ -1,6 +1,7 @@
 package persist
 
 import (
+	"context"
 	"math/rand"
 	"time"
 
@@ -27,7 +28,7 @@ func NewMemoryPersister(pathPrefix string) MemoryPersister {
 // Category persistence methods
 
 // SelectCategories loads all the categories from the database
-func (p MemoryPersister) SelectCategories() ([]model.Category, error) {
+func (p MemoryPersister) SelectCategories(ctx context.Context) ([]model.Category, error) {
 	cats := make([]model.Category, 0, len(p.categories))
 
 	for _, value := range p.categories {
@@ -37,7 +38,7 @@ func (p MemoryPersister) SelectCategories() ([]model.Category, error) {
 }
 
 // SelectOneCategory loads a single category from the database
-func (p MemoryPersister) SelectOneCategory(id string) (model.Category, error) {
+func (p MemoryPersister) SelectOneCategory(ctx context.Context, id string) (model.Category, error) {
 	cat, found := p.categories[id]
 	if !found {
 		return cat, ErrNoRows
@@ -46,7 +47,7 @@ func (p MemoryPersister) SelectOneCategory(id string) (model.Category, error) {
 }
 
 // InsertCategory inserts a CategoryBody into the database and returns the inserted Category
-func (p MemoryPersister) InsertCategory(in model.CategoryIn) (model.Category, error) {
+func (p MemoryPersister) InsertCategory(ctx context.Context, in model.CategoryIn) (model.Category, error) {
 	cat := model.NewCategory(int32(rand.Int31()), in)
 	cat.Type = "category"
 	now := time.Now()
@@ -58,7 +59,7 @@ func (p MemoryPersister) InsertCategory(in model.CategoryIn) (model.Category, er
 }
 
 // UpdateCategory updates a Category in the database and returns the updated Category
-func (p MemoryPersister) UpdateCategory(id string, in model.CategoryIn) (model.Category, error) {
+func (p MemoryPersister) UpdateCategory(ctx context.Context, id string, in model.CategoryIn) (model.Category, error) {
 	_, found := p.categories[id]
 	if !found {
 		return model.Category{}, ErrNoRows
@@ -71,7 +72,7 @@ func (p MemoryPersister) UpdateCategory(id string, in model.CategoryIn) (model.C
 }
 
 // DeleteCategory deletes a Category
-func (p MemoryPersister) DeleteCategory(id string) error {
+func (p MemoryPersister) DeleteCategory(ctx context.Context, id string) error {
 	delete(p.categories, id)
 	return nil
 }
@@ -79,7 +80,7 @@ func (p MemoryPersister) DeleteCategory(id string) error {
 // Collection persistence methods
 
 // SelectCollections selects all collections
-func (p MemoryPersister) SelectCollections() ([]model.Collection, error) {
+func (p MemoryPersister) SelectCollections(ctx context.Context) ([]model.Collection, error) {
 	cols := make([]model.Collection, 0, len(p.collections))
 
 	for _, value := range p.collections {
@@ -89,7 +90,7 @@ func (p MemoryPersister) SelectCollections() ([]model.Collection, error) {
 }
 
 // SelectOneCollection selects a single collection
-func (p MemoryPersister) SelectOneCollection(id string) (model.Collection, error) {
+func (p MemoryPersister) SelectOneCollection(ctx context.Context, id string) (model.Collection, error) {
 	col, found := p.collections[id]
 	if !found {
 		return col, ErrNoRows
@@ -98,7 +99,7 @@ func (p MemoryPersister) SelectOneCollection(id string) (model.Collection, error
 }
 
 // InsertCollection inserts a new collection
-func (p MemoryPersister) InsertCollection(in model.CollectionIn) (model.Collection, error) {
+func (p MemoryPersister) InsertCollection(ctx context.Context, in model.CollectionIn) (model.Collection, error) {
 	col := model.NewCollection(int32(rand.Int31()), in)
 	col.Type = model.CollectionName
 	now := time.Now()
@@ -110,7 +111,7 @@ func (p MemoryPersister) InsertCollection(in model.CollectionIn) (model.Collecti
 }
 
 // UpdateCollection updates a collection
-func (p MemoryPersister) UpdateCollection(id string, in model.CollectionIn) (model.Collection, error) {
+func (p MemoryPersister) UpdateCollection(ctx context.Context, id string, in model.CollectionIn) (model.Collection, error) {
 	col := model.Collection{}
 	_, found := p.collections[id]
 	if !found {
@@ -127,7 +128,7 @@ func (p MemoryPersister) UpdateCollection(id string, in model.CollectionIn) (mod
 }
 
 // DeleteCollection deletes a collection
-func (p MemoryPersister) DeleteCollection(id string) error {
+func (p MemoryPersister) DeleteCollection(ctx context.Context, id string) error {
 	delete(p.collections, id)
 	return nil
 }

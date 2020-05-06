@@ -1,6 +1,8 @@
 package persist
 
-import "errors"
+import (
+	"errors"
+)
 
 // Error definitions
 

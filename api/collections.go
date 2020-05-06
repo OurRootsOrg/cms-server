@@ -1,188 +1,81 @@
 package api
 
 import (
-	"encoding/json"
-	"fmt"
+	"context"
 	"log"
-	"mime"
 	"net/http"
 
 	"github.com/ourrootsorg/cms-server/model"
 	"github.com/ourrootsorg/cms-server/persist"
 )
 
-// GetAllCollections returns all collections in the database
-// @summary returns all collections
-// @router /collections [get]
-// @tags collections
-// @id getCollections
-// @produce application/json
-// @success 200 {array} model.Collection "OK"
-// @failure 500 {object} model.Errors "Server error"
-func (app App) GetAllCollections(w http.ResponseWriter, req *http.Request) {
-	enc := json.NewEncoder(w)
-	w.Header().Set("Content-Type", contentType)
-	cols, err := app.collectionPersister.SelectCollections()
-	if err != nil {
-		serverError(w, err)
-		return
-	}
-	v := make([]model.Collection, 0, len(cols))
-	for _, value := range cols {
-		v = append(v, value)
-	}
-	err = enc.Encode(v)
-	if err != nil {
-		serverError(w, err)
-		return
-	}
+// CollectionResult is a paged Collection result
+type CollectionResult struct {
+	Collections []model.Collection `json:"collections"`
+	NextPage    string             `json:"next_page"`
 }
 
-// GetCollection gets a Collection from the database
-// @summary gets a Collection
-// @router /collections/{id} [get]
-// @tags collections
-// @id getCollection
-// @Param id path string true "Collection ID" format(url)
-// @produce application/json
-// @success 200 {object} model.Collection "OK"
-// @failure 404 {object} model.Errors "Not found"
-// @failure 500 {object} model.Errors "Server error"
-func (app App) GetCollection(w http.ResponseWriter, req *http.Request) {
-	enc := json.NewEncoder(w)
-	w.Header().Set("Content-Type", contentType)
-	collection, err := app.collectionPersister.SelectOneCollection(req.URL.String())
+// GetCollections holds the business logic around getting many Collections
+func (api API) GetCollections(ctx context.Context /* filter/search criteria */) (*CollectionResult, *Errors) {
+	// TODO: handle search criteria and paged results
+	cols, err := api.collectionPersister.SelectCollections(ctx)
+	if err != nil {
+		return nil, NewErrors(http.StatusInternalServerError, err)
+	}
+	return &CollectionResult{Collections: cols}, nil
+}
+
+// GetCollection holds the business logic around getting a Collection
+func (api API) GetCollection(ctx context.Context, id string) (*model.Collection, *Errors) {
+	collection, err := api.collectionPersister.SelectOneCollection(ctx, id)
 	if err == persist.ErrNoRows {
-		NotFound(w, req)
-		return
+		return nil, NewErrors(http.StatusNotFound, NewError(ErrNotFound, id))
 	} else if err != nil {
-		serverError(w, err)
-		return
+		return nil, NewErrors(http.StatusInternalServerError, err)
 	}
-	err = enc.Encode(collection)
-	if err != nil {
-		serverError(w, err)
-		return
-	}
+	return &collection, nil
 }
 
-// PostCollection adds a new Collection to the database
-// @summary adds a new Collection
-// @router /collections [post]
-// @tags collections
-// @id addCollection
-// @Param collection body model.CollectionIn true "Add Collection"
-// @accept application/json
-// @produce application/json
-// @success 201 {object} model.Collection "OK"
-// @failure 415 {object} model.Errors "Bad Content-Type"
-// @failure 500 {object} model.Errors "Server error"
-func (app App) PostCollection(w http.ResponseWriter, req *http.Request) {
-	mt, _, err := mime.ParseMediaType(req.Header.Get("Content-Type"))
+// AddCollection holds the business logic around adding a Collection
+func (api API) AddCollection(ctx context.Context, in model.CollectionIn) (*model.Collection, *Errors) {
+	err := api.validate.Struct(in)
 	if err != nil {
-		msg := fmt.Sprintf("Bad Content-Type '%s'", mt)
-		OtherErrorResponse(w, http.StatusUnsupportedMediaType, msg)
-		return
+		return nil, NewErrors(http.StatusBadRequest, err)
 	}
-	if mt != contentType {
-		msg := fmt.Sprintf("Bad Content-Type '%s'", mt)
-		OtherErrorResponse(w, http.StatusUnsupportedMediaType, msg)
-		return
-	}
-	in := model.CollectionIn{}
-	err = json.NewDecoder(req.Body).Decode(&in)
-	if err != nil {
-		msg := fmt.Sprintf("Bad request: %v", err)
-		OtherErrorResponse(w, http.StatusBadRequest, msg)
-		return
-	}
-	err = app.validate.Struct(in)
-	if err != nil {
-		ValidationErrorResponse(w, 400, err)
-		return
-	}
-	collection, err := app.collectionPersister.InsertCollection(in)
+	collection, err := api.collectionPersister.InsertCollection(ctx, in)
 	if err == persist.ErrForeignKeyViolation {
-		msg := fmt.Sprintf("Invalid category reference: %v", err)
-		log.Print("[ERROR] " + msg)
-		OtherErrorResponse(w, http.StatusBadRequest, msg)
-		return
+		log.Printf("[ERROR] Invalid category reference: %v", err)
+		return nil, NewErrors(http.StatusBadRequest, NewError(ErrBadReference, in.Category.ID, in.Category.Type))
 	} else if err != nil {
-		serverError(w, err)
-		return
+		return nil, NewErrors(http.StatusInternalServerError, err)
 	}
-	w.Header().Set("Content-Type", contentType)
-	w.WriteHeader(http.StatusCreated)
-	enc := json.NewEncoder(w)
-	err = enc.Encode(collection)
-	if err != nil {
-		serverError(w, err)
-		return
-	}
+	return &collection, nil
 }
 
-// PatchCollection updates a Collection in the database
-// @summary updates a Collection
-// @router /collections/{id} [patch]
-// @tags collections
-// @id updateCollection
-// @Param id path string true "Collection ID" format(url)
-// @Param collection body model.CollectionIn true "Update Collection"
-// @accept application/json
-// @produce application/json
-// @success 200 {object} model.Collection "OK"
-// @failure 415 {object} model.Errors "Bad Content-Type"
-// @failure 500 {object} model.Errors "Server error"
-func (app App) PatchCollection(w http.ResponseWriter, req *http.Request) {
-	mt, _, err := mime.ParseMediaType(req.Header.Get("Content-Type"))
-	if err != nil || mt != contentType {
-		msg := fmt.Sprintf("Bad Content-Type '%s'", mt)
-		OtherErrorResponse(w, http.StatusUnsupportedMediaType, msg)
-		return
-	}
-	var in model.CollectionIn
-	err = json.NewDecoder(req.Body).Decode(&in)
+// UpdateCollection holds the business logic around updating a Collection
+func (api API) UpdateCollection(ctx context.Context, id string, in model.CollectionIn) (*model.Collection, *Errors) {
+	err := api.validate.Struct(in)
 	if err != nil {
-		msg := fmt.Sprintf("Bad request: %v", err)
-		OtherErrorResponse(w, http.StatusBadRequest, msg)
-		return
+		return nil, NewErrors(http.StatusBadRequest, err)
 	}
-	// err = app.validate.Struct(in)
-	// if err != nil {
-	// 	ValidationErrorResponse(w, 400, err)
-	// 	return
-	// }
-	collection, err := app.collectionPersister.UpdateCollection(req.URL.String(), in)
-	if err == persist.ErrNoRows {
-		// Not allowed to add a Collection with PATCH
-		NotFound(w, req)
-		return
+	collection, err := api.collectionPersister.UpdateCollection(ctx, id, in)
+	if err == persist.ErrForeignKeyViolation {
+		log.Printf("[ERROR] Invalid category reference: %v", err)
+		return nil, NewErrors(http.StatusBadRequest, NewError(ErrBadReference, in.Category.ID, in.Category.Type))
+	} else if err == persist.ErrNoRows {
+		// Not allowed to add a Collection with PUT
+		return nil, NewErrors(http.StatusNotFound, NewError(ErrNotFound, id))
 	} else if err != nil {
-		serverError(w, err)
-		return
+		return nil, NewErrors(http.StatusInternalServerError, err)
 	}
-	w.Header().Set("Content-Type", contentType)
-	enc := json.NewEncoder(w)
-	err = enc.Encode(collection)
-	if err != nil {
-		serverError(w, err)
-		return
-	}
+	return &collection, nil
 }
 
-// DeleteCollection deletes a Collection from the database
-// @summary deletes a Collection
-// @router /collections/{id} [delete]
-// @tags collections
-// @id deleteCollection
-// @Param id path string true "Collection ID" format(url)
-// @success 204 {object} model.Collection "OK"
-// @failure 500 {object} model.Errors "Server error"
-func (app App) DeleteCollection(w http.ResponseWriter, req *http.Request) {
-	err := app.collectionPersister.DeleteCollection(req.URL.String())
+// DeleteCollection holds the business logic around deleting a Collection
+func (api API) DeleteCollection(ctx context.Context, id string) *Errors {
+	err := api.collectionPersister.DeleteCollection(ctx, id)
 	if err != nil {
-		serverError(w, err)
-		return
+		return NewErrors(http.StatusInternalServerError, err)
 	}
-	w.WriteHeader(http.StatusNoContent)
+	return nil
 }
