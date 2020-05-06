@@ -52,6 +52,12 @@ func TestCollections(t *testing.T) {
 	assert.NotEmpty(t, created.ID)
 	assert.Equal(t, in.Category, created.Category)
 
+	// Add with bad category reference
+	in.Category.ID = in.Category.ID + "88"
+	_, errors = testApi.AddCollection(in)
+	assert.Len(t, errors.Errs(), 1)
+	assert.Equal(t, api.ErrBadReference, errors.Errs()[0].Code, "errors.Errs()[0]: %#v", errors.Errs()[0])
+
 	// GET /collections should now return the created Collection
 	ret, errors := testApi.GetCollections()
 	assert.Nil(t, errors)
@@ -89,6 +95,13 @@ func TestCollections(t *testing.T) {
 	_, errors = testApi.UpdateCollection(created.ID+"99", created.CollectionIn)
 	assert.Len(t, errors.Errs(), 1)
 	assert.Equal(t, api.ErrNotFound, errors.Errs()[0].Code, "errors.Errs()[0]: %#v", errors.Errs()[0])
+
+	created.Category.ID = created.Category.ID + "99"
+
+	// Update with bad category
+	_, errors = testApi.UpdateCollection(created.ID, created.CollectionIn)
+	assert.Len(t, errors.Errs(), 1)
+	assert.Equal(t, api.ErrBadReference, errors.Errs()[0].Code, "errors.Errs()[0]: %#v", errors.Errs()[0])
 
 	// DELETE
 	errors = testApi.DeleteCollection(created.ID)

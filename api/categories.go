@@ -31,7 +31,7 @@ func (api API) GetCategory(id string) (*model.Category, *Errors) {
 	if err == persist.ErrNoRows {
 		msg := fmt.Sprintf("Not Found: %v", err)
 		log.Print("[ERROR] " + msg)
-		return nil, NewErrors(http.StatusNotFound, err)
+		return nil, NewErrors(http.StatusNotFound, NewError(ErrNotFound, id))
 	} else if err != nil {
 		return nil, NewErrors(http.StatusInternalServerError, err)
 	}

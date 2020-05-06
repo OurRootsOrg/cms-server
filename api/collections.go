@@ -1,7 +1,6 @@
 package api
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 
@@ -29,9 +28,7 @@ func (api API) GetCollections( /* filter/search criteria */ ) (*CollectionResult
 func (api API) GetCollection(id string) (*model.Collection, *Errors) {
 	collection, err := api.collectionPersister.SelectOneCollection(id)
 	if err == persist.ErrNoRows {
-		msg := fmt.Sprintf("Not Found: %v", err)
-		log.Print("[ERROR] " + msg)
-		return nil, NewErrors(http.StatusNotFound, err)
+		return nil, NewErrors(http.StatusNotFound, NewError(ErrNotFound, id))
 	} else if err != nil {
 		return nil, NewErrors(http.StatusInternalServerError, err)
 	}
@@ -46,9 +43,8 @@ func (api API) AddCollection(in model.CollectionIn) (*model.Collection, *Errors)
 	}
 	collection, err := api.collectionPersister.InsertCollection(in)
 	if err == persist.ErrForeignKeyViolation {
-		msg := fmt.Sprintf("Invalid category reference: %v", err)
-		log.Print("[ERROR] " + msg)
-		return nil, NewErrors(http.StatusBadRequest, err)
+		log.Printf("[ERROR] Invalid category reference: %v", err)
+		return nil, NewErrors(http.StatusBadRequest, NewError(ErrBadReference, in.Category.ID, in.Category.Type))
 	} else if err != nil {
 		return nil, NewErrors(http.StatusInternalServerError, err)
 	}
@@ -62,9 +58,12 @@ func (api API) UpdateCollection(id string, in model.CollectionIn) (*model.Collec
 		return nil, NewErrors(http.StatusBadRequest, err)
 	}
 	collection, err := api.collectionPersister.UpdateCollection(id, in)
-	if err == persist.ErrNoRows {
+	if err == persist.ErrForeignKeyViolation {
+		log.Printf("[ERROR] Invalid category reference: %v", err)
+		return nil, NewErrors(http.StatusBadRequest, NewError(ErrBadReference, in.Category.ID, in.Category.Type))
+	} else if err == persist.ErrNoRows {
 		// Not allowed to add a Collection with PUT
-		return nil, NewErrors(http.StatusNotFound, NewError(ErrNotFound, "collection"))
+		return nil, NewErrors(http.StatusNotFound, NewError(ErrNotFound, id))
 	} else if err != nil {
 		return nil, NewErrors(http.StatusInternalServerError, err)
 	}

@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/go-playground/validator/v10"
-	"github.com/ourrootsorg/cms-server/persist"
 )
 
 // ErrorCode is one of the valid error codes the API can return
@@ -14,15 +13,17 @@ type ErrorCode string
 
 // Standard error codes
 const (
-	ErrRequired ErrorCode = "REQUIRED"
-	ErrNotFound ErrorCode = "NOT_FOUND"
-	ErrOther    ErrorCode = "OTHER"
+	ErrRequired     ErrorCode = "REQUIRED"
+	ErrNotFound     ErrorCode = "NOT_FOUND"
+	ErrBadReference ErrorCode = "BAD_REFERENCE"
+	ErrOther        ErrorCode = "OTHER"
 )
 
 var errorMessages = map[ErrorCode]string{
-	ErrRequired: "Field '%s' is required",
-	ErrNotFound: "Instance of type '%s' was not found",
-	ErrOther:    "Unknown error: %s",
+	ErrRequired:     "Field '%s' is required",
+	ErrNotFound:     "'%s' was not found",
+	ErrBadReference: "Non-existent reference. ID: '%s', Type: '%s'",
+	ErrOther:        "Unknown error: %s",
 }
 
 // Error represents a single API error
@@ -79,8 +80,6 @@ func NewErrors(httpStatus int, err error, params ...string) *Errors {
 		}
 	} else if er, ok := err.(Error); ok {
 		errors.errs = append(errors.errs, er)
-	} else if err == persist.ErrNoRows {
-		errors.errs = append(errors.errs, NewError(ErrNotFound, err.Error()))
 	} else {
 		errors.errs = append(errors.errs, NewError(ErrOther, err.Error()))
 	}
