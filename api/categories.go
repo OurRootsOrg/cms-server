@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
@@ -16,9 +17,9 @@ type CategoryResult struct {
 }
 
 // GetCategories holds the business logic around getting many Categories
-func (api API) GetCategories( /* filter/search criteria */ ) (*CategoryResult, *Errors) {
+func (api API) GetCategories(ctx context.Context /* filter/search criteria */) (*CategoryResult, *Errors) {
 	// TODO: handle search criteria and paged results
-	cols, err := api.categoryPersister.SelectCategories()
+	cols, err := api.categoryPersister.SelectCategories(ctx)
 	if err != nil {
 		return nil, NewErrors(http.StatusInternalServerError, err)
 	}
@@ -26,8 +27,8 @@ func (api API) GetCategories( /* filter/search criteria */ ) (*CategoryResult, *
 }
 
 // GetCategory holds the business logic around getting a Category
-func (api API) GetCategory(id string) (*model.Category, *Errors) {
-	collection, err := api.categoryPersister.SelectOneCategory(id)
+func (api API) GetCategory(ctx context.Context, id string) (*model.Category, *Errors) {
+	collection, err := api.categoryPersister.SelectOneCategory(ctx, id)
 	if err == persist.ErrNoRows {
 		msg := fmt.Sprintf("Not Found: %v", err)
 		log.Print("[ERROR] " + msg)
@@ -39,12 +40,12 @@ func (api API) GetCategory(id string) (*model.Category, *Errors) {
 }
 
 // AddCategory holds the business logic around adding a Category
-func (api API) AddCategory(in model.CategoryIn) (*model.Category, *Errors) {
+func (api API) AddCategory(ctx context.Context, in model.CategoryIn) (*model.Category, *Errors) {
 	err := api.validate.Struct(in)
 	if err != nil {
 		return nil, NewErrors(http.StatusBadRequest, err)
 	}
-	collection, err := api.categoryPersister.InsertCategory(in)
+	collection, err := api.categoryPersister.InsertCategory(ctx, in)
 	if err != nil {
 		return nil, NewErrors(http.StatusInternalServerError, err)
 	}
@@ -52,12 +53,12 @@ func (api API) AddCategory(in model.CategoryIn) (*model.Category, *Errors) {
 }
 
 // UpdateCategory holds the business logic around updating a Category
-func (api API) UpdateCategory(id string, in model.CategoryIn) (*model.Category, *Errors) {
+func (api API) UpdateCategory(ctx context.Context, id string, in model.CategoryIn) (*model.Category, *Errors) {
 	err := api.validate.Struct(in)
 	if err != nil {
 		return nil, NewErrors(http.StatusBadRequest, err)
 	}
-	collection, err := api.categoryPersister.UpdateCategory(id, in)
+	collection, err := api.categoryPersister.UpdateCategory(ctx, id, in)
 	if err == persist.ErrNoRows {
 		// Not allowed to add a Category with PUT
 		return nil, NewErrors(http.StatusNotFound, NewError(ErrNotFound, "collection"))
@@ -68,8 +69,8 @@ func (api API) UpdateCategory(id string, in model.CategoryIn) (*model.Category, 
 }
 
 // DeleteCategory holds the business logic around deleting a Category
-func (api API) DeleteCategory(id string) *Errors {
-	err := api.categoryPersister.DeleteCategory(id)
+func (api API) DeleteCategory(ctx context.Context, id string) *Errors {
+	err := api.categoryPersister.DeleteCategory(ctx, id)
 	if err != nil {
 		return NewErrors(http.StatusInternalServerError, err)
 	}

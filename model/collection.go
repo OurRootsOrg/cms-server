@@ -1,6 +1,7 @@
 package model
 
 import (
+	"context"
 	"database/sql/driver"
 	"encoding/json"
 	"errors"
@@ -17,11 +18,11 @@ var CollectionName = "collection"
 
 // CollectionPersister defines methods needed to persist categories
 type CollectionPersister interface {
-	SelectCollections() ([]Collection, error)
-	SelectOneCollection(id string) (Collection, error)
-	InsertCollection(in CollectionIn) (Collection, error)
-	UpdateCollection(id string, in CollectionIn) (Collection, error)
-	DeleteCollection(id string) error
+	SelectCollections(ctx context.Context) ([]Collection, error)
+	SelectOneCollection(ctx context.Context, id string) (Collection, error)
+	InsertCollection(ctx context.Context, in CollectionIn) (Collection, error)
+	UpdateCollection(ctx context.Context, id string, in CollectionIn) (Collection, error)
+	DeleteCollection(ctx context.Context, id string) error
 }
 
 // CollectionBody is the JSON body of a Collection

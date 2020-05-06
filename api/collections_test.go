@@ -35,7 +35,7 @@ func TestCollections(t *testing.T) {
 	assert.Nil(t, err, "Error creating test category")
 	defer deleteTestCategory(p, testCategory)
 
-	empty, errors := testApi.GetCollections()
+	empty, errors := testApi.GetCollections(context.TODO())
 	assert.Nil(t, errors)
 	assert.Equal(t, 0, len(empty.Collections), "Expected empty slice, got %#v", empty)
 
@@ -46,7 +46,7 @@ func TestCollections(t *testing.T) {
 		},
 		Category: testCategory.CategoryRef,
 	}
-	created, errors := testApi.AddCollection(in)
+	created, errors := testApi.AddCollection(context.TODO(), in)
 	assert.Nil(t, errors)
 	assert.Equal(t, in.Name, created.Name, "Expected Name to match")
 	assert.NotEmpty(t, created.ID)
@@ -54,57 +54,57 @@ func TestCollections(t *testing.T) {
 
 	// Add with bad category reference
 	in.Category.ID = in.Category.ID + "88"
-	_, errors = testApi.AddCollection(in)
+	_, errors = testApi.AddCollection(context.TODO(), in)
 	assert.Len(t, errors.Errs(), 1)
 	assert.Equal(t, api.ErrBadReference, errors.Errs()[0].Code, "errors.Errs()[0]: %#v", errors.Errs()[0])
 
 	// GET /collections should now return the created Collection
-	ret, errors := testApi.GetCollections()
+	ret, errors := testApi.GetCollections(context.TODO())
 	assert.Nil(t, errors)
 	assert.Equal(t, 0, len(empty.Collections), "Expected empty slice, got %#v", empty)
 	assert.Equal(t, 1, len(ret.Collections))
 	assert.Equal(t, *created, ret.Collections[0])
 
 	// GET /collections/{id} should now return the created Collection
-	ret2, errors := testApi.GetCollection(created.ID)
+	ret2, errors := testApi.GetCollection(context.TODO(), created.ID)
 	assert.Nil(t, errors)
 	assert.Equal(t, created, ret2)
 
 	// Bad request - no category
 	in.Category = model.CategoryRef{}
-	_, errors = testApi.AddCollection(in)
+	_, errors = testApi.AddCollection(context.TODO(), in)
 	assert.Len(t, errors.Errs(), 2, "errors.Errs(): %#v", errors.Errs())
 	assert.Equal(t, errors.Errs()[0].Code, api.ErrRequired)
 	assert.Equal(t, errors.Errs()[1].Code, api.ErrRequired)
 
 	// Collection not found
-	_, errors = testApi.GetCollection(created.ID + "99")
+	_, errors = testApi.GetCollection(context.TODO(), created.ID+"99")
 	assert.NotNil(t, errors)
 	assert.Len(t, errors.Errs(), 1)
 	assert.Equal(t, api.ErrNotFound, errors.Errs()[0].Code, "errors.Errs()[0]: %#v", errors.Errs()[0])
 
 	// Update
 	ret2.Name = "Updated"
-	updated, errors := testApi.UpdateCollection(ret2.ID, ret2.CollectionIn)
+	updated, errors := testApi.UpdateCollection(context.TODO(), ret2.ID, ret2.CollectionIn)
 	assert.Nil(t, errors)
 	assert.Equal(t, ret2.ID, updated.ID)
 	assert.Equal(t, ret2.Category, updated.Category)
 	assert.Equal(t, ret2.Name, updated.Name, "Expected Name to match")
 
 	// Update non-existant
-	_, errors = testApi.UpdateCollection(created.ID+"99", created.CollectionIn)
+	_, errors = testApi.UpdateCollection(context.TODO(), created.ID+"99", created.CollectionIn)
 	assert.Len(t, errors.Errs(), 1)
 	assert.Equal(t, api.ErrNotFound, errors.Errs()[0].Code, "errors.Errs()[0]: %#v", errors.Errs()[0])
 
 	created.Category.ID = created.Category.ID + "99"
 
 	// Update with bad category
-	_, errors = testApi.UpdateCollection(created.ID, created.CollectionIn)
+	_, errors = testApi.UpdateCollection(context.TODO(), created.ID, created.CollectionIn)
 	assert.Len(t, errors.Errs(), 1)
 	assert.Equal(t, api.ErrBadReference, errors.Errs()[0].Code, "errors.Errs()[0]: %#v", errors.Errs()[0])
 
 	// DELETE
-	errors = testApi.DeleteCollection(created.ID)
+	errors = testApi.DeleteCollection(context.TODO(), created.ID)
 	assert.Nil(t, errors)
 }
 
@@ -117,7 +117,7 @@ func createTestCategory(p model.CategoryPersister) (*model.Category, error) {
 	if err != nil {
 		return nil, err
 	}
-	created, err := p.InsertCategory(in)
+	created, err := p.InsertCategory(context.TODO(), in)
 	if err != nil {
 		return nil, err
 	}
@@ -125,5 +125,5 @@ func createTestCategory(p model.CategoryPersister) (*model.Category, error) {
 }
 
 func deleteTestCategory(p model.CategoryPersister, category *model.Category) error {
-	return p.DeleteCategory(category.ID)
+	return p.DeleteCategory(context.TODO(), category.ID)
 }

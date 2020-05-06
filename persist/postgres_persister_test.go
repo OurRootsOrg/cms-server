@@ -1,6 +1,7 @@
 package persist_test
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -29,7 +30,7 @@ func TestSelectCategories(t *testing.T) {
 		WillReturnRows(sqlmock.NewRows([]string{"id", "body", "insert_time", "last_update_time"}).
 			AddRow(1, js, now, now).AddRow(2, js, now, now))
 
-	c, err := p.SelectCategories()
+	c, err := p.SelectCategories(context.TODO())
 	assert.NoError(t, err)
 	assert.Len(t, c, 2)
 	cc := model.NewCategory(1, in)
@@ -57,7 +58,7 @@ func TestSelectOneCategory(t *testing.T) {
 		WillReturnRows(sqlmock.NewRows([]string{"id", "body", "insert_time", "last_update_time"}).
 			AddRow(int32(1), js, now, now))
 
-	c, err := p.SelectOneCategory("/categories/1")
+	c, err := p.SelectOneCategory(context.TODO(), "/categories/1")
 	assert.NoError(t, err)
 	assert.Equal(t, "/categories/1", c.ID)
 	assert.Equal(t, "category", c.Type)
@@ -81,7 +82,7 @@ func TestInsertCategory(t *testing.T) {
 		WithArgs([]byte(js)).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "body", "insert_time", "last_update_time"}).AddRow(1, js, now, now))
 
-	c, err := p.InsertCategory(cb)
+	c, err := p.InsertCategory(context.TODO(), cb)
 	assert.NoError(t, err)
 	assert.Equal(t, "/categories/1", c.ID)
 	assert.Equal(t, "category", c.Type)
@@ -105,7 +106,7 @@ func TestUpdateCategory(t *testing.T) {
 		WithArgs([]byte(js), 1).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "body", "insert_time", "last_update_time"}).AddRow(1, js, now, now))
 
-	c, err := p.UpdateCategory("/categories/1", in)
+	c, err := p.UpdateCategory(context.TODO(), "/categories/1", in)
 	assert.NoError(t, err)
 	assert.Equal(t, "/categories/1", c.ID)
 	assert.Equal(t, "category", c.Type)
@@ -121,7 +122,7 @@ func TestDeleteCategory(t *testing.T) {
 	p := persist.NewPostgresPersister("", db)
 	mock.ExpectExec("DELETE FROM category WHERE id = $1").
 		WithArgs(1).WillReturnResult(sqlmock.NewResult(0, 1))
-	err = p.DeleteCategory("/categories/1")
+	err = p.DeleteCategory(context.TODO(), "/categories/1")
 	assert.NoError(t, err)
 }
 
@@ -144,7 +145,7 @@ func TestSelectCollections(t *testing.T) {
 			AddRow(1, 1, js, now, now).
 			AddRow(2, 1, js, now, now))
 
-	c, err := p.SelectCollections()
+	c, err := p.SelectCollections(context.TODO())
 	assert.NoError(t, err)
 	assert.Len(t, c, 2)
 	cc := model.NewCollection(1, in)
@@ -173,7 +174,7 @@ func TestSelectOneCollection(t *testing.T) {
 		WillReturnRows(sqlmock.NewRows([]string{"id", "category_id", "body", "insert_time", "last_update_time"}).
 			AddRow(1, 1, js, now, now))
 
-	c, err := p.SelectOneCollection("/collections/1")
+	c, err := p.SelectOneCollection(context.TODO(), "/collections/1")
 	assert.NoError(t, err)
 	assert.Equal(t, "/collections/1", c.ID)
 	assert.Equal(t, "collection", c.Type)
@@ -201,7 +202,7 @@ func TestInsertCollection(t *testing.T) {
 		WillReturnRows(sqlmock.NewRows([]string{"id", "category_id", "body", "insert_time", "last_update_time"}).
 			AddRow(1, catID, js, now, now))
 
-	c, err := p.InsertCollection(in)
+	c, err := p.InsertCollection(context.TODO(), in)
 	assert.NoError(t, err)
 	assert.Equal(t, "/collections/1", c.ID)
 	assert.Equal(t, "collection", c.Type)
@@ -227,7 +228,7 @@ func TestUpdateCollection(t *testing.T) {
 		WillReturnRows(sqlmock.NewRows([]string{"id", "category_id", "body", "insert_time", "last_update_time"}).
 			AddRow(1, 1, js, now, now))
 
-	c, err := p.UpdateCollection("/collections/1", in)
+	c, err := p.UpdateCollection(context.TODO(), "/collections/1", in)
 	assert.NoError(t, err)
 	assert.Equal(t, "/collections/1", c.ID)
 	assert.Equal(t, "collection", c.Type)
@@ -242,7 +243,7 @@ func TestDeleteCollection(t *testing.T) {
 	p := persist.NewPostgresPersister("", db)
 	mock.ExpectExec("DELETE FROM collection WHERE id = $1").
 		WithArgs(1).WillReturnResult(sqlmock.NewResult(0, 1))
-	err = p.DeleteCollection("/collections/1")
+	err = p.DeleteCollection(context.TODO(), "/collections/1")
 	assert.NoError(t, err)
 }
 

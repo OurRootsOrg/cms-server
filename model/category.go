@@ -1,6 +1,7 @@
 package model
 
 import (
+	"context"
 	"database/sql/driver"
 	"encoding/json"
 	"errors"
@@ -20,11 +21,11 @@ const CategoryIDFormat = "/categories/%d"
 
 // CategoryPersister defines methods needed to persist categories
 type CategoryPersister interface {
-	SelectCategories() ([]Category, error)
-	SelectOneCategory(id string) (Category, error)
-	InsertCategory(in CategoryIn) (Category, error)
-	UpdateCategory(id string, body CategoryIn) (Category, error)
-	DeleteCategory(id string) error
+	SelectCategories(ctx context.Context) ([]Category, error)
+	SelectOneCategory(ctx context.Context, id string) (Category, error)
+	InsertCategory(ctx context.Context, in CategoryIn) (Category, error)
+	UpdateCategory(ctx context.Context, id string, body CategoryIn) (Category, error)
+	DeleteCategory(ctx context.Context, id string) error
 }
 
 // CategoryIn is the payload to create or update a category

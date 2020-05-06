@@ -20,7 +20,7 @@ import (
 func (app App) GetCollections(w http.ResponseWriter, req *http.Request) {
 	enc := json.NewEncoder(w)
 	w.Header().Set("Content-Type", contentType)
-	cols, errors := app.api.GetCollections()
+	cols, errors := app.api.GetCollections(app.Context())
 	if errors != nil {
 		ErrorsResponse(w, errors)
 		return
@@ -45,7 +45,7 @@ func (app App) GetCollections(w http.ResponseWriter, req *http.Request) {
 func (app App) GetCollection(w http.ResponseWriter, req *http.Request) {
 	enc := json.NewEncoder(w)
 	w.Header().Set("Content-Type", contentType)
-	collection, errors := app.api.GetCollection(req.URL.String())
+	collection, errors := app.api.GetCollection(app.Context(), req.URL.String())
 	if errors != nil {
 		ErrorsResponse(w, errors)
 		return
@@ -82,7 +82,7 @@ func (app App) PostCollection(w http.ResponseWriter, req *http.Request) {
 		OtherErrorResponse(w, http.StatusBadRequest, msg)
 		return
 	}
-	collection, errors := app.api.AddCollection(in)
+	collection, errors := app.api.AddCollection(app.Context(), in)
 	if errors != nil {
 		ErrorsResponse(w, errors)
 		return
@@ -123,7 +123,7 @@ func (app App) PutCollection(w http.ResponseWriter, req *http.Request) {
 		OtherErrorResponse(w, http.StatusBadRequest, msg)
 		return
 	}
-	collection, errors := app.api.UpdateCollection(req.URL.String(), in)
+	collection, errors := app.api.UpdateCollection(app.Context(), req.URL.String(), in)
 	if errors != nil {
 		ErrorsResponse(w, errors)
 		return
@@ -146,7 +146,7 @@ func (app App) PutCollection(w http.ResponseWriter, req *http.Request) {
 // @success 204 {object} model.Collection "OK"
 // @failure 500 {object} api.Errors "Server error"
 func (app App) DeleteCollection(w http.ResponseWriter, req *http.Request) {
-	errors := app.api.DeleteCollection(req.URL.String())
+	errors := app.api.DeleteCollection(app.Context(), req.URL.String())
 	if errors != nil {
 		ErrorsResponse(w, errors)
 		return

@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"log"
 	"net/http"
 
@@ -15,9 +16,9 @@ type CollectionResult struct {
 }
 
 // GetCollections holds the business logic around getting many Collections
-func (api API) GetCollections( /* filter/search criteria */ ) (*CollectionResult, *Errors) {
+func (api API) GetCollections(ctx context.Context /* filter/search criteria */) (*CollectionResult, *Errors) {
 	// TODO: handle search criteria and paged results
-	cols, err := api.collectionPersister.SelectCollections()
+	cols, err := api.collectionPersister.SelectCollections(ctx)
 	if err != nil {
 		return nil, NewErrors(http.StatusInternalServerError, err)
 	}
@@ -25,8 +26,8 @@ func (api API) GetCollections( /* filter/search criteria */ ) (*CollectionResult
 }
 
 // GetCollection holds the business logic around getting a Collection
-func (api API) GetCollection(id string) (*model.Collection, *Errors) {
-	collection, err := api.collectionPersister.SelectOneCollection(id)
+func (api API) GetCollection(ctx context.Context, id string) (*model.Collection, *Errors) {
+	collection, err := api.collectionPersister.SelectOneCollection(ctx, id)
 	if err == persist.ErrNoRows {
 		return nil, NewErrors(http.StatusNotFound, NewError(ErrNotFound, id))
 	} else if err != nil {
@@ -36,12 +37,12 @@ func (api API) GetCollection(id string) (*model.Collection, *Errors) {
 }
 
 // AddCollection holds the business logic around adding a Collection
-func (api API) AddCollection(in model.CollectionIn) (*model.Collection, *Errors) {
+func (api API) AddCollection(ctx context.Context, in model.CollectionIn) (*model.Collection, *Errors) {
 	err := api.validate.Struct(in)
 	if err != nil {
 		return nil, NewErrors(http.StatusBadRequest, err)
 	}
-	collection, err := api.collectionPersister.InsertCollection(in)
+	collection, err := api.collectionPersister.InsertCollection(ctx, in)
 	if err == persist.ErrForeignKeyViolation {
 		log.Printf("[ERROR] Invalid category reference: %v", err)
 		return nil, NewErrors(http.StatusBadRequest, NewError(ErrBadReference, in.Category.ID, in.Category.Type))
@@ -52,12 +53,12 @@ func (api API) AddCollection(in model.CollectionIn) (*model.Collection, *Errors)
 }
 
 // UpdateCollection holds the business logic around updating a Collection
-func (api API) UpdateCollection(id string, in model.CollectionIn) (*model.Collection, *Errors) {
+func (api API) UpdateCollection(ctx context.Context, id string, in model.CollectionIn) (*model.Collection, *Errors) {
 	err := api.validate.Struct(in)
 	if err != nil {
 		return nil, NewErrors(http.StatusBadRequest, err)
 	}
-	collection, err := api.collectionPersister.UpdateCollection(id, in)
+	collection, err := api.collectionPersister.UpdateCollection(ctx, id, in)
 	if err == persist.ErrForeignKeyViolation {
 		log.Printf("[ERROR] Invalid category reference: %v", err)
 		return nil, NewErrors(http.StatusBadRequest, NewError(ErrBadReference, in.Category.ID, in.Category.Type))
@@ -71,8 +72,8 @@ func (api API) UpdateCollection(id string, in model.CollectionIn) (*model.Collec
 }
 
 // DeleteCollection holds the business logic around deleting a Collection
-func (api API) DeleteCollection(id string) *Errors {
-	err := api.collectionPersister.DeleteCollection(id)
+func (api API) DeleteCollection(ctx context.Context, id string) *Errors {
+	err := api.collectionPersister.DeleteCollection(ctx, id)
 	if err != nil {
 		return NewErrors(http.StatusInternalServerError, err)
 	}

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -64,6 +65,11 @@ func (app App) NewRouter() *mux.Router {
 	r.HandleFunc(app.baseURL.Path+"/collections/{id}", app.PutCollection).Methods("PUT")
 	r.HandleFunc(app.baseURL.Path+"/collections/{id}", app.DeleteCollection).Methods("DELETE")
 	return r
+}
+
+// Context returns a `Context` for use processing an HTTP request
+func (app App) Context() context.Context {
+	return context.Background()
 }
 
 // NotFound returns an http.StatusNotFound response

@@ -20,7 +20,7 @@ import (
 func (app App) GetAllCategories(w http.ResponseWriter, req *http.Request) {
 	enc := json.NewEncoder(w)
 	w.Header().Set("Content-Type", contentType)
-	cats, errors := app.api.GetCategories()
+	cats, errors := app.api.GetCategories(app.Context())
 	if errors != nil {
 		ErrorsResponse(w, errors)
 		return
@@ -45,7 +45,7 @@ func (app App) GetAllCategories(w http.ResponseWriter, req *http.Request) {
 func (app App) GetCategory(w http.ResponseWriter, req *http.Request) {
 	enc := json.NewEncoder(w)
 	w.Header().Set("Content-Type", contentType)
-	category, errors := app.api.GetCategory(req.URL.String())
+	category, errors := app.api.GetCategory(app.Context(), req.URL.String())
 	if errors != nil {
 		ErrorsResponse(w, errors)
 		return
@@ -82,7 +82,7 @@ func (app App) PostCategory(w http.ResponseWriter, req *http.Request) {
 		OtherErrorResponse(w, http.StatusBadRequest, msg)
 		return
 	}
-	category, errors := app.api.AddCategory(in)
+	category, errors := app.api.AddCategory(app.Context(), in)
 	if errors != nil {
 		ErrorsResponse(w, errors)
 		return
@@ -123,7 +123,7 @@ func (app App) PutCategory(w http.ResponseWriter, req *http.Request) {
 		OtherErrorResponse(w, http.StatusBadRequest, msg)
 		return
 	}
-	category, errors := app.api.UpdateCategory(req.URL.String(), in)
+	category, errors := app.api.UpdateCategory(app.Context(), req.URL.String(), in)
 	if errors != nil {
 		ErrorsResponse(w, errors)
 		return
@@ -146,7 +146,7 @@ func (app App) PutCategory(w http.ResponseWriter, req *http.Request) {
 // @success 204 "OK"
 // @failure 500 {object} api.Errors "Server error"
 func (app App) DeleteCategory(w http.ResponseWriter, req *http.Request) {
-	errors := app.api.DeleteCategory(req.URL.String())
+	errors := app.api.DeleteCategory(app.Context(), req.URL.String())
 	if errors != nil {
 		ErrorsResponse(w, errors)
 		return

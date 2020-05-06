@@ -29,7 +29,7 @@ func TestCategories(t *testing.T) {
 	testApi := api.NewAPI().
 		CategoryPersister(p)
 
-	empty, errors := testApi.GetCategories()
+	empty, errors := testApi.GetCategories(context.TODO())
 	assert.Nil(t, errors)
 	assert.Equal(t, 0, len(empty.Categories), "Expected empty slice, got %#v", empty)
 
@@ -39,42 +39,42 @@ func TestCategories(t *testing.T) {
 			Name: "Test Category",
 		},
 	}
-	created, errors := testApi.AddCategory(in)
+	created, errors := testApi.AddCategory(context.TODO(), in)
 	assert.Nil(t, errors)
 	assert.Equal(t, in.Name, created.Name, "Expected Name to match")
 	assert.NotEmpty(t, created.ID)
 
 	// GET /collections should now return the created Category
-	ret, errors := testApi.GetCategories()
+	ret, errors := testApi.GetCategories(context.TODO())
 	assert.Nil(t, errors)
 	assert.Equal(t, 0, len(empty.Categories), "Expected empty slice, got %#v", empty)
 	assert.Equal(t, 1, len(ret.Categories))
 	assert.Equal(t, *created, ret.Categories[0])
 
 	// GET /collections/{id} should now return the created Category
-	ret2, errors := testApi.GetCategory(created.ID)
+	ret2, errors := testApi.GetCategory(context.TODO(), created.ID)
 	assert.Nil(t, errors)
 	assert.Equal(t, created, ret2)
 
 	// Category not found
-	_, errors = testApi.GetCategory(created.ID + "99")
+	_, errors = testApi.GetCategory(context.TODO(), created.ID+"99")
 	assert.NotNil(t, errors)
 	assert.Len(t, errors.Errs(), 1)
 	assert.Equal(t, api.ErrNotFound, errors.Errs()[0].Code, "errors.Errs()[0]: %#v", errors.Errs()[0])
 
 	// Update
 	ret2.Name = "Updated"
-	updated, errors := testApi.UpdateCategory(ret2.ID, ret2.CategoryIn)
+	updated, errors := testApi.UpdateCategory(context.TODO(), ret2.ID, ret2.CategoryIn)
 	assert.Nil(t, errors)
 	assert.Equal(t, ret2.ID, updated.ID)
 	assert.Equal(t, ret2.Name, updated.Name, "Expected Name to match")
 
 	// Update non-existant
-	_, errors = testApi.UpdateCategory(created.ID+"99", created.CategoryIn)
+	_, errors = testApi.UpdateCategory(context.TODO(), created.ID+"99", created.CategoryIn)
 	assert.Len(t, errors.Errs(), 1)
 	assert.Equal(t, api.ErrNotFound, errors.Errs()[0].Code, "errors.Errs()[0]: %#v", errors.Errs()[0])
 
 	// DELETE
-	errors = testApi.DeleteCategory(created.ID)
+	errors = testApi.DeleteCategory(context.TODO(), created.ID)
 	assert.Nil(t, errors)
 }
