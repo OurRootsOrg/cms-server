@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"testing"
+	"time"
 
 	"gocloud.dev/postgres"
 
@@ -56,7 +57,7 @@ func TestCollections(t *testing.T) {
 	in.Category.ID = in.Category.ID + "88"
 	_, errors = testApi.AddCollection(context.TODO(), in)
 	assert.Len(t, errors.Errs(), 1)
-	assert.Equal(t, api.ErrBadReference, errors.Errs()[0].Code, "errors.Errs()[0]: %#v", errors.Errs()[0])
+	assert.Equal(t, model.ErrBadReference, errors.Errs()[0].Code, "errors.Errs()[0]: %#v", errors.Errs()[0])
 
 	// GET /collections should now return the created Collection
 	ret, errors := testApi.GetCollections(context.TODO())
@@ -74,37 +75,45 @@ func TestCollections(t *testing.T) {
 	in.Category = model.CategoryRef{}
 	_, errors = testApi.AddCollection(context.TODO(), in)
 	assert.Len(t, errors.Errs(), 2, "errors.Errs(): %#v", errors.Errs())
-	assert.Equal(t, errors.Errs()[0].Code, api.ErrRequired)
-	assert.Equal(t, errors.Errs()[1].Code, api.ErrRequired)
+	assert.Equal(t, errors.Errs()[0].Code, model.ErrRequired)
+	assert.Equal(t, errors.Errs()[1].Code, model.ErrRequired)
 
 	// Collection not found
 	_, errors = testApi.GetCollection(context.TODO(), created.ID+"99")
 	assert.NotNil(t, errors)
 	assert.Len(t, errors.Errs(), 1)
-	assert.Equal(t, api.ErrNotFound, errors.Errs()[0].Code, "errors.Errs()[0]: %#v", errors.Errs()[0])
+	assert.Equal(t, model.ErrNotFound, errors.Errs()[0].Code, "errors.Errs()[0]: %#v", errors.Errs()[0])
 
 	// Update
 	ret2.Name = "Updated"
-	updated, errors := testApi.UpdateCollection(context.TODO(), ret2.ID, ret2.CollectionIn)
+	updated, errors := testApi.UpdateCollection(context.TODO(), ret2.ID, *ret2)
 	assert.Nil(t, errors)
 	assert.Equal(t, ret2.ID, updated.ID)
 	assert.Equal(t, ret2.Category, updated.Category)
 	assert.Equal(t, ret2.Name, updated.Name, "Expected Name to match")
 
 	// Update non-existant
-	_, errors = testApi.UpdateCollection(context.TODO(), created.ID+"99", created.CollectionIn)
+	_, errors = testApi.UpdateCollection(context.TODO(), updated.ID+"99", *updated)
 	assert.Len(t, errors.Errs(), 1)
-	assert.Equal(t, api.ErrNotFound, errors.Errs()[0].Code, "errors.Errs()[0]: %#v", errors.Errs()[0])
-
-	created.Category.ID = created.Category.ID + "99"
+	assert.Equal(t, model.ErrNotFound, errors.Errs()[0].Code, "errors.Errs()[0]: %#v", errors.Errs()[0])
 
 	// Update with bad category
-	_, errors = testApi.UpdateCollection(context.TODO(), created.ID, created.CollectionIn)
+	updated.Category.ID = updated.Category.ID + "99"
+	_, errors = testApi.UpdateCollection(context.TODO(), updated.ID, *updated)
 	assert.Len(t, errors.Errs(), 1)
-	assert.Equal(t, api.ErrBadReference, errors.Errs()[0].Code, "errors.Errs()[0]: %#v", errors.Errs()[0])
+	assert.Equal(t, model.ErrBadReference, errors.Errs()[0].Code, "errors.Errs()[0]: %#v", errors.Errs()[0])
+
+	// Update with bad LastUpdateTime
+	updated.Category.ID = ret2.Category.ID
+	updated.LastUpdateTime = time.Now().Add(-time.Minute)
+	_, errors = testApi.UpdateCollection(context.TODO(), updated.ID, *updated)
+	if assert.NotNil(t, errors) {
+		assert.Len(t, errors.Errs(), 1)
+		assert.Equal(t, model.ErrConcurrentUpdate, errors.Errs()[0].Code, "errors.Errs()[0]: %#v", errors.Errs()[0])
+	}
 
 	// DELETE
-	errors = testApi.DeleteCollection(context.TODO(), created.ID)
+	errors = testApi.DeleteCollection(context.TODO(), updated.ID)
 	assert.Nil(t, errors)
 }
 

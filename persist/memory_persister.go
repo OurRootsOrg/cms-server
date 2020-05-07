@@ -59,16 +59,14 @@ func (p MemoryPersister) InsertCategory(ctx context.Context, in model.CategoryIn
 }
 
 // UpdateCategory updates a Category in the database and returns the updated Category
-func (p MemoryPersister) UpdateCategory(ctx context.Context, id string, in model.CategoryIn) (model.Category, error) {
+func (p MemoryPersister) UpdateCategory(ctx context.Context, id string, in model.Category) (model.Category, error) {
 	_, found := p.categories[id]
 	if !found {
 		return model.Category{}, ErrNoRows
 	}
-	cat := model.NewCategory(0, in)
-	cat.ID = id
-	cat.LastUpdateTime = time.Now()
-	p.categories[cat.ID] = cat
-	return cat, nil
+	in.LastUpdateTime = time.Now()
+	p.categories[in.ID] = in
+	return in, nil
 }
 
 // DeleteCategory deletes a Category
@@ -111,7 +109,7 @@ func (p MemoryPersister) InsertCollection(ctx context.Context, in model.Collecti
 }
 
 // UpdateCollection updates a collection
-func (p MemoryPersister) UpdateCollection(ctx context.Context, id string, in model.CollectionIn) (model.Collection, error) {
+func (p MemoryPersister) UpdateCollection(ctx context.Context, id string, in model.Collection) (model.Collection, error) {
 	col := model.Collection{}
 	_, found := p.collections[id]
 	if !found {

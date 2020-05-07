@@ -1,7 +1,5 @@
 basePath: /
 definitions:
-  api.Errors:
-    type: object
   model.Category:
     properties:
       field_defs:
@@ -93,6 +91,8 @@ definitions:
     - category
     - name
     type: object
+  model.Errors:
+    type: object
   model.FieldDef:
     properties:
       csv_heading:
@@ -140,7 +140,7 @@ paths:
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/api.Errors'
+            $ref: '#/definitions/model.Errors'
       summary: returns all categories
       tags:
       - categories
@@ -165,11 +165,11 @@ paths:
         "415":
           description: Bad Content-Type
           schema:
-            $ref: '#/definitions/api.Errors'
+            $ref: '#/definitions/model.Errors'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/api.Errors'
+            $ref: '#/definitions/model.Errors'
       summary: adds a new Category
       tags:
       - categories
@@ -188,7 +188,7 @@ paths:
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/api.Errors'
+            $ref: '#/definitions/model.Errors'
       summary: deletes a Category
       tags:
       - categories
@@ -210,11 +210,11 @@ paths:
         "404":
           description: Not found
           schema:
-            $ref: '#/definitions/api.Errors'
+            $ref: '#/definitions/model.Errors'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/api.Errors'
+            $ref: '#/definitions/model.Errors'
       summary: gets a Category
       tags:
       - categories
@@ -233,7 +233,7 @@ paths:
         name: category
         required: true
         schema:
-          $ref: '#/definitions/model.CategoryIn'
+          $ref: '#/definitions/model.Category'
       produces:
       - application/json
       responses:
@@ -244,11 +244,11 @@ paths:
         "415":
           description: Bad Content-Type
           schema:
-            $ref: '#/definitions/api.Errors'
+            $ref: '#/definitions/model.Errors'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/api.Errors'
+            $ref: '#/definitions/model.Errors'
       summary: updates a Category
       tags:
       - categories
@@ -267,7 +267,7 @@ paths:
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/api.Errors'
+            $ref: '#/definitions/model.Errors'
       summary: returns all collections
       tags:
       - collections
@@ -292,11 +292,11 @@ paths:
         "415":
           description: Bad Content-Type
           schema:
-            $ref: '#/definitions/api.Errors'
+            $ref: '#/definitions/model.Errors'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/api.Errors'
+            $ref: '#/definitions/model.Errors'
       summary: adds a new Collection
       tags:
       - collections
@@ -318,7 +318,7 @@ paths:
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/api.Errors'
+            $ref: '#/definitions/model.Errors'
       summary: deletes a Collection
       tags:
       - collections
@@ -341,11 +341,11 @@ paths:
         "404":
           description: Not found
           schema:
-            $ref: '#/definitions/api.Errors'
+            $ref: '#/definitions/model.Errors'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/api.Errors'
+            $ref: '#/definitions/model.Errors'
       summary: gets a Collection
       tags:
       - collections
@@ -365,7 +365,7 @@ paths:
         name: collection
         required: true
         schema:
-          $ref: '#/definitions/model.CollectionIn'
+          $ref: '#/definitions/model.Collection'
       produces:
       - application/json
       responses:
@@ -376,11 +376,11 @@ paths:
         "415":
           description: Bad Content-Type
           schema:
-            $ref: '#/definitions/api.Errors'
+            $ref: '#/definitions/model.Errors'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/api.Errors'
+            $ref: '#/definitions/model.Errors'
       summary: updates a Collection
       tags:
       - collections

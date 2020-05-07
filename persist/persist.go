@@ -4,7 +4,9 @@ import (
 	"errors"
 )
 
-// Error definitions
+// Translated error definitions.
+// These should only be returned when translating a databsse error code.
+// For other cases, just return a `model.Error` with the proper parameters.
 
 // ErrNoRows is returned when there are no rows
 var ErrNoRows = errors.New("persist: no rows in result set")

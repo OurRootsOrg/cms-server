@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"testing"
+	"time"
 
 	"gocloud.dev/postgres"
 
@@ -60,19 +61,27 @@ func TestCategories(t *testing.T) {
 	_, errors = testApi.GetCategory(context.TODO(), created.ID+"99")
 	assert.NotNil(t, errors)
 	assert.Len(t, errors.Errs(), 1)
-	assert.Equal(t, api.ErrNotFound, errors.Errs()[0].Code, "errors.Errs()[0]: %#v", errors.Errs()[0])
+	assert.Equal(t, model.ErrNotFound, errors.Errs()[0].Code, "errors.Errs()[0]: %#v", errors.Errs()[0])
 
 	// Update
 	ret2.Name = "Updated"
-	updated, errors := testApi.UpdateCategory(context.TODO(), ret2.ID, ret2.CategoryIn)
+	updated, errors := testApi.UpdateCategory(context.TODO(), ret2.ID, *ret2)
 	assert.Nil(t, errors)
 	assert.Equal(t, ret2.ID, updated.ID)
 	assert.Equal(t, ret2.Name, updated.Name, "Expected Name to match")
 
-	// Update non-existant
-	_, errors = testApi.UpdateCategory(context.TODO(), created.ID+"99", created.CategoryIn)
+	// Update non-existent
+	_, errors = testApi.UpdateCategory(context.TODO(), created.ID+"99", *created)
 	assert.Len(t, errors.Errs(), 1)
-	assert.Equal(t, api.ErrNotFound, errors.Errs()[0].Code, "errors.Errs()[0]: %#v", errors.Errs()[0])
+	assert.Equal(t, model.ErrNotFound, errors.Errs()[0].Code, "errors.Errs()[0]: %#v", errors.Errs()[0])
+
+	// Update with bad LastUpdateTime
+	updated.LastUpdateTime = time.Now().Add(-time.Minute)
+	updated, errors = testApi.UpdateCategory(context.TODO(), updated.ID, *updated)
+	if assert.NotNil(t, errors) {
+		assert.Len(t, errors.Errs(), 1)
+		assert.Equal(t, model.ErrConcurrentUpdate, errors.Errs()[0].Code, "errors.Errs()[0]: %#v", errors.Errs()[0])
+	}
 
 	// DELETE
 	errors = testApi.DeleteCategory(context.TODO(), created.ID)
