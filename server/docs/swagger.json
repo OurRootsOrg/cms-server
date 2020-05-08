@@ -44,7 +44,7 @@
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/api.Errors"
+                            "$ref": "#/definitions/model.Errors"
                         }
                     }
                 }
@@ -82,13 +82,13 @@
                     "415": {
                         "description": "Bad Content-Type",
                         "schema": {
-                            "$ref": "#/definitions/api.Errors"
+                            "$ref": "#/definitions/model.Errors"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/api.Errors"
+                            "$ref": "#/definitions/model.Errors"
                         }
                     }
                 }
@@ -123,13 +123,13 @@
                     "404": {
                         "description": "Not found",
                         "schema": {
-                            "$ref": "#/definitions/api.Errors"
+                            "$ref": "#/definitions/model.Errors"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/api.Errors"
+                            "$ref": "#/definitions/model.Errors"
                         }
                     }
                 }
@@ -160,7 +160,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/model.CategoryIn"
+                            "$ref": "#/definitions/model.Category"
                         }
                     }
                 ],
@@ -174,13 +174,13 @@
                     "415": {
                         "description": "Bad Content-Type",
                         "schema": {
-                            "$ref": "#/definitions/api.Errors"
+                            "$ref": "#/definitions/model.Errors"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/api.Errors"
+                            "$ref": "#/definitions/model.Errors"
                         }
                     }
                 }
@@ -207,7 +207,7 @@
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/api.Errors"
+                            "$ref": "#/definitions/model.Errors"
                         }
                     }
                 }
@@ -236,7 +236,7 @@
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/api.Errors"
+                            "$ref": "#/definitions/model.Errors"
                         }
                     }
                 }
@@ -274,13 +274,13 @@
                     "415": {
                         "description": "Bad Content-Type",
                         "schema": {
-                            "$ref": "#/definitions/api.Errors"
+                            "$ref": "#/definitions/model.Errors"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/api.Errors"
+                            "$ref": "#/definitions/model.Errors"
                         }
                     }
                 }
@@ -298,8 +298,7 @@
                 "operationId": "getCollection",
                 "parameters": [
                     {
-                        "type": "string",
-                        "format": "url",
+                        "type": "integer",
                         "description": "Collection ID",
                         "name": "id",
                         "in": "path",
@@ -316,13 +315,13 @@
                     "404": {
                         "description": "Not found",
                         "schema": {
-                            "$ref": "#/definitions/api.Errors"
+                            "$ref": "#/definitions/model.Errors"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/api.Errors"
+                            "$ref": "#/definitions/model.Errors"
                         }
                     }
                 }
@@ -341,8 +340,7 @@
                 "operationId": "updateCollection",
                 "parameters": [
                     {
-                        "type": "string",
-                        "format": "url",
+                        "type": "integer",
                         "description": "Collection ID",
                         "name": "id",
                         "in": "path",
@@ -354,7 +352,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/model.CollectionIn"
+                            "$ref": "#/definitions/model.Collection"
                         }
                     }
                 ],
@@ -368,13 +366,13 @@
                     "415": {
                         "description": "Bad Content-Type",
                         "schema": {
-                            "$ref": "#/definitions/api.Errors"
+                            "$ref": "#/definitions/model.Errors"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/api.Errors"
+                            "$ref": "#/definitions/model.Errors"
                         }
                     }
                 }
@@ -387,8 +385,7 @@
                 "operationId": "deleteCollection",
                 "parameters": [
                     {
-                        "type": "string",
-                        "format": "url",
+                        "type": "integer",
                         "description": "Collection ID",
                         "name": "id",
                         "in": "path",
@@ -405,7 +402,7 @@
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/api.Errors"
+                            "$ref": "#/definitions/model.Errors"
                         }
                     }
                 }
@@ -413,9 +410,6 @@
         }
     },
     "definitions": {
-        "api.Errors": {
-            "type": "object"
-        },
         "model.Category": {
             "type": "object",
             "required": [
@@ -541,6 +535,9 @@
                     "type": "string"
                 }
             }
+        },
+        "model.Errors": {
+            "type": "object"
         },
         "model.FieldDef": {
             "type": "object",

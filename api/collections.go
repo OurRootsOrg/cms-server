@@ -16,66 +16,71 @@ type CollectionResult struct {
 }
 
 // GetCollections holds the business logic around getting many Collections
-func (api API) GetCollections(ctx context.Context /* filter/search criteria */) (*CollectionResult, *Errors) {
+func (api API) GetCollections(ctx context.Context /* filter/search criteria */) (*CollectionResult, *model.Errors) {
 	// TODO: handle search criteria and paged results
 	cols, err := api.collectionPersister.SelectCollections(ctx)
 	if err != nil {
-		return nil, NewErrors(http.StatusInternalServerError, err)
+		return nil, model.NewErrors(http.StatusInternalServerError, err)
 	}
 	return &CollectionResult{Collections: cols}, nil
 }
 
 // GetCollection holds the business logic around getting a Collection
-func (api API) GetCollection(ctx context.Context, id string) (*model.Collection, *Errors) {
+func (api API) GetCollection(ctx context.Context, id string) (*model.Collection, *model.Errors) {
 	collection, err := api.collectionPersister.SelectOneCollection(ctx, id)
 	if err == persist.ErrNoRows {
-		return nil, NewErrors(http.StatusNotFound, NewError(ErrNotFound, id))
+		return nil, model.NewErrors(http.StatusNotFound, model.NewError(model.ErrNotFound, id))
 	} else if err != nil {
-		return nil, NewErrors(http.StatusInternalServerError, err)
+		return nil, model.NewErrors(http.StatusInternalServerError, err)
 	}
 	return &collection, nil
 }
 
 // AddCollection holds the business logic around adding a Collection
-func (api API) AddCollection(ctx context.Context, in model.CollectionIn) (*model.Collection, *Errors) {
+func (api API) AddCollection(ctx context.Context, in model.CollectionIn) (*model.Collection, *model.Errors) {
 	err := api.validate.Struct(in)
 	if err != nil {
-		return nil, NewErrors(http.StatusBadRequest, err)
+		return nil, model.NewErrors(http.StatusBadRequest, err)
 	}
 	collection, err := api.collectionPersister.InsertCollection(ctx, in)
 	if err == persist.ErrForeignKeyViolation {
 		log.Printf("[ERROR] Invalid category reference: %v", err)
-		return nil, NewErrors(http.StatusBadRequest, NewError(ErrBadReference, in.Category.ID, in.Category.Type))
+		return nil, model.NewErrors(http.StatusBadRequest, model.NewError(model.ErrBadReference, in.Category.ID, in.Category.Type))
 	} else if err != nil {
-		return nil, NewErrors(http.StatusInternalServerError, err)
+		return nil, model.NewErrors(http.StatusInternalServerError, err)
 	}
 	return &collection, nil
 }
 
 // UpdateCollection holds the business logic around updating a Collection
-func (api API) UpdateCollection(ctx context.Context, id string, in model.CollectionIn) (*model.Collection, *Errors) {
+func (api API) UpdateCollection(ctx context.Context, id string, in model.Collection) (*model.Collection, *model.Errors) {
 	err := api.validate.Struct(in)
 	if err != nil {
-		return nil, NewErrors(http.StatusBadRequest, err)
+		return nil, model.NewErrors(http.StatusBadRequest, err)
 	}
 	collection, err := api.collectionPersister.UpdateCollection(ctx, id, in)
+	if er, ok := err.(model.Error); ok {
+		if er.Code == model.ErrConcurrentUpdate {
+			return nil, model.NewErrors(http.StatusConflict, er)
+		} else if er.Code == model.ErrNotFound {
+			// Not allowed to add a Collection with PUT
+			return nil, model.NewErrors(http.StatusNotFound, er)
+		}
+	}
 	if err == persist.ErrForeignKeyViolation {
 		log.Printf("[ERROR] Invalid category reference: %v", err)
-		return nil, NewErrors(http.StatusBadRequest, NewError(ErrBadReference, in.Category.ID, in.Category.Type))
-	} else if err == persist.ErrNoRows {
-		// Not allowed to add a Collection with PUT
-		return nil, NewErrors(http.StatusNotFound, NewError(ErrNotFound, id))
+		return nil, model.NewErrors(http.StatusBadRequest, model.NewError(model.ErrBadReference, in.Category.ID, in.Category.Type))
 	} else if err != nil {
-		return nil, NewErrors(http.StatusInternalServerError, err)
+		return nil, model.NewErrors(http.StatusInternalServerError, err)
 	}
 	return &collection, nil
 }
 
 // DeleteCollection holds the business logic around deleting a Collection
-func (api API) DeleteCollection(ctx context.Context, id string) *Errors {
+func (api API) DeleteCollection(ctx context.Context, id string) *model.Errors {
 	err := api.collectionPersister.DeleteCollection(ctx, id)
 	if err != nil {
-		return NewErrors(http.StatusInternalServerError, err)
+		return model.NewErrors(http.StatusInternalServerError, err)
 	}
 	return nil
 }

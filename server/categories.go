@@ -16,7 +16,7 @@ import (
 // @id getCategories
 // @produce application/json
 // @success 200 {array} model.Category "OK"
-// @failure 500 {object} api.Errors "Server error"
+// @failure 500 {object} model.Errors "Server error"
 func (app App) GetAllCategories(w http.ResponseWriter, req *http.Request) {
 	enc := json.NewEncoder(w)
 	w.Header().Set("Content-Type", contentType)
@@ -40,8 +40,8 @@ func (app App) GetAllCategories(w http.ResponseWriter, req *http.Request) {
 // @Param id path integer true "Category ID"
 // @produce application/json
 // @success 200 {object} model.Category "OK"
-// @failure 404 {object} api.Errors "Not found"
-// @failure 500 {object} api.Errors "Server error"
+// @failure 404 {object} model.Errors "Not found"
+// @failure 500 {object} model.Errors "Server error"
 func (app App) GetCategory(w http.ResponseWriter, req *http.Request) {
 	enc := json.NewEncoder(w)
 	w.Header().Set("Content-Type", contentType)
@@ -66,20 +66,20 @@ func (app App) GetCategory(w http.ResponseWriter, req *http.Request) {
 // @accept application/json
 // @produce application/json
 // @success 201 {object} model.Category "OK"
-// @failure 415 {object} api.Errors "Bad Content-Type"
-// @failure 500 {object} api.Errors "Server error"
+// @failure 415 {object} model.Errors "Bad Content-Type"
+// @failure 500 {object} model.Errors "Server error"
 func (app App) PostCategory(w http.ResponseWriter, req *http.Request) {
 	mt, _, err := mime.ParseMediaType(req.Header.Get("Content-Type"))
 	if err != nil || mt != contentType {
 		msg := fmt.Sprintf("Bad Content-Type '%s'", mt)
-		OtherErrorResponse(w, http.StatusUnsupportedMediaType, msg)
+		ErrorResponse(w, http.StatusUnsupportedMediaType, msg)
 		return
 	}
 	in := model.CategoryIn{}
 	err = json.NewDecoder(req.Body).Decode(&in)
 	if err != nil {
 		msg := fmt.Sprintf("Bad request: %v", err.Error())
-		OtherErrorResponse(w, http.StatusBadRequest, msg)
+		ErrorResponse(w, http.StatusBadRequest, msg)
 		return
 	}
 	category, errors := app.api.AddCategory(app.Context(), in)
@@ -103,24 +103,24 @@ func (app App) PostCategory(w http.ResponseWriter, req *http.Request) {
 // @tags categories
 // @id updateCategory
 // @Param id path integer true "Category ID"
-// @Param category body model.CategoryIn true "Update Category"
+// @Param category body model.Category true "Update Category"
 // @accept application/json
 // @produce application/json
 // @success 200 {object} model.Category "OK"
-// @failure 415 {object} api.Errors "Bad Content-Type"
-// @failure 500 {object} api.Errors "Server error"
+// @failure 415 {object} model.Errors "Bad Content-Type"
+// @failure 500 {object} model.Errors "Server error"
 func (app App) PutCategory(w http.ResponseWriter, req *http.Request) {
 	mt, _, err := mime.ParseMediaType(req.Header.Get("Content-Type"))
 	if err != nil || mt != contentType {
 		msg := fmt.Sprintf("Bad Content-Type '%s'", mt)
-		OtherErrorResponse(w, http.StatusUnsupportedMediaType, msg)
+		ErrorResponse(w, http.StatusUnsupportedMediaType, msg)
 		return
 	}
-	var in model.CategoryIn
+	var in model.Category
 	err = json.NewDecoder(req.Body).Decode(&in)
 	if err != nil {
 		msg := fmt.Sprintf("Bad request: %v", err.Error())
-		OtherErrorResponse(w, http.StatusBadRequest, msg)
+		ErrorResponse(w, http.StatusBadRequest, msg)
 		return
 	}
 	category, errors := app.api.UpdateCategory(app.Context(), req.URL.String(), in)
@@ -144,7 +144,7 @@ func (app App) PutCategory(w http.ResponseWriter, req *http.Request) {
 // @id deleteCategory
 // @Param id path integer true "Category ID"
 // @success 204 "OK"
-// @failure 500 {object} api.Errors "Server error"
+// @failure 500 {object} model.Errors "Server error"
 func (app App) DeleteCategory(w http.ResponseWriter, req *http.Request) {
 	errors := app.api.DeleteCategory(app.Context(), req.URL.String())
 	if errors != nil {

@@ -55,7 +55,7 @@ var doc = `{
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/api.Errors"
+                            "$ref": "#/definitions/model.Errors"
                         }
                     }
                 }
@@ -93,13 +93,13 @@ var doc = `{
                     "415": {
                         "description": "Bad Content-Type",
                         "schema": {
-                            "$ref": "#/definitions/api.Errors"
+                            "$ref": "#/definitions/model.Errors"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/api.Errors"
+                            "$ref": "#/definitions/model.Errors"
                         }
                     }
                 }
@@ -134,13 +134,13 @@ var doc = `{
                     "404": {
                         "description": "Not found",
                         "schema": {
-                            "$ref": "#/definitions/api.Errors"
+                            "$ref": "#/definitions/model.Errors"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/api.Errors"
+                            "$ref": "#/definitions/model.Errors"
                         }
                     }
                 }
@@ -171,7 +171,7 @@ var doc = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/model.CategoryIn"
+                            "$ref": "#/definitions/model.Category"
                         }
                     }
                 ],
@@ -185,13 +185,13 @@ var doc = `{
                     "415": {
                         "description": "Bad Content-Type",
                         "schema": {
-                            "$ref": "#/definitions/api.Errors"
+                            "$ref": "#/definitions/model.Errors"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/api.Errors"
+                            "$ref": "#/definitions/model.Errors"
                         }
                     }
                 }
@@ -218,7 +218,7 @@ var doc = `{
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/api.Errors"
+                            "$ref": "#/definitions/model.Errors"
                         }
                     }
                 }
@@ -247,7 +247,7 @@ var doc = `{
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/api.Errors"
+                            "$ref": "#/definitions/model.Errors"
                         }
                     }
                 }
@@ -285,13 +285,13 @@ var doc = `{
                     "415": {
                         "description": "Bad Content-Type",
                         "schema": {
-                            "$ref": "#/definitions/api.Errors"
+                            "$ref": "#/definitions/model.Errors"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/api.Errors"
+                            "$ref": "#/definitions/model.Errors"
                         }
                     }
                 }
@@ -309,8 +309,7 @@ var doc = `{
                 "operationId": "getCollection",
                 "parameters": [
                     {
-                        "type": "string",
-                        "format": "url",
+                        "type": "integer",
                         "description": "Collection ID",
                         "name": "id",
                         "in": "path",
@@ -327,13 +326,13 @@ var doc = `{
                     "404": {
                         "description": "Not found",
                         "schema": {
-                            "$ref": "#/definitions/api.Errors"
+                            "$ref": "#/definitions/model.Errors"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/api.Errors"
+                            "$ref": "#/definitions/model.Errors"
                         }
                     }
                 }
@@ -352,8 +351,7 @@ var doc = `{
                 "operationId": "updateCollection",
                 "parameters": [
                     {
-                        "type": "string",
-                        "format": "url",
+                        "type": "integer",
                         "description": "Collection ID",
                         "name": "id",
                         "in": "path",
@@ -365,7 +363,7 @@ var doc = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/model.CollectionIn"
+                            "$ref": "#/definitions/model.Collection"
                         }
                     }
                 ],
@@ -379,13 +377,13 @@ var doc = `{
                     "415": {
                         "description": "Bad Content-Type",
                         "schema": {
-                            "$ref": "#/definitions/api.Errors"
+                            "$ref": "#/definitions/model.Errors"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/api.Errors"
+                            "$ref": "#/definitions/model.Errors"
                         }
                     }
                 }
@@ -398,8 +396,7 @@ var doc = `{
                 "operationId": "deleteCollection",
                 "parameters": [
                     {
-                        "type": "string",
-                        "format": "url",
+                        "type": "integer",
                         "description": "Collection ID",
                         "name": "id",
                         "in": "path",
@@ -416,7 +413,7 @@ var doc = `{
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/api.Errors"
+                            "$ref": "#/definitions/model.Errors"
                         }
                     }
                 }
@@ -424,9 +421,6 @@ var doc = `{
         }
     },
     "definitions": {
-        "api.Errors": {
-            "type": "object"
-        },
         "model.Category": {
             "type": "object",
             "required": [
@@ -552,6 +546,9 @@ var doc = `{
                     "type": "string"
                 }
             }
+        },
+        "model.Errors": {
+            "type": "object"
         },
         "model.FieldDef": {
             "type": "object",
