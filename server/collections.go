@@ -37,7 +37,7 @@ func (app App) GetCollections(w http.ResponseWriter, req *http.Request) {
 // @router /collections/{id} [get]
 // @tags collections
 // @id getCollection
-// @Param id path string true "Collection ID" format(url)
+// @Param id path integer true "Collection ID"
 // @produce application/json
 // @success 200 {object} model.Collection "OK"
 // @failure 404 {object} model.Errors "Not found"
@@ -102,7 +102,7 @@ func (app App) PostCollection(w http.ResponseWriter, req *http.Request) {
 // @router /collections/{id} [put]
 // @tags collections
 // @id updateCollection
-// @Param id path string true "Collection ID" format(url)
+// @Param id path integer true "Collection ID"
 // @Param collection body model.Collection true "Update Collection"
 // @accept application/json
 // @produce application/json
@@ -142,7 +142,7 @@ func (app App) PutCollection(w http.ResponseWriter, req *http.Request) {
 // @router /collections/{id} [delete]
 // @tags collections
 // @id deleteCollection
-// @Param id path string true "Collection ID" format(url)
+// @Param id path integer true "Collection ID"
 // @success 204 {object} model.Collection "OK"
 // @failure 500 {object} model.Errors "Server error"
 func (app App) DeleteCollection(w http.ResponseWriter, req *http.Request) {

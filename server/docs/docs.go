@@ -309,8 +309,7 @@ var doc = `{
                 "operationId": "getCollection",
                 "parameters": [
                     {
-                        "type": "string",
-                        "format": "url",
+                        "type": "integer",
                         "description": "Collection ID",
                         "name": "id",
                         "in": "path",
@@ -352,8 +351,7 @@ var doc = `{
                 "operationId": "updateCollection",
                 "parameters": [
                     {
-                        "type": "string",
-                        "format": "url",
+                        "type": "integer",
                         "description": "Collection ID",
                         "name": "id",
                         "in": "path",
@@ -398,8 +396,7 @@ var doc = `{
                 "operationId": "deleteCollection",
                 "parameters": [
                     {
-                        "type": "string",
-                        "format": "url",
+                        "type": "integer",
                         "description": "Collection ID",
                         "name": "id",
                         "in": "path",

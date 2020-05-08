@@ -298,8 +298,7 @@
                 "operationId": "getCollection",
                 "parameters": [
                     {
-                        "type": "string",
-                        "format": "url",
+                        "type": "integer",
                         "description": "Collection ID",
                         "name": "id",
                         "in": "path",
@@ -341,8 +340,7 @@
                 "operationId": "updateCollection",
                 "parameters": [
                     {
-                        "type": "string",
-                        "format": "url",
+                        "type": "integer",
                         "description": "Collection ID",
                         "name": "id",
                         "in": "path",
@@ -387,8 +385,7 @@
                 "operationId": "deleteCollection",
                 "parameters": [
                     {
-                        "type": "string",
-                        "format": "url",
+                        "type": "integer",
                         "description": "Collection ID",
                         "name": "id",
                         "in": "path",

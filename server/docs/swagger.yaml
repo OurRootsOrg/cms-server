@@ -305,11 +305,10 @@ paths:
       operationId: deleteCollection
       parameters:
       - description: Collection ID
-        format: url
         in: path
         name: id
         required: true
-        type: string
+        type: integer
       responses:
         "204":
           description: OK
@@ -326,11 +325,10 @@ paths:
       operationId: getCollection
       parameters:
       - description: Collection ID
-        format: url
         in: path
         name: id
         required: true
-        type: string
+        type: integer
       produces:
       - application/json
       responses:
@@ -355,11 +353,10 @@ paths:
       operationId: updateCollection
       parameters:
       - description: Collection ID
-        format: url
         in: path
         name: id
         required: true
-        type: string
+        type: integer
       - description: Update Collection
         in: body
         name: collection
