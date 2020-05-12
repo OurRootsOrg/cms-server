@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/dgrijalva/jwt-go"
 	"github.com/ourrootsorg/cms-server/model"
 	"github.com/ourrootsorg/cms-server/persist"
 )
@@ -18,6 +19,12 @@ type CategoryResult struct {
 
 // GetCategories holds the business logic around getting many Categories
 func (api API) GetCategories(ctx context.Context /* filter/search criteria */) (*CategoryResult, *model.Errors) {
+	user := ctx.Value("user")
+	log.Printf("[DEBUG] This is an authenticated request")
+	log.Printf("[DEBUG] Claim content:\n")
+	for k, v := range user.(*jwt.Token).Claims.(jwt.MapClaims) {
+		log.Printf("[DEBUG] %s :\t%#v\n", k, v)
+	}
 	// TODO: handle search criteria and paged results
 	cols, err := api.categoryPersister.SelectCategories(ctx)
 	if err != nil {

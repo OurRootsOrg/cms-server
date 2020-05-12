@@ -17,10 +17,11 @@ import (
 // @produce application/json
 // @success 200 {array} model.Category "OK"
 // @failure 500 {object} model.Errors "Server error"
+// @Security OAuth2Implicit[cms,openid,profile,email]
 func (app App) GetAllCategories(w http.ResponseWriter, req *http.Request) {
 	enc := json.NewEncoder(w)
 	w.Header().Set("Content-Type", contentType)
-	cats, errors := app.api.GetCategories(app.Context())
+	cats, errors := app.api.GetCategories(req.Context())
 	if errors != nil {
 		ErrorsResponse(w, errors)
 		return
@@ -45,7 +46,7 @@ func (app App) GetAllCategories(w http.ResponseWriter, req *http.Request) {
 func (app App) GetCategory(w http.ResponseWriter, req *http.Request) {
 	enc := json.NewEncoder(w)
 	w.Header().Set("Content-Type", contentType)
-	category, errors := app.api.GetCategory(app.Context(), req.URL.String())
+	category, errors := app.api.GetCategory(req.Context(), req.URL.String())
 	if errors != nil {
 		ErrorsResponse(w, errors)
 		return
@@ -82,7 +83,7 @@ func (app App) PostCategory(w http.ResponseWriter, req *http.Request) {
 		ErrorResponse(w, http.StatusBadRequest, msg)
 		return
 	}
-	category, errors := app.api.AddCategory(app.Context(), in)
+	category, errors := app.api.AddCategory(req.Context(), in)
 	if errors != nil {
 		ErrorsResponse(w, errors)
 		return
@@ -123,7 +124,7 @@ func (app App) PutCategory(w http.ResponseWriter, req *http.Request) {
 		ErrorResponse(w, http.StatusBadRequest, msg)
 		return
 	}
-	category, errors := app.api.UpdateCategory(app.Context(), req.URL.String(), in)
+	category, errors := app.api.UpdateCategory(req.Context(), req.URL.String(), in)
 	if errors != nil {
 		ErrorsResponse(w, errors)
 		return
@@ -146,7 +147,7 @@ func (app App) PutCategory(w http.ResponseWriter, req *http.Request) {
 // @success 204 "OK"
 // @failure 500 {object} model.Errors "Server error"
 func (app App) DeleteCategory(w http.ResponseWriter, req *http.Request) {
-	errors := app.api.DeleteCategory(app.Context(), req.URL.String())
+	errors := app.api.DeleteCategory(req.Context(), req.URL.String())
 	if errors != nil {
 		ErrorsResponse(w, errors)
 		return

@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"html/template"
 	"time"
 )
 
@@ -35,9 +36,10 @@ type CategoryIn struct {
 
 // CategoryBody is the JSON part of the Category object
 type CategoryBody struct {
-	Name      string      `json:"name,omitempty" validate:"required"`
-	FieldDefs FieldDefSet `json:"field_defs,omitempty"` //   example:"{\"int_field\":\"Int\", \"string_field\":\"String\"}"
-	//IndexMapping
+	Name                      string             `json:"name,omitempty" validate:"required"`
+	FieldDefs                 FieldDefSet        `json:"field_defs,omitempty"` // example:"{\"int_field\":\"Int\", \"string_field\":\"String\"}"
+	SearchResultsPageTemplate *template.Template `json:"search_results_page_template,omitempty"`
+	DetailsPageTemplate       *template.Template `json:"details_page_template,omitempty"`
 }
 
 // NewCategoryIn constructs a CategoryIn

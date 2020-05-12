@@ -34,6 +34,16 @@ var doc = `{
     "paths": {
         "/categories": {
             "get": {
+                "security": [
+                    {
+                        "OAuth2Implicit": [
+                            "cms",
+                            "openid",
+                            "profile",
+                            "email"
+                        ]
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -677,6 +687,9 @@ var doc = `{
                 "name"
             ],
             "properties": {
+                "details_page_template": {
+                    "type": "string"
+                },
                 "field_defs": {
                     "description": "example:\"{\\\"int_field\\\":\\\"Int\\\", \\\"string_field\\\":\\\"String\\\"}\"",
                     "type": "object",
@@ -694,6 +707,13 @@ var doc = `{
                 },
                 "name": {
                     "type": "string"
+                },
+                "search_results_page_template": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string",
+                    "example": "category"
                 }
             }
         },
@@ -703,12 +723,18 @@ var doc = `{
                 "name"
             ],
             "properties": {
+                "details_page_template": {
+                    "type": "string"
+                },
                 "field_defs": {
                     "description": "example:\"{\\\"int_field\\\":\\\"Int\\\", \\\"string_field\\\":\\\"String\\\"}\"",
                     "type": "object",
                     "$ref": "#/definitions/model.FieldDefSet"
                 },
                 "name": {
+                    "type": "string"
+                },
+                "search_results_page_template": {
                     "type": "string"
                 }
             }
@@ -839,6 +865,19 @@ var doc = `{
                 "name": {
                     "type": "string"
                 }
+            }
+        }
+    },
+    "securityDefinitions": {
+        "OAuth2Implicit": {
+            "type": "oauth2",
+            "flow": "implicit",
+            "authorizationUrl": "https://ourroots-jim.auth0.com/authorize?audience=https%3A%2F%2Flocalhost%3A3000%2F",
+            "scopes": {
+                "cms": " Grants read and write access to the CMS",
+                "email": " Grants access to OIDC email attributes",
+                "openid": " Indicates that the application intends to use OIDC to verify the user's identity",
+                "profile": " Grants access to OIDC user profile attributes"
             }
         }
     }

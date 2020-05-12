@@ -3,11 +3,15 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
 	"net/url"
+	"os"
 
+	jwtmiddleware "github.com/auth0/go-jwt-middleware"
+	"github.com/dgrijalva/jwt-go"
 	"github.com/gorilla/mux"
 	"github.com/ourrootsorg/cms-server/api"
 	"github.com/ourrootsorg/cms-server/model"
@@ -37,8 +41,10 @@ type localAPI interface {
 
 // App is the container for the application
 type App struct {
-	baseURL url.URL
-	api     localAPI
+	baseURL      url.URL
+	api          localAPI
+	oidcAudience string
+	oidcDomain   string
 }
 
 // NewApp builds an App
@@ -61,24 +67,70 @@ func (app *App) API(api localAPI) *App {
 	return app
 }
 
-// GetIndex redirects to the Swagger documentation
-func (app App) GetIndex(w http.ResponseWriter, req *http.Request) {
-	http.Redirect(w, req, app.baseURL.Path+"/swagger/", http.StatusTemporaryRedirect)
+// OIDCAudience sets the OIDC audience for the app
+func (app *App) OIDCAudience(oidcAudience string) *App {
+	app.oidcAudience = oidcAudience
+	return app
 }
 
+// OIDCDomain sets the OIDC domain for the app
+func (app *App) OIDCDomain(oidcDomain string) *App {
+	app.oidcDomain = oidcDomain
+	return app
+}
+
+// GetIndex redirects to the Swagger documentation
+func (app App) GetIndex(w http.ResponseWriter, req *http.Request) {
+	http.Redirect(w, req,
+		app.baseURL.Path+"/swagger/index.html?oauth2RedirectUrl="+url.QueryEscape(app.baseURL.String()+"/swagger/oauth2-redirect.html")+
+			"&url="+url.QueryEscape(app.baseURL.String()+"/swagger/doc.json"), http.StatusTemporaryRedirect)
+}
+
+// GetHealth always returns `http.StatusOK` to indicate a running server
 func (app App) GetHealth(w http.ResponseWriter, req *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
 // NewRouter builds a router for handling requests
 func (app App) NewRouter() *mux.Router {
+	// if app.oidcAudience == "" || app.oidcDomain == "" {
+	// 	// Run without authentication
+	// }
+	jwtMiddleware := jwtmiddleware.New(jwtmiddleware.Options{
+		ValidationKeyGetter: func(token *jwt.Token) (interface{}, error) {
+			// Verify 'aud' claim
+			log.Printf("[DEBUG] token: %#v, oidcAudience: %#v, oidcDomain: %#v", *token, app.oidcAudience, app.oidcDomain)
+			checkAud := token.Claims.(jwt.MapClaims).VerifyAudience(app.oidcAudience, false)
+			if !checkAud {
+				log.Printf("[DEBUG] invalid audience %v", *token)
+				return token, errors.New("invalid audience")
+			}
+			// Verify 'iss' claim
+			iss := "https://" + app.oidcDomain + "/"
+			checkIss := token.Claims.(jwt.MapClaims).VerifyIssuer(iss, false)
+			if !checkIss {
+				log.Printf("[DEBUG] invalid issuer %v", *token)
+				return token, errors.New("invalid issuer")
+			}
+
+			cert, err := getPemCert(token)
+			if err != nil {
+				panic(err.Error())
+			}
+
+			result, _ := jwt.ParseRSAPublicKeyFromPEM([]byte(cert))
+			return result, nil
+		},
+		SigningMethod: jwt.SigningMethodRS256,
+	})
 	r := mux.NewRouter()
 	r.StrictSlash(true)
 	r.HandleFunc(app.baseURL.Path+"/", app.GetIndex).Methods("GET")
 	r.HandleFunc(app.baseURL.Path+"/health", app.GetHealth).Methods("GET")
 	r.HandleFunc(app.baseURL.Path+"/index.html", app.GetIndex).Methods("GET")
 
-	r.HandleFunc(app.baseURL.Path+"/categories", app.GetAllCategories).Methods("GET")
+	r.Handle(app.baseURL.Path+"/categories", jwtMiddleware.Handler(http.HandlerFunc(app.GetAllCategories))).Methods("GET")
+	// r.HandleFunc(app.baseURL.Path+"/categories", app.GetAllCategories).Methods("GET")
 	r.HandleFunc(app.baseURL.Path+"/categories", app.PostCategory).Methods("POST")
 	r.HandleFunc(app.baseURL.Path+"/categories/{id}", app.GetCategory).Methods("GET")
 	r.HandleFunc(app.baseURL.Path+"/categories/{id}", app.PutCategory).Methods("PUT")
@@ -101,9 +153,47 @@ func (app App) NewRouter() *mux.Router {
 	return r
 }
 
-// Context returns a `Context` for use processing an HTTP request
-func (app App) Context() context.Context {
-	return context.Background()
+type jwks struct {
+	Keys []jsonWebKeys `json:"keys"`
+}
+
+type jsonWebKeys struct {
+	Kty string   `json:"kty"`
+	Kid string   `json:"kid"`
+	Use string   `json:"use"`
+	N   string   `json:"n"`
+	E   string   `json:"e"`
+	X5c []string `json:"x5c"`
+}
+
+func getPemCert(token *jwt.Token) (string, error) {
+	cert := ""
+	resp, err := http.Get("https://" + os.Getenv("AUTH0_DOMAIN") + "/.well-known/jwks.json")
+
+	if err != nil {
+		return cert, err
+	}
+	defer resp.Body.Close()
+
+	var jwk = jwks{}
+	err = json.NewDecoder(resp.Body).Decode(&jwk)
+
+	if err != nil {
+		return cert, err
+	}
+
+	for k := range jwk.Keys {
+		if token.Header["kid"] == jwk.Keys[k].Kid {
+			cert = "-----BEGIN CERTIFICATE-----\n" + jwk.Keys[k].X5c[0] + "\n-----END CERTIFICATE-----"
+		}
+	}
+
+	if cert == "" {
+		err := errors.New("unable to find appropriate key")
+		return cert, err
+	}
+
+	return cert, nil
 }
 
 // NotFound returns an http.StatusNotFound response

@@ -1,0 +1,81 @@
+// Persister is a generic persistence interface
+// type Persister interface {
+// 	SelectMany(t model.Type /* criteria & paging */) ([]interface{}, error)
+// 	SelectOne(t model.Type, id string) (interface{}, error)
+// 	Insert(t model.Type, entity interface{}) (interface{}, error)
+// 	Update(t model.Type, id string, entity interface{}) (interface{}, error)
+// 	Delete(t model.Type, id string) error
+// }
+
+
+// // SelectMany selects many rows
+// func (p PostgresPersister) SelectMany(t model.Type /* criteria & paging */) ([]interface{}, error) {
+// 	return nil, nil
+// }
+
+// // SelectOne selects a row
+// func (p PostgresPersister) SelectOne(t model.Type, id string) (interface{}, error) {
+// 	return nil, nil
+// }
+
+// // Insert inserts a row
+// func (p PostgresPersister) Insert(t model.Type, entity interface{}) (interface{}, error) {
+// 	return nil, nil
+// }
+
+// Update updates a row
+// func (p PostgresPersister) Update(t model.Type, id string, entity interface{}) (interface{}, error) {
+// 	var dbid int32
+// 	fmt.Sscanf(id, p.pathPrefix+model.CollectionIDFormat, &dbid)
+// 	var catID int32
+// 	fmt.Sscanf(in.Category.ID, p.pathPrefix+model.CategoryIDFormat, &catID)
+// 	var collection model.Collection
+// 	err := p.db.QueryRow(
+// 		`UPDATE collection SET body = $1, category_id = $2, last_update_time = CURRENT_TIMESTAMP
+// 		 WHERE id = $3
+// 		 RETURNING id, category_id, body, insert_time, last_update_time`,
+// 		in.CollectionBody, catID, dbid).
+// 		Scan(
+// 			&dbid,
+// 			&collection.Category,
+// 			&collection.CollectionBody,
+// 			&collection.InsertTime,
+// 			&collection.LastUpdateTime,
+// 		)
+// 	collection.ID = p.pathPrefix + fmt.Sprintf(model.CollectionIDFormat, dbid)
+// 	collection.Type = "collection"
+// 	return collection, translateError(err)
+// }
+
+// Delete deletes a row
+// func (p PostgresPersister) Delete(t model.Type, id string) error {
+// 	var dbid int32
+// 	fmt.Sscanf(id, p.pathPrefix+t.IDFormat(), &dbid)
+// 	_, err := p.db.Exec(fmt.Sprintf("DELETE FROM %s WHERE id = $1", t.TableName()), dbid)
+// 	return translateError(err)
+// }
+
+
+type Type struct {
+	idFormat  string
+	name      string
+	tableName string
+}
+
+func (t Type) IDFormat() string {
+	return t.idFormat
+}
+func (t Type) Name() string {
+	return t.name
+}
+func (t Type) TableName() string {
+	return t.tableName
+}
+
+func CollectionType() Type {
+	return Type{
+		idFormat:  CollectionIDFormat,
+		name:      CollectionName,
+		tableName: "collections",
+	}
+}
