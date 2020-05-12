@@ -34,20 +34,31 @@ PERSISTER=sql DATABASE_URL=postgres://ourroots:password@localhost:5432/cms?sslmo
 ```
 
 ## Instructions for running server and uglyui client 
-#### requires docker-compose, tilt, npm, and vue
+#### requires docker-compose, tilt, psql, npm, and vue
 
 ```
-install docker                  # https://www.docker.com/ - includes docker-compose on Mac
-install tilt                    # https://tilt.dev/ - makes rebuilds much faster
-install npm                     # https://nodejs.org/en/ - includes npm
+install docker                  # https://www.docker.com/ 
+install docker-compose          # https://docs.docker.com/compose/install/
+                                  # no need to install docker-compose on mac since mac docker includes compose
+install tilt                    # https://tilt.dev/
+                                  # optional but makes rebuilds much faster
+                                  # ignore kubernetes and kubectl; you just need the one-line curl install
+install npm                     # https://nodejs.org/en/ 
+                                  # node includes npm
+install psql                    # https://blog.timescale.com/tutorials/how-to-install-psql-on-mac-ubuntu-debian-windows/
 npm install -g @vue/cli         # the uglyui client uses vue
 
 docker volume create cms_pgdata # do this once to create a persistent database volume
 tilt up                         # run the server and dependencies
+                                  # alternatively, run docker-compose up --build
 cd db && ./db_setup.sh          # do this once to set up the database
+                                  # make sure you have psql (postgres client) available on your path
+tilt down && tilt up            # do this once after you've set up the database to restart the server
+                                  # alternatively, run docker-compose down && docker-compose up --build
 cd ../uglyui                    # the directory for the uglyui client
 npm install                     # do this once, and again if you get a missing dependency error
 npm run serve                   # run the ugly client
                                 # make changes to either the server or client, everything reloads automatically
 tilt down                       # clean up docker images when done
+                                  # alternatively, run docker-compose down
 ```
