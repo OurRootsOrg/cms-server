@@ -97,14 +97,14 @@ func TestUpdateCategory(t *testing.T) {
 	assert.NoError(t, err)
 	defer db.Close()
 	p := persist.NewPostgresPersister("", db)
-	in := makeCategoryIn(t)
-	js, err := json.Marshal(in)
+	in := makeCategory(t)
+	js, err := json.Marshal(in.CategoryBody)
 	assert.NoError(t, err)
 
 	now := time.Now()
-	mock.ExpectQuery("UPDATE category SET body = $1, last_update_time = CURRENT_TIMESTAMP WHERE id = $2 RETURNING id, body, insert_time, last_update_time").
-		WithArgs([]byte(js), 1).
-		WillReturnRows(sqlmock.NewRows([]string{"id", "body", "insert_time", "last_update_time"}).AddRow(1, js, now, now))
+	mock.ExpectQuery("UPDATE category SET body = $1, last_update_time = CURRENT_TIMESTAMP WHERE id = $2 AND last_update_time = $3 RETURNING id, body, insert_time, last_update_time").
+		WithArgs([]byte(js), 1, in.LastUpdateTime).
+		WillReturnRows(sqlmock.NewRows([]string{"id", "body", "insert_time", "last_update_time"}).AddRow(1, js, in.InsertTime, now))
 
 	c, err := p.UpdateCategory(context.TODO(), "/categories/1", in)
 	assert.NoError(t, err)
@@ -112,7 +112,7 @@ func TestUpdateCategory(t *testing.T) {
 	assert.Equal(t, "category", c.Type)
 	assert.Equal(t, in.Name, c.Name)
 	assert.Equal(t, in.FieldDefs, c.FieldDefs)
-	assert.Equal(t, now, c.InsertTime)
+	assert.Equal(t, in.InsertTime, c.InsertTime)
 	assert.Equal(t, now, c.LastUpdateTime)
 }
 func TestDeleteCategory(t *testing.T) {
@@ -216,15 +216,15 @@ func TestUpdateCollection(t *testing.T) {
 	assert.NoError(t, err)
 	defer db.Close()
 	p := persist.NewPostgresPersister("", db)
-	in := makeCollectionIn(t)
+	in := makeCollection(t)
 	js, err := json.Marshal(in.CollectionBody)
 	assert.NoError(t, err)
 
 	now := time.Now()
 	mock.ExpectQuery(`UPDATE collection SET body = $1, category_id = $2, last_update_time = CURRENT_TIMESTAMP 
-	WHERE id = $3 
+	WHERE id = $3 AND last_update_time = $4
 	RETURNING id, category_id, body, insert_time, last_update_time`).
-		WithArgs([]byte(js), in.Category, 1).
+		WithArgs([]byte(js), in.Category, 1, in.LastUpdateTime).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "category_id", "body", "insert_time", "last_update_time"}).
 			AddRow(1, 1, js, now, now))
 
@@ -262,12 +262,33 @@ func makeCategoryIn(t *testing.T) model.CategoryIn {
 	assert.NoError(t, err)
 	return in
 }
+func makeCategory(t *testing.T) model.Category {
+	now := time.Now()
+	in := model.Category{
+		CategoryRef:    model.NewCategoryRef(33),
+		CategoryIn:     makeCategoryIn(t),
+		InsertTime:     now,
+		LastUpdateTime: now,
+	}
+	return in
+}
 
 func makeCollectionIn(t *testing.T) model.CollectionIn {
 	cat := model.NewCategoryRef(1)
 	in := model.CollectionIn{
 		CollectionBody: model.CollectionBody{Name: "Test Collection"},
 		Category:       cat,
+	}
+	return in
+}
+
+func makeCollection(t *testing.T) model.Collection {
+	now := time.Now()
+	in := model.Collection{
+		CollectionRef:  model.NewCollectionRef(22),
+		CollectionIn:   makeCollectionIn(t),
+		InsertTime:     now,
+		LastUpdateTime: now,
 	}
 	return in
 }

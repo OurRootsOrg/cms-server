@@ -17,7 +17,7 @@ import (
 // @id getCollections
 // @produce application/json
 // @success 200 {array} model.Collection "OK"
-// @failure 500 {object} api.Errors "Server error"
+// @failure 500 {object} model.Errors "Server error"
 func (app App) GetCollections(w http.ResponseWriter, req *http.Request) {
 	enc := json.NewEncoder(w)
 	w.Header().Set("Content-Type", contentType)
@@ -38,11 +38,11 @@ func (app App) GetCollections(w http.ResponseWriter, req *http.Request) {
 // @router /collections/{id} [get]
 // @tags collections
 // @id getCollection
-// @Param id path string true "Collection ID" format(url)
+// @Param id path integer true "Collection ID"
 // @produce application/json
 // @success 200 {object} model.Collection "OK"
-// @failure 404 {object} api.Errors "Not found"
-// @failure 500 {object} api.Errors "Server error"
+// @failure 404 {object} model.Errors "Not found"
+// @failure 500 {object} model.Errors "Server error"
 func (app App) GetCollection(w http.ResponseWriter, req *http.Request) {
 	enc := json.NewEncoder(w)
 	w.Header().Set("Content-Type", contentType)
@@ -67,21 +67,20 @@ func (app App) GetCollection(w http.ResponseWriter, req *http.Request) {
 // @accept application/json
 // @produce application/json
 // @success 201 {object} model.Collection "OK"
-// @failure 415 {object} api.Errors "Bad Content-Type"
-// @failure 500 {object} api.Errors "Server error"
+// @failure 415 {object} model.Errors "Bad Content-Type"
+// @failure 500 {object} model.Errors "Server error"
 func (app App) PostCollection(w http.ResponseWriter, req *http.Request) {
 	mt, _, err := mime.ParseMediaType(req.Header.Get("Content-Type"))
 	if err != nil || mt != contentType {
 		msg := fmt.Sprintf("Bad Content-Type '%s'", mt)
-		OtherErrorResponse(w, http.StatusUnsupportedMediaType, msg)
+		ErrorResponse(w, http.StatusUnsupportedMediaType, msg)
 		return
 	}
 	in := model.CollectionIn{}
 	err = json.NewDecoder(req.Body).Decode(&in)
 	if err != nil {
 		msg := fmt.Sprintf("Bad request: %v", err)
-		log.Printf("PostCollection decoder %v\n", err)
-		OtherErrorResponse(w, http.StatusBadRequest, msg)
+		ErrorResponse(w, http.StatusBadRequest, msg)
 		return
 	}
 	collection, errors := app.api.AddCollection(app.Context(), in)
@@ -105,25 +104,25 @@ func (app App) PostCollection(w http.ResponseWriter, req *http.Request) {
 // @router /collections/{id} [put]
 // @tags collections
 // @id updateCollection
-// @Param id path string true "Collection ID" format(url)
-// @Param collection body model.CollectionIn true "Update Collection"
+// @Param id path integer true "Collection ID"
+// @Param collection body model.Collection true "Update Collection"
 // @accept application/json
 // @produce application/json
 // @success 200 {object} model.Collection "OK"
-// @failure 415 {object} api.Errors "Bad Content-Type"
-// @failure 500 {object} api.Errors "Server error"
+// @failure 415 {object} model.Errors "Bad Content-Type"
+// @failure 500 {object} model.Errors "Server error"
 func (app App) PutCollection(w http.ResponseWriter, req *http.Request) {
 	mt, _, err := mime.ParseMediaType(req.Header.Get("Content-Type"))
 	if err != nil || mt != contentType {
 		msg := fmt.Sprintf("Bad Content-Type '%s'", mt)
-		OtherErrorResponse(w, http.StatusUnsupportedMediaType, msg)
+		ErrorResponse(w, http.StatusUnsupportedMediaType, msg)
 		return
 	}
-	var in model.CollectionIn
+	var in model.Collection
 	err = json.NewDecoder(req.Body).Decode(&in)
 	if err != nil {
 		msg := fmt.Sprintf("Bad request: %v", err)
-		OtherErrorResponse(w, http.StatusBadRequest, msg)
+		ErrorResponse(w, http.StatusBadRequest, msg)
 		return
 	}
 	collection, errors := app.api.UpdateCollection(app.Context(), req.URL.String(), in)
@@ -145,9 +144,9 @@ func (app App) PutCollection(w http.ResponseWriter, req *http.Request) {
 // @router /collections/{id} [delete]
 // @tags collections
 // @id deleteCollection
-// @Param id path string true "Collection ID" format(url)
+// @Param id path integer true "Collection ID"
 // @success 204 {object} model.Collection "OK"
-// @failure 500 {object} api.Errors "Server error"
+// @failure 500 {object} model.Errors "Server error"
 func (app App) DeleteCollection(w http.ResponseWriter, req *http.Request) {
 	errors := app.api.DeleteCollection(app.Context(), req.URL.String())
 	if errors != nil {

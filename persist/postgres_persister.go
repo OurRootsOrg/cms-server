@@ -26,14 +26,14 @@ func NewPostgresPersister(pathPrefix string, db *sql.DB) PostgresPersister {
 
 func translateError(err error) error {
 	switch err {
+	case nil:
+		return nil
 	case sql.ErrConnDone:
 		return ErrConnDone
 	case sql.ErrNoRows:
 		return ErrNoRows
 	case sql.ErrTxDone:
 		return ErrTxDone
-	case nil:
-		return nil
 	default:
 		pqErr, ok := err.(*pq.Error)
 		if !ok {
@@ -79,7 +79,7 @@ func (p PostgresPersister) SelectOneCategory(ctx context.Context, id string) (mo
 	n, err := fmt.Sscanf(id+"\n", p.pathPrefix+model.CategoryIDFormat+"\n", &dbid)
 	if err != nil || n != 1 {
 		// Bad ID
-		return cat, ErrNoRows
+		return cat, model.NewError(model.ErrNotFound, id)
 	}
 	log.Printf("[DEBUG] id: %s, dbid: %d", id, dbid)
 	err = p.db.QueryRowContext(ctx, "SELECT id, body, insert_time, last_update_time FROM category WHERE id=$1", dbid).Scan(
@@ -113,21 +113,30 @@ func (p PostgresPersister) InsertCategory(ctx context.Context, in model.Category
 }
 
 // UpdateCategory updates a Category in the database and returns the updated Category
-func (p PostgresPersister) UpdateCategory(ctx context.Context, id string, in model.CategoryIn) (model.Category, error) {
+func (p PostgresPersister) UpdateCategory(ctx context.Context, id string, in model.Category) (model.Category, error) {
 	var cat model.Category
 	var dbid int32
 	n, err := fmt.Sscanf(id+"\n", p.pathPrefix+model.CategoryIDFormat+"\n", &dbid)
 	if err != nil || n != 1 {
 		// Bad ID
-		return cat, ErrNoRows
+		return cat, model.NewError(model.ErrNotFound, id)
 	}
-	err = p.db.QueryRowContext(ctx, "UPDATE category SET body = $1, last_update_time = CURRENT_TIMESTAMP WHERE id = $2 RETURNING id, body, insert_time, last_update_time", in, dbid).
+	err = p.db.QueryRowContext(ctx, "UPDATE category SET body = $1, last_update_time = CURRENT_TIMESTAMP WHERE id = $2 AND last_update_time = $3 RETURNING id, body, insert_time, last_update_time", in.CategoryBody, dbid, in.LastUpdateTime).
 		Scan(
 			&dbid,
 			&cat.CategoryBody,
 			&cat.InsertTime,
 			&cat.LastUpdateTime,
 		)
+	if err != nil && err == sql.ErrNoRows {
+		// Either non-existent or last_update_time didn't match
+		c, _ := p.SelectOneCategory(ctx, id)
+		if c.ID == id {
+			// Row exists, so it must be a non-matching update time
+			return cat, model.NewError(model.ErrConcurrentUpdate, c.LastUpdateTime.String(), in.LastUpdateTime.String())
+		}
+		return cat, model.NewError(model.ErrNotFound, id)
+	}
 	cat.ID = p.pathPrefix + fmt.Sprintf(model.CategoryIDFormat, dbid)
 	cat.Type = "category"
 	return cat, translateError(err)
@@ -139,7 +148,7 @@ func (p PostgresPersister) DeleteCategory(ctx context.Context, id string) error 
 	n, err := fmt.Sscanf(id+"\n", p.pathPrefix+model.CategoryIDFormat+"\n", &dbid)
 	if err != nil || n != 1 {
 		// Bad ID
-		return ErrNoRows
+		return model.NewError(model.ErrNotFound, id)
 	}
 	_, err = p.db.ExecContext(ctx, "DELETE FROM category WHERE id = $1", dbid)
 	return translateError(err)
@@ -180,7 +189,7 @@ func (p PostgresPersister) SelectOneCollection(ctx context.Context, id string) (
 	n, err := fmt.Sscanf(id+"\n", p.pathPrefix+model.CollectionIDFormat+"\n", &dbid)
 	if err != nil || n != 1 {
 		// Bad ID
-		return collection, ErrNoRows
+		return collection, model.NewError(model.ErrNotFound, id)
 	}
 	err = p.db.QueryRowContext(ctx, "SELECT id, category_id, body, insert_time, last_update_time FROM collection WHERE id=$1", dbid).Scan(
 		&dbid,
@@ -221,21 +230,21 @@ func (p PostgresPersister) InsertCollection(ctx context.Context, in model.Collec
 }
 
 // UpdateCollection updates a Collection in the database and returns the updated Collection
-func (p PostgresPersister) UpdateCollection(ctx context.Context, id string, in model.CollectionIn) (model.Collection, error) {
+func (p PostgresPersister) UpdateCollection(ctx context.Context, id string, in model.Collection) (model.Collection, error) {
 	var collection model.Collection
 	var dbid int32
 	n, err := fmt.Sscanf(id+"\n", p.pathPrefix+model.CollectionIDFormat+"\n", &dbid)
 	if err != nil || n != 1 {
 		// Bad ID
-		return collection, ErrNoRows
+		return collection, model.NewError(model.ErrNotFound, id)
 	}
 	var catID int32
 	n, err = fmt.Sscanf(in.Category.ID, p.pathPrefix+model.CategoryIDFormat, &catID)
 	err = p.db.QueryRowContext(ctx,
 		`UPDATE collection SET body = $1, category_id = $2, last_update_time = CURRENT_TIMESTAMP 
-		 WHERE id = $3 
+		 WHERE id = $3 AND last_update_time = $4
 		 RETURNING id, category_id, body, insert_time, last_update_time`,
-		in.CollectionBody, catID, dbid).
+		in.CollectionBody, catID, dbid, in.LastUpdateTime).
 		Scan(
 			&dbid,
 			&collection.Category,
@@ -243,6 +252,15 @@ func (p PostgresPersister) UpdateCollection(ctx context.Context, id string, in m
 			&collection.InsertTime,
 			&collection.LastUpdateTime,
 		)
+	if err != nil && err == sql.ErrNoRows {
+		// Either non-existent or last_update_time didn't match
+		c, _ := p.SelectOneCollection(ctx, id)
+		if c.ID == id {
+			// Row exists, so it must be a non-matching update time
+			return collection, model.NewError(model.ErrConcurrentUpdate, c.LastUpdateTime.String(), in.LastUpdateTime.String())
+		}
+		return collection, model.NewError(model.ErrNotFound, id)
+	}
 	collection.ID = p.pathPrefix + fmt.Sprintf(model.CollectionIDFormat, dbid)
 	collection.Type = "collection"
 	return collection, translateError(err)
@@ -254,7 +272,7 @@ func (p PostgresPersister) DeleteCollection(ctx context.Context, id string) erro
 	n, err := fmt.Sscanf(id+"\n", p.pathPrefix+model.CollectionIDFormat+"\n", &dbid)
 	if err != nil || n != 1 {
 		// Bad ID
-		return ErrNoRows
+		return model.NewError(model.ErrNotFound, id)
 	}
 	_, err = p.db.ExecContext(ctx, "DELETE FROM collection WHERE id = $1", dbid)
 	return translateError(err)

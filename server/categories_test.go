@@ -162,10 +162,10 @@ func TestCategories(t *testing.T) {
 	assert.Equal(t, http.StatusNotFound, response.Code, "404 response is expected")
 
 	// PUT
-	in.Name = "Updated"
+	created.Name = "Updated"
 	buf = new(bytes.Buffer)
 	enc = json.NewEncoder(buf)
-	err = enc.Encode(in)
+	err = enc.Encode(created)
 	if err != nil {
 		t.Errorf("Error encoding CategoryIn: %v", err)
 	}
@@ -184,8 +184,8 @@ func TestCategories(t *testing.T) {
 	if err != nil {
 		t.Errorf("Error parsing JSON: %v", err)
 	}
-	assert.Equal(t, in.Name, updated.Name, "Expected Name to match")
-	assert.Equal(t, in.FieldDefs, updated.FieldDefs, "Expected FieldDefs to match")
+	assert.Equal(t, created.Name, updated.Name, "Expected Name to match")
+	assert.Equal(t, created.FieldDefs, updated.FieldDefs, "Expected FieldDefs to match")
 
 	// Missing MIME type
 	buf = new(bytes.Buffer)
@@ -214,7 +214,7 @@ func TestCategories(t *testing.T) {
 	// PUT non-existant
 	buf = new(bytes.Buffer)
 	enc = json.NewEncoder(buf)
-	err = enc.Encode(in)
+	err = enc.Encode(created)
 	if err != nil {
 		t.Errorf("Error encoding CategoryIn: %v", err)
 	}

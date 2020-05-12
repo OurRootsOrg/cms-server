@@ -24,7 +24,7 @@ type CategoryPersister interface {
 	SelectCategories(ctx context.Context) ([]Category, error)
 	SelectOneCategory(ctx context.Context, id string) (Category, error)
 	InsertCategory(ctx context.Context, in CategoryIn) (Category, error)
-	UpdateCategory(ctx context.Context, id string, body CategoryIn) (Category, error)
+	UpdateCategory(ctx context.Context, id string, body Category) (Category, error)
 	DeleteCategory(ctx context.Context, id string) error
 }
 

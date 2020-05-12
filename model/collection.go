@@ -21,7 +21,7 @@ type CollectionPersister interface {
 	SelectCollections(ctx context.Context) ([]Collection, error)
 	SelectOneCollection(ctx context.Context, id string) (Collection, error)
 	InsertCollection(ctx context.Context, in CollectionIn) (Collection, error)
-	UpdateCollection(ctx context.Context, id string, in CollectionIn) (Collection, error)
+	UpdateCollection(ctx context.Context, id string, in Collection) (Collection, error)
 	DeleteCollection(ctx context.Context, id string) error
 }
 

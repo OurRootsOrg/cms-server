@@ -1,4 +1,4 @@
-package api
+package model
 
 import (
 	"fmt"
@@ -13,17 +13,19 @@ type ErrorCode string
 
 // Standard error codes
 const (
-	ErrRequired     ErrorCode = "REQUIRED"
-	ErrNotFound     ErrorCode = "NOT_FOUND"
-	ErrBadReference ErrorCode = "BAD_REFERENCE"
-	ErrOther        ErrorCode = "OTHER"
+	ErrRequired         ErrorCode = "REQUIRED"
+	ErrNotFound         ErrorCode = "NOT_FOUND"
+	ErrBadReference     ErrorCode = "BAD_REFERENCE"
+	ErrConcurrentUpdate ErrorCode = "CONCURRENT_UPDATE"
+	ErrOther            ErrorCode = "OTHER"
 )
 
 var errorMessages = map[ErrorCode]string{
-	ErrRequired:     "Field '%s' is required",
-	ErrNotFound:     "'%s' was not found",
-	ErrBadReference: "Non-existent reference. ID: '%s', Type: '%s'",
-	ErrOther:        "Unknown error: %s",
+	ErrRequired:         "Field '%s' is required",
+	ErrNotFound:         "'%s' was not found",
+	ErrBadReference:     "Non-existent reference. ID: '%s', Type: '%s'",
+	ErrConcurrentUpdate: "Database LastUpdateTime (%s) doesn't match provided value (%s).",
+	ErrOther:            "Unknown error: %s",
 }
 
 // Error represents a single API error
@@ -94,6 +96,14 @@ func (e Errors) HTTPStatus() int {
 // Errs returns the slice of Error structs
 func (e Errors) Errs() []Error {
 	return e.errs
+}
+
+func (e Errors) Error() string {
+	s := "Errors:"
+	for _, er := range e.Errs() {
+		s += "\n  " + er.Error()
+	}
+	return s
 }
 
 // func (e Errors) Error() string {

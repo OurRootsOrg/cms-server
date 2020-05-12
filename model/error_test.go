@@ -1,13 +1,13 @@
-package api_test
+package model_test
 
 import (
 	"testing"
 
-	"github.com/ourrootsorg/cms-server/api"
+	"github.com/ourrootsorg/cms-server/model"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestError(t *testing.T) {
-	e := api.NewError(api.ErrRequired, "some_field")
+	e := model.NewError(model.ErrRequired, "some_field")
 	assert.NotNil(t, e)
 }

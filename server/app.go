@@ -10,6 +10,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/ourrootsorg/cms-server/api"
+	"github.com/ourrootsorg/cms-server/model"
 )
 
 const contentType = "application/json"
@@ -81,42 +82,22 @@ func (app App) Context() context.Context {
 func NotFound(w http.ResponseWriter, req *http.Request) {
 	m := fmt.Sprintf("Path '%s' not found", req.URL.RequestURI())
 	log.Print("[ERROR] " + m)
-	OtherErrorResponse(w, http.StatusNotFound, m)
+	ErrorResponse(w, http.StatusNotFound, m)
 }
 
 func serverError(w http.ResponseWriter, err error) {
 	log.Print("[ERROR] Server error: " + err.Error())
 	// debug.PrintStack()
-	OtherErrorResponse(w, http.StatusInternalServerError, fmt.Sprintf("Internal server error: %v", err.Error()))
+	ErrorResponse(w, http.StatusInternalServerError, fmt.Sprintf("Internal server error: %v", err.Error()))
 }
 
-// OtherErrorResponse returns an error response
-func OtherErrorResponse(w http.ResponseWriter, code int, message string) {
-	w.Header().Set("Content-Type", contentType)
-	w.WriteHeader(code)
-	enc := json.NewEncoder(w)
-	e := api.NewError(api.ErrOther, message)
-	err := enc.Encode([]api.Error{e})
-	if err != nil {
-		log.Printf("[ERROR] Failure encoding error response: '%v'", err)
-	}
+// ErrorResponse returns an error response
+func ErrorResponse(w http.ResponseWriter, code int, message string) {
+	ErrorsResponse(w, model.NewErrors(code, model.NewError(model.ErrOther, message)))
 }
 
-// ValidationErrorResponse returns a validation error response
-func ValidationErrorResponse(w http.ResponseWriter, code int, er error) {
-	w.Header().Set("Content-Type", contentType)
-	w.WriteHeader(code)
-	enc := json.NewEncoder(w)
-	errors := api.NewErrors(http.StatusBadRequest, er)
-	log.Printf("[DEBUG] errBody: %#v", errors)
-	err := enc.Encode(errors.Errs())
-	if err != nil {
-		log.Printf("[ERROR] Failure encoding error response: '%v'", err)
-	}
-}
-
-// ErrorsResponse returns an HTTP response from a api.Errors
-func ErrorsResponse(w http.ResponseWriter, errors *api.Errors) {
+// ErrorsResponse returns an HTTP response from a model.Errors
+func ErrorsResponse(w http.ResponseWriter, errors *model.Errors) {
 	w.Header().Set("Content-Type", contentType)
 	w.WriteHeader(errors.HTTPStatus())
 	enc := json.NewEncoder(w)
