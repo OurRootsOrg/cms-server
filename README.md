@@ -43,6 +43,7 @@ install docker-compose          # https://docs.docker.com/compose/install/
 install tilt                    # https://tilt.dev/
                                   # optional but makes rebuilds much faster
                                   # ignore kubernetes and kubectl; you just need the one-line curl install
+                                  # on mac, you can use brew to install tilt
 install npm                     # https://nodejs.org/en/ 
                                   # node includes npm
 install psql                    # https://blog.timescale.com/tutorials/how-to-install-psql-on-mac-ubuntu-debian-windows/
@@ -50,6 +51,7 @@ npm install -g @vue/cli         # the uglyui client uses vue
 
 docker volume create cms_pgdata # do this once to create a persistent database volume
 tilt up                         # run the server and dependencies
+                                  # make sure you don't already have a postgres process running
                                   # alternatively, run docker-compose up --build
 cd db && ./db_setup.sh          # do this once to set up the database
                                   # make sure you have psql (postgres client) available on your path
