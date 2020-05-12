@@ -53,6 +53,12 @@
           <li><router-link to="/settings">Go</router-link></li>
         </ul>
       </div>
+      <div>
+        <h3>Flatfile demo</h3>
+        <ul>
+          <li><router-link to="/flatfile">Go</router-link></li>
+        </ul>
+      </div>
     </div>
     <Notifications />
     <router-view id="view" />

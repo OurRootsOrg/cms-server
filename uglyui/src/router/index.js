@@ -89,6 +89,12 @@ const routes = [
       import(/* webpackChunkName: "about" */ "../views/Settings.vue")
   },
   {
+    path: "/flatfile",
+    name: "flatfile",
+    component: () =>
+      import(/* webpackChunkName: "about" */ "../views/Flatfile.vue")
+  },
+  {
     path: "/404",
     name: "404",
     component: NotFound,
