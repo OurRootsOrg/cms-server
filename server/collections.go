@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"mime"
 	"net/http"
 
@@ -79,11 +80,13 @@ func (app App) PostCollection(w http.ResponseWriter, req *http.Request) {
 	err = json.NewDecoder(req.Body).Decode(&in)
 	if err != nil {
 		msg := fmt.Sprintf("Bad request: %v", err)
+		log.Printf("PostCollection decoder %v\n", err)
 		OtherErrorResponse(w, http.StatusBadRequest, msg)
 		return
 	}
 	collection, errors := app.api.AddCollection(app.Context(), in)
 	if errors != nil {
+		log.Printf("PostCollection addcollection %v\n", errors)
 		ErrorsResponse(w, errors)
 		return
 	}

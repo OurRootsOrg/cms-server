@@ -40,6 +40,7 @@ func (api API) GetCollection(ctx context.Context, id string) (*model.Collection,
 func (api API) AddCollection(ctx context.Context, in model.CollectionIn) (*model.Collection, *Errors) {
 	err := api.validate.Struct(in)
 	if err != nil {
+		log.Printf("[ERROR] Invalid collection %v", err)
 		return nil, NewErrors(http.StatusBadRequest, err)
 	}
 	collection, err := api.collectionPersister.InsertCollection(ctx, in)
@@ -47,6 +48,7 @@ func (api API) AddCollection(ctx context.Context, in model.CollectionIn) (*model
 		log.Printf("[ERROR] Invalid category reference: %v", err)
 		return nil, NewErrors(http.StatusBadRequest, NewError(ErrBadReference, in.Category.ID, in.Category.Type))
 	} else if err != nil {
+		log.Printf("[ERROR] Internal server error: %v", err)
 		return nil, NewErrors(http.StatusInternalServerError, err)
 	}
 	return &collection, nil

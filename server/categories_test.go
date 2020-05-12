@@ -20,6 +20,9 @@ import (
 )
 
 func TestCategories(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping tests in short mode")
+	}
 	db, err := postgres.Open(context.TODO(), os.Getenv("DATABASE_URL"))
 	if err != nil {
 		log.Fatalf("Error opening database connection: %v\n  DATABASE_URL: %s",

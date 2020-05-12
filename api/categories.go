@@ -12,7 +12,7 @@ import (
 
 // CategoryResult is a paged Category result
 type CategoryResult struct {
-	Categories []model.Category `json:"collections"`
+	Categories []model.Category `json:"categories"`
 	NextPage   string           `json:"next_page"`
 }
 

@@ -1,7 +1,8 @@
 version: "3.0"
 services:
   postgres:
-    image: postgres
+    container_name: cms-test_postgres
+    image: postgres:10.7
     ports:
       - "15432:5432"
     environment:

@@ -1,7 +1,7 @@
 # Binaries for programs and plugins
+deploy/
 server/server
 server/main.lambda
-deploy/awslambda/main.lambda.zip
 *.exe
 *.exe~
 *.dll
@@ -17,8 +17,10 @@ output-ourroots.cf.yaml
 
 # Dependency directories (remove the comment below to include it)
 # vendor/
-uglyui/node_modules/
 
 # IDEs
+.vscode/
 .idea/
-uglyui/.idea/
+
+# Ugly UI
+uglyui/
