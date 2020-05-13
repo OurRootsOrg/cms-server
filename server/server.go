@@ -6,10 +6,12 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"math"
 	"net/http"
 	"net/url"
 	"os"
 	"reflect"
+	"time"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
@@ -66,6 +68,7 @@ func main() {
 
 	switch env.Persister {
 	case "sql":
+		log.Printf("Connecting to %s\n", env.DatabaseURL)
 		db, err := postgres.Open(context.TODO(), env.DatabaseURL)
 		if err != nil {
 			log.Fatalf("Error opening database connection: %v\n  DATABASE_URL: %s",
@@ -73,6 +76,25 @@ func main() {
 				env.DatabaseURL,
 			)
 		}
+
+		// ping the database to make sure we can connect
+		cnt := 0
+		err = errors.New("unknown error")
+		for err != nil && cnt <= 3 {
+			if cnt > 0 {
+				time.Sleep(time.Duration(math.Pow(2.0, float64(cnt))) * time.Second)
+			}
+			err = db.Ping()
+			cnt++
+		}
+		if err != nil {
+			log.Fatalf("Error connecting to database: %v\n DATABASE_URL: %s\n",
+				err,
+				env.DatabaseURL,
+				)
+		}
+		log.Printf("Connected to %s\n", env.DatabaseURL)
+
 		p := persist.NewPostgresPersister(env.BaseURL.Path, db)
 		ap.CategoryPersister(p).CollectionPersister(p)
 		log.Print("[INFO] Using PostgresPersister")
@@ -120,7 +142,7 @@ func main() {
 		// 	Handler(http.StripPrefix("/flutter", http.FileServer(http.Dir(flutterDir))))
 		// r.PathPrefix("/wasm/").
 		// 	Handler(http.StripPrefix("/wasm", http.FileServer(http.Dir(vectyDir))))
-		log.Fatal(http.ListenAndServe(env.BaseURL.Host,
+		log.Fatal(http.ListenAndServe(fmt.Sprintf(":%s", env.BaseURL.Port()), // changed from Host because host doesn't work inside docker
 			handlers.LoggingHandler(os.Stdout,
 				handlers.CORS(
 					handlers.AllowedHeaders([]string{"X-Requested-With", "Content-Type", "Authorization"}),

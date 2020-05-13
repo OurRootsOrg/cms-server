@@ -17,9 +17,9 @@ test-setup:
 	docker-compose -f docker-compose-dependencies.yaml up --detach --build
 	cd db && ./wait-for-db.sh $(PG_PORT) && ./db_setup.sh $(PG_PORT)
 test-exec:
-	DATABASE_URL="postgres://ourroots:password@localhost:$(PG_PORT)/ourroots?sslmode=disable" $(GOTEST) -v ./...
+	DATABASE_URL="postgres://ourroots:password@localhost:$(PG_PORT)/cms?sslmode=disable" $(GOTEST) -v ./...
 test-clean:
-	docker-compose -f docker-compose-dependencies.yaml down --volumes
+	docker-compose -f docker-compose-dependencies.yaml down --volumes --remove-orphans
 clean:
 	rm -f server/$(BINARY_NAME)
 	rm -f server/server

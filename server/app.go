@@ -47,11 +47,16 @@ func (app App) GetIndex(w http.ResponseWriter, req *http.Request) {
 	http.Redirect(w, req, app.baseURL.Path+"/swagger/", http.StatusTemporaryRedirect)
 }
 
+func (app App) GetHealth(w http.ResponseWriter, req *http.Request) {
+	w.WriteHeader(http.StatusOK)
+}
+
 // NewRouter builds a router for handling requests
 func (app App) NewRouter() *mux.Router {
 	r := mux.NewRouter()
 	r.StrictSlash(true)
 	r.HandleFunc(app.baseURL.Path+"/", app.GetIndex).Methods("GET")
+	r.HandleFunc(app.baseURL.Path+"/health", app.GetHealth).Methods("GET")
 	r.HandleFunc(app.baseURL.Path+"/index.html", app.GetIndex).Methods("GET")
 
 	r.HandleFunc(app.baseURL.Path+"/categories", app.GetAllCategories).Methods("GET")

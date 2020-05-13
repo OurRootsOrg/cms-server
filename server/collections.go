@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"mime"
 	"net/http"
 
@@ -84,6 +85,7 @@ func (app App) PostCollection(w http.ResponseWriter, req *http.Request) {
 	}
 	collection, errors := app.api.AddCollection(app.Context(), in)
 	if errors != nil {
+		log.Printf("PostCollection addcollection %v\n", errors)
 		ErrorsResponse(w, errors)
 		return
 	}
