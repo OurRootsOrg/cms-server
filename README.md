@@ -53,7 +53,7 @@ docker volume create cms_pgdata # do this once to create a persistent database v
 tilt up                         # run the server and dependencies
                                   # make sure you don't already have a postgres process running
                                   # alternatively, run docker-compose up --build
-cd db && ./db_setup.sh          # do this once to set up the database
+cd db && ./db_setup.sh && cd ..   # do this once to set up the database
                                   # make sure you have psql (postgres client) available on your path
 tilt down && tilt up            # do this once after you've set up the database to restart the server
                                   # alternatively, run docker-compose down && docker-compose up --build
