@@ -33,11 +33,7 @@
         </p>
       </template>
 
-      <BaseButton
-        type="submit"
-        class="submit-button"
-        buttonClass="-fill-gradient"
-        :disabled="$v.$anyError"
+      <BaseButton type="submit" class="submit-button" buttonClass="-fill-gradient" :disabled="$v.$anyError"
         >Submit</BaseButton
       >
       <p v-if="$v.$anyError" class="errorMessage">
