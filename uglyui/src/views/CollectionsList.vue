@@ -20,19 +20,14 @@ export default {
     Collection
   },
   beforeRouteEnter(routeTo, routeFrom, next) {
-    Promise.all([
-      store.dispatch("categoriesGetAll"),
-      store.dispatch("collectionsGetAll")
-    ]).then(() => {
+    Promise.all([store.dispatch("categoriesGetAll"), store.dispatch("collectionsGetAll")]).then(() => {
       next();
     });
   },
   computed: {
     categoryForCollection() {
       return collection => {
-        return this.categories.categoriesList.find(
-          cat => cat.id === collection.category.id
-        );
+        return this.categories.categoriesList.find(cat => cat.id === collection.category.id);
       };
     },
     ...mapState(["categories", "collections"])

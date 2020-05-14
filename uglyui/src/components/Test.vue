@@ -2,8 +2,7 @@
   <div class="test">
     <h1>{{ msg }}</h1>
     <p>
-      Select an option to the left. If you have not registered or logged in, do
-      that first.
+      Select an option to the left. If you have not registered or logged in, do that first.
     </p>
   </div>
 </template>
