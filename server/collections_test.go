@@ -64,7 +64,7 @@ func TestCollections(t *testing.T) {
 		CollectionBody: model.CollectionBody{
 			Name: "Test Collection",
 		},
-		Category: testCategory.CategoryRef,
+		Category: testCategory.ID,
 	}
 	buf := new(bytes.Buffer)
 	enc := json.NewEncoder(buf)
@@ -122,7 +122,7 @@ func TestCollections(t *testing.T) {
 	}
 	assert.Equal(t, in.Name, created.Name, "Expected Name to match")
 	assert.NotEmpty(t, created.ID)
-	assert.Equal(t, in.Category, created.Category)
+	assert.Equal(t, in.Category, created.Category, "created: %#v", created)
 
 	// GET /collections should now return the created Collection
 	request, _ = http.NewRequest("GET", "/collections", nil)
@@ -168,7 +168,7 @@ func TestCollections(t *testing.T) {
 	assert.Equal(t, http.StatusBadRequest, response.Code, "Response: %s", string(response.Body.Bytes()))
 
 	// Bad request - no category
-	in.Category = model.CategoryRef{}
+	in.Category = ""
 	buf = new(bytes.Buffer)
 	enc = json.NewEncoder(buf)
 	err = enc.Encode(in)

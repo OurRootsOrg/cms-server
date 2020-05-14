@@ -13,9 +13,6 @@ import (
 // CollectionIDFormat is the format for Collection IDs
 const CollectionIDFormat = "/collections/%d"
 
-// CollectionName is the name use in the JSON type field
-var CollectionName = "collection"
-
 // CollectionPersister defines methods needed to persist categories
 type CollectionPersister interface {
 	SelectCollections(ctx context.Context) ([]Collection, error)
@@ -49,30 +46,13 @@ func (cb *CollectionBody) Scan(value interface{}) error {
 // CollectionIn is the payload to create or update a Collection
 type CollectionIn struct {
 	CollectionBody
-	Category CategoryRef `json:"category,omitempty" validate:"required,omitempty"`
-}
-
-// CollectionRef is a reference to a Category
-type CollectionRef struct {
-	ID   string `json:"id,omitempty" example:"/collections/999" validate:"required"`
-	Type string `json:"type,omitempty" example:"collection" validate:"required"`
-}
-
-// NewCollectionRef constructs a CollectionRef from an id
-func NewCollectionRef(id int32) CollectionRef {
-	cid := fmt.Sprintf(pathPrefix+CollectionIDFormat, id)
-	return CollectionRef{
-		ID:   cid,
-		Type: CollectionName,
-	}
+	Category string `json:"category,omitempty" example:"/categories/999" validate:"required"`
 }
 
 // Collection represents a set of related Records
 type Collection struct {
-	CollectionRef
+	ID string `json:"id,omitempty" example:"/collections/999" validate:"required"`
 	CollectionIn
-	// CollectionBody
-	// Category       CategoryRef `json:"category" validate:"required"`
 	InsertTime     time.Time `json:"insert_time,omitempty"`
 	LastUpdateTime time.Time `json:"last_update_time,omitempty"`
 }
@@ -81,7 +61,7 @@ type Collection struct {
 func NewCollection(id int32, ci CollectionIn) Collection {
 	now := time.Now()
 	c := Collection{
-		CollectionRef: NewCollectionRef(id),
+		ID: MakeCollectionID(id),
 		CollectionIn: CollectionIn{
 			CollectionBody: ci.CollectionBody,
 			Category:       ci.Category,
@@ -90,4 +70,9 @@ func NewCollection(id int32, ci CollectionIn) Collection {
 		LastUpdateTime: now,
 	}
 	return c
+}
+
+// MakeCollectionID builds a Collection ID string from an integer ID
+func MakeCollectionID(id int32) string {
+	return pathPrefix + fmt.Sprintf(CollectionIDFormat, id)
 }

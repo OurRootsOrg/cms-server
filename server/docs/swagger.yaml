@@ -15,13 +15,9 @@ definitions:
         type: string
       name:
         type: string
-      type:
-        example: category
-        type: string
     required:
     - id
     - name
-    - type
     type: object
   model.CategoryIn:
     properties:
@@ -34,32 +30,17 @@ definitions:
     required:
     - name
     type: object
-  model.CategoryRef:
-    properties:
-      id:
-        example: /categories/999
-        type: string
-      type:
-        example: category
-        type: string
-    required:
-    - id
-    - type
-    type: object
   model.Collection:
     properties:
       category:
-        $ref: '#/definitions/model.CategoryRef'
-        type: object
+        example: /categories/999
+        type: string
       citation_template:
         type: string
       id:
         example: /collections/999
         type: string
       insert_time:
-        description: |-
-          CollectionBody
-          Category       CategoryRef `json:"category" validate:"required"`
         type: string
       last_update_time:
         type: string
@@ -67,20 +48,16 @@ definitions:
         type: string
       name:
         type: string
-      type:
-        example: collection
-        type: string
     required:
     - category
     - id
     - name
-    - type
     type: object
   model.CollectionIn:
     properties:
       category:
-        $ref: '#/definitions/model.CategoryRef'
-        type: object
+        example: /categories/999
+        type: string
       citation_template:
         type: string
       location:

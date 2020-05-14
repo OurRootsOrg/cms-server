@@ -45,7 +45,7 @@ func TestCollections(t *testing.T) {
 		CollectionBody: model.CollectionBody{
 			Name: "Test Collection",
 		},
-		Category: testCategory.CategoryRef,
+		Category: testCategory.ID,
 	}
 	created, errors := testApi.AddCollection(context.TODO(), in)
 	assert.Nil(t, errors)
@@ -54,7 +54,7 @@ func TestCollections(t *testing.T) {
 	assert.Equal(t, in.Category, created.Category)
 
 	// Add with bad category reference
-	in.Category.ID = in.Category.ID + "88"
+	in.Category = in.Category + "88"
 	_, errors = testApi.AddCollection(context.TODO(), in)
 	assert.Len(t, errors.Errs(), 1)
 	assert.Equal(t, model.ErrBadReference, errors.Errs()[0].Code, "errors.Errs()[0]: %#v", errors.Errs()[0])
@@ -72,11 +72,11 @@ func TestCollections(t *testing.T) {
 	assert.Equal(t, created, ret2)
 
 	// Bad request - no category
-	in.Category = model.CategoryRef{}
+	in.Category = ""
 	_, errors = testApi.AddCollection(context.TODO(), in)
-	assert.Len(t, errors.Errs(), 2, "errors.Errs(): %#v", errors.Errs())
-	assert.Equal(t, errors.Errs()[0].Code, model.ErrRequired)
-	assert.Equal(t, errors.Errs()[1].Code, model.ErrRequired)
+	if assert.Len(t, errors.Errs(), 1, "errors.Errs(): %#v", errors.Errs()) {
+		assert.Equal(t, errors.Errs()[0].Code, model.ErrRequired)
+	}
 
 	// Collection not found
 	_, errors = testApi.GetCollection(context.TODO(), created.ID+"99")
@@ -98,13 +98,13 @@ func TestCollections(t *testing.T) {
 	assert.Equal(t, model.ErrNotFound, errors.Errs()[0].Code, "errors.Errs()[0]: %#v", errors.Errs()[0])
 
 	// Update with bad category
-	updated.Category.ID = updated.Category.ID + "99"
+	updated.Category = updated.Category + "99"
 	_, errors = testApi.UpdateCollection(context.TODO(), updated.ID, *updated)
 	assert.Len(t, errors.Errs(), 1)
 	assert.Equal(t, model.ErrBadReference, errors.Errs()[0].Code, "errors.Errs()[0]: %#v", errors.Errs()[0])
 
 	// Update with bad LastUpdateTime
-	updated.Category.ID = ret2.Category.ID
+	updated.Category = ret2.Category
 	updated.LastUpdateTime = time.Now().Add(-time.Minute)
 	_, errors = testApi.UpdateCollection(context.TODO(), updated.ID, *updated)
 	if assert.NotNil(t, errors) {

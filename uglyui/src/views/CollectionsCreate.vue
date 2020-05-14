@@ -74,7 +74,7 @@ export default {
   methods: {
     createCollection() {
       let coll = Object.assign({}, this.collection, {
-        category: { id: this.collection.category, type: "category" }
+        category: this.collection.category
       });
       this.$v.$touch();
       if (!this.$v.$invalid) {

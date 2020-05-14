@@ -61,7 +61,6 @@ func TestSelectOneCategory(t *testing.T) {
 	c, err := p.SelectOneCategory(context.TODO(), "/categories/1")
 	assert.NoError(t, err)
 	assert.Equal(t, "/categories/1", c.ID)
-	assert.Equal(t, "category", c.Type)
 	assert.Equal(t, cb.Name, c.Name)
 	assert.Equal(t, cb.FieldDefs, c.FieldDefs)
 	assert.Equal(t, now, c.InsertTime)
@@ -85,7 +84,6 @@ func TestInsertCategory(t *testing.T) {
 	c, err := p.InsertCategory(context.TODO(), cb)
 	assert.NoError(t, err)
 	assert.Equal(t, "/categories/1", c.ID)
-	assert.Equal(t, "category", c.Type)
 	assert.Equal(t, cb.Name, c.Name)
 	assert.Equal(t, cb.FieldDefs, c.FieldDefs)
 	assert.Equal(t, now, c.InsertTime)
@@ -109,7 +107,6 @@ func TestUpdateCategory(t *testing.T) {
 	c, err := p.UpdateCategory(context.TODO(), "/categories/1", in)
 	assert.NoError(t, err)
 	assert.Equal(t, "/categories/1", c.ID)
-	assert.Equal(t, "category", c.Type)
 	assert.Equal(t, in.Name, c.Name)
 	assert.Equal(t, in.FieldDefs, c.FieldDefs)
 	assert.Equal(t, in.InsertTime, c.InsertTime)
@@ -177,7 +174,6 @@ func TestSelectOneCollection(t *testing.T) {
 	c, err := p.SelectOneCollection(context.TODO(), "/collections/1")
 	assert.NoError(t, err)
 	assert.Equal(t, "/collections/1", c.ID)
-	assert.Equal(t, "collection", c.Type)
 	assert.Equal(t, cb.Name, c.Name)
 	assert.Equal(t, now, c.InsertTime)
 	assert.Equal(t, now, c.LastUpdateTime)
@@ -190,7 +186,7 @@ func TestInsertCollection(t *testing.T) {
 	p := persist.NewPostgresPersister("", db)
 	in := makeCollectionIn(t)
 	var catID int32
-	fmt.Sscanf(in.Category.ID, model.CategoryIDFormat, &catID)
+	fmt.Sscanf(in.Category+"\n", model.CategoryIDFormat, &catID)
 	js, err := json.Marshal(in.CollectionBody)
 	assert.NoError(t, err)
 
@@ -205,7 +201,6 @@ func TestInsertCollection(t *testing.T) {
 	c, err := p.InsertCollection(context.TODO(), in)
 	assert.NoError(t, err)
 	assert.Equal(t, "/collections/1", c.ID)
-	assert.Equal(t, "collection", c.Type)
 	assert.Equal(t, in.Name, c.Name)
 	assert.Equal(t, now, c.InsertTime)
 	assert.Equal(t, now, c.LastUpdateTime)
@@ -219,19 +214,20 @@ func TestUpdateCollection(t *testing.T) {
 	in := makeCollection(t)
 	js, err := json.Marshal(in.CollectionBody)
 	assert.NoError(t, err)
+	var catID int32
+	fmt.Sscanf(in.Category+"\n", model.CategoryIDFormat, &catID)
 
 	now := time.Now()
 	mock.ExpectQuery(`UPDATE collection SET body = $1, category_id = $2, last_update_time = CURRENT_TIMESTAMP 
 	WHERE id = $3 AND last_update_time = $4
 	RETURNING id, category_id, body, insert_time, last_update_time`).
-		WithArgs([]byte(js), in.Category, 1, in.LastUpdateTime).
+		WithArgs([]byte(js), catID, 1, in.LastUpdateTime).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "category_id", "body", "insert_time", "last_update_time"}).
 			AddRow(1, 1, js, now, now))
 
 	c, err := p.UpdateCollection(context.TODO(), "/collections/1", in)
 	assert.NoError(t, err)
 	assert.Equal(t, "/collections/1", c.ID)
-	assert.Equal(t, "collection", c.Type)
 	assert.Equal(t, in.Name, c.Name)
 	assert.Equal(t, now, c.InsertTime)
 	assert.Equal(t, now, c.LastUpdateTime)
@@ -265,7 +261,7 @@ func makeCategoryIn(t *testing.T) model.CategoryIn {
 func makeCategory(t *testing.T) model.Category {
 	now := time.Now()
 	in := model.Category{
-		CategoryRef:    model.NewCategoryRef(33),
+		ID:             model.MakeCategoryID(33),
 		CategoryIn:     makeCategoryIn(t),
 		InsertTime:     now,
 		LastUpdateTime: now,
@@ -274,10 +270,9 @@ func makeCategory(t *testing.T) model.Category {
 }
 
 func makeCollectionIn(t *testing.T) model.CollectionIn {
-	cat := model.NewCategoryRef(1)
 	in := model.CollectionIn{
 		CollectionBody: model.CollectionBody{Name: "Test Collection"},
-		Category:       cat,
+		Category:       model.MakeCategoryID(1),
 	}
 	return in
 }
@@ -285,7 +280,7 @@ func makeCollectionIn(t *testing.T) model.CollectionIn {
 func makeCollection(t *testing.T) model.Collection {
 	now := time.Now()
 	in := model.Collection{
-		CollectionRef:  model.NewCollectionRef(22),
+		ID:             model.MakeCollectionID(22),
 		CollectionIn:   makeCollectionIn(t),
 		InsertTime:     now,
 		LastUpdateTime: now,

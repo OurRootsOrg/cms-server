@@ -74,41 +74,9 @@ func (cb *CategoryBody) Scan(value interface{}) error {
 	return json.Unmarshal(b, &cb)
 }
 
-// CategoryRef is a reference to a Category
-type CategoryRef struct {
-	ID   string `json:"id,omitempty" example:"/categories/999" validate:"required,omitempty"`
-	Type string `json:"type,omitempty" example:"category" validate:"required,omitempty"`
-}
-
-// NewCategoryRef constructs a CategoryRef from an id
-func NewCategoryRef(id int32) CategoryRef {
-	return CategoryRef{
-		ID:   pathPrefix + fmt.Sprintf(CategoryIDFormat, id),
-		Type: "category",
-	}
-}
-
-// Value makes CategoryRef implement the driver.Valuer interface.
-func (cr CategoryRef) Value() (driver.Value, error) {
-	var catID int64
-	_, err := fmt.Sscanf(cr.ID, pathPrefix+CategoryIDFormat, &catID)
-	return catID, err
-}
-
-// Scan makes CategoryRef implement the sql.Scanner interface.
-func (cr *CategoryRef) Scan(value interface{}) error {
-	catID, ok := value.(int64)
-	if !ok {
-		return fmt.Errorf("type assertion to int64 failed: %v", value)
-	}
-	cr.ID = pathPrefix + fmt.Sprintf(CategoryIDFormat, catID)
-	cr.Type = "category"
-	return nil
-}
-
 // Category represents a set of collections that all contain the same fields
 type Category struct {
-	CategoryRef
+	ID string `json:"id,omitempty" example:"/categories/999" validate:"required,omitempty"`
 	CategoryIn
 	InsertTime     time.Time `json:"insert_time,omitempty"`
 	LastUpdateTime time.Time `json:"last_update_time,omitempty"`
@@ -117,9 +85,14 @@ type Category struct {
 // NewCategory constructs a Category from an id and body
 func NewCategory(id int32, in CategoryIn) Category {
 	return Category{
-		CategoryRef: NewCategoryRef(id),
+		ID: MakeCategoryID(id),
 		CategoryIn: CategoryIn{
 			CategoryBody: in.CategoryBody,
 		},
 	}
+}
+
+// MakeCategoryID builds a Category ID string from an integer ID
+func MakeCategoryID(id int32) string {
+	return pathPrefix + fmt.Sprintf(CategoryIDFormat, id)
 }

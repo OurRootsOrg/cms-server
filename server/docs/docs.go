@@ -425,8 +425,7 @@ var doc = `{
             "type": "object",
             "required": [
                 "id",
-                "name",
-                "type"
+                "name"
             ],
             "properties": {
                 "field_defs": {
@@ -446,10 +445,6 @@ var doc = `{
                 },
                 "name": {
                     "type": "string"
-                },
-                "type": {
-                    "type": "string",
-                    "example": "category"
                 }
             }
         },
@@ -469,35 +464,17 @@ var doc = `{
                 }
             }
         },
-        "model.CategoryRef": {
-            "type": "object",
-            "required": [
-                "id",
-                "type"
-            ],
-            "properties": {
-                "id": {
-                    "type": "string",
-                    "example": "/categories/999"
-                },
-                "type": {
-                    "type": "string",
-                    "example": "category"
-                }
-            }
-        },
         "model.Collection": {
             "type": "object",
             "required": [
                 "category",
                 "id",
-                "name",
-                "type"
+                "name"
             ],
             "properties": {
                 "category": {
-                    "type": "object",
-                    "$ref": "#/definitions/model.CategoryRef"
+                    "type": "string",
+                    "example": "/categories/999"
                 },
                 "citation_template": {
                     "type": "string"
@@ -507,7 +484,6 @@ var doc = `{
                     "example": "/collections/999"
                 },
                 "insert_time": {
-                    "description": "CollectionBody\nCategory       CategoryRef ` + "`" + `json:\"category\" validate:\"required\"` + "`" + `",
                     "type": "string"
                 },
                 "last_update_time": {
@@ -518,10 +494,6 @@ var doc = `{
                 },
                 "name": {
                     "type": "string"
-                },
-                "type": {
-                    "type": "string",
-                    "example": "collection"
                 }
             }
         },
@@ -533,8 +505,8 @@ var doc = `{
             ],
             "properties": {
                 "category": {
-                    "type": "object",
-                    "$ref": "#/definitions/model.CategoryRef"
+                    "type": "string",
+                    "example": "/categories/999"
                 },
                 "citation_template": {
                     "type": "string"
