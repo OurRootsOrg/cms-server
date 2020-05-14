@@ -46,7 +46,7 @@ func (api API) AddCollection(ctx context.Context, in model.CollectionIn) (*model
 	collection, err := api.collectionPersister.InsertCollection(ctx, in)
 	if err == persist.ErrForeignKeyViolation {
 		log.Printf("[ERROR] Invalid category reference: %v", err)
-		return nil, model.NewErrors(http.StatusBadRequest, model.NewError(model.ErrBadReference, in.Category.ID, in.Category.Type))
+		return nil, model.NewErrors(http.StatusBadRequest, model.NewError(model.ErrBadReference, in.Category, "category"))
 	} else if err != nil {
 		log.Printf("[ERROR] Internal server error: %v", err)
 		return nil, model.NewErrors(http.StatusInternalServerError, err)
@@ -71,7 +71,7 @@ func (api API) UpdateCollection(ctx context.Context, id string, in model.Collect
 	}
 	if err == persist.ErrForeignKeyViolation {
 		log.Printf("[ERROR] Invalid category reference: %v", err)
-		return nil, model.NewErrors(http.StatusBadRequest, model.NewError(model.ErrBadReference, in.Category.ID, in.Category.Type))
+		return nil, model.NewErrors(http.StatusBadRequest, model.NewError(model.ErrBadReference, in.Category, "category"))
 	} else if err != nil {
 		return nil, model.NewErrors(http.StatusInternalServerError, err)
 	}

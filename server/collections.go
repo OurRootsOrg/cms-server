@@ -85,7 +85,7 @@ func (app App) PostCollection(w http.ResponseWriter, req *http.Request) {
 	}
 	collection, errors := app.api.AddCollection(app.Context(), in)
 	if errors != nil {
-		log.Printf("PostCollection addcollection %v\n", errors)
+		log.Printf("[DEBUG] PostCollection AddCollection %v\n", errors)
 		ErrorsResponse(w, errors)
 		return
 	}

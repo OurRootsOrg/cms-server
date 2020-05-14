@@ -24,8 +24,7 @@ func TestCollection(t *testing.T) {
 	js, err = json.Marshal(c)
 	assert.NoError(t, err)
 	// log.Printf("Collection JSON: %s", string(js))
-	cr := model.NewCategoryRef(999)
-	c.Category = cr
+	c.Category = "/categories/999"
 	js, err = json.Marshal(c)
 	assert.NoError(t, err)
 	// log.Printf("Collection JSON: %s", string(js))

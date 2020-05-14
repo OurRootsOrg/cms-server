@@ -9,11 +9,7 @@ Vue.use(Vuelidate);
 
 Vue.config.productionTip = false;
 
-const requireComponent = require.context(
-  "./components",
-  false,
-  /Base[A-Z]\w+\.(vue|js)$/
-);
+const requireComponent = require.context("./components", false, /Base[A-Z]\w+\.(vue|js)$/);
 
 requireComponent.keys().forEach(fileName => {
   const componentConfig = requireComponent(fileName);

@@ -49,12 +49,11 @@ func (p MemoryPersister) SelectOneCategory(ctx context.Context, id string) (mode
 // InsertCategory inserts a CategoryBody into the database and returns the inserted Category
 func (p MemoryPersister) InsertCategory(ctx context.Context, in model.CategoryIn) (model.Category, error) {
 	cat := model.NewCategory(int32(rand.Int31()), in)
-	cat.Type = "category"
 	now := time.Now()
 	cat.InsertTime = now
 	cat.LastUpdateTime = now
 	// Add to "database"
-	p.categories[cat.ID] = cat
+	p.categories[string(cat.ID)] = cat
 	return cat, nil
 }
 
@@ -65,7 +64,7 @@ func (p MemoryPersister) UpdateCategory(ctx context.Context, id string, in model
 		return model.Category{}, ErrNoRows
 	}
 	in.LastUpdateTime = time.Now()
-	p.categories[in.ID] = in
+	p.categories[string(in.ID)] = in
 	return in, nil
 }
 
@@ -99,7 +98,6 @@ func (p MemoryPersister) SelectOneCollection(ctx context.Context, id string) (mo
 // InsertCollection inserts a new collection
 func (p MemoryPersister) InsertCollection(ctx context.Context, in model.CollectionIn) (model.Collection, error) {
 	col := model.NewCollection(int32(rand.Int31()), in)
-	col.Type = model.CollectionName
 	now := time.Now()
 	col.InsertTime = now
 	col.LastUpdateTime = now
@@ -116,7 +114,6 @@ func (p MemoryPersister) UpdateCollection(ctx context.Context, id string, in mod
 		return col, ErrNoRows
 	}
 	col.ID = id
-	col.Type = model.CollectionName
 	col.CollectionBody = in.CollectionBody
 	col.Category = in.Category
 	now := time.Now()

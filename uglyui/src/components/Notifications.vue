@@ -1,10 +1,6 @@
 <template>
   <div class="notifications">
-    <Notification
-      v-for="notification in notificationsList"
-      :key="notification.id"
-      :notification="notification"
-    />
+    <Notification v-for="notification in notificationsList" :key="notification.id" :notification="notification" />
   </div>
 </template>
 

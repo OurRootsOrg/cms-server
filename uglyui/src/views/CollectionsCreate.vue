@@ -33,11 +33,7 @@
         </p>
       </template>
 
-      <BaseButton
-        type="submit"
-        class="submit-button"
-        buttonClass="-fill-gradient"
-        :disabled="$v.$anyError"
+      <BaseButton type="submit" class="submit-button" buttonClass="-fill-gradient" :disabled="$v.$anyError"
         >Submit</BaseButton
       >
       <p v-if="$v.$anyError" class="errorMessage">
@@ -74,7 +70,7 @@ export default {
   methods: {
     createCollection() {
       let coll = Object.assign({}, this.collection, {
-        category: { id: this.collection.category, type: "category" }
+        category: this.collection.category
       });
       this.$v.$touch();
       if (!this.$v.$invalid) {
