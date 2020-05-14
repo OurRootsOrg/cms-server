@@ -6,7 +6,6 @@
       :value="value"
       @change="updateValue"
       v-bind="$attrs"
-      v-on="$listeners"
     >
       <option
         v-for="option in options"

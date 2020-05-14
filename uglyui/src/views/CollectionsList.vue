@@ -31,7 +31,7 @@ export default {
     categoryForCollection() {
       return collection => {
         return this.categories.categoriesList.find(
-          cat => cat.id === collection.category.id
+          cat => cat.id === collection.category
         );
       };
     },

@@ -31,7 +31,7 @@ export default {
     collectionsForCategory() {
       return category => {
         return this.collections.collectionsList.filter(
-          coll => coll.category.id === category.id
+          coll => coll.category === category.id
         );
       };
     },
