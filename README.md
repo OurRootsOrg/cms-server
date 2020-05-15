@@ -50,6 +50,7 @@ install psql                    # https://blog.timescale.com/tutorials/how-to-in
 npm install -g @vue/cli         # the uglyui client uses vue
 
 docker volume create cms_pgdata # do this once to create a persistent database volume
+docker volume create cms_s3data # do this once to create a persistent blob-store volume
 tilt up                         # run the server and dependencies
                                   # make sure you don't already have a postgres process running
                                   # alternatively, run docker-compose up --build

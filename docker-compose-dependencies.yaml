@@ -9,6 +9,33 @@ services:
       - POSTGRES_PASSWORD=postgres
     networks:
       - mynetwork
+
+  minio:
+    image: minio/minio
+    ports:
+      - "19000:9000"
+    environment:
+      MINIO_ACCESS_KEY: minioaccess
+      MINIO_SECRET_KEY: miniosecret
+    entrypoint: sh
+    command: -c 'mkdir -p /data/testbucket && /usr/bin/minio server /data'
+    networks:
+      - mynetwork
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    ports:
+      - "25672:5672"
+      - "15672:15672"
+    volumes:
+      - ./rabbitmq_advanced.config:/etc/rabbitmq/advanced.config
+      - ./rabbitmq_definitions.json:/etc/rabbitmq/rabbitmq_definitions.json
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    networks:
+      - mynetwork
+
 networks:
   mynetwork:
     driver: bridge
