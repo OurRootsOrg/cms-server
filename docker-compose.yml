@@ -53,6 +53,7 @@ services:
       - BASE_URL=http://localhost:8000
       - PERSISTER=sql
       - DATABASE_URL=postgres://ourroots:password@postgres:5432/cms?sslmode=disable
+      - RABBIT_SERVER_URL="amqp://guest:guest@localhost:5672/"
     networks:
       - mynetwork
 
