@@ -5,7 +5,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io"
 	"log"
 	"math"
 	"net/http"
@@ -167,33 +166,21 @@ func main() {
 		if env.BaseURL.Scheme == "https" {
 			log.Fatal(http.ListenAndServeTLS(fmt.Sprintf(":%s", env.BaseURL.Port()),
 				"server.crt", "server.key",
-				handlers.CustomLoggingHandler(
+				handlers.LoggingHandler(
 					os.Stdout,
-					handlers.LoggingHandler(
-						os.Stdout,
-						handlers.CORS(
-							handlers.AllowedHeaders([]string{"X-Requested-With", "Content-Type", "Authorization"}),
-							handlers.AllowedMethods([]string{"GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS"}),
-							handlers.AllowedOrigins([]string{"*"}))(r)),
-					func(writer io.Writer, params handlers.LogFormatterParams) {
-						writer.Write([]byte("Hello\n"))
-						writer.Write([]byte(fmt.Sprintf("Request: %#v\n", params.Request)))
-					},
-				)))
+					handlers.CORS(
+						handlers.AllowedHeaders([]string{"X-Requested-With", "Content-Type", "Authorization"}),
+						handlers.AllowedMethods([]string{"GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS"}),
+						handlers.AllowedOrigins([]string{"*"}))(r)),
+			))
 		} else {
 			log.Fatal(http.ListenAndServe(fmt.Sprintf(":%s", env.BaseURL.Port()),
-				handlers.CustomLoggingHandler(
-					os.Stdout,
-					handlers.LoggingHandler(os.Stdout,
-						handlers.CORS(
-							handlers.AllowedHeaders([]string{"X-Requested-With", "Content-Type", "Authorization"}),
-							handlers.AllowedMethods([]string{"GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS"}),
-							handlers.AllowedOrigins([]string{"*"}))(r)),
-					func(writer io.Writer, params handlers.LogFormatterParams) {
-						writer.Write([]byte(fmt.Sprintf("Request: %#v\n", params.Request)))
-					},
-				)))
-
+				handlers.LoggingHandler(os.Stdout,
+					handlers.CORS(
+						handlers.AllowedHeaders([]string{"X-Requested-With", "Content-Type", "Authorization"}),
+						handlers.AllowedMethods([]string{"GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS"}),
+						handlers.AllowedOrigins([]string{"*"}))(r)),
+			))
 		}
 	}
 }

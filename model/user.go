@@ -28,14 +28,14 @@ type UserIn struct {
 
 // UserBody is the JSON part of the User object
 type UserBody struct {
-	Name         string `json:"name,omitempty" validate:"required"`
-	Email        string `email:"email,omitempty" validate:"required,email"`
-	passwordHash string
+	Name           string `json:"name,omitempty" validate:"required"`
+	Email          string `email:"email,omitempty" validate:"required,email"`
+	EmailConfirmed bool   `email:"email_confirmed,omitempty"`
 }
 
 // NewUserIn constructs a UserIn
-func NewUserIn(name string, email string, passwordHash string) (UserIn, error) {
-	cb, err := newUserBody(name, email, passwordHash)
+func NewUserIn(name string, email string, emailConfirmed bool) (UserIn, error) {
+	cb, err := newUserBody(name, email, emailConfirmed)
 	if err != nil {
 		return UserIn{}, err
 	}
@@ -43,11 +43,11 @@ func NewUserIn(name string, email string, passwordHash string) (UserIn, error) {
 }
 
 // newUserBody constructs a UserBody
-func newUserBody(name string, email string, passwordHash string) (UserBody, error) {
+func newUserBody(name string, email string, emailConfirmed bool) (UserBody, error) {
 	ub := UserBody{
-		Name:         name,
-		Email:        email,
-		passwordHash: passwordHash,
+		Name:           name,
+		Email:          email,
+		EmailConfirmed: emailConfirmed,
 	}
 	return ub, nil
 }
@@ -66,41 +66,14 @@ func (cb *UserBody) Scan(value interface{}) error {
 	return json.Unmarshal(b, &cb)
 }
 
-// UserRef is a reference to a User
-type UserRef struct {
-	ID   string `json:"id,omitempty" example:"/users/999" validate:"required,omitempty"`
-	Type string `json:"type,omitempty" example:"user" validate:"required,omitempty"`
-}
-
-// NewUserRef constructs a UserRef from an id
-func NewUserRef(id int32) UserRef {
-	return UserRef{
-		ID:   pathPrefix + fmt.Sprintf(UserIDFormat, id),
-		Type: "category",
-	}
-}
-
-// Value makes UserRef implement the driver.Valuer interface.
-func (cr UserRef) Value() (driver.Value, error) {
-	var catID int64
-	_, err := fmt.Sscanf(cr.ID, pathPrefix+UserIDFormat, &catID)
-	return catID, err
-}
-
-// Scan makes UserRef implement the sql.Scanner interface.
-func (cr *UserRef) Scan(value interface{}) error {
-	catID, ok := value.(int64)
-	if !ok {
-		return fmt.Errorf("type assertion to int64 failed: %v", value)
-	}
-	cr.ID = pathPrefix + fmt.Sprintf(UserIDFormat, catID)
-	cr.Type = "category"
-	return nil
+// NewUserID constructs an ID for a User from an integer id
+func NewUserID(id int32) string {
+	return pathPrefix + fmt.Sprintf(UserIDFormat, id)
 }
 
 // User represents a set of collections that all contain the same fields
 type User struct {
-	UserRef
+	ID string `json:"id,omitempty" example:"/users/999" validate:"required,omitempty"`
 	UserIn
 	InsertTime     time.Time `json:"insert_time,omitempty"`
 	LastUpdateTime time.Time `json:"last_update_time,omitempty"`
@@ -109,7 +82,7 @@ type User struct {
 // NewUser constructs a User from an id and body
 func NewUser(id int32, in UserIn) User {
 	return User{
-		UserRef: NewUserRef(id),
+		ID: NewUserID(id),
 		UserIn: UserIn{
 			UserBody: in.UserBody,
 		},

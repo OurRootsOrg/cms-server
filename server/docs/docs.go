@@ -42,6 +42,14 @@ var doc = `{
                             "profile",
                             "email"
                         ]
+                    },
+                    {
+                        "OAuth2AuthCode": [
+                            "cms",
+                            "openid",
+                            "profile",
+                            "email"
+                        ]
                     }
                 ],
                 "produces": [
@@ -710,10 +718,6 @@ var doc = `{
                 },
                 "search_results_page_template": {
                     "type": "string"
-                },
-                "type": {
-                    "type": "string",
-                    "example": "category"
                 }
             }
         },

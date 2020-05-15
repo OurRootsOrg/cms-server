@@ -8,7 +8,6 @@ import (
 	"log"
 	"net/http"
 	"net/url"
-	"os"
 
 	jwtmiddleware "github.com/auth0/go-jwt-middleware"
 	"github.com/dgrijalva/jwt-go"
@@ -113,7 +112,7 @@ func (app App) NewRouter() *mux.Router {
 				return token, errors.New("invalid issuer")
 			}
 
-			cert, err := getPemCert(token)
+			cert, err := getPemCert(app.oidcDomain, token)
 			if err != nil {
 				panic(err.Error())
 			}
@@ -166,9 +165,9 @@ type jsonWebKeys struct {
 	X5c []string `json:"x5c"`
 }
 
-func getPemCert(token *jwt.Token) (string, error) {
+func getPemCert(domain string, token *jwt.Token) (string, error) {
 	cert := ""
-	resp, err := http.Get("https://" + os.Getenv("AUTH0_DOMAIN") + "/.well-known/jwks.json")
+	resp, err := http.Get("https://" + domain + "/.well-known/jwks.json")
 
 	if err != nil {
 		return cert, err

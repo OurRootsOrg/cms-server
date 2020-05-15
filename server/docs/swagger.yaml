@@ -24,9 +24,6 @@ definitions:
         type: string
       search_results_page_template:
         type: string
-      type:
-        example: category
-        type: string
     required:
     - id
     - name
@@ -166,6 +163,11 @@ paths:
             $ref: '#/definitions/model.Errors'
       security:
       - OAuth2Implicit:
+        - cms
+        - openid
+        - profile
+        - email
+      - OAuth2AuthCode:
         - cms
         - openid
         - profile

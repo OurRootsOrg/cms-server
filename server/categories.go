@@ -18,6 +18,7 @@ import (
 // @success 200 {array} model.Category "OK"
 // @failure 500 {object} model.Errors "Server error"
 // @Security OAuth2Implicit[cms,openid,profile,email]
+// @Security OAuth2AuthCode[cms,openid,profile,email]
 func (app App) GetAllCategories(w http.ResponseWriter, req *http.Request) {
 	enc := json.NewEncoder(w)
 	w.Header().Set("Content-Type", contentType)
