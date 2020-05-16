@@ -11,6 +11,7 @@ import (
 	"net/url"
 	"os"
 	"reflect"
+	"strings"
 	"time"
 
 	"github.com/aws/aws-lambda-go/events"
@@ -63,7 +64,10 @@ func main() {
 	log.SetOutput(filter)
 	log.Printf("[INFO] env.BaseURLString: %s, env.BaseURL.Path: %s", env.BaseURLString, env.BaseURL.Path)
 	model.Initialize(env.BaseURL.Path)
-	ap := api.NewAPI().BaseURL(*env.BaseURL)
+	ap := api.NewAPI().
+		BaseURL(*env.BaseURL).
+		BlobStoreConfig(env.Region, env.BlobStoreEndpoint, env.BlobStoreAccessKey, env.BlobStoreSecretKey, env.BlobStoreBucket, env.BlobStoreDisableSSL).
+		PubSubConfig(env.Region, env.PubSubProtocol, env.PubSubPrefix)
 	app := NewApp().BaseURL(*env.BaseURL).API(ap)
 
 	switch env.Persister {
@@ -91,7 +95,7 @@ func main() {
 			log.Fatalf("Error connecting to database: %v\n DATABASE_URL: %s\n",
 				err,
 				env.DatabaseURL,
-				)
+			)
 		}
 		log.Printf("Connected to %s\n", env.DatabaseURL)
 
@@ -153,22 +157,38 @@ func main() {
 
 // Env holds values parse from environment variables
 type Env struct {
-	IsLambda      bool   `env:"LAMBDA_TASK_ROOT"`
-	MinLogLevel   string `env:"MIN_LOG_LEVEL" validate:"omitempty,eq=DEBUG|eq=INFO|eq=ERROR"`
-	BaseURLString string `env:"BASE_URL" validate:"omitempty,url"`
-	Persister     string `env:"PERSISTER" validate:"required,eq=memory|eq=sql"`
-	DatabaseURL   string `env:"DATABASE_URL" validate:"omitempty,url"`
-	BaseURL       *url.URL
+	IsLambda            bool   `env:"LAMBDA_TASK_ROOT"`
+	MinLogLevel         string `env:"MIN_LOG_LEVEL" validate:"omitempty,eq=DEBUG|eq=INFO|eq=ERROR"`
+	BaseURLString       string `env:"BASE_URL" validate:"omitempty,url"`
+	Persister           string `env:"PERSISTER" validate:"required,eq=memory|eq=sql"`
+	DatabaseURL         string `env:"DATABASE_URL" validate:"omitempty,url"`
+	BaseURL             *url.URL
+	Region              string `env:"AWS_REGION"`
+	BlobStoreEndpoint   string `env:"BLOB_STORE_ENDPOINT"`
+	BlobStoreAccessKey  string `env:"BLOB_STORE_ACCESS_KEY"`
+	BlobStoreSecretKey  string `env:"BLOB_STORE_SECRET_KEY"`
+	BlobStoreBucket     string `env:"BLOB_STORE_BUCKET"`
+	BlobStoreDisableSSL bool   `env:"BLOB_STORE_DISABLE_SSL"`
+	PubSubProtocol      string `env:"PUB_SUB_PROTOCOL"`
+	PubSubPrefix        string `env:"PUB_SUB_PREFIX"`
 }
 
 // ParseEnv parses and validates environment variables and stores them in the Env structure
 func ParseEnv() (*Env, error) {
 	env := Env{
-		IsLambda:      os.Getenv("LAMBDA_TASK_ROOT") != "",
-		MinLogLevel:   os.Getenv("MIN_LOG_LEVEL"),
-		BaseURLString: os.Getenv("BASE_URL"),
-		Persister:     os.Getenv("PERSISTER"),
-		DatabaseURL:   os.Getenv("DATABASE_URL"),
+		IsLambda:            os.Getenv("LAMBDA_TASK_ROOT") != "",
+		MinLogLevel:         os.Getenv("MIN_LOG_LEVEL"),
+		BaseURLString:       os.Getenv("BASE_URL"),
+		Persister:           os.Getenv("PERSISTER"),
+		DatabaseURL:         os.Getenv("DATABASE_URL"),
+		Region:              os.Getenv("AWS_REGION"),
+		BlobStoreEndpoint:   os.Getenv("BLOB_STORE_ENDPOINT"),
+		BlobStoreAccessKey:  os.Getenv("BLOB_STORE_ACCESS_KEY"),
+		BlobStoreSecretKey:  os.Getenv("BLOB_STORE_SECRET_KEY"),
+		BlobStoreBucket:     os.Getenv("BLOB_STORE_BUCKET"),
+		BlobStoreDisableSSL: strings.HasPrefix(strings.ToUpper(os.Getenv("BLOB_STORE_DISABLE_SSL")), "T"),
+		PubSubProtocol:      os.Getenv("PUB_SUB_PROTOCOL"),
+		PubSubPrefix:        os.Getenv("PUB_SUB_PREFIX"),
 	}
 	validate := validator.New()
 	validate.RegisterTagNameFunc(func(fld reflect.StructField) string {
