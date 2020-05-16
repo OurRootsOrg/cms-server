@@ -65,6 +65,7 @@ services:
       - PUB_SUB_PREFIX=
       - RABBIT_SERVER_URL=amqp://guest:guest@rabbitmq:5672/
       - OIDC_DOMAIN=ourroots-jim.auth0.com
+#      - OIDC_DOMAIN=dev-0s6r65gs.auth0.com
       - OIDC_AUDIENCE=https://localhost:3000/
     networks:
       - mynetwork

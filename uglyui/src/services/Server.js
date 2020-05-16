@@ -1,4 +1,5 @@
 import axios from "axios";
+import { getInstance } from "../auth";
 
 const apiClient = axios.create({
   baseURL: `http://localhost:8000`,
@@ -18,7 +19,15 @@ export default {
     return apiClient.post("/categories", category);
   },
   categoriesGetAll() {
-    return apiClient.get("/categories");
+    console.log("categoriesGetAll", apiClient, 'auth', getInstance());
+    return getInstance().getTokenSilently().then(token => {
+      console.log('token', token);
+      return apiClient.get("/categories", {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+    })
   },
   collectionsCreate(collection) {
     return apiClient.post("/collections", collection);

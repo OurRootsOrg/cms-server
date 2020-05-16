@@ -25,5 +25,5 @@ uglyui/node_modules/
 uglyui/.idea/
 .vscode/
 
-# sensitive data
+# Secrets
 uglyui/auth_config.json

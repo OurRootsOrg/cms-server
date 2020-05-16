@@ -2,13 +2,6 @@
   <div id="app">
     <div id="nav">
       <div>
-        <h3>Authentication</h3>
-        <ul>
-          <li><router-link to="/auth/register">Register</router-link></li>
-          <li><router-link to="/auth/login">Login</router-link></li>
-        </ul>
-      </div>
-      <div>
         <h3>Dashboard</h3>
         <ul>
           <li><router-link to="/dashboard">Go</router-link></li>
