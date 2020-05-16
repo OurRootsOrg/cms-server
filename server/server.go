@@ -10,13 +10,13 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"reflect"
 	"time"
+
+	"github.com/kelseyhightower/envconfig"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/awslabs/aws-lambda-go-api-proxy/gorillamux"
-	"github.com/go-playground/validator/v10"
 	"github.com/gorilla/handlers"
 	"github.com/hashicorp/logutils"
 	"github.com/ourrootsorg/cms-server/api"
@@ -91,7 +91,7 @@ func main() {
 			log.Fatalf("Error connecting to database: %v\n DATABASE_URL: %s\n",
 				err,
 				env.DatabaseURL,
-				)
+			)
 		}
 		log.Printf("Connected to %s\n", env.DatabaseURL)
 
@@ -153,61 +153,48 @@ func main() {
 
 // Env holds values parse from environment variables
 type Env struct {
-	IsLambda      bool   `env:"LAMBDA_TASK_ROOT"`
-	MinLogLevel   string `env:"MIN_LOG_LEVEL" validate:"omitempty,eq=DEBUG|eq=INFO|eq=ERROR"`
-	BaseURLString string `env:"BASE_URL" validate:"omitempty,url"`
-	Persister     string `env:"PERSISTER" validate:"required,eq=memory|eq=sql"`
-	DatabaseURL   string `env:"DATABASE_URL" validate:"omitempty,url"`
-	BaseURL       *url.URL
+	LambdaTaskRoot string   `envconfig:"LAMBDA_TASK_ROOT"`
+	IsLambda       bool     `ignored:"true"`
+	MinLogLevel    string   `envconfig:"MIN_LOG_LEVEL"`
+	Persister      string   `envconfig:"PERSISTER" required:"true"`
+	DatabaseURL    string   `envconfig:"DATABASE_URL"`
+	BaseURLString  string   `envconfig:"BASE_URL"`
+	BaseURL        *url.URL `ignored:"true"`
 }
 
 // ParseEnv parses and validates environment variables and stores them in the Env structure
 func ParseEnv() (*Env, error) {
-	env := Env{
-		IsLambda:      os.Getenv("LAMBDA_TASK_ROOT") != "",
-		MinLogLevel:   os.Getenv("MIN_LOG_LEVEL"),
-		BaseURLString: os.Getenv("BASE_URL"),
-		Persister:     os.Getenv("PERSISTER"),
-		DatabaseURL:   os.Getenv("DATABASE_URL"),
-	}
-	validate := validator.New()
-	validate.RegisterTagNameFunc(func(fld reflect.StructField) string {
-		return fld.Tag.Get("env")
-	})
-	err := validate.Struct(env)
+	var env Env
+	err := envconfig.Process("", &env)
 	if err != nil {
-		errs := "Error parsing environment variables:\n"
-		for _, fe := range err.(validator.ValidationErrors) {
-			switch fe.Field() {
-			case "MIN_LOG_LEVEL":
-				errs += fmt.Sprintf("  Invalid MIN_LOG_LEVEL: '%v', valid values are 'DEBUG', 'INFO' or 'ERROR'\n", fe.Value())
-			case "BASE_URL":
-				errs += fmt.Sprintf("  Invalid BASE_URL: '%v' is not a valid URL\n", fe.Value())
-			case "PERSISTER":
-				if fe.Tag() == "required" {
-					errs += "  PERSISTER is required, valid values are 'memory' or 'sql'\n"
-				} else {
-					errs += fmt.Sprintf("  Invalid PERSISTER: '%v', valid values are 'memory' or 'sql'\n", fe.Value())
-				}
-			case "DATABASE_URL":
-				errs += fmt.Sprintf("  Invalid DATABASE_URL: '%v' is not a valid Postgresql URL\n", fe.Value())
-			}
-		}
-		return nil, errors.New(errs)
+		return nil, err
 	}
+	env.IsLambda = env.LambdaTaskRoot != ""
+	errs := ""
 	if env.MinLogLevel == "" {
 		env.MinLogLevel = "DEBUG"
+	}
+	if env.MinLogLevel != "DEBUG" && env.MinLogLevel != "INFO" && env.MinLogLevel != "ERROR" {
+		errs += fmt.Sprintf("  Invalid MIN_LOG_LEVEL: '%v', valid values are 'DEBUG', 'INFO' or 'ERROR'\n", env.MinLogLevel)
+	}
+	if env.Persister != "memory" && env.Persister != "sql" {
+		errs += fmt.Sprintf("  Invalid PERSISTER: '%v', valid values are 'memory' or 'sql'\n", env.Persister)
+	}
+	if env.Persister == "sql" && env.DatabaseURL == "" {
+		errs += "DATABASE_URL is required for PERSISTER=sql"
+	}
+	if _, err := url.ParseRequestURI(env.DatabaseURL); env.DatabaseURL != "" && err != nil {
+		errs += fmt.Sprintf("Unable to parse BASE_URL '%s': %v", env.DatabaseURL, err)
 	}
 	if env.BaseURLString == "" {
 		env.BaseURLString = defaultURL
 	}
 	env.BaseURL, err = url.ParseRequestURI(env.BaseURLString)
 	if err != nil {
-		// Unreachable, if the validator does its job
-		return nil, fmt.Errorf("Unable to parse BASE_URL '%s': %v", env.BaseURLString, err)
+		errs += fmt.Sprintf("Unable to parse BASE_URL '%s': %v", env.BaseURLString, err)
 	}
-	if env.Persister == "sql" && env.DatabaseURL == "" {
-		return nil, errors.New("DATABASE_URL is required for PERSISTER=sql")
+	if errs != "" {
+		return nil, errors.New(errs)
 	}
 	return &env, nil
 }
