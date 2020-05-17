@@ -14,11 +14,12 @@ const UserIDFormat = "/users/%d"
 
 // UserPersister defines methods needed to persist categories
 type UserPersister interface {
-	SelectUsers(ctx context.Context) ([]User, error)
-	SelectOneUser(ctx context.Context, id string) (User, error)
-	InsertUser(ctx context.Context, in UserIn) (User, error)
-	UpdateUser(ctx context.Context, id string, body User) (User, error)
-	DeleteUser(ctx context.Context, id string) error
+	RetrieveUser(ctx context.Context, in UserIn) (*User, error)
+	// SelectUsers(ctx context.Context) ([]User, error)
+	// SelectOneUser(ctx context.Context, id string) (User, error)
+	// InsertUser(ctx context.Context, in UserIn) (User, error)
+	// UpdateUser(ctx context.Context, id string, body User) (User, error)
+	// DeleteUser(ctx context.Context, id string) error
 }
 
 // UserIn is the payload to create or update a category
@@ -29,13 +30,16 @@ type UserIn struct {
 // UserBody is the JSON part of the User object
 type UserBody struct {
 	Name           string `json:"name,omitempty" validate:"required"`
-	Email          string `email:"email,omitempty" validate:"required,email"`
-	EmailConfirmed bool   `email:"email_confirmed,omitempty"`
+	Email          string `json:"email,omitempty" validate:"required,email"`
+	EmailConfirmed bool   `json:"email_confirmed,omitempty"`
+	Issuer         string `json:"iss" validate:"required,url"`
+	Subject        string `json:"sub" validate:"required"`
+	Enabled        bool   `json:"enabled"`
 }
 
 // NewUserIn constructs a UserIn
-func NewUserIn(name string, email string, emailConfirmed bool) (UserIn, error) {
-	cb, err := newUserBody(name, email, emailConfirmed)
+func NewUserIn(name string, email string, emailConfirmed bool, issuer string, subject string) (UserIn, error) {
+	cb, err := newUserBody(name, email, emailConfirmed, issuer, subject, true)
 	if err != nil {
 		return UserIn{}, err
 	}
@@ -43,11 +47,14 @@ func NewUserIn(name string, email string, emailConfirmed bool) (UserIn, error) {
 }
 
 // newUserBody constructs a UserBody
-func newUserBody(name string, email string, emailConfirmed bool) (UserBody, error) {
+func newUserBody(name string, email string, emailConfirmed bool, issuer string, subject string, enabled bool) (UserBody, error) {
 	ub := UserBody{
 		Name:           name,
 		Email:          email,
 		EmailConfirmed: emailConfirmed,
+		Issuer:         issuer,
+		Subject:        subject,
+		Enabled:        enabled,
 	}
 	return ub, nil
 }
@@ -87,4 +94,9 @@ func NewUser(id int32, in UserIn) User {
 			UserBody: in.UserBody,
 		},
 	}
+}
+
+// MakeUserID builds a User ID string from an integer ID
+func MakeUserID(id int32) string {
+	return pathPrefix + fmt.Sprintf(UserIDFormat, id)
 }

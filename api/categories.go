@@ -6,7 +6,6 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/dgrijalva/jwt-go"
 	"github.com/ourrootsorg/cms-server/model"
 	"github.com/ourrootsorg/cms-server/persist"
 )
@@ -19,12 +18,24 @@ type CategoryResult struct {
 
 // GetCategories holds the business logic around getting many Categories
 func (api API) GetCategories(ctx context.Context /* filter/search criteria */) (*CategoryResult, *model.Errors) {
-	user := ctx.Value("user")
-	log.Printf("[DEBUG] This is an authenticated request")
-	log.Printf("[DEBUG] Claim content:\n")
-	for k, v := range user.(*jwt.Token).Claims.(jwt.MapClaims) {
-		log.Printf("[DEBUG] %s :\t%#v\n", k, v)
-	}
+	// token, ok := ctx.Value(TokenProperty).(*oidc.IDToken)
+	// if token == nil || !ok {
+	// 	msg := "No authentication token"
+	// 	log.Print("[DEBUG] " + msg)
+	// 	return nil, model.NewErrors(http.StatusUnauthorized, errors.New(msg))
+	// }
+	// log.Printf("[DEBUG] This is an authenticated request")
+	// log.Printf("[DEBUG] Audience: %s", token.Audience)
+	// log.Printf("[DEBUG] Subject: %s", token.Subject)
+	// log.Printf("[DEBUG] Issuer: %s", token.Issuer)
+	// log.Printf("[DEBUG] IssuedAt: %s", token.IssuedAt.Format(time.RFC3339))
+	// log.Printf("[DEBUG] Expiry: %s", token.Expiry.Format(time.RFC3339))
+	// claims := make(map[string]interface{})
+	// err := token.Claims(&claims)
+	// if err != nil {
+	// 	log.Printf("[ERROR] Error getting claims: %v", err)
+	// }
+	// log.Printf("[DEBUG] Claims: %#v", claims)
 	// TODO: handle search criteria and paged results
 	cols, err := api.categoryPersister.SelectCategories(ctx)
 	if err != nil {

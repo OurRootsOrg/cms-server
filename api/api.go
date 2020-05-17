@@ -14,8 +14,18 @@ import (
 	"gocloud.dev/pubsub"
 
 	"github.com/go-playground/validator/v10"
+	lru "github.com/hashicorp/golang-lru"
 	"github.com/ourrootsorg/cms-server/model"
 )
+
+// TokenKey is the key to the token property in the request context
+type TokenKey string
+
+// TokenProperty is the name of the token property in the request context
+const TokenProperty TokenKey = "token"
+
+// UserProperty is the name of the token property in the request context
+const UserProperty TokenKey = "user"
 
 // API is the container for the apilication
 type API struct {
@@ -26,6 +36,7 @@ type API struct {
 	validate            *validator.Validate
 	blobStoreConfig     BlobStoreConfig
 	pubSubConfig        PubSubConfig
+	userCache           *lru.TwoQueueCache
 }
 
 // BlobStoreConfig contains configuration information for the blob store
@@ -46,12 +57,18 @@ type PubSubConfig struct {
 }
 
 // NewAPI builds an API
-func NewAPI() *API {
+func NewAPI() (*API, error) {
 	api := &API{
 		baseURL: url.URL{},
 	}
 	api.Validate(validator.New())
-	return api
+	var err error
+	api.userCache, err = lru.New2Q(100)
+	if err != nil {
+		return nil, err
+	}
+
+	return api, nil
 }
 
 // BaseURL sets the base URL for the api
@@ -135,4 +152,10 @@ func (api *API) getPubSubUrlStr(target string) string {
 		log.Fatalf("Invalid protocol %s\n", api.pubSubConfig.protocol)
 	}
 	return urlStr
+}
+
+// UserPersister sets the UserPersister for the API
+func (api *API) UserPersister(p model.UserPersister) *API {
+	api.userPersister = p
+	return api
 }

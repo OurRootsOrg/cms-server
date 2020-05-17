@@ -3,14 +3,13 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"log"
 	"net/http"
 	"net/url"
+	"strings"
 
-	jwtmiddleware "github.com/auth0/go-jwt-middleware"
-	"github.com/dgrijalva/jwt-go"
+	"github.com/coreos/go-oidc"
 	"github.com/gorilla/mux"
 	"github.com/ourrootsorg/cms-server/api"
 	"github.com/ourrootsorg/cms-server/model"
@@ -44,6 +43,8 @@ type App struct {
 	api          localAPI
 	oidcAudience string
 	oidcDomain   string
+	oidcProvider *oidc.Provider
+	oidcVerifier *oidc.IDTokenVerifier
 }
 
 // NewApp builds an App
@@ -66,15 +67,20 @@ func (app *App) API(api localAPI) *App {
 	return app
 }
 
-// OIDCAudience sets the OIDC audience for the app
-func (app *App) OIDCAudience(oidcAudience string) *App {
+// OIDC sets up OIDC configuration for the app
+func (app *App) OIDC(oidcAudience string, oidcDomain string) *App {
+	var err error
 	app.oidcAudience = oidcAudience
-	return app
-}
-
-// OIDCDomain sets the OIDC domain for the app
-func (app *App) OIDCDomain(oidcDomain string) *App {
 	app.oidcDomain = oidcDomain
+	// Assumes that the OIDC provider supports discovery
+	app.oidcProvider, err = oidc.NewProvider(context.TODO(), "https://"+app.oidcDomain+"/")
+	if err != nil {
+		log.Fatalf("Unable to intialize OIDC verifier: %v", err)
+	}
+	config := &oidc.Config{
+		ClientID: app.oidcAudience,
+	}
+	app.oidcVerifier = app.oidcProvider.Verifier(config)
 	return app
 }
 
@@ -90,45 +96,64 @@ func (app App) GetHealth(w http.ResponseWriter, req *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
+func (app App) verifyToken(next http.Handler) http.Handler {
+	fn := func(w http.ResponseWriter, r *http.Request) {
+		authHeader := r.Header.Get("Authorization")
+		if authHeader == "" {
+			msg := "No Authorization header found"
+			log.Print("[DEBUG] " + msg)
+			ErrorResponse(w, http.StatusNotFound, msg)
+			return
+		}
+		authHeaderParts := strings.Fields(authHeader)
+		if len(authHeaderParts) != 2 || strings.ToLower(authHeaderParts[0]) != "bearer" {
+			msg := "Authorization header format must be Bearer {token}"
+			log.Print("[DEBUG] " + msg)
+			ErrorResponse(w, http.StatusNotFound, msg)
+			return
+		}
+
+		// Make sure that the incoming request has our token header
+		accessJWT := authHeaderParts[1]
+
+		// Verify the access token
+		ctx := r.Context()
+		parsedToken, err := app.oidcVerifier.Verify(ctx, accessJWT)
+		if err != nil {
+			msg := fmt.Sprintf("Invalid token: %s", err.Error())
+			log.Print("[DEBUG] " + msg)
+			ErrorResponse(w, http.StatusNotFound, msg)
+			return
+		}
+		log.Printf("[DEBUG] Found valid token for subject '%s'", parsedToken.Subject)
+		user, errors := app.api.RetrieveUser(r.Context(), app.oidcProvider, parsedToken, accessJWT)
+		if errors != nil {
+			ErrorsResponse(w, errors)
+			return
+		}
+
+		// If we get here, everything worked and we can set the
+		// user property in context.
+		// c := context.WithValue(r.Context(), api.TokenProperty, parsedToken)
+		c := context.WithValue(r.Context(), api.UserProperty, user)
+
+		newRequest := r.WithContext(c)
+		// Update the current request with the new context information.
+		*r = *newRequest
+		next.ServeHTTP(w, r)
+	}
+	return http.HandlerFunc(fn)
+}
+
 // NewRouter builds a router for handling requests
 func (app App) NewRouter() *mux.Router {
-	// if app.oidcAudience == "" || app.oidcDomain == "" {
-	// 	// Run without authentication
-	// }
-	jwtMiddleware := jwtmiddleware.New(jwtmiddleware.Options{
-		ValidationKeyGetter: func(token *jwt.Token) (interface{}, error) {
-			// Verify 'aud' claim
-			log.Printf("[DEBUG] token: %#v, oidcAudience: %#v, oidcDomain: %#v", *token, app.oidcAudience, app.oidcDomain)
-			checkAud := token.Claims.(jwt.MapClaims).VerifyAudience(app.oidcAudience, false)
-			if !checkAud {
-				log.Printf("[DEBUG] invalid audience %v", *token)
-				return token, errors.New("invalid audience")
-			}
-			// Verify 'iss' claim
-			iss := "https://" + app.oidcDomain + "/"
-			checkIss := token.Claims.(jwt.MapClaims).VerifyIssuer(iss, false)
-			if !checkIss {
-				log.Printf("[DEBUG] invalid issuer %v", *token)
-				return token, errors.New("invalid issuer")
-			}
-
-			cert, err := getPemCert(app.oidcDomain, token)
-			if err != nil {
-				panic(err.Error())
-			}
-
-			result, _ := jwt.ParseRSAPublicKeyFromPEM([]byte(cert))
-			return result, nil
-		},
-		SigningMethod: jwt.SigningMethodRS256,
-	})
 	r := mux.NewRouter()
 	r.StrictSlash(true)
 	r.HandleFunc(app.baseURL.Path+"/", app.GetIndex).Methods("GET")
 	r.HandleFunc(app.baseURL.Path+"/health", app.GetHealth).Methods("GET")
 	r.HandleFunc(app.baseURL.Path+"/index.html", app.GetIndex).Methods("GET")
 
-	r.Handle(app.baseURL.Path+"/categories", jwtMiddleware.Handler(http.HandlerFunc(app.GetAllCategories))).Methods("GET")
+	r.Handle(app.baseURL.Path+"/categories", app.verifyToken(http.HandlerFunc(app.GetAllCategories))).Methods("GET")
 	// r.HandleFunc(app.baseURL.Path+"/categories", app.GetAllCategories).Methods("GET")
 	r.HandleFunc(app.baseURL.Path+"/categories", app.PostCategory).Methods("POST")
 	r.HandleFunc(app.baseURL.Path+"/categories/{id}", app.GetCategory).Methods("GET")
@@ -150,49 +175,6 @@ func (app App) NewRouter() *mux.Router {
 	r.HandleFunc(app.baseURL.Path+"/posts/{id}", app.DeletePost).Methods("DELETE")
 
 	return r
-}
-
-type jwks struct {
-	Keys []jsonWebKeys `json:"keys"`
-}
-
-type jsonWebKeys struct {
-	Kty string   `json:"kty"`
-	Kid string   `json:"kid"`
-	Use string   `json:"use"`
-	N   string   `json:"n"`
-	E   string   `json:"e"`
-	X5c []string `json:"x5c"`
-}
-
-func getPemCert(domain string, token *jwt.Token) (string, error) {
-	cert := ""
-	resp, err := http.Get("https://" + domain + "/.well-known/jwks.json")
-
-	if err != nil {
-		return cert, err
-	}
-	defer resp.Body.Close()
-
-	var jwk = jwks{}
-	err = json.NewDecoder(resp.Body).Decode(&jwk)
-
-	if err != nil {
-		return cert, err
-	}
-
-	for k := range jwk.Keys {
-		if token.Header["kid"] == jwk.Keys[k].Kid {
-			cert = "-----BEGIN CERTIFICATE-----\n" + jwk.Keys[k].X5c[0] + "\n-----END CERTIFICATE-----"
-		}
-	}
-
-	if cert == "" {
-		err := errors.New("unable to find appropriate key")
-		return cert, err
-	}
-
-	return cert, nil
 }
 
 // NotFound returns an http.StatusNotFound response

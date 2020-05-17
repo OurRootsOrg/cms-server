@@ -11,12 +11,12 @@ import (
 	"net/url"
 	"os"
 	"reflect"
-	"strings"
 	"time"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/awslabs/aws-lambda-go-api-proxy/gorillamux"
+	"github.com/codingconcepts/env"
 	"github.com/go-playground/validator/v10"
 	"github.com/gorilla/handlers"
 	"github.com/hashicorp/logutils"
@@ -73,11 +73,14 @@ func main() {
 	log.Printf("[INFO] env.BaseURLString: %s, env.BaseURL.Path: %s", env.BaseURLString, env.BaseURL.Path)
 
 	model.Initialize(env.BaseURL.Path)
-	ap := api.NewAPI().
-		BaseURL(*env.BaseURL).
+	ap, err := api.NewAPI()
+	if err != nil {
+		log.Fatalf("Error calling NewAPI: %v", err)
+	}
+	ap = BaseURL(*env.BaseURL).
 		BlobStoreConfig(env.Region, env.BlobStoreEndpoint, env.BlobStoreAccessKey, env.BlobStoreSecretKey, env.BlobStoreBucket, env.BlobStoreDisableSSL).
 		PubSubConfig(env.Region, env.PubSubProtocol, env.PubSubPrefix)
-	app := NewApp().BaseURL(*env.BaseURL).API(ap).OIDCAudience(env.OIDCAudience).OIDCDomain(env.OIDCDomain)
+	app := NewApp().BaseURL(*env.BaseURL).API(ap).OIDC(env.OIDCAudience, env.OIDCDomain)
 	if env.BaseURL.Scheme == "https" {
 		docs.SwaggerInfo.Schemes = []string{"https"}
 	} else {
@@ -116,7 +119,8 @@ func main() {
 		ap.
 			CategoryPersister(p).
 			CollectionPersister(p).
-			PostPersister(p)
+			PostPersister(p).
+			UserPersister(p)
 		log.Print("[INFO] Using PostgresPersister")
 	case "memory":
 		p := persist.NewMemoryPersister(env.BaseURL.Path)
@@ -208,28 +212,15 @@ type Env struct {
 
 // ParseEnv parses and validates environment variables and stores them in the Env structure
 func ParseEnv() (*Env, error) {
-	env := Env{
-		IsLambda:            os.Getenv("LAMBDA_TASK_ROOT") != "",
-		MinLogLevel:         os.Getenv("MIN_LOG_LEVEL"),
-		BaseURLString:       os.Getenv("BASE_URL"),
-		Persister:           os.Getenv("PERSISTER"),
-		DatabaseURL:         os.Getenv("DATABASE_URL"),
-		Region:              os.Getenv("AWS_REGION"),
-		BlobStoreEndpoint:   os.Getenv("BLOB_STORE_ENDPOINT"),
-		BlobStoreAccessKey:  os.Getenv("BLOB_STORE_ACCESS_KEY"),
-		BlobStoreSecretKey:  os.Getenv("BLOB_STORE_SECRET_KEY"),
-		BlobStoreBucket:     os.Getenv("BLOB_STORE_BUCKET"),
-		BlobStoreDisableSSL: strings.HasPrefix(strings.ToUpper(os.Getenv("BLOB_STORE_DISABLE_SSL")), "T"),
-		PubSubProtocol:      os.Getenv("PUB_SUB_PROTOCOL"),
-		PubSubPrefix:        os.Getenv("PUB_SUB_PREFIX"),
-		OIDCAudience:        os.Getenv("OIDC_AUDIENCE"),
-		OIDCDomain:          os.Getenv("OIDC_DOMAIN"),
+	var config Env
+	if err := env.Set(&config); err != nil {
+		log.Fatal(err)
 	}
 	validate := validator.New()
 	validate.RegisterTagNameFunc(func(fld reflect.StructField) string {
 		return fld.Tag.Get("env")
 	})
-	err := validate.Struct(env)
+	err := validate.Struct(config)
 	if err != nil {
 		errs := "Error parsing environment variables:\n"
 		for _, fe := range err.(validator.ValidationErrors) {
@@ -250,19 +241,19 @@ func ParseEnv() (*Env, error) {
 		}
 		return nil, errors.New(errs)
 	}
-	if env.MinLogLevel == "" {
-		env.MinLogLevel = "DEBUG"
+	if config.MinLogLevel == "" {
+		config.MinLogLevel = "DEBUG"
 	}
-	if env.BaseURLString == "" {
-		env.BaseURLString = defaultURL
+	if config.BaseURLString == "" {
+		config.BaseURLString = defaultURL
 	}
-	env.BaseURL, err = url.ParseRequestURI(env.BaseURLString)
+	config.BaseURL, err = url.ParseRequestURI(config.BaseURLString)
 	if err != nil {
 		// Unreachable, if the validator does its job
-		return nil, fmt.Errorf("Unable to parse BASE_URL '%s': %v", env.BaseURLString, err)
+		return nil, fmt.Errorf("Unable to parse BASE_URL '%s': %v", config.BaseURLString, err)
 	}
-	if env.Persister == "sql" && env.DatabaseURL == "" {
+	if config.Persister == "sql" && config.DatabaseURL == "" {
 		return nil, errors.New("DATABASE_URL is required for PERSISTER=sql")
 	}
-	return &env, nil
+	return &config, nil
 }
