@@ -14,6 +14,7 @@ type MemoryPersister struct {
 	pathPrefix  string
 	categories  map[string]model.Category
 	collections map[string]model.Collection
+	posts       map[string]model.Post
 }
 
 // NewMemoryPersister constructs a MemoryPersister
@@ -125,5 +126,59 @@ func (p MemoryPersister) UpdateCollection(ctx context.Context, id string, in mod
 // DeleteCollection deletes a collection
 func (p MemoryPersister) DeleteCollection(ctx context.Context, id string) error {
 	delete(p.collections, id)
+	return nil
+}
+
+// Post persistence methods
+
+// SelectPosts selects all posts
+func (p MemoryPersister) SelectPosts(ctx context.Context) ([]model.Post, error) {
+	cols := make([]model.Post, 0, len(p.posts))
+
+	for _, value := range p.posts {
+		cols = append(cols, value)
+	}
+	return cols, nil
+}
+
+// SelectOnePost selects a single post
+func (p MemoryPersister) SelectOnePost(ctx context.Context, id string) (model.Post, error) {
+	col, found := p.posts[id]
+	if !found {
+		return col, ErrNoRows
+	}
+	return col, nil
+}
+
+// InsertPost inserts a new post
+func (p MemoryPersister) InsertPost(ctx context.Context, in model.PostIn) (model.Post, error) {
+	col := model.NewPost(int32(rand.Int31()), in)
+	now := time.Now()
+	col.InsertTime = now
+	col.LastUpdateTime = now
+	// Add to "database"
+	p.posts[col.ID] = col
+	return col, nil
+}
+
+// UpdatePost updates a post
+func (p MemoryPersister) UpdatePost(ctx context.Context, id string, in model.Post) (model.Post, error) {
+	col := model.Post{}
+	_, found := p.posts[id]
+	if !found {
+		return col, ErrNoRows
+	}
+	col.ID = id
+	col.PostBody = in.PostBody
+	col.Collection = in.Collection
+	now := time.Now()
+	col.LastUpdateTime = now
+	p.posts[col.ID] = col
+	return col, nil
+}
+
+// DeletePost deletes a post
+func (p MemoryPersister) DeletePost(ctx context.Context, id string) error {
+	delete(p.posts, id)
 	return nil
 }

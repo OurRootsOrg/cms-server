@@ -20,6 +20,7 @@ import (
 type API struct {
 	categoryPersister   model.CategoryPersister
 	collectionPersister model.CollectionPersister
+	postPersister       model.PostPersister
 	baseURL             url.URL
 	validate            *validator.Validate
 	blobStoreConfig     BlobStoreConfig
@@ -82,6 +83,12 @@ func (api *API) CategoryPersister(cp model.CategoryPersister) *API {
 // CollectionPersister sets the CollectionPersister for the api
 func (api *API) CollectionPersister(cp model.CollectionPersister) *API {
 	api.collectionPersister = cp
+	return api
+}
+
+// PostPersister sets the PostPersister for the api
+func (api *API) PostPersister(cp model.PostPersister) *API {
+	api.postPersister = cp
 	return api
 }
 

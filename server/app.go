@@ -72,6 +72,13 @@ func (app App) NewRouter() *mux.Router {
 	r.HandleFunc(app.baseURL.Path+"/collections/{id}", app.DeleteCollection).Methods("DELETE")
 
 	r.HandleFunc(app.baseURL.Path+"/content", app.PostContentRequest).Methods("POST")
+
+	r.HandleFunc(app.baseURL.Path+"/posts", app.GetPosts).Methods("GET")
+	r.HandleFunc(app.baseURL.Path+"/posts", app.PostPost).Methods("POST")
+	r.HandleFunc(app.baseURL.Path+"/posts/{id}", app.GetPost).Methods("GET")
+	r.HandleFunc(app.baseURL.Path+"/posts/{id}", app.PutPost).Methods("PUT")
+	r.HandleFunc(app.baseURL.Path+"/posts/{id}", app.DeletePost).Methods("DELETE")
+
 	return r
 }
 

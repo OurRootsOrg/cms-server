@@ -1,16 +1,15 @@
 version: "3.0"
 services:
-  postgres:
-    container_name: cms-test_postgres
+  postgres_test:
     image: postgres:10.7
     ports:
       - "15432:5432"
     environment:
       - POSTGRES_PASSWORD=postgres
     networks:
-      - mynetwork
+      - mynetwork_test
 
-  minio:
+  minio_test:
     image: minio/minio
     ports:
       - "19000:9000"
@@ -20,13 +19,13 @@ services:
     entrypoint: sh
     command: -c 'mkdir -p /data/testbucket && /usr/bin/minio server /data'
     networks:
-      - mynetwork
+      - mynetwork_test
 
-  rabbitmq:
+  rabbitmq_test:
     image: rabbitmq:3-management-alpine
     ports:
       - "25672:5672"
-      - "15672:15672"
+      - "35672:15672"
     volumes:
       - ./rabbitmq_advanced.config:/etc/rabbitmq/advanced.config
       - ./rabbitmq_definitions.json:/etc/rabbitmq/rabbitmq_definitions.json
@@ -34,8 +33,8 @@ services:
       RABBITMQ_DEFAULT_USER: guest
       RABBITMQ_DEFAULT_PASS: guest
     networks:
-      - mynetwork
+      - mynetwork_test
 
 networks:
-  mynetwork:
+  mynetwork_test:
     driver: bridge

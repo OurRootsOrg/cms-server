@@ -22,3 +22,6 @@ uglyui/node_modules/
 # IDEs
 .idea/
 uglyui/.idea/
+
+# sensitive data
+uglyui/auth_config.json
