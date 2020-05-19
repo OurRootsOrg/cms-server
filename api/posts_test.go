@@ -27,7 +27,9 @@ func TestPosts(t *testing.T) {
 		)
 	}
 	p := persist.NewPostgresPersister("", db)
-	testApi := api.NewAPI().
+	testApi, err := api.NewAPI()
+	assert.NoError(t, err)
+	testApi = testApi.
 		CollectionPersister(p).
 		PostPersister(p)
 

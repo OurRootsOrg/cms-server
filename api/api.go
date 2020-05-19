@@ -32,6 +32,7 @@ type API struct {
 	categoryPersister   model.CategoryPersister
 	collectionPersister model.CollectionPersister
 	postPersister       model.PostPersister
+	userPersister       model.UserPersister
 	baseURL             url.URL
 	validate            *validator.Validate
 	blobStoreConfig     BlobStoreConfig

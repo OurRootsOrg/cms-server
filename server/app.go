@@ -35,6 +35,11 @@ type localAPI interface {
 	DeletePost(ctx context.Context, id string) *model.Errors
 	PostContentRequest(ctx context.Context, contentRequest api.ContentRequest) (*api.ContentResult, *model.Errors)
 	GetContent(ctx context.Context, key string) ([]byte, *model.Errors)
+	RetrieveUser(ctx context.Context, provider *oidc.Provider, token *oidc.IDToken, rawToken string) (*model.User, *model.Errors)
+}
+
+type Verifier interface {
+	Verify(ctx context.Context, rawIDToken string) (*oidc.IDToken, error)
 }
 
 // App is the container for the application
@@ -44,7 +49,8 @@ type App struct {
 	oidcAudience string
 	oidcDomain   string
 	oidcProvider *oidc.Provider
-	oidcVerifier *oidc.IDTokenVerifier
+	// oidcVerifier *oidc.IDTokenVerifier
+	oidcVerifier Verifier
 }
 
 // NewApp builds an App

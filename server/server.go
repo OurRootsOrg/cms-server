@@ -77,7 +77,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("Error calling NewAPI: %v", err)
 	}
-	ap = BaseURL(*env.BaseURL).
+	ap = ap.BaseURL(*env.BaseURL).
 		BlobStoreConfig(env.Region, env.BlobStoreEndpoint, env.BlobStoreAccessKey, env.BlobStoreSecretKey, env.BlobStoreBucket, env.BlobStoreDisableSSL).
 		PubSubConfig(env.Region, env.PubSubProtocol, env.PubSubPrefix)
 	app := NewApp().BaseURL(*env.BaseURL).API(ap).OIDC(env.OIDCAudience, env.OIDCDomain)
@@ -207,7 +207,6 @@ type Env struct {
 	PubSubPrefix        string `env:"PUB_SUB_PREFIX"`
 	OIDCAudience        string `env:"OIDC_AUDIENCE" validate:"omitempty"`
 	OIDCDomain          string `env:"OIDC_DOMAIN" validate:"omitempty"`
-	BaseURL             *url.URL
 }
 
 // ParseEnv parses and validates environment variables and stores them in the Env structure

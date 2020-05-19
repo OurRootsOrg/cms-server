@@ -2,16 +2,28 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
 
+	"github.com/coreos/go-oidc"
 	"github.com/ourrootsorg/cms-server/api"
 	"github.com/ourrootsorg/cms-server/model"
 	"github.com/stretchr/testify/assert"
 )
+
+type verifier struct{}
+
+func (v verifier) Verify(ctx context.Context, rawIDToken string) (*oidc.IDToken, error) {
+	token := &oidc.IDToken{
+		Issuer:  "https://ourroots-jim.auth0.com/",
+		Subject: "auth0|5ebae805d5971f0bf053a26b",
+	}
+	return token, nil
+}
 
 func TestGetAllCategories(t *testing.T) {
 	am := &apiMock{}
@@ -25,6 +37,7 @@ func TestGetAllCategories(t *testing.T) {
 
 	request, _ := http.NewRequest("GET", "/categories", nil)
 	response := httptest.NewRecorder()
+	request.Header.Add("Authorization", "Bearer XYZ")
 	r.ServeHTTP(response, request)
 	assert.Equal(t, 200, response.Code, "OK response is expected")
 	var empty api.CategoryResult

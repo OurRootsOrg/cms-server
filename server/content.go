@@ -34,7 +34,7 @@ func (app App) PostContentRequest(w http.ResponseWriter, req *http.Request) {
 		ErrorResponse(w, http.StatusBadRequest, msg)
 		return
 	}
-	result, errors := app.api.PostContentRequest(app.Context(), in)
+	result, errors := app.api.PostContentRequest(req.Context(), in)
 	if errors != nil {
 		ErrorsResponse(w, errors)
 		return

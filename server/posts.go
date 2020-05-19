@@ -21,7 +21,7 @@ import (
 func (app App) GetPosts(w http.ResponseWriter, req *http.Request) {
 	enc := json.NewEncoder(w)
 	w.Header().Set("Content-Type", contentType)
-	cols, errors := app.api.GetPosts(app.Context())
+	cols, errors := app.api.GetPosts(req.Context())
 	if errors != nil {
 		ErrorsResponse(w, errors)
 		return
@@ -46,7 +46,7 @@ func (app App) GetPosts(w http.ResponseWriter, req *http.Request) {
 func (app App) GetPost(w http.ResponseWriter, req *http.Request) {
 	enc := json.NewEncoder(w)
 	w.Header().Set("Content-Type", contentType)
-	post, errors := app.api.GetPost(app.Context(), req.URL.String())
+	post, errors := app.api.GetPost(req.Context(), req.URL.String())
 	if errors != nil {
 		ErrorsResponse(w, errors)
 		return
@@ -83,7 +83,7 @@ func (app App) PostPost(w http.ResponseWriter, req *http.Request) {
 		ErrorResponse(w, http.StatusBadRequest, msg)
 		return
 	}
-	post, errors := app.api.AddPost(app.Context(), in)
+	post, errors := app.api.AddPost(req.Context(), in)
 	if errors != nil {
 		log.Printf("[DEBUG] PostPost AddPost %v\n", errors)
 		ErrorsResponse(w, errors)
@@ -125,7 +125,7 @@ func (app App) PutPost(w http.ResponseWriter, req *http.Request) {
 		ErrorResponse(w, http.StatusBadRequest, msg)
 		return
 	}
-	post, errors := app.api.UpdatePost(app.Context(), req.URL.String(), in)
+	post, errors := app.api.UpdatePost(req.Context(), req.URL.String(), in)
 	if errors != nil {
 		ErrorsResponse(w, errors)
 		return
@@ -148,7 +148,7 @@ func (app App) PutPost(w http.ResponseWriter, req *http.Request) {
 // @success 204 {object} model.Post "OK"
 // @failure 500 {object} model.Errors "Server error"
 func (app App) DeletePost(w http.ResponseWriter, req *http.Request) {
-	errors := app.api.DeletePost(app.Context(), req.URL.String())
+	errors := app.api.DeletePost(req.Context(), req.URL.String())
 	if errors != nil {
 		ErrorsResponse(w, errors)
 		return
