@@ -100,11 +100,17 @@ func main() {
 		log.Printf("Connected to %s\n", env.DatabaseURL)
 
 		p := persist.NewPostgresPersister(env.BaseURL.Path, db)
-		ap.CategoryPersister(p).CollectionPersister(p)
+		ap.
+			CategoryPersister(p).
+			CollectionPersister(p).
+			PostPersister(p)
 		log.Print("[INFO] Using PostgresPersister")
 	case "memory":
 		p := persist.NewMemoryPersister(env.BaseURL.Path)
-		ap.CategoryPersister(p).CollectionPersister(p)
+		ap.
+			CategoryPersister(p).
+			CollectionPersister(p).
+			PostPersister(p)
 		log.Print("[INFO] Using MemoryPersister")
 	default:
 		// Should never happen

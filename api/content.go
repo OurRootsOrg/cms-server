@@ -31,7 +31,6 @@ func (api API) PostContentRequest(ctx context.Context, contentRequest ContentReq
 
 	now := time.Now()
 	key := fmt.Sprintf("%s/%s", now.Format("2006-01-02"), now.Format(time.RFC3339Nano))
-	fmt.Println("key=", key)
 	signedURL, err := bucket.SignedURL(ctx, key, &blob.SignedURLOptions{
 		Expiry:      5 * time.Minute,
 		Method:      "PUT",

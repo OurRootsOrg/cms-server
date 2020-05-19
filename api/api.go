@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"fmt"
+	"log"
 	"net/url"
 	"reflect"
 	"strings"
@@ -124,10 +125,14 @@ func (api *API) OpenSubscription(ctx context.Context, queue string) (*pubsub.Sub
 func (api *API) getPubSubUrlStr(target string) string {
 	var urlStr string
 	switch api.pubSubConfig.protocol {
+	case "": // use rabbit as the default protocol for testing convenience
+		fallthrough
 	case "rabbit":
-		urlStr = fmt.Sprintf("%s://%s", api.pubSubConfig.protocol, target)
+		urlStr = fmt.Sprintf("rabbit://%s", target)
 	case "awssqs":
-		urlStr = fmt.Sprintf("%s://%s/%s?region=%s", api.pubSubConfig.protocol, api.pubSubConfig.prefix, target, api.pubSubConfig.region)
+		urlStr = fmt.Sprintf("awssqs://%s/%s?region=%s", api.pubSubConfig.prefix, target, api.pubSubConfig.region)
+	default:
+		log.Fatalf("Invalid protocol %s\n", api.pubSubConfig.protocol)
 	}
 	return urlStr
 }
