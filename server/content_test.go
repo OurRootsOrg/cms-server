@@ -14,6 +14,7 @@ import (
 func TestPostContentRequest(t *testing.T) {
 	am := &apiMock{}
 	app := NewApp().API(am)
+	app.authDisabled = true
 	r := app.NewRouter()
 
 	am.result = &api.ContentResult{

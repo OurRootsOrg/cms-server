@@ -822,7 +822,8 @@
             "required": [
                 "collection",
                 "id",
-                "name"
+                "name",
+                "recordsKey"
             ],
             "properties": {
                 "collection": {
@@ -841,6 +842,12 @@
                 },
                 "name": {
                     "type": "string"
+                },
+                "recordsKey": {
+                    "type": "string"
+                },
+                "recordsStatus": {
+                    "type": "string"
                 }
             }
         },
@@ -848,7 +855,8 @@
             "type": "object",
             "required": [
                 "collection",
-                "name"
+                "name",
+                "recordsKey"
             ],
             "properties": {
                 "collection": {
@@ -856,6 +864,12 @@
                     "example": "/collections/999"
                 },
                 "name": {
+                    "type": "string"
+                },
+                "recordsKey": {
+                    "type": "string"
+                },
+                "recordsStatus": {
                     "type": "string"
                 }
             }

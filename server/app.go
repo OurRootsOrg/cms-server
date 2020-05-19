@@ -161,25 +161,24 @@ func (app App) NewRouter() *mux.Router {
 	r.HandleFunc(app.baseURL.Path+"/index.html", app.GetIndex).Methods("GET")
 
 	r.Handle(app.baseURL.Path+"/categories", app.verifyToken(http.HandlerFunc(app.GetAllCategories))).Methods("GET")
-	// r.HandleFunc(app.baseURL.Path+"/categories", app.GetAllCategories).Methods("GET")
-	r.HandleFunc(app.baseURL.Path+"/categories", app.PostCategory).Methods("POST")
-	r.HandleFunc(app.baseURL.Path+"/categories/{id}", app.GetCategory).Methods("GET")
-	r.HandleFunc(app.baseURL.Path+"/categories/{id}", app.PutCategory).Methods("PUT")
-	r.HandleFunc(app.baseURL.Path+"/categories/{id}", app.DeleteCategory).Methods("DELETE")
+	r.Handle(app.baseURL.Path+"/categories", app.verifyToken(http.HandlerFunc(app.PostCategory))).Methods("POST")
+	r.Handle(app.baseURL.Path+"/categories/{id}", app.verifyToken(http.HandlerFunc(app.GetCategory))).Methods("GET")
+	r.Handle(app.baseURL.Path+"/categories/{id}", app.verifyToken(http.HandlerFunc(app.PutCategory))).Methods("PUT")
+	r.Handle(app.baseURL.Path+"/categories/{id}", app.verifyToken(http.HandlerFunc(app.DeleteCategory))).Methods("DELETE")
 
-	r.HandleFunc(app.baseURL.Path+"/collections", app.GetCollections).Methods("GET")
-	r.HandleFunc(app.baseURL.Path+"/collections", app.PostCollection).Methods("POST")
-	r.HandleFunc(app.baseURL.Path+"/collections/{id}", app.GetCollection).Methods("GET")
-	r.HandleFunc(app.baseURL.Path+"/collections/{id}", app.PutCollection).Methods("PUT")
-	r.HandleFunc(app.baseURL.Path+"/collections/{id}", app.DeleteCollection).Methods("DELETE")
+	r.Handle(app.baseURL.Path+"/collections", app.verifyToken(http.HandlerFunc(app.GetCollections))).Methods("GET")
+	r.Handle(app.baseURL.Path+"/collections", app.verifyToken(http.HandlerFunc(app.PostCollection))).Methods("POST")
+	r.Handle(app.baseURL.Path+"/collections/{id}", app.verifyToken(http.HandlerFunc(app.GetCollection))).Methods("GET")
+	r.Handle(app.baseURL.Path+"/collections/{id}", app.verifyToken(http.HandlerFunc(app.PutCollection))).Methods("PUT")
+	r.Handle(app.baseURL.Path+"/collections/{id}", app.verifyToken(http.HandlerFunc(app.DeleteCollection))).Methods("DELETE")
 
-	r.HandleFunc(app.baseURL.Path+"/content", app.PostContentRequest).Methods("POST")
+	r.Handle(app.baseURL.Path+"/content", app.verifyToken(http.HandlerFunc(app.PostContentRequest))).Methods("POST")
 
-	r.HandleFunc(app.baseURL.Path+"/posts", app.GetPosts).Methods("GET")
-	r.HandleFunc(app.baseURL.Path+"/posts", app.PostPost).Methods("POST")
-	r.HandleFunc(app.baseURL.Path+"/posts/{id}", app.GetPost).Methods("GET")
-	r.HandleFunc(app.baseURL.Path+"/posts/{id}", app.PutPost).Methods("PUT")
-	r.HandleFunc(app.baseURL.Path+"/posts/{id}", app.DeletePost).Methods("DELETE")
+	r.Handle(app.baseURL.Path+"/posts", app.verifyToken(http.HandlerFunc(app.GetPosts))).Methods("GET")
+	r.Handle(app.baseURL.Path+"/posts", app.verifyToken(http.HandlerFunc(app.PostPost))).Methods("POST")
+	r.Handle(app.baseURL.Path+"/posts/{id}", app.verifyToken(http.HandlerFunc(app.GetPost))).Methods("GET")
+	r.Handle(app.baseURL.Path+"/posts/{id}", app.verifyToken(http.HandlerFunc(app.PutPost))).Methods("PUT")
+	r.Handle(app.baseURL.Path+"/posts/{id}", app.verifyToken(http.HandlerFunc(app.DeletePost))).Methods("DELETE")
 
 	return r
 }

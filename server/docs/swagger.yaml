@@ -116,10 +116,15 @@ definitions:
         type: string
       name:
         type: string
+      recordsKey:
+        type: string
+      recordsStatus:
+        type: string
     required:
     - collection
     - id
     - name
+    - recordsKey
     type: object
   model.PostIn:
     properties:
@@ -128,9 +133,14 @@ definitions:
         type: string
       name:
         type: string
+      recordsKey:
+        type: string
+      recordsStatus:
+        type: string
     required:
     - collection
     - name
+    - recordsKey
     type: object
 host: api.ourroots.org
 info:

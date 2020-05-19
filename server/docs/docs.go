@@ -833,7 +833,8 @@ var doc = `{
             "required": [
                 "collection",
                 "id",
-                "name"
+                "name",
+                "recordsKey"
             ],
             "properties": {
                 "collection": {
@@ -852,6 +853,12 @@ var doc = `{
                 },
                 "name": {
                     "type": "string"
+                },
+                "recordsKey": {
+                    "type": "string"
+                },
+                "recordsStatus": {
+                    "type": "string"
                 }
             }
         },
@@ -859,7 +866,8 @@ var doc = `{
             "type": "object",
             "required": [
                 "collection",
-                "name"
+                "name",
+                "recordsKey"
             ],
             "properties": {
                 "collection": {
@@ -867,6 +875,12 @@ var doc = `{
                     "example": "/collections/999"
                 },
                 "name": {
+                    "type": "string"
+                },
+                "recordsKey": {
+                    "type": "string"
+                },
+                "recordsStatus": {
                     "type": "string"
                 }
             }
