@@ -12,6 +12,34 @@ services:
       - POSTGRES_DB=ourroots
     networks:
       - mynetwork
+
+  minio:
+    image: minio/minio
+    ports:
+      - "9000:9000"
+    volumes:
+      - cms_s3data:/data
+    environment:
+      MINIO_ACCESS_KEY: minioaccess
+      MINIO_SECRET_KEY: miniosecret
+    command: server /data
+    networks:
+      - mynetwork
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - ./rabbitmq_advanced.config:/etc/rabbitmq/advanced.config
+      - ./rabbitmq_definitions.json:/etc/rabbitmq/rabbitmq_definitions.json
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    networks:
+      - mynetwork
+
   server:
     build:
       context: .
@@ -25,11 +53,26 @@ services:
       - BASE_URL=http://localhost:8000
       - PERSISTER=sql
       - DATABASE_URL=postgres://ourroots:password@postgres:5432/cms?sslmode=disable
+      - AWS_REGION=us-east-1
+      - BLOB_STORE_BUCKET=cmsbucket
+      # this configures minio; to use S3, omit these settings and set the bucket to a bucket you own
+      - BLOB_STORE_ENDPOINT=minio:9000
+      - BLOB_STORE_ACCESS_KEY=minioaccess
+      - BLOB_STORE_SECRET_KEY=miniosecret
+      - BLOB_STORE_DISABLE_SSL=true
+      # this configures rabbitmq; to use SQS, set the protocol to awssqs and the prefix to sqs.us-east-1.amazonaws.com/<accountid>
+      - PUB_SUB_PROTOCOL=rabbit
+      - PUB_SUB_PREFIX=
+      - RABBIT_SERVER_URL="amqp://guest:guest@localhost:5672/"
     networks:
       - mynetwork
+
 volumes:
   cms_pgdata:
     external: true
+  cms_s3data:
+    external: true
+
 networks:
   mynetwork:
     driver: bridge

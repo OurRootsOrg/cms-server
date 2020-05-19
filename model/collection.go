@@ -57,6 +57,17 @@ type Collection struct {
 	LastUpdateTime time.Time `json:"last_update_time,omitempty"`
 }
 
+// NewCollectionIn constructs a CollectionIn
+func NewCollectionIn(name string, categoryID string) CollectionIn {
+	ci := CollectionIn{
+		CollectionBody: CollectionBody{
+			Name: name,
+		},
+		Category: categoryID,
+	}
+	return ci
+}
+
 // NewCollection constructs a Collection from a CollectionIn
 func NewCollection(id int32, ci CollectionIn) Collection {
 	now := time.Now()
