@@ -56,7 +56,7 @@ services:
       - AWS_REGION=us-east-1
       - BLOB_STORE_BUCKET=cmsbucket
       # this configures minio; to use S3, omit these settings and set the bucket to a bucket you own
-      - BLOB_STORE_ENDPOINT=minio:9000
+      - BLOB_STORE_ENDPOINT=127.0.0.1:9000
       - BLOB_STORE_ACCESS_KEY=minioaccess
       - BLOB_STORE_SECRET_KEY=miniosecret
       - BLOB_STORE_DISABLE_SSL=true

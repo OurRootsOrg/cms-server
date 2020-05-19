@@ -25,5 +25,23 @@ export default {
   },
   collectionsGetAll() {
     return apiClient.get("/collections");
+  },
+  contentPostRequest(contentType) {
+    return apiClient.post("/content", { contentType });
+  },
+  contentPut(url, contentType, data) {
+    console.log("contentPut", url, contentType, data);
+    return axios.put(url, data, {
+      headers: {
+        "Content-Type": contentType
+      },
+      timeout: 10000
+    });
+  },
+  postsGetAll() {
+    return apiClient.get("/posts");
+  },
+  postsCreate(post) {
+    return apiClient.post("/posts", post);
   }
 };
