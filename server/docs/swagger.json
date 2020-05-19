@@ -407,9 +407,258 @@
                     }
                 }
             }
+        },
+        "/content": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "content"
+                ],
+                "summary": "returns a URL for uploading content",
+                "operationId": "postContentRequest",
+                "parameters": [
+                    {
+                        "description": "Create content request",
+                        "name": "contentRequest",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.ContentRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.Category"
+                        }
+                    },
+                    "415": {
+                        "description": "Bad Content-Type",
+                        "schema": {
+                            "$ref": "#/definitions/model.Errors"
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "$ref": "#/definitions/model.Errors"
+                        }
+                    }
+                }
+            }
+        },
+        "/posts": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "posts"
+                ],
+                "summary": "returns all posts",
+                "operationId": "getPosts",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.Post"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "$ref": "#/definitions/model.Errors"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "posts"
+                ],
+                "summary": "adds a new Post",
+                "operationId": "addPost",
+                "parameters": [
+                    {
+                        "description": "Add Post",
+                        "name": "post",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.PostIn"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.Post"
+                        }
+                    },
+                    "415": {
+                        "description": "Bad Content-Type",
+                        "schema": {
+                            "$ref": "#/definitions/model.Errors"
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "$ref": "#/definitions/model.Errors"
+                        }
+                    }
+                }
+            }
+        },
+        "/posts/{id}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "posts"
+                ],
+                "summary": "gets a Post",
+                "operationId": "getPost",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Post ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.Post"
+                        }
+                    },
+                    "404": {
+                        "description": "Not found",
+                        "schema": {
+                            "$ref": "#/definitions/model.Errors"
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "$ref": "#/definitions/model.Errors"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "posts"
+                ],
+                "summary": "updates a Post",
+                "operationId": "updatePost",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Post ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Update Post",
+                        "name": "post",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.Post"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.Post"
+                        }
+                    },
+                    "415": {
+                        "description": "Bad Content-Type",
+                        "schema": {
+                            "$ref": "#/definitions/model.Errors"
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "$ref": "#/definitions/model.Errors"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "posts"
+                ],
+                "summary": "deletes a Post",
+                "operationId": "deletePost",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Post ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.Post"
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "$ref": "#/definitions/model.Errors"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
+        "api.ContentRequest": {
+            "type": "object",
+            "properties": {
+                "contentType": {
+                    "type": "string"
+                }
+            }
+        },
         "model.Category": {
             "type": "object",
             "required": [
@@ -536,6 +785,49 @@
             "type": "array",
             "items": {
                 "$ref": "#/definitions/model.FieldDef"
+            }
+        },
+        "model.Post": {
+            "type": "object",
+            "required": [
+                "collection",
+                "id",
+                "name"
+            ],
+            "properties": {
+                "collection": {
+                    "type": "string",
+                    "example": "/collections/999"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "/posts/999"
+                },
+                "insert_time": {
+                    "type": "string"
+                },
+                "last_update_time": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.PostIn": {
+            "type": "object",
+            "required": [
+                "collection",
+                "name"
+            ],
+            "properties": {
+                "collection": {
+                    "type": "string",
+                    "example": "/collections/999"
+                },
+                "name": {
+                    "type": "string"
+                }
             }
         }
     }

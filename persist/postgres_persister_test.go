@@ -262,7 +262,7 @@ func makeCategory(t *testing.T) model.Category {
 	now := time.Now()
 	in := model.Category{
 		ID:             model.MakeCategoryID(33),
-		CategoryIn:     makeCategoryIn(t),
+		CategoryBody:   makeCategoryIn(t).CategoryBody,
 		InsertTime:     now,
 		LastUpdateTime: now,
 	}

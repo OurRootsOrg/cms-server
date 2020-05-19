@@ -15,10 +15,30 @@ import (
 
 const contentType = "application/json"
 
+type localAPI interface {
+	GetCategories(context.Context) (*api.CategoryResult, *model.Errors)
+	GetCategory(ctx context.Context, id string) (*model.Category, *model.Errors)
+	AddCategory(ctx context.Context, in model.CategoryIn) (*model.Category, *model.Errors)
+	UpdateCategory(ctx context.Context, id string, in model.Category) (*model.Category, *model.Errors)
+	DeleteCategory(ctx context.Context, id string) *model.Errors
+	GetCollections(ctx context.Context /* filter/search criteria */) (*api.CollectionResult, *model.Errors)
+	GetCollection(ctx context.Context, id string) (*model.Collection, *model.Errors)
+	AddCollection(ctx context.Context, in model.CollectionIn) (*model.Collection, *model.Errors)
+	UpdateCollection(ctx context.Context, id string, in model.Collection) (*model.Collection, *model.Errors)
+	DeleteCollection(ctx context.Context, id string) *model.Errors
+	GetPosts(ctx context.Context /* filter/search criteria */) (*api.PostResult, *model.Errors)
+	GetPost(ctx context.Context, id string) (*model.Post, *model.Errors)
+	AddPost(ctx context.Context, in model.PostIn) (*model.Post, *model.Errors)
+	UpdatePost(ctx context.Context, id string, in model.Post) (*model.Post, *model.Errors)
+	DeletePost(ctx context.Context, id string) *model.Errors
+	PostContentRequest(ctx context.Context, contentRequest api.ContentRequest) (*api.ContentResult, *model.Errors)
+	GetContent(ctx context.Context, key string) ([]byte, *model.Errors)
+}
+
 // App is the container for the application
 type App struct {
 	baseURL url.URL
-	api     *api.API
+	api     localAPI
 }
 
 // NewApp builds an App
@@ -36,8 +56,7 @@ func (app *App) BaseURL(url url.URL) *App {
 }
 
 // API sets the API object for the app
-func (app *App) API(api *api.API) *App {
-	log.Printf("[DEBUG] api: %#v", app.api)
+func (app *App) API(api localAPI) *App {
 	app.api = api
 	return app
 }
