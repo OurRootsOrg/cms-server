@@ -38,10 +38,6 @@ type localAPI interface {
 	RetrieveUser(ctx context.Context, provider *oidc.Provider, token *oidc.IDToken, rawToken string) (*model.User, *model.Errors)
 }
 
-type Verifier interface {
-	Verify(ctx context.Context, rawIDToken string) (*oidc.IDToken, error)
-}
-
 // App is the container for the application
 type App struct {
 	baseURL      url.URL
@@ -49,8 +45,8 @@ type App struct {
 	oidcAudience string
 	oidcDomain   string
 	oidcProvider *oidc.Provider
-	// oidcVerifier *oidc.IDTokenVerifier
-	oidcVerifier Verifier
+	oidcVerifier *oidc.IDTokenVerifier
+	authDisabled bool // If set to true, this disables authentication. This should only be done in test code!
 }
 
 // NewApp builds an App
@@ -103,6 +99,11 @@ func (app App) GetHealth(w http.ResponseWriter, req *http.Request) {
 }
 
 func (app App) verifyToken(next http.Handler) http.Handler {
+	if app.authDisabled {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			next.ServeHTTP(w, r)
+		})
+	}
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		authHeader := r.Header.Get("Authorization")
 		if authHeader == "" {

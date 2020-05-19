@@ -2,32 +2,21 @@ package main
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
 
-	"github.com/coreos/go-oidc"
 	"github.com/ourrootsorg/cms-server/api"
 	"github.com/ourrootsorg/cms-server/model"
 	"github.com/stretchr/testify/assert"
 )
 
-type verifier struct{}
-
-func (v verifier) Verify(ctx context.Context, rawIDToken string) (*oidc.IDToken, error) {
-	token := &oidc.IDToken{
-		Issuer:  "https://ourroots-jim.auth0.com/",
-		Subject: "auth0|5ebae805d5971f0bf053a26b",
-	}
-	return token, nil
-}
-
 func TestGetAllCategories(t *testing.T) {
 	am := &apiMock{}
 	app := NewApp().API(am)
+	app.authDisabled = true
 	r := app.NewRouter()
 
 	// Empty result

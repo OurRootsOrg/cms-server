@@ -30,7 +30,7 @@ import (
 )
 
 const (
-	defaultURL = "https://localhost:3000"
+	defaultURL = "http://localhost:3000"
 )
 
 // @title OurRoots API
@@ -191,7 +191,8 @@ func main() {
 
 // Env holds values parse from environment variables
 type Env struct {
-	IsLambda            bool   `env:"LAMBDA_TASK_ROOT"`
+	LambdaTaskRoot      string `env:"LAMBDA_TASK_ROOT"`
+	IsLambda            bool
 	MinLogLevel         string `env:"MIN_LOG_LEVEL" validate:"omitempty,eq=DEBUG|eq=INFO|eq=ERROR"`
 	BaseURLString       string `env:"BASE_URL" validate:"omitempty,url"`
 	Persister           string `env:"PERSISTER" validate:"required,eq=memory|eq=sql"`
@@ -240,6 +241,7 @@ func ParseEnv() (*Env, error) {
 		}
 		return nil, errors.New(errs)
 	}
+	config.IsLambda = config.LambdaTaskRoot != ""
 	if config.MinLogLevel == "" {
 		config.MinLogLevel = "DEBUG"
 	}

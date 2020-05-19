@@ -11,7 +11,8 @@ import (
 
 func TestParseEnv(t *testing.T) {
 	// All defaults (except PERSISTER, which is required)
-	os.Setenv("LAMBDA_TASK_ROOT", "")
+	// os.Setenv("LAMBDA_TASK_ROOT", "")
+	os.Unsetenv("LAMBDA_TASK_ROOT")
 	os.Setenv("BASE_URL", "")
 	os.Setenv("MIN_LOG_LEVEL", "")
 	os.Setenv("PERSISTER", "memory")
@@ -34,7 +35,7 @@ func TestParseEnv(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, env)
 	assert.Equal(t, true, env.IsLambda)
-	os.Setenv("LAMBDA_TASK_ROOT", "")
+	os.Unsetenv("LAMBDA_TASK_ROOT")
 
 	// Bad MIN_LOG_LEVEL
 	os.Setenv("MIN_LOG_LEVEL", "WARN")
