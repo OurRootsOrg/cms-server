@@ -17,6 +17,7 @@ test: test-setup test-exec test-teardown
 test-setup:
 	docker-compose -f docker-compose-dependencies.yaml up --detach --build
 	cd db && ./wait-for-db.sh $(PG_PORT) && ./db_setup.sh $(PG_PORT)
+	rabbitmq/wait-for-rabbitmq.sh ${RABBIT_PORT}
 test-exec:
 	DATABASE_URL="postgres://ourroots:password@localhost:$(PG_PORT)/cms?sslmode=disable" \
     RABBIT_SERVER_URL="amqp://guest:guest@localhost:$(RABBIT_PORT)/" \

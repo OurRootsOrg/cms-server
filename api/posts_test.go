@@ -46,7 +46,8 @@ func TestPosts(t *testing.T) {
 	// Add a Post
 	in := model.PostIn{
 		PostBody: model.PostBody{
-			Name: "Test Post",
+			Name:       "Test Post",
+			RecordsKey: "key",
 		},
 		Collection: testCollection.ID,
 	}
