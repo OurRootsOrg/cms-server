@@ -14,7 +14,6 @@ type apiMock struct {
 }
 
 func (a *apiMock) GetCategories(ctx context.Context) (*api.CategoryResult, *model.Errors) {
-	// a.Called(ctx)
 	return a.result.(*api.CategoryResult), a.errors
 }
 func (a *apiMock) GetCategory(ctx context.Context, id string) (*model.Category, *model.Errors) {
@@ -43,4 +42,27 @@ func (a *apiMock) UpdateCollection(ctx context.Context, id string, in model.Coll
 }
 func (a *apiMock) DeleteCollection(ctx context.Context, id string) *model.Errors {
 	return a.errors
+}
+
+func (a *apiMock) GetPosts(ctx context.Context /* filter/search criteria */) (*api.PostResult, *model.Errors) {
+	return a.result.(*api.PostResult), a.errors
+}
+func (a *apiMock) GetPost(ctx context.Context, id string) (*model.Post, *model.Errors) {
+	return a.result.(*model.Post), a.errors
+}
+func (a *apiMock) AddPost(ctx context.Context, in model.PostIn) (*model.Post, *model.Errors) {
+	return a.result.(*model.Post), a.errors
+}
+func (a *apiMock) UpdatePost(ctx context.Context, id string, in model.Post) (*model.Post, *model.Errors) {
+	return a.result.(*model.Post), a.errors
+}
+func (a *apiMock) DeletePost(ctx context.Context, id string) *model.Errors {
+	return a.errors
+}
+
+func (a *apiMock) PostContentRequest(ctx context.Context, contentRequest api.ContentRequest) (*api.ContentResult, *model.Errors) {
+	return a.result.(*api.ContentResult), a.errors
+}
+func (a *apiMock) GetContent(ctx context.Context, key string) ([]byte, *model.Errors) {
+	return a.result.([]byte), a.errors
 }

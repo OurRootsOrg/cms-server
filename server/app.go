@@ -26,6 +26,13 @@ type localAPI interface {
 	AddCollection(ctx context.Context, in model.CollectionIn) (*model.Collection, *model.Errors)
 	UpdateCollection(ctx context.Context, id string, in model.Collection) (*model.Collection, *model.Errors)
 	DeleteCollection(ctx context.Context, id string) *model.Errors
+	GetPosts(ctx context.Context /* filter/search criteria */) (*api.PostResult, *model.Errors)
+	GetPost(ctx context.Context, id string) (*model.Post, *model.Errors)
+	AddPost(ctx context.Context, in model.PostIn) (*model.Post, *model.Errors)
+	UpdatePost(ctx context.Context, id string, in model.Post) (*model.Post, *model.Errors)
+	DeletePost(ctx context.Context, id string) *model.Errors
+	PostContentRequest(ctx context.Context, contentRequest api.ContentRequest) (*api.ContentResult, *model.Errors)
+	GetContent(ctx context.Context, key string) ([]byte, *model.Errors)
 }
 
 // App is the container for the application
