@@ -2,46 +2,33 @@ package main
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
-	"log"
 	"net/http"
 	"net/http/httptest"
-	"os"
-	"strings"
 	"testing"
-
-	"gocloud.dev/postgres"
+	"time"
 
 	"github.com/ourrootsorg/cms-server/api"
 	"github.com/ourrootsorg/cms-server/model"
-	"github.com/ourrootsorg/cms-server/persist"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestCategories(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skipping tests in short mode")
-	}
-	db, err := postgres.Open(context.TODO(), os.Getenv("DATABASE_URL"))
-	if err != nil {
-		log.Fatalf("Error opening database connection: %v\n  DATABASE_URL: %s",
-			err,
-			os.Getenv("DATABASE_URL"),
-		)
-	}
-	p := persist.NewPostgresPersister("", db)
-	app := NewApp().
-		API(api.NewAPI().
-			CategoryPersister(p))
+func TestGetAllCategories(t *testing.T) {
+	am := &apiMock{}
+	app := NewApp().API(am)
 	r := app.NewRouter()
+
+	// Empty result
+	cr := api.CategoryResult{}
+	am.result = &cr
+	am.errors = nil
 
 	request, _ := http.NewRequest("GET", "/categories", nil)
 	response := httptest.NewRecorder()
 	r.ServeHTTP(response, request)
 	assert.Equal(t, 200, response.Code, "OK response is expected")
 	var empty api.CategoryResult
-	err = json.NewDecoder(response.Body).Decode(&empty)
+	err := json.NewDecoder(response.Body).Decode(&empty)
 	if err != nil {
 		t.Errorf("Error parsing JSON: %v", err)
 	}
@@ -49,71 +36,23 @@ func TestCategories(t *testing.T) {
 	assert.Equal(t,
 		contentType,
 		response.Result().Header["Content-Type"][0])
-	// Add a Category
-	stringType, err := model.NewFieldDef("stringField", model.StringType, "string_field")
-	assert.NoError(t, err)
-	in, err := model.NewCategoryIn("First", stringType)
-	assert.NoError(t, err)
-	buf := new(bytes.Buffer)
-	enc := json.NewEncoder(buf)
-	err = enc.Encode(in)
-	if err != nil {
-		t.Errorf("Error encoding CategoryIn: %v", err)
-	}
-	// missing MIME type
-	request, _ = http.NewRequest("POST", "/categories", buf)
-	response = httptest.NewRecorder()
-	r.ServeHTTP(response, request)
-	assert.Equal(t, http.StatusUnsupportedMediaType, response.Code, "415 response is expected")
-	assert.Contains(t, response.Result().Header, "Content-Type", "Should have Content-Type header")
-	assert.Equal(t,
-		contentType,
-		response.Result().Header["Content-Type"][0])
 
-	buf = new(bytes.Buffer)
-	enc = json.NewEncoder(buf)
-	err = enc.Encode(in)
-	if err != nil {
-		t.Errorf("Error encoding CategoryIn: %v", err)
+	// Non-empty result
+	now := time.Now().Truncate(0) // Truncate(0) truncates monotonic time
+	cr = api.CategoryResult{
+		Categories: []model.Category{
+			{
+				ID: "/categories/1",
+				CategoryBody: model.CategoryBody{
+					Name: "Test name",
+				},
+				InsertTime:     now,
+				LastUpdateTime: now,
+			},
+		},
 	}
-	// wrong MIME type
-	request, _ = http.NewRequest("POST", "/categories", buf)
-	request.Header.Add("Content-Type", "application/notjson")
-	response = httptest.NewRecorder()
-	r.ServeHTTP(response, request)
-	assert.Equal(t, http.StatusUnsupportedMediaType, response.Code, "Response: %s", string(response.Body.Bytes()))
-	assert.Contains(t, response.Result().Header, "Content-Type", "Should have Content-Type header")
-	assert.Equal(t,
-		contentType,
-		response.Result().Header["Content-Type"][0])
-
-	buf = new(bytes.Buffer)
-	enc = json.NewEncoder(buf)
-	err = enc.Encode(in)
-	if err != nil {
-		t.Errorf("Error encoding CategoryIn: %v", err)
-	}
-	// correct MIME type
-	request, _ = http.NewRequest("POST", "/categories", buf)
-	request.Header.Add("Content-Type", contentType)
-
-	response = httptest.NewRecorder()
-	r.ServeHTTP(response, request)
-	assert.Equal(t, http.StatusCreated, response.Code, "Response: %s", string(response.Body.Bytes()))
-	assert.Contains(t, response.Result().Header, "Content-Type", "Should have Content-Type header")
-	assert.Equal(t,
-		contentType,
-		response.Result().Header["Content-Type"][0])
-	var created model.Category
-	err = json.NewDecoder(response.Body).Decode(&created)
-	if err != nil {
-		t.Errorf("Error parsing JSON: %v", err)
-	}
-	assert.Equal(t, in.Name, created.Name, "Expected Name to match")
-	assert.Equal(t, in.FieldDefs, created.FieldDefs, "Expected FieldDefs to match")
-	assert.NotEmpty(t, created.ID)
-	// t.Logf("app.Categories: %#v", app.Categories)
-	// GET /categories should now return the created Category
+	am.result = &cr
+	am.errors = nil
 	request, _ = http.NewRequest("GET", "/categories", nil)
 	response = httptest.NewRecorder()
 	r.ServeHTTP(response, request)
@@ -127,113 +66,168 @@ func TestCategories(t *testing.T) {
 		t.Errorf("Error parsing JSON: %v", err)
 	}
 	assert.Equal(t, 1, len(ret.Categories))
-	assert.Equal(t, created, ret.Categories[0])
-	// GET /categories/{id} should now return the created Category
-	request, _ = http.NewRequest("GET", created.ID, nil)
+	assert.Equal(t, cr.Categories[0], ret.Categories[0])
+
+	// error result
+	am.result = (*api.CategoryResult)(nil)
+	am.errors = model.NewErrors(http.StatusInternalServerError, assert.AnError)
+	request, _ = http.NewRequest("GET", "/categories", nil)
 	response = httptest.NewRecorder()
 	r.ServeHTTP(response, request)
-	assert.Equal(t, 200, response.Code, "OK response is expected")
-	assert.Contains(t, response.Result().Header, "Content-Type", "Should have Content-Type header")
+	assert.Equal(t, 500, response.Code)
 	assert.Equal(t,
 		contentType,
 		response.Result().Header["Content-Type"][0])
-	var ret2 model.Category
-	err = json.NewDecoder(response.Body).Decode(&ret2)
+	var errRet []model.Error
+	err = json.NewDecoder(response.Body).Decode(&errRet)
 	if err != nil {
 		t.Errorf("Error parsing JSON: %v", err)
 	}
-	assert.Equal(t, created, ret2)
+	assert.NotNil(t, errRet)
+	assert.Equal(t, 1, len(errRet))
+	assert.Equal(t, am.errors.Errs(), errRet)
+}
+func TestGetCategory(t *testing.T) {
+	am := &apiMock{}
+	app := NewApp().API(am)
+	r := app.NewRouter()
+
+	category := &model.Category{
+		ID: "/categories/1",
+		CategoryBody: model.CategoryBody{
+			Name: "Name",
+		},
+	}
+	am.result = category
+	am.errors = nil
+	var ret model.Category
+
+	request, _ := http.NewRequest("GET", "/categories/1", nil)
+	response := httptest.NewRecorder()
+	r.ServeHTTP(response, request)
+	assert.Equal(t, http.StatusOK, response.Code)
+	err := json.NewDecoder(response.Body).Decode(&ret)
+	if err != nil {
+		t.Errorf("Error parsing JSON: %v", err)
+	}
+	assert.Equal(t, *category, ret)
+
+	category = nil
+	am.result = category
+	am.errors = model.NewErrors(http.StatusNotFound, model.NewError(model.ErrNotFound, "/categories/1"))
+
+	request, _ = http.NewRequest("GET", "/categories/1", nil)
+	response = httptest.NewRecorder()
+	r.ServeHTTP(response, request)
+	assert.Equal(t, http.StatusNotFound, response.Code)
+	assert.Equal(t,
+		contentType,
+		response.Result().Header["Content-Type"][0])
+	var errRet []model.Error
+	err = json.NewDecoder(response.Body).Decode(&errRet)
+	if err != nil {
+		t.Errorf("Error parsing JSON: %v", err)
+	}
+	assert.NotNil(t, errRet)
+	assert.Equal(t, 1, len(errRet))
+	assert.Equal(t, am.errors.Errs(), errRet)
+}
+
+func TestPostCategory(t *testing.T) {
+	am := &apiMock{}
+	app := NewApp().API(am)
+	r := app.NewRouter()
+
+	in, buf := makeCategoryIn(t)
+	now := time.Now().Truncate(0) // Truncate(0) truncates monotonic time
+	am.result = &model.Category{
+		ID:             "/categories/1",
+		CategoryBody:   in.CategoryBody,
+		InsertTime:     now,
+		LastUpdateTime: now,
+	}
+	am.errors = nil
+
+	request, _ := http.NewRequest("POST", "/categories", buf)
+	request.Header.Add("Content-Type", contentType)
+
+	response := httptest.NewRecorder()
+	r.ServeHTTP(response, request)
+	assert.Equal(t, http.StatusCreated, response.Code, "Response: %s", string(response.Body.Bytes()))
 	assert.Contains(t, response.Result().Header, "Content-Type", "Should have Content-Type header")
 	assert.Equal(t,
 		contentType,
 		response.Result().Header["Content-Type"][0])
-
-	// Bad request
-	request, _ = http.NewRequest("POST", "/categories", strings.NewReader("{xxx}"))
-	request.Header.Add("Content-Type", contentType)
-	response = httptest.NewRecorder()
-	r.ServeHTTP(response, request)
-	assert.Equal(t, http.StatusBadRequest, response.Code, "400 response is expected")
-
-	// Category not found
-	request, _ = http.NewRequest("GET", created.ID+"999", nil)
-	response = httptest.NewRecorder()
-	r.ServeHTTP(response, request)
-	assert.Equal(t, http.StatusNotFound, response.Code, "404 response is expected")
-
-	// PUT
-	created.Name = "Updated"
-	buf = new(bytes.Buffer)
-	enc = json.NewEncoder(buf)
-	err = enc.Encode(created)
+	var created model.Category
+	err := json.NewDecoder(response.Body).Decode(&created)
 	if err != nil {
-		t.Errorf("Error encoding CategoryIn: %v", err)
+		t.Errorf("Error parsing JSON: %v", err)
 	}
-	// correct MIME type
-	request, _ = http.NewRequest("PUT", created.ID, buf)
+	assert.Equal(t, in.Name, created.Name, "Expected Name to match")
+	assert.Equal(t, in.FieldDefs, created.FieldDefs, "Expected FieldDefs to match")
+	assert.NotEmpty(t, created.ID)
+}
+
+func TestPutCategory(t *testing.T) {
+	am := &apiMock{}
+	app := NewApp().API(am)
+	r := app.NewRouter()
+
+	in, buf := makeCategoryIn(t)
+	now := time.Now().Truncate(0) // Truncate(0) truncates monotonic time
+	cat := model.Category{
+		ID:             "/categories/1",
+		CategoryBody:   in.CategoryBody,
+		InsertTime:     now,
+		LastUpdateTime: now,
+	}
+	am.result = &cat
+	am.errors = nil
+
+	request, _ := http.NewRequest("PUT", "/categories/1", buf)
 	request.Header.Add("Content-Type", contentType)
-	response = httptest.NewRecorder()
+
+	response := httptest.NewRecorder()
 	r.ServeHTTP(response, request)
 	assert.Equal(t, http.StatusOK, response.Code, "Response: %s", string(response.Body.Bytes()))
 	assert.Contains(t, response.Result().Header, "Content-Type", "Should have Content-Type header")
 	assert.Equal(t,
 		contentType,
 		response.Result().Header["Content-Type"][0])
-	var updated model.Category
-	err = json.NewDecoder(response.Body).Decode(&updated)
+	var created model.Category
+	err := json.NewDecoder(response.Body).Decode(&created)
 	if err != nil {
 		t.Errorf("Error parsing JSON: %v", err)
 	}
-	assert.Equal(t, created.Name, updated.Name, "Expected Name to match")
-	assert.Equal(t, created.FieldDefs, updated.FieldDefs, "Expected FieldDefs to match")
+	assert.Equal(t, in.Name, created.Name, "Expected Name to match")
+	assert.Equal(t, in.FieldDefs, created.FieldDefs, "Expected FieldDefs to match")
+	assert.NotEmpty(t, created.ID)
+}
 
-	// Missing MIME type
-	buf = new(bytes.Buffer)
-	enc = json.NewEncoder(buf)
-	err = enc.Encode(in)
-	if err != nil {
-		t.Errorf("Error encoding CategoryIn: %v", err)
-	}
-	request, _ = http.NewRequest("PUT", created.ID, buf)
-	response = httptest.NewRecorder()
-	r.ServeHTTP(response, request)
-	assert.Equal(t, http.StatusUnsupportedMediaType, response.Code, "Response: %s", string(response.Body.Bytes()))
-	// Bad MIME type
-	buf = new(bytes.Buffer)
-	enc = json.NewEncoder(buf)
-	err = enc.Encode(in)
-	if err != nil {
-		t.Errorf("Error encoding CategoryIn: %v", err)
-	}
-	request, _ = http.NewRequest("PUT", created.ID, buf)
-	request.Header.Add("Content-Type", "application/notjson")
-	response = httptest.NewRecorder()
-	r.ServeHTTP(response, request)
-	assert.Equal(t, http.StatusUnsupportedMediaType, response.Code, "Response: %s", string(response.Body.Bytes()))
+func TestDeleteCategory(t *testing.T) {
+	am := &apiMock{}
+	app := NewApp().API(am)
+	r := app.NewRouter()
 
-	// PUT non-existant
-	buf = new(bytes.Buffer)
-	enc = json.NewEncoder(buf)
-	err = enc.Encode(created)
-	if err != nil {
-		t.Errorf("Error encoding CategoryIn: %v", err)
-	}
-	request, _ = http.NewRequest("PUT", created.ID+"999", buf)
-	request.Header.Add("Content-Type", contentType)
-	response = httptest.NewRecorder()
-	r.ServeHTTP(response, request)
-	assert.Equal(t, http.StatusNotFound, response.Code, "Response: %s", string(response.Body.Bytes()))
+	am.result = nil
+	am.errors = nil
 
-	// Bad request
-	request, _ = http.NewRequest("PUT", created.ID, strings.NewReader("{x}"))
-	request.Header.Add("Content-Type", contentType)
-	response = httptest.NewRecorder()
-	r.ServeHTTP(response, request)
-	assert.Equal(t, http.StatusBadRequest, response.Code, "Response: %s", string(response.Body.Bytes()))
-
-	// DELETE
-	request, _ = http.NewRequest("DELETE", created.ID, nil)
-	response = httptest.NewRecorder()
+	request, _ := http.NewRequest("DELETE", "/categories/1", nil)
+	response := httptest.NewRecorder()
 	r.ServeHTTP(response, request)
 	assert.Equal(t, http.StatusNoContent, response.Code, "Response: %s", string(response.Body.Bytes()))
+}
+
+func makeCategoryIn(t *testing.T) (model.CategoryIn, *bytes.Buffer) {
+	stringType, err := model.NewFieldDef("stringField", model.StringType, "string_field")
+	assert.NoError(t, err)
+	in, err := model.NewCategoryIn("First", stringType)
+	assert.NoError(t, err)
+	buf := new(bytes.Buffer)
+	enc := json.NewEncoder(buf)
+	err = enc.Encode(in)
+	if err != nil {
+		t.Errorf("Error encoding CategoryIn: %v", err)
+	}
+	return in, buf
 }

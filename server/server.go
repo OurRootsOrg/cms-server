@@ -53,11 +53,11 @@ const (
 func main() {
 	env, err := ParseEnv()
 	if err != nil {
-		log.Fatalf("Error parsing environmet variables: %v", err)
+		log.Fatalf("[FATAL] Error parsing environmet variables: %v", err)
 	}
 
 	filter := &logutils.LevelFilter{
-		Levels:   []logutils.LogLevel{"DEBUG", "INFO", "ERROR"},
+		Levels:   []logutils.LogLevel{"DEBUG", "INFO", "ERROR", "FATAL"},
 		MinLevel: logutils.LogLevel(env.MinLogLevel),
 		Writer:   os.Stderr,
 	}
@@ -75,7 +75,7 @@ func main() {
 		log.Printf("Connecting to %s\n", env.DatabaseURL)
 		db, err := postgres.Open(context.TODO(), env.DatabaseURL)
 		if err != nil {
-			log.Fatalf("Error opening database connection: %v\n  DATABASE_URL: %s",
+			log.Fatalf("[FATAL] Error opening database connection: %v\n  DATABASE_URL: %s",
 				err,
 				env.DatabaseURL,
 			)
@@ -92,7 +92,7 @@ func main() {
 			cnt++
 		}
 		if err != nil {
-			log.Fatalf("Error connecting to database: %v\n DATABASE_URL: %s\n",
+			log.Fatalf("[FATAL] Error connecting to database: %v\n DATABASE_URL: %s\n",
 				err,
 				env.DatabaseURL,
 			)
@@ -108,7 +108,7 @@ func main() {
 		log.Print("[INFO] Using MemoryPersister")
 	default:
 		// Should never happen
-		log.Fatalf("Invalid PERSISTER: '%s', valid choices are 'sql' or 'memory'.", env.Persister)
+		log.Fatalf("[FATAL] Invalid PERSISTER: '%s', valid choices are 'sql' or 'memory'.", env.Persister)
 	}
 	r := app.NewRouter()
 	docs.SwaggerInfo.Host = env.BaseURL.Hostname()

@@ -50,7 +50,6 @@ func (app *App) BaseURL(url url.URL) *App {
 
 // API sets the API object for the app
 func (app *App) API(api localAPI) *App {
-	log.Printf("[DEBUG] api: %#v", app.api)
 	app.api = api
 	return app
 }

@@ -2,55 +2,33 @@ package main
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
-	"errors"
-	"log"
 	"net/http"
 	"net/http/httptest"
-	"os"
-	"strings"
 	"testing"
-
-	"github.com/gorilla/mux"
-	"gocloud.dev/postgres"
+	"time"
 
 	"github.com/ourrootsorg/cms-server/api"
 	"github.com/ourrootsorg/cms-server/model"
-	"github.com/ourrootsorg/cms-server/persist"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestCollections(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skipping tests in short mode")
-	}
-	db, err := postgres.Open(context.TODO(), os.Getenv("DATABASE_URL"))
-	if err != nil {
-		log.Fatalf("Error opening database connection: %v\n  DATABASE_URL: %s",
-			err,
-			os.Getenv("DATABASE_URL"),
-		)
-	}
-	p := persist.NewPostgresPersister("", db)
-	app := NewApp().
-		API(api.NewAPI().
-			CategoryPersister(p).
-			CollectionPersister(p))
-
+func TestGetAllCollections(t *testing.T) {
+	am := &apiMock{}
+	app := NewApp().API(am)
 	r := app.NewRouter()
 
-	// Add a test category for referential integrity
-	testCategory, err := createTestCategory(r)
-	assert.Nil(t, err, "Error creating test category")
-	defer deleteTestCategory(r, testCategory)
+	// Empty result
+	cr := api.CollectionResult{}
+	am.result = &cr
+	am.errors = nil
 
 	request, _ := http.NewRequest("GET", "/collections", nil)
 	response := httptest.NewRecorder()
 	r.ServeHTTP(response, request)
-	assert.Equal(t, 200, response.Code, "Response: %s", string(response.Body.Bytes()))
+	assert.Equal(t, 200, response.Code, "OK response is expected")
 	var empty api.CollectionResult
-	err = json.NewDecoder(response.Body).Decode(&empty)
+	err := json.NewDecoder(response.Body).Decode(&empty)
 	if err != nil {
 		t.Errorf("Error parsing JSON: %v", err)
 	}
@@ -59,76 +37,25 @@ func TestCollections(t *testing.T) {
 		contentType,
 		response.Result().Header["Content-Type"][0])
 
-	// Add a Collection
-	in := model.CollectionIn{
-		CollectionBody: model.CollectionBody{
-			Name: "Test Collection",
+	// Non-empty result
+	now := time.Now().Truncate(0) // Truncate(0) truncates monotonic time
+	ci, _ := makeCollectionIn(t)
+	cr = api.CollectionResult{
+		Collections: []model.Collection{
+			{
+				ID:             "/collections/1",
+				CollectionIn:   ci,
+				InsertTime:     now,
+				LastUpdateTime: now,
+			},
 		},
-		Category: testCategory.ID,
 	}
-	buf := new(bytes.Buffer)
-	enc := json.NewEncoder(buf)
-	err = enc.Encode(in)
-	if err != nil {
-		t.Errorf("Error encoding CollectionIn: %v", err)
-	}
-	// missing MIME type
-	request, _ = http.NewRequest("POST", "/collections", buf)
-	response = httptest.NewRecorder()
-	r.ServeHTTP(response, request)
-	assert.Equal(t, http.StatusUnsupportedMediaType, response.Code, "Response: %s", string(response.Body.Bytes()))
-	assert.Contains(t, response.Result().Header, "Content-Type", "Should have Content-Type header")
-	assert.Equal(t,
-		contentType,
-		response.Result().Header["Content-Type"][0])
-
-	buf = new(bytes.Buffer)
-	enc = json.NewEncoder(buf)
-	err = enc.Encode(in)
-	if err != nil {
-		t.Errorf("Error encoding CollectionIn: %v", err)
-	}
-	// wrong MIME type
-	request, _ = http.NewRequest("POST", "/collections", buf)
-	request.Header.Add("Content-Type", "application/notjson")
-	response = httptest.NewRecorder()
-	r.ServeHTTP(response, request)
-	assert.Equal(t, http.StatusUnsupportedMediaType, response.Code, "Response: %s", string(response.Body.Bytes()))
-	assert.Contains(t, response.Result().Header, "Content-Type", "Should have Content-Type header")
-	assert.Equal(t,
-		contentType,
-		response.Result().Header["Content-Type"][0])
-
-	buf = new(bytes.Buffer)
-	enc = json.NewEncoder(buf)
-	err = enc.Encode(in)
-	if err != nil {
-		t.Errorf("Error encoding CollectionIn: %v", err)
-	}
-	// correct MIME type
-	request, _ = http.NewRequest("POST", "/collections", buf)
-	request.Header.Add("Content-Type", contentType)
-	response = httptest.NewRecorder()
-	r.ServeHTTP(response, request)
-	assert.Equal(t, http.StatusCreated, response.Code, "Response: %s", string(response.Body.Bytes()))
-	assert.Contains(t, response.Result().Header, "Content-Type", "Should have Content-Type header")
-	assert.Equal(t,
-		contentType,
-		response.Result().Header["Content-Type"][0])
-	var created model.Collection
-	err = json.NewDecoder(response.Body).Decode(&created)
-	if err != nil {
-		t.Errorf("Error parsing JSON: %v", err)
-	}
-	assert.Equal(t, in.Name, created.Name, "Expected Name to match")
-	assert.NotEmpty(t, created.ID)
-	assert.Equal(t, in.Category, created.Category, "created: %#v", created)
-
-	// GET /collections should now return the created Collection
+	am.result = &cr
+	am.errors = nil
 	request, _ = http.NewRequest("GET", "/collections", nil)
 	response = httptest.NewRecorder()
 	r.ServeHTTP(response, request)
-	assert.Equal(t, 200, response.Code, "Response: %s", string(response.Body.Bytes()))
+	assert.Equal(t, 200, response.Code, "OK response is expected")
 	assert.Equal(t,
 		contentType,
 		response.Result().Header["Content-Type"][0])
@@ -138,158 +65,173 @@ func TestCollections(t *testing.T) {
 		t.Errorf("Error parsing JSON: %v", err)
 	}
 	assert.Equal(t, 1, len(ret.Collections))
-	assert.Equal(t, created, ret.Collections[0])
+	assert.Equal(t, cr.Collections[0], ret.Collections[0])
 
-	// GET /collections/{id} should now return the created Collection
-	request, _ = http.NewRequest("GET", created.ID, nil)
+	// error result
+	am.result = (*api.CollectionResult)(nil)
+	am.errors = model.NewErrors(http.StatusInternalServerError, assert.AnError)
+	request, _ = http.NewRequest("GET", "/collections", nil)
 	response = httptest.NewRecorder()
 	r.ServeHTTP(response, request)
-	assert.Equal(t, 200, response.Code, "Response: %s", string(response.Body.Bytes()))
-	assert.Contains(t, response.Result().Header, "Content-Type", "Should have Content-Type header")
+	assert.Equal(t, 500, response.Code)
 	assert.Equal(t,
 		contentType,
 		response.Result().Header["Content-Type"][0])
-	var ret2 model.Collection
-	err = json.NewDecoder(response.Body).Decode(&ret2)
+	var errRet []model.Error
+	err = json.NewDecoder(response.Body).Decode(&errRet)
 	if err != nil {
 		t.Errorf("Error parsing JSON: %v", err)
 	}
-	assert.Equal(t, created, ret2)
+	assert.NotNil(t, errRet)
+	assert.Equal(t, 1, len(errRet))
+	assert.Equal(t, am.errors.Errs(), errRet)
+}
+func TestGetCollection(t *testing.T) {
+	am := &apiMock{}
+	app := NewApp().API(am)
+	r := app.NewRouter()
+
+	ci, _ := makeCollectionIn(t)
+	collection := &model.Collection{
+		ID:           "/collections/1",
+		CollectionIn: ci,
+	}
+	am.result = collection
+	am.errors = nil
+	var ret model.Collection
+
+	request, _ := http.NewRequest("GET", "/collections/1", nil)
+	response := httptest.NewRecorder()
+	r.ServeHTTP(response, request)
+	assert.Equal(t, http.StatusOK, response.Code)
+	err := json.NewDecoder(response.Body).Decode(&ret)
+	if err != nil {
+		t.Errorf("Error parsing JSON: %v", err)
+	}
+	assert.Equal(t, *collection, ret)
+
+	collection = nil
+	am.result = collection
+	am.errors = model.NewErrors(http.StatusNotFound, model.NewError(model.ErrNotFound, "/collections/1"))
+
+	request, _ = http.NewRequest("GET", "/collections/1", nil)
+	response = httptest.NewRecorder()
+	r.ServeHTTP(response, request)
+	assert.Equal(t, http.StatusNotFound, response.Code)
+	assert.Equal(t,
+		contentType,
+		response.Result().Header["Content-Type"][0])
+	var errRet []model.Error
+	err = json.NewDecoder(response.Body).Decode(&errRet)
+	if err != nil {
+		t.Errorf("Error parsing JSON: %v", err)
+	}
+	assert.NotNil(t, errRet)
+	assert.Equal(t, 1, len(errRet))
+	assert.Equal(t, am.errors.Errs(), errRet)
+}
+
+func TestPostCollection(t *testing.T) {
+	am := &apiMock{}
+	app := NewApp().API(am)
+	r := app.NewRouter()
+
+	in, buf := makeCollectionIn(t)
+	now := time.Now().Truncate(0) // Truncate(0) truncates monotonic time
+	am.result = &model.Collection{
+		ID:             "/collections/1",
+		CollectionIn:   in,
+		InsertTime:     now,
+		LastUpdateTime: now,
+	}
+	am.errors = nil
+
+	request, _ := http.NewRequest("POST", "/collections", buf)
+	request.Header.Add("Content-Type", contentType)
+
+	response := httptest.NewRecorder()
+	r.ServeHTTP(response, request)
+	assert.Equal(t, http.StatusCreated, response.Code, "Response: %s", string(response.Body.Bytes()))
 	assert.Contains(t, response.Result().Header, "Content-Type", "Should have Content-Type header")
 	assert.Equal(t,
 		contentType,
 		response.Result().Header["Content-Type"][0])
-
-	// Bad request
-	request, _ = http.NewRequest("POST", "/collections", strings.NewReader("{xxx}"))
-	request.Header.Add("Content-Type", contentType)
-	response = httptest.NewRecorder()
-	r.ServeHTTP(response, request)
-	assert.Equal(t, http.StatusBadRequest, response.Code, "Response: %s", string(response.Body.Bytes()))
-
-	// Bad request - no category
-	in.Category = ""
-	buf = new(bytes.Buffer)
-	enc = json.NewEncoder(buf)
-	err = enc.Encode(in)
+	var created model.Collection
+	err := json.NewDecoder(response.Body).Decode(&created)
 	if err != nil {
-		t.Errorf("Error encoding CollectionIn: %v", err)
+		t.Errorf("Error parsing JSON: %v", err)
 	}
-	request, _ = http.NewRequest("POST", "/collections", buf)
-	request.Header.Add("Content-Type", contentType)
-	response = httptest.NewRecorder()
-	r.ServeHTTP(response, request)
-	assert.Equal(t, http.StatusBadRequest, response.Code, "Response: %s", string(response.Body.Bytes()))
-	// Collection not found
-	request, _ = http.NewRequest("GET", created.ID+"999", nil)
-	response = httptest.NewRecorder()
-	r.ServeHTTP(response, request)
-	assert.Equal(t, http.StatusNotFound, response.Code, "Response: %s", string(response.Body.Bytes()))
+	assert.Equal(t, in.Name, created.Name, "Expected Name to match")
+	assert.Equal(t, in, created.CollectionIn)
+	assert.Equal(t, now, created.InsertTime)
+	assert.Equal(t, now, created.LastUpdateTime)
+	assert.NotEmpty(t, created.ID)
+}
 
-	// PUT
-	ret2.Name = "Updated"
-	buf = new(bytes.Buffer)
-	enc = json.NewEncoder(buf)
-	err = enc.Encode(ret2)
-	if err != nil {
-		t.Errorf("Error encoding CollectionIn: %v", err)
+func TestPutCollection(t *testing.T) {
+	am := &apiMock{}
+	app := NewApp().API(am)
+	r := app.NewRouter()
+
+	in, buf := makeCollectionIn(t)
+	now := time.Now().Truncate(0) // Truncate(0) truncates monotonic time
+	coll := model.Collection{
+		ID:             "/collections/1",
+		CollectionIn:   in,
+		InsertTime:     now,
+		LastUpdateTime: now,
 	}
-	// correct MIME type
-	request, _ = http.NewRequest("PUT", created.ID, buf)
+	am.result = &coll
+	am.errors = nil
+
+	request, _ := http.NewRequest("PUT", "/collections/1", buf)
 	request.Header.Add("Content-Type", contentType)
-	response = httptest.NewRecorder()
+
+	response := httptest.NewRecorder()
 	r.ServeHTTP(response, request)
 	assert.Equal(t, http.StatusOK, response.Code, "Response: %s", string(response.Body.Bytes()))
 	assert.Contains(t, response.Result().Header, "Content-Type", "Should have Content-Type header")
 	assert.Equal(t,
 		contentType,
 		response.Result().Header["Content-Type"][0])
-	var updated model.Collection
-	err = json.NewDecoder(response.Body).Decode(&updated)
+	var created model.Collection
+	err := json.NewDecoder(response.Body).Decode(&created)
 	if err != nil {
 		t.Errorf("Error parsing JSON: %v", err)
 	}
-	assert.Equal(t, ret2.Name, updated.Name, "Expected Name to match")
+	assert.Equal(t, in.Name, created.Name, "Expected Name to match")
+	assert.Equal(t, in, created.CollectionIn)
+	assert.Equal(t, now, created.InsertTime)
+	assert.Equal(t, now, created.LastUpdateTime)
+	assert.NotEmpty(t, created.ID)
+}
 
-	// Missing MIME type
-	buf = new(bytes.Buffer)
-	enc = json.NewEncoder(buf)
-	err = enc.Encode(in)
-	if err != nil {
-		t.Errorf("Error encoding CollectionIn: %v", err)
-	}
-	request, _ = http.NewRequest("PUT", created.ID, buf)
-	response = httptest.NewRecorder()
-	r.ServeHTTP(response, request)
-	assert.Equal(t, http.StatusUnsupportedMediaType, response.Code, "Response: %s", string(response.Body.Bytes()))
-	// Bad MIME type
-	buf = new(bytes.Buffer)
-	enc = json.NewEncoder(buf)
-	err = enc.Encode(in)
-	if err != nil {
-		t.Errorf("Error encoding CollectionIn: %v", err)
-	}
-	request, _ = http.NewRequest("PUT", created.ID, buf)
-	request.Header.Add("Content-Type", "application/notjson")
-	response = httptest.NewRecorder()
-	r.ServeHTTP(response, request)
-	assert.Equal(t, http.StatusUnsupportedMediaType, response.Code, "Response: %s", string(response.Body.Bytes()))
+func TestDeleteCollection(t *testing.T) {
+	am := &apiMock{}
+	app := NewApp().API(am)
+	r := app.NewRouter()
 
-	// PUT non-existant
-	buf = new(bytes.Buffer)
-	enc = json.NewEncoder(buf)
-	err = enc.Encode(ret2)
-	if err != nil {
-		t.Errorf("Error encoding CollectionIn: %v", err)
-	}
-	request, _ = http.NewRequest("PUT", created.ID+"x", buf)
-	request.Header.Add("Content-Type", contentType)
-	response = httptest.NewRecorder()
-	r.ServeHTTP(response, request)
-	assert.Equal(t, http.StatusNotFound, response.Code, "Response: %s", string(response.Body.Bytes()))
+	am.result = nil
+	am.errors = nil
 
-	// Bad request
-	request, _ = http.NewRequest("PUT", created.ID, strings.NewReader("{x}"))
-	request.Header.Add("Content-Type", contentType)
-	response = httptest.NewRecorder()
-	r.ServeHTTP(response, request)
-	assert.Equal(t, http.StatusBadRequest, response.Code, "Response: %s", string(response.Body.Bytes()))
-
-	// DELETE
-	request, _ = http.NewRequest("DELETE", created.ID, nil)
-	response = httptest.NewRecorder()
+	request, _ := http.NewRequest("DELETE", "/collections/1", nil)
+	response := httptest.NewRecorder()
 	r.ServeHTTP(response, request)
 	assert.Equal(t, http.StatusNoContent, response.Code, "Response: %s", string(response.Body.Bytes()))
 }
 
-func createTestCategory(r *mux.Router) (*model.Category, error) {
-	stringType, err := model.NewFieldDef("stringField", model.StringType, "string_field")
-	if err != nil {
-		return nil, err
-	}
-	in, err := model.NewCategoryIn("Test", stringType)
-	if err != nil {
-		return nil, err
+func makeCollectionIn(t *testing.T) (model.CollectionIn, *bytes.Buffer) {
+	in := model.CollectionIn{
+		CollectionBody: model.CollectionBody{
+			Name: "First",
+		},
+		Category: "/categories/1",
 	}
 	buf := new(bytes.Buffer)
 	enc := json.NewEncoder(buf)
-	if err := enc.Encode(in); err != nil {
-		return nil, err
+	err := enc.Encode(in)
+	if err != nil {
+		t.Errorf("Error encoding CollectionIn: %v", err)
 	}
-	request, _ := http.NewRequest("POST", "/categories", buf)
-	request.Header.Add("Content-Type", contentType)
-	response := httptest.NewRecorder()
-	r.ServeHTTP(response, request)
-	if response.Code != http.StatusCreated {
-		return nil, errors.New("Error creating category")
-	}
-	var created model.Category
-	err = json.NewDecoder(response.Body).Decode(&created)
-	return &created, err
-}
-
-func deleteTestCategory(r *mux.Router, category *model.Category) {
-	request, _ := http.NewRequest("DELETE", category.ID, nil)
-	response := httptest.NewRecorder()
-	r.ServeHTTP(response, request)
+	return in, buf
 }
