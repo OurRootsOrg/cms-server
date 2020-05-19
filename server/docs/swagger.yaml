@@ -1,5 +1,10 @@
 basePath: /
 definitions:
+  api.ContentRequest:
+    properties:
+      contentType:
+        type: string
+    type: object
   model.Category:
     properties:
       field_defs:
@@ -89,6 +94,36 @@ definitions:
     items:
       $ref: '#/definitions/model.FieldDef'
     type: array
+  model.Post:
+    properties:
+      collection:
+        example: /collections/999
+        type: string
+      id:
+        example: /posts/999
+        type: string
+      insert_time:
+        type: string
+      last_update_time:
+        type: string
+      name:
+        type: string
+    required:
+    - collection
+    - id
+    - name
+    type: object
+  model.PostIn:
+    properties:
+      collection:
+        example: /collections/999
+        type: string
+      name:
+        type: string
+    required:
+    - collection
+    - name
+    type: object
 host: api.ourroots.org
 info:
   contact:
@@ -358,6 +393,165 @@ paths:
       summary: updates a Collection
       tags:
       - collections
+  /content:
+    post:
+      consumes:
+      - application/json
+      operationId: postContentRequest
+      parameters:
+      - description: Create content request
+        in: body
+        name: contentRequest
+        required: true
+        schema:
+          $ref: '#/definitions/api.ContentRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Category'
+        "415":
+          description: Bad Content-Type
+          schema:
+            $ref: '#/definitions/model.Errors'
+        "500":
+          description: Server error
+          schema:
+            $ref: '#/definitions/model.Errors'
+      summary: returns a URL for uploading content
+      tags:
+      - content
+  /posts:
+    get:
+      operationId: getPosts
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.Post'
+            type: array
+        "500":
+          description: Server error
+          schema:
+            $ref: '#/definitions/model.Errors'
+      summary: returns all posts
+      tags:
+      - posts
+    post:
+      consumes:
+      - application/json
+      operationId: addPost
+      parameters:
+      - description: Add Post
+        in: body
+        name: post
+        required: true
+        schema:
+          $ref: '#/definitions/model.PostIn'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Post'
+        "415":
+          description: Bad Content-Type
+          schema:
+            $ref: '#/definitions/model.Errors'
+        "500":
+          description: Server error
+          schema:
+            $ref: '#/definitions/model.Errors'
+      summary: adds a new Post
+      tags:
+      - posts
+  /posts/{id}:
+    delete:
+      operationId: deletePost
+      parameters:
+      - description: Post ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Post'
+        "500":
+          description: Server error
+          schema:
+            $ref: '#/definitions/model.Errors'
+      summary: deletes a Post
+      tags:
+      - posts
+    get:
+      operationId: getPost
+      parameters:
+      - description: Post ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Post'
+        "404":
+          description: Not found
+          schema:
+            $ref: '#/definitions/model.Errors'
+        "500":
+          description: Server error
+          schema:
+            $ref: '#/definitions/model.Errors'
+      summary: gets a Post
+      tags:
+      - posts
+    put:
+      consumes:
+      - application/json
+      operationId: updatePost
+      parameters:
+      - description: Post ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Update Post
+        in: body
+        name: post
+        required: true
+        schema:
+          $ref: '#/definitions/model.Post'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Post'
+        "415":
+          description: Bad Content-Type
+          schema:
+            $ref: '#/definitions/model.Errors'
+        "500":
+          description: Server error
+          schema:
+            $ref: '#/definitions/model.Errors'
+      summary: updates a Post
+      tags:
+      - posts
 schemes:
 - http
 - https

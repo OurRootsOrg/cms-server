@@ -17,7 +17,6 @@ require (
 	github.com/hashicorp/logutils v1.0.0
 	github.com/lib/pq v1.2.0
 	github.com/mailru/easyjson v0.7.1 // indirect
-	github.com/minio/minio-go/v6 v6.0.55
 	github.com/onsi/ginkgo v1.7.0 // indirect
 	github.com/onsi/gomega v1.4.3 // indirect
 	github.com/stretchr/testify v1.5.1

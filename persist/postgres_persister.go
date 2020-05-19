@@ -205,7 +205,7 @@ func (p PostgresPersister) InsertCollection(ctx context.Context, in model.Collec
 	var dbID int32
 	var collection model.Collection
 	var catID int32
-	n, err := fmt.Sscanf(in.Category, p.pathPrefix+model.CategoryIDFormat, &catID)
+	n, err := fmt.Sscanf(in.Category+"\n", p.pathPrefix+model.CategoryIDFormat+"\n", &catID)
 	if err != nil || n != 1 {
 		// Bad ID
 		return collection, model.NewError(model.ErrBadReference, in.Category, "category")
@@ -237,7 +237,7 @@ func (p PostgresPersister) UpdateCollection(ctx context.Context, id string, in m
 		return collection, model.NewError(model.ErrNotFound, id)
 	}
 	var catID int32
-	n, err = fmt.Sscanf(in.Category, p.pathPrefix+model.CategoryIDFormat, &catID)
+	n, err = fmt.Sscanf(in.Category+"\n", p.pathPrefix+model.CategoryIDFormat+"\n", &catID)
 	if err != nil || n != 1 {
 		// Bad ID
 		return collection, model.NewError(model.ErrBadReference, in.Category, "category")

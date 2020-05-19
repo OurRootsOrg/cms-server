@@ -2,59 +2,33 @@ package main
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
-	"errors"
-	"log"
 	"net/http"
 	"net/http/httptest"
-	"os"
-	"strings"
 	"testing"
-
-	"github.com/gorilla/mux"
-	"gocloud.dev/postgres"
+	"time"
 
 	"github.com/ourrootsorg/cms-server/api"
 	"github.com/ourrootsorg/cms-server/model"
-	"github.com/ourrootsorg/cms-server/persist"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestPosts(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skipping tests in short mode")
-	}
-	db, err := postgres.Open(context.TODO(), os.Getenv("DATABASE_URL"))
-	if err != nil {
-		log.Fatalf("Error opening database connection: %v\n  DATABASE_URL: %s",
-			err,
-			os.Getenv("DATABASE_URL"),
-		)
-	}
-	p := persist.NewPostgresPersister("", db)
-	app := NewApp().
-		API(api.NewAPI().
-			CategoryPersister(p).
-			CollectionPersister(p).
-			PostPersister(p))
-
+func TestGetAllPosts(t *testing.T) {
+	am := &apiMock{}
+	app := NewApp().API(am)
 	r := app.NewRouter()
 
-	// Add a test collection for referential integrity
-	testCategory, err := createTestCategory(r)
-	assert.Nil(t, err, "Error creating test category")
-	defer deleteTestCategory(r, testCategory)
-	testCollection, err := createTestCollection(r, testCategory)
-	assert.Nil(t, err, "Error creating test collection")
-	defer deleteTestCollection(r, testCollection)
+	// Empty result
+	cr := api.PostResult{}
+	am.result = &cr
+	am.errors = nil
 
 	request, _ := http.NewRequest("GET", "/posts", nil)
 	response := httptest.NewRecorder()
 	r.ServeHTTP(response, request)
-	assert.Equal(t, 200, response.Code, "Response: %s", string(response.Body.Bytes()))
+	assert.Equal(t, 200, response.Code, "OK response is expected")
 	var empty api.PostResult
-	err = json.NewDecoder(response.Body).Decode(&empty)
+	err := json.NewDecoder(response.Body).Decode(&empty)
 	if err != nil {
 		t.Errorf("Error parsing JSON: %v", err)
 	}
@@ -63,76 +37,25 @@ func TestPosts(t *testing.T) {
 		contentType,
 		response.Result().Header["Content-Type"][0])
 
-	// Add a Post
-	in := model.PostIn{
-		PostBody: model.PostBody{
-			Name: "Test Post",
+	// Non-empty result
+	now := time.Now().Truncate(0) // Truncate(0) truncates monotonic time
+	ci, _ := makePostIn(t)
+	cr = api.PostResult{
+		Posts: []model.Post{
+			{
+				ID:             "/posts/1",
+				PostIn:         ci,
+				InsertTime:     now,
+				LastUpdateTime: now,
+			},
 		},
-		Collection: testCollection.ID,
 	}
-	buf := new(bytes.Buffer)
-	enc := json.NewEncoder(buf)
-	err = enc.Encode(in)
-	if err != nil {
-		t.Errorf("Error encoding PostIn: %v", err)
-	}
-	// missing MIME type
-	request, _ = http.NewRequest("POST", "/posts", buf)
-	response = httptest.NewRecorder()
-	r.ServeHTTP(response, request)
-	assert.Equal(t, http.StatusUnsupportedMediaType, response.Code, "Response: %s", string(response.Body.Bytes()))
-	assert.Contains(t, response.Result().Header, "Content-Type", "Should have Content-Type header")
-	assert.Equal(t,
-		contentType,
-		response.Result().Header["Content-Type"][0])
-
-	buf = new(bytes.Buffer)
-	enc = json.NewEncoder(buf)
-	err = enc.Encode(in)
-	if err != nil {
-		t.Errorf("Error encoding PostIn: %v", err)
-	}
-	// wrong MIME type
-	request, _ = http.NewRequest("POST", "/posts", buf)
-	request.Header.Add("Content-Type", "application/notjson")
-	response = httptest.NewRecorder()
-	r.ServeHTTP(response, request)
-	assert.Equal(t, http.StatusUnsupportedMediaType, response.Code, "Response: %s", string(response.Body.Bytes()))
-	assert.Contains(t, response.Result().Header, "Content-Type", "Should have Content-Type header")
-	assert.Equal(t,
-		contentType,
-		response.Result().Header["Content-Type"][0])
-
-	buf = new(bytes.Buffer)
-	enc = json.NewEncoder(buf)
-	err = enc.Encode(in)
-	if err != nil {
-		t.Errorf("Error encoding PostIn: %v", err)
-	}
-	// correct MIME type
-	request, _ = http.NewRequest("POST", "/posts", buf)
-	request.Header.Add("Content-Type", contentType)
-	response = httptest.NewRecorder()
-	r.ServeHTTP(response, request)
-	assert.Equal(t, http.StatusCreated, response.Code, "Response: %s", string(response.Body.Bytes()))
-	assert.Contains(t, response.Result().Header, "Content-Type", "Should have Content-Type header")
-	assert.Equal(t,
-		contentType,
-		response.Result().Header["Content-Type"][0])
-	var created model.Post
-	err = json.NewDecoder(response.Body).Decode(&created)
-	if err != nil {
-		t.Errorf("Error parsing JSON: %v", err)
-	}
-	assert.Equal(t, in.Name, created.Name, "Expected Name to match")
-	assert.NotEmpty(t, created.ID)
-	assert.Equal(t, in.Collection, created.Collection, "created: %#v", created)
-
-	// GET /posts should now return the created Post
+	am.result = &cr
+	am.errors = nil
 	request, _ = http.NewRequest("GET", "/posts", nil)
 	response = httptest.NewRecorder()
 	r.ServeHTTP(response, request)
-	assert.Equal(t, 200, response.Code, "Response: %s", string(response.Body.Bytes()))
+	assert.Equal(t, 200, response.Code, "OK response is expected")
 	assert.Equal(t,
 		contentType,
 		response.Result().Header["Content-Type"][0])
@@ -142,151 +65,173 @@ func TestPosts(t *testing.T) {
 		t.Errorf("Error parsing JSON: %v", err)
 	}
 	assert.Equal(t, 1, len(ret.Posts))
-	assert.Equal(t, created, ret.Posts[0])
+	assert.Equal(t, cr.Posts[0], ret.Posts[0])
 
-	// GET /posts/{id} should now return the created Post
-	request, _ = http.NewRequest("GET", created.ID, nil)
+	// error result
+	am.result = (*api.PostResult)(nil)
+	am.errors = model.NewErrors(http.StatusInternalServerError, assert.AnError)
+	request, _ = http.NewRequest("GET", "/posts", nil)
 	response = httptest.NewRecorder()
 	r.ServeHTTP(response, request)
-	assert.Equal(t, 200, response.Code, "Response: %s", string(response.Body.Bytes()))
-	assert.Contains(t, response.Result().Header, "Content-Type", "Should have Content-Type header")
+	assert.Equal(t, 500, response.Code)
 	assert.Equal(t,
 		contentType,
 		response.Result().Header["Content-Type"][0])
-	var ret2 model.Post
-	err = json.NewDecoder(response.Body).Decode(&ret2)
+	var errRet []model.Error
+	err = json.NewDecoder(response.Body).Decode(&errRet)
 	if err != nil {
 		t.Errorf("Error parsing JSON: %v", err)
 	}
-	assert.Equal(t, created, ret2)
+	assert.NotNil(t, errRet)
+	assert.Equal(t, 1, len(errRet))
+	assert.Equal(t, am.errors.Errs(), errRet)
+}
+func TestGetPost(t *testing.T) {
+	am := &apiMock{}
+	app := NewApp().API(am)
+	r := app.NewRouter()
+
+	ci, _ := makePostIn(t)
+	post := &model.Post{
+		ID:     "/posts/1",
+		PostIn: ci,
+	}
+	am.result = post
+	am.errors = nil
+	var ret model.Post
+
+	request, _ := http.NewRequest("GET", "/posts/1", nil)
+	response := httptest.NewRecorder()
+	r.ServeHTTP(response, request)
+	assert.Equal(t, http.StatusOK, response.Code)
+	err := json.NewDecoder(response.Body).Decode(&ret)
+	if err != nil {
+		t.Errorf("Error parsing JSON: %v", err)
+	}
+	assert.Equal(t, *post, ret)
+
+	post = nil
+	am.result = post
+	am.errors = model.NewErrors(http.StatusNotFound, model.NewError(model.ErrNotFound, "/posts/1"))
+
+	request, _ = http.NewRequest("GET", "/posts/1", nil)
+	response = httptest.NewRecorder()
+	r.ServeHTTP(response, request)
+	assert.Equal(t, http.StatusNotFound, response.Code)
+	assert.Equal(t,
+		contentType,
+		response.Result().Header["Content-Type"][0])
+	var errRet []model.Error
+	err = json.NewDecoder(response.Body).Decode(&errRet)
+	if err != nil {
+		t.Errorf("Error parsing JSON: %v", err)
+	}
+	assert.NotNil(t, errRet)
+	assert.Equal(t, 1, len(errRet))
+	assert.Equal(t, am.errors.Errs(), errRet)
+}
+
+func TestPostPost(t *testing.T) {
+	am := &apiMock{}
+	app := NewApp().API(am)
+	r := app.NewRouter()
+
+	in, buf := makePostIn(t)
+	now := time.Now().Truncate(0) // Truncate(0) truncates monotonic time
+	am.result = &model.Post{
+		ID:             "/posts/1",
+		PostIn:         in,
+		InsertTime:     now,
+		LastUpdateTime: now,
+	}
+	am.errors = nil
+
+	request, _ := http.NewRequest("POST", "/posts", buf)
+	request.Header.Add("Content-Type", contentType)
+
+	response := httptest.NewRecorder()
+	r.ServeHTTP(response, request)
+	assert.Equal(t, http.StatusCreated, response.Code, "Response: %s", string(response.Body.Bytes()))
 	assert.Contains(t, response.Result().Header, "Content-Type", "Should have Content-Type header")
 	assert.Equal(t,
 		contentType,
 		response.Result().Header["Content-Type"][0])
-
-	// Bad request
-	request, _ = http.NewRequest("POST", "/posts", strings.NewReader("{xxx}"))
-	request.Header.Add("Content-Type", contentType)
-	response = httptest.NewRecorder()
-	r.ServeHTTP(response, request)
-	assert.Equal(t, http.StatusBadRequest, response.Code, "Response: %s", string(response.Body.Bytes()))
-
-	// Bad request - no collection
-	in.Collection = ""
-	buf = new(bytes.Buffer)
-	enc = json.NewEncoder(buf)
-	err = enc.Encode(in)
+	var created model.Post
+	err := json.NewDecoder(response.Body).Decode(&created)
 	if err != nil {
-		t.Errorf("Error encoding PostIn: %v", err)
+		t.Errorf("Error parsing JSON: %v", err)
 	}
-	request, _ = http.NewRequest("POST", "/posts", buf)
-	request.Header.Add("Content-Type", contentType)
-	response = httptest.NewRecorder()
-	r.ServeHTTP(response, request)
-	assert.Equal(t, http.StatusBadRequest, response.Code, "Response: %s", string(response.Body.Bytes()))
-	// Post not found
-	request, _ = http.NewRequest("GET", created.ID+"999", nil)
-	response = httptest.NewRecorder()
-	r.ServeHTTP(response, request)
-	assert.Equal(t, http.StatusNotFound, response.Code, "Response: %s", string(response.Body.Bytes()))
+	assert.Equal(t, in.Name, created.Name, "Expected Name to match")
+	assert.Equal(t, in, created.PostIn)
+	assert.Equal(t, now, created.InsertTime)
+	assert.Equal(t, now, created.LastUpdateTime)
+	assert.NotEmpty(t, created.ID)
+}
 
-	// PUT
-	ret2.Name = "Updated"
-	buf = new(bytes.Buffer)
-	enc = json.NewEncoder(buf)
-	err = enc.Encode(ret2)
-	if err != nil {
-		t.Errorf("Error encoding PostIn: %v", err)
+func TestPutPost(t *testing.T) {
+	am := &apiMock{}
+	app := NewApp().API(am)
+	r := app.NewRouter()
+
+	in, buf := makePostIn(t)
+	now := time.Now().Truncate(0) // Truncate(0) truncates monotonic time
+	coll := model.Post{
+		ID:             "/posts/1",
+		PostIn:         in,
+		InsertTime:     now,
+		LastUpdateTime: now,
 	}
-	// correct MIME type
-	request, _ = http.NewRequest("PUT", created.ID, buf)
+	am.result = &coll
+	am.errors = nil
+
+	request, _ := http.NewRequest("PUT", "/posts/1", buf)
 	request.Header.Add("Content-Type", contentType)
-	response = httptest.NewRecorder()
+
+	response := httptest.NewRecorder()
 	r.ServeHTTP(response, request)
 	assert.Equal(t, http.StatusOK, response.Code, "Response: %s", string(response.Body.Bytes()))
 	assert.Contains(t, response.Result().Header, "Content-Type", "Should have Content-Type header")
 	assert.Equal(t,
 		contentType,
 		response.Result().Header["Content-Type"][0])
-	var updated model.Post
-	err = json.NewDecoder(response.Body).Decode(&updated)
+	var created model.Post
+	err := json.NewDecoder(response.Body).Decode(&created)
 	if err != nil {
 		t.Errorf("Error parsing JSON: %v", err)
 	}
-	assert.Equal(t, ret2.Name, updated.Name, "Expected Name to match")
+	assert.Equal(t, in.Name, created.Name, "Expected Name to match")
+	assert.Equal(t, in, created.PostIn)
+	assert.Equal(t, now, created.InsertTime)
+	assert.Equal(t, now, created.LastUpdateTime)
+	assert.NotEmpty(t, created.ID)
+}
 
-	// Missing MIME type
-	buf = new(bytes.Buffer)
-	enc = json.NewEncoder(buf)
-	err = enc.Encode(in)
-	if err != nil {
-		t.Errorf("Error encoding PostIn: %v", err)
-	}
-	request, _ = http.NewRequest("PUT", created.ID, buf)
-	response = httptest.NewRecorder()
-	r.ServeHTTP(response, request)
-	assert.Equal(t, http.StatusUnsupportedMediaType, response.Code, "Response: %s", string(response.Body.Bytes()))
-	// Bad MIME type
-	buf = new(bytes.Buffer)
-	enc = json.NewEncoder(buf)
-	err = enc.Encode(in)
-	if err != nil {
-		t.Errorf("Error encoding PostIn: %v", err)
-	}
-	request, _ = http.NewRequest("PUT", created.ID, buf)
-	request.Header.Add("Content-Type", "application/notjson")
-	response = httptest.NewRecorder()
-	r.ServeHTTP(response, request)
-	assert.Equal(t, http.StatusUnsupportedMediaType, response.Code, "Response: %s", string(response.Body.Bytes()))
+func TestDeletePost(t *testing.T) {
+	am := &apiMock{}
+	app := NewApp().API(am)
+	r := app.NewRouter()
 
-	// PUT non-existant
-	buf = new(bytes.Buffer)
-	enc = json.NewEncoder(buf)
-	err = enc.Encode(ret2)
-	if err != nil {
-		t.Errorf("Error encoding PostIn: %v", err)
-	}
-	request, _ = http.NewRequest("PUT", created.ID+"x", buf)
-	request.Header.Add("Content-Type", contentType)
-	response = httptest.NewRecorder()
-	r.ServeHTTP(response, request)
-	assert.Equal(t, http.StatusNotFound, response.Code, "Response: %s", string(response.Body.Bytes()))
+	am.result = nil
+	am.errors = nil
 
-	// Bad request
-	request, _ = http.NewRequest("PUT", created.ID, strings.NewReader("{x}"))
-	request.Header.Add("Content-Type", contentType)
-	response = httptest.NewRecorder()
-	r.ServeHTTP(response, request)
-	assert.Equal(t, http.StatusBadRequest, response.Code, "Response: %s", string(response.Body.Bytes()))
-
-	// DELETE
-	request, _ = http.NewRequest("DELETE", created.ID, nil)
-	response = httptest.NewRecorder()
+	request, _ := http.NewRequest("DELETE", "/posts/1", nil)
+	response := httptest.NewRecorder()
 	r.ServeHTTP(response, request)
 	assert.Equal(t, http.StatusNoContent, response.Code, "Response: %s", string(response.Body.Bytes()))
 }
 
-func createTestCollection(r *mux.Router, category *model.Category) (*model.Collection, error) {
-	in := model.NewCollectionIn("Test", category.ID)
+func makePostIn(t *testing.T) (model.PostIn, *bytes.Buffer) {
+	in := model.PostIn{
+		PostBody: model.PostBody{
+			Name: "First",
+		},
+		Collection: "/collections/1",
+	}
 	buf := new(bytes.Buffer)
 	enc := json.NewEncoder(buf)
-	if err := enc.Encode(in); err != nil {
-		return nil, err
+	err := enc.Encode(in)
+	if err != nil {
+		t.Errorf("Error encoding PostIn: %v", err)
 	}
-	request, _ := http.NewRequest("POST", "/collections", buf)
-	request.Header.Add("Content-Type", contentType)
-	response := httptest.NewRecorder()
-	r.ServeHTTP(response, request)
-	if response.Code != http.StatusCreated {
-		return nil, errors.New("Error creating collection")
-	}
-	var created model.Collection
-	err := json.NewDecoder(response.Body).Decode(&created)
-	return &created, err
-}
-
-func deleteTestCollection(r *mux.Router, collection *model.Collection) {
-	request, _ := http.NewRequest("DELETE", collection.ID, nil)
-	response := httptest.NewRecorder()
-	r.ServeHTTP(response, request)
+	return in, buf
 }
