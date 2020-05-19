@@ -38,6 +38,15 @@
   "policies": [],
   "queues": [
     {
+      "name": "recordswriter",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-queue-type": "classic"
+      }
+    },
+    {
       "name": "test",
       "vhost": "/",
       "durable": true,
@@ -49,6 +58,15 @@
   ],
   "exchanges": [
     {
+      "name": "recordswriter",
+      "vhost": "/",
+      "type": "fanout",
+      "durable": true,
+      "auto_delete": false,
+      "internal": false,
+      "arguments": {}
+    },
+    {
       "name": "test",
       "vhost": "/",
       "type": "fanout",
@@ -59,6 +77,14 @@
     }
   ],
   "bindings": [
+    {
+      "source": "recordswriter",
+      "vhost": "/",
+      "destination": "recordswriter",
+      "destination_type": "queue",
+      "routing_key": "",
+      "arguments": {}
+    },
     {
       "source": "test",
       "vhost": "/",

@@ -15,7 +15,7 @@ export const mutations = {
 
 export const actions = {
   postsCreate({ commit, dispatch }, post) {
-    console.log('postsCreate', post);
+    console.log("postsCreate", post);
     return Server.postsCreate(post)
       .then(post => {
         commit("POSTS_ADD", post);

@@ -63,7 +63,7 @@ services:
       # this configures rabbitmq; to use SQS, set the protocol to awssqs and the prefix to sqs.us-east-1.amazonaws.com/<accountid>
       - PUB_SUB_PROTOCOL=rabbit
       - PUB_SUB_PREFIX=
-      - RABBIT_SERVER_URL="amqp://guest:guest@localhost:5672/"
+      - RABBIT_SERVER_URL=amqp://guest:guest@rabbitmq:5672/
     networks:
       - mynetwork
 

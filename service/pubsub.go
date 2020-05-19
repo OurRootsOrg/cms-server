@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+
 	"gocloud.dev/pubsub"
 	_ "gocloud.dev/pubsub/awssnssqs"
 	_ "gocloud.dev/pubsub/rabbitpubsub"

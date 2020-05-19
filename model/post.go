@@ -23,7 +23,9 @@ type PostPersister interface {
 
 // PostBody is the JSON body of a Post
 type PostBody struct {
-	Name string `json:"name,omitempty" validate:"required,omitempty"`
+	Name          string `json:"name,omitempty" validate:"required,omitempty"`
+	RecordsKey    string `json:"recordsKey" validate:"required"`
+	RecordsStatus string `json:"recordsStatus"`
 }
 
 // Value makes PostBody implement the driver.Valuer interface.

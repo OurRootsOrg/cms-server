@@ -38,7 +38,6 @@
         Please fill out the required field(s).
       </p>
     </form>
-    <textarea id="raw_output" :value="results"></textarea>
   </div>
 </template>
 
@@ -76,7 +75,7 @@ async function uploadData(store, post, contentType, data) {
   console.log("postRequestResult", postRequestResult, postRequestResult.data.putURL);
   let putResult = await Server.contentPut(postRequestResult.data.putURL, contentType, data.validData);
   console.log("putResult", putResult);
-  post.key = postRequestResult.data.key;
+  post.recordsKey = postRequestResult.data.key;
   console.log("upload post", post);
   let postPostResult = await store.dispatch("postsCreate", post);
   console.log("postPostResult", postPostResult);
