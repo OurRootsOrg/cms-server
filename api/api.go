@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"net/url"
 	"reflect"
 	"strings"
 
@@ -33,7 +32,6 @@ type API struct {
 	collectionPersister model.CollectionPersister
 	postPersister       model.PostPersister
 	userPersister       model.UserPersister
-	baseURL             url.URL
 	validate            *validator.Validate
 	blobStoreConfig     BlobStoreConfig
 	pubSubConfig        PubSubConfig
@@ -59,23 +57,14 @@ type PubSubConfig struct {
 
 // NewAPI builds an API
 func NewAPI() (*API, error) {
-	api := &API{
-		baseURL: url.URL{},
-	}
+	api := &API{}
 	api.Validate(validator.New())
 	var err error
 	api.userCache, err = lru.New2Q(100)
 	if err != nil {
 		return nil, err
 	}
-
 	return api, nil
-}
-
-// BaseURL sets the base URL for the api
-func (api *API) BaseURL(url url.URL) *API {
-	api.baseURL = url
-	return api
 }
 
 // Validate sets the validate object for the api
@@ -132,15 +121,16 @@ func (api *API) OpenBucket(ctx context.Context) (*blob.Bucket, error) {
 // OpenTopic opens a topic for publishing
 // Shutdown(ctx) the topic when you're done with it
 func (api *API) OpenTopic(ctx context.Context, topic string) (*pubsub.Topic, error) {
-	return pubsub.OpenTopic(ctx, api.getPubSubUrlStr(topic))
+	return pubsub.OpenTopic(ctx, api.getPubSubURLStr(topic))
 }
 
+// OpenSubscription opens a subscription to a queue
 // Shutdown(ctx) the subscription when you're done with it, and ack() messages when you've processed them
 func (api *API) OpenSubscription(ctx context.Context, queue string) (*pubsub.Subscription, error) {
-	return pubsub.OpenSubscription(ctx, api.getPubSubUrlStr(queue))
+	return pubsub.OpenSubscription(ctx, api.getPubSubURLStr(queue))
 }
 
-func (api *API) getPubSubUrlStr(target string) string {
+func (api *API) getPubSubURLStr(target string) string {
 	var urlStr string
 	switch api.pubSubConfig.protocol {
 	case "": // use rabbit as the default protocol for testing convenience
