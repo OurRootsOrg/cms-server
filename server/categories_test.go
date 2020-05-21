@@ -16,6 +16,7 @@ import (
 func TestGetAllCategories(t *testing.T) {
 	am := &apiMock{}
 	app := NewApp().API(am)
+	app.authDisabled = true
 	r := app.NewRouter()
 
 	// Empty result
@@ -90,6 +91,7 @@ func TestGetAllCategories(t *testing.T) {
 func TestGetCategory(t *testing.T) {
 	am := &apiMock{}
 	app := NewApp().API(am)
+	app.authDisabled = true
 	r := app.NewRouter()
 
 	category := &model.Category{
@@ -136,6 +138,7 @@ func TestGetCategory(t *testing.T) {
 func TestPostCategory(t *testing.T) {
 	am := &apiMock{}
 	app := NewApp().API(am)
+	app.authDisabled = true
 	r := app.NewRouter()
 
 	in, buf := makeCategoryIn(t)
@@ -171,6 +174,7 @@ func TestPostCategory(t *testing.T) {
 func TestPutCategory(t *testing.T) {
 	am := &apiMock{}
 	app := NewApp().API(am)
+	app.authDisabled = true
 	r := app.NewRouter()
 
 	in, buf := makeCategoryIn(t)
@@ -207,6 +211,7 @@ func TestPutCategory(t *testing.T) {
 func TestDeleteCategory(t *testing.T) {
 	am := &apiMock{}
 	app := NewApp().API(am)
+	app.authDisabled = true
 	r := app.NewRouter()
 
 	am.result = nil

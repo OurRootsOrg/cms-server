@@ -7,6 +7,8 @@ definitions:
     type: object
   model.Category:
     properties:
+      details_page_template:
+        type: string
       field_defs:
         $ref: '#/definitions/model.FieldDefSet'
         description: example:"{\"int_field\":\"Int\", \"string_field\":\"String\"}"
@@ -20,17 +22,23 @@ definitions:
         type: string
       name:
         type: string
+      search_results_page_template:
+        type: string
     required:
     - id
     - name
     type: object
   model.CategoryIn:
     properties:
+      details_page_template:
+        type: string
       field_defs:
         $ref: '#/definitions/model.FieldDefSet'
         description: example:"{\"int_field\":\"Int\", \"string_field\":\"String\"}"
         type: object
       name:
+        type: string
+      search_results_page_template:
         type: string
     required:
     - name
@@ -108,10 +116,15 @@ definitions:
         type: string
       name:
         type: string
+      recordsKey:
+        type: string
+      recordsStatus:
+        type: string
     required:
     - collection
     - id
     - name
+    - recordsKey
     type: object
   model.PostIn:
     properties:
@@ -120,9 +133,14 @@ definitions:
         type: string
       name:
         type: string
+      recordsKey:
+        type: string
+      recordsStatus:
+        type: string
     required:
     - collection
     - name
+    - recordsKey
     type: object
 host: api.ourroots.org
 info:
@@ -153,6 +171,17 @@ paths:
           description: Server error
           schema:
             $ref: '#/definitions/model.Errors'
+      security:
+      - OAuth2Implicit:
+        - cms
+        - openid
+        - profile
+        - email
+      - OAuth2AuthCode:
+        - cms
+        - openid
+        - profile
+        - email
       summary: returns all categories
       tags:
       - categories
@@ -555,4 +584,15 @@ paths:
 schemes:
 - http
 - https
+securityDefinitions:
+  OAuth2Implicit:
+    authorizationUrl: https://ourroots-jim.auth0.com/authorize?audience=https%3A%2F%2Flocalhost%3A3000%2F
+    flow: implicit
+    scopes:
+      cms: ' Grants read and write access to the CMS'
+      email: ' Grants access to OIDC email attributes'
+      openid: ' Indicates that the application intends to use OIDC to verify the user''s
+        identity'
+      profile: ' Grants access to OIDC user profile attributes'
+    type: oauth2
 swagger: "2.0"

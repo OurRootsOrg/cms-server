@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"net/url"
 	"reflect"
 	"strings"
 
@@ -14,18 +13,29 @@ import (
 	"gocloud.dev/pubsub"
 
 	"github.com/go-playground/validator/v10"
+	lru "github.com/hashicorp/golang-lru"
 	"github.com/ourrootsorg/cms-server/model"
 )
+
+// TokenKey is the key to the token property in the request context
+type TokenKey string
+
+// TokenProperty is the name of the token property in the request context
+const TokenProperty TokenKey = "token"
+
+// UserProperty is the name of the token property in the request context
+const UserProperty TokenKey = "user"
 
 // API is the container for the apilication
 type API struct {
 	categoryPersister   model.CategoryPersister
 	collectionPersister model.CollectionPersister
 	postPersister       model.PostPersister
-	baseURL             url.URL
+	userPersister       model.UserPersister
 	validate            *validator.Validate
 	blobStoreConfig     BlobStoreConfig
 	pubSubConfig        PubSubConfig
+	userCache           *lru.TwoQueueCache
 }
 
 // BlobStoreConfig contains configuration information for the blob store
@@ -46,18 +56,15 @@ type PubSubConfig struct {
 }
 
 // NewAPI builds an API
-func NewAPI() *API {
-	api := &API{
-		baseURL: url.URL{},
-	}
+func NewAPI() (*API, error) {
+	api := &API{}
 	api.Validate(validator.New())
-	return api
-}
-
-// BaseURL sets the base URL for the api
-func (api *API) BaseURL(url url.URL) *API {
-	api.baseURL = url
-	return api
+	var err error
+	api.userCache, err = lru.New2Q(100)
+	if err != nil {
+		return nil, err
+	}
+	return api, nil
 }
 
 // Validate sets the validate object for the api
@@ -114,15 +121,16 @@ func (api *API) OpenBucket(ctx context.Context) (*blob.Bucket, error) {
 // OpenTopic opens a topic for publishing
 // Shutdown(ctx) the topic when you're done with it
 func (api *API) OpenTopic(ctx context.Context, topic string) (*pubsub.Topic, error) {
-	return pubsub.OpenTopic(ctx, api.getPubSubUrlStr(topic))
+	return pubsub.OpenTopic(ctx, api.getPubSubURLStr(topic))
 }
 
+// OpenSubscription opens a subscription to a queue
 // Shutdown(ctx) the subscription when you're done with it, and ack() messages when you've processed them
 func (api *API) OpenSubscription(ctx context.Context, queue string) (*pubsub.Subscription, error) {
-	return pubsub.OpenSubscription(ctx, api.getPubSubUrlStr(queue))
+	return pubsub.OpenSubscription(ctx, api.getPubSubURLStr(queue))
 }
 
-func (api *API) getPubSubUrlStr(target string) string {
+func (api *API) getPubSubURLStr(target string) string {
 	var urlStr string
 	switch api.pubSubConfig.protocol {
 	case "": // use rabbit as the default protocol for testing convenience
@@ -135,4 +143,10 @@ func (api *API) getPubSubUrlStr(target string) string {
 		log.Fatalf("Invalid protocol %s\n", api.pubSubConfig.protocol)
 	}
 	return urlStr
+}
+
+// UserPersister sets the UserPersister for the API
+func (api *API) UserPersister(p model.UserPersister) *API {
+	api.userPersister = p
+	return api
 }

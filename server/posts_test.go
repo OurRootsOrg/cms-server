@@ -16,6 +16,7 @@ import (
 func TestGetAllPosts(t *testing.T) {
 	am := &apiMock{}
 	app := NewApp().API(am)
+	app.authDisabled = true
 	r := app.NewRouter()
 
 	// Empty result
@@ -89,6 +90,7 @@ func TestGetAllPosts(t *testing.T) {
 func TestGetPost(t *testing.T) {
 	am := &apiMock{}
 	app := NewApp().API(am)
+	app.authDisabled = true
 	r := app.NewRouter()
 
 	ci, _ := makePostIn(t)
@@ -134,6 +136,7 @@ func TestGetPost(t *testing.T) {
 func TestPostPost(t *testing.T) {
 	am := &apiMock{}
 	app := NewApp().API(am)
+	app.authDisabled = true
 	r := app.NewRouter()
 
 	in, buf := makePostIn(t)
@@ -171,6 +174,7 @@ func TestPostPost(t *testing.T) {
 func TestPutPost(t *testing.T) {
 	am := &apiMock{}
 	app := NewApp().API(am)
+	app.authDisabled = true
 	r := app.NewRouter()
 
 	in, buf := makePostIn(t)
@@ -209,6 +213,7 @@ func TestPutPost(t *testing.T) {
 func TestDeletePost(t *testing.T) {
 	am := &apiMock{}
 	app := NewApp().API(am)
+	app.authDisabled = true
 	r := app.NewRouter()
 
 	am.result = nil

@@ -18,10 +18,12 @@ output-ourroots.cf.yaml
 # Dependency directories (remove the comment below to include it)
 # vendor/
 uglyui/node_modules/
+02-calling-an-api/node_modules/
 
 # IDEs
 .idea/
 uglyui/.idea/
+.vscode/
 
-# sensitive data
+# Secrets
 uglyui/auth_config.json

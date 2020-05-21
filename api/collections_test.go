@@ -27,7 +27,9 @@ func TestCollections(t *testing.T) {
 		)
 	}
 	p := persist.NewPostgresPersister("", db)
-	testApi := api.NewAPI().
+	ap, err := api.NewAPI()
+	assert.NoError(t, err)
+	testApi := ap.
 		CategoryPersister(p).
 		CollectionPersister(p)
 

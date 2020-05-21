@@ -21,7 +21,7 @@ import (
 func (app App) GetCollections(w http.ResponseWriter, req *http.Request) {
 	enc := json.NewEncoder(w)
 	w.Header().Set("Content-Type", contentType)
-	cols, errors := app.api.GetCollections(app.Context())
+	cols, errors := app.api.GetCollections(req.Context())
 	if errors != nil {
 		ErrorsResponse(w, errors)
 		return
@@ -46,7 +46,7 @@ func (app App) GetCollections(w http.ResponseWriter, req *http.Request) {
 func (app App) GetCollection(w http.ResponseWriter, req *http.Request) {
 	enc := json.NewEncoder(w)
 	w.Header().Set("Content-Type", contentType)
-	collection, errors := app.api.GetCollection(app.Context(), req.URL.String())
+	collection, errors := app.api.GetCollection(req.Context(), req.URL.String())
 	if errors != nil {
 		ErrorsResponse(w, errors)
 		return
@@ -83,7 +83,7 @@ func (app App) PostCollection(w http.ResponseWriter, req *http.Request) {
 		ErrorResponse(w, http.StatusBadRequest, msg)
 		return
 	}
-	collection, errors := app.api.AddCollection(app.Context(), in)
+	collection, errors := app.api.AddCollection(req.Context(), in)
 	if errors != nil {
 		log.Printf("[DEBUG] PostCollection AddCollection %v\n", errors)
 		ErrorsResponse(w, errors)
@@ -125,7 +125,7 @@ func (app App) PutCollection(w http.ResponseWriter, req *http.Request) {
 		ErrorResponse(w, http.StatusBadRequest, msg)
 		return
 	}
-	collection, errors := app.api.UpdateCollection(app.Context(), req.URL.String(), in)
+	collection, errors := app.api.UpdateCollection(req.Context(), req.URL.String(), in)
 	if errors != nil {
 		ErrorsResponse(w, errors)
 		return
@@ -148,7 +148,7 @@ func (app App) PutCollection(w http.ResponseWriter, req *http.Request) {
 // @success 204 {object} model.Collection "OK"
 // @failure 500 {object} model.Errors "Server error"
 func (app App) DeleteCollection(w http.ResponseWriter, req *http.Request) {
-	errors := app.api.DeleteCollection(app.Context(), req.URL.String())
+	errors := app.api.DeleteCollection(req.Context(), req.URL.String())
 	if errors != nil {
 		ErrorsResponse(w, errors)
 		return

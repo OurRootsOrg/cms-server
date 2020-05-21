@@ -16,6 +16,7 @@ import (
 func TestGetAllCollections(t *testing.T) {
 	am := &apiMock{}
 	app := NewApp().API(am)
+	app.authDisabled = true
 	r := app.NewRouter()
 
 	// Empty result
@@ -89,6 +90,7 @@ func TestGetAllCollections(t *testing.T) {
 func TestGetCollection(t *testing.T) {
 	am := &apiMock{}
 	app := NewApp().API(am)
+	app.authDisabled = true
 	r := app.NewRouter()
 
 	ci, _ := makeCollectionIn(t)
@@ -134,6 +136,7 @@ func TestGetCollection(t *testing.T) {
 func TestPostCollection(t *testing.T) {
 	am := &apiMock{}
 	app := NewApp().API(am)
+	app.authDisabled = true
 	r := app.NewRouter()
 
 	in, buf := makeCollectionIn(t)
@@ -171,6 +174,7 @@ func TestPostCollection(t *testing.T) {
 func TestPutCollection(t *testing.T) {
 	am := &apiMock{}
 	app := NewApp().API(am)
+	app.authDisabled = true
 	r := app.NewRouter()
 
 	in, buf := makeCollectionIn(t)
@@ -209,6 +213,7 @@ func TestPutCollection(t *testing.T) {
 func TestDeleteCollection(t *testing.T) {
 	am := &apiMock{}
 	app := NewApp().API(am)
+	app.authDisabled = true
 	r := app.NewRouter()
 
 	am.result = nil

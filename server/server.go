@@ -11,12 +11,12 @@ import (
 	"net/url"
 	"os"
 	"reflect"
-	"strings"
 	"time"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/awslabs/aws-lambda-go-api-proxy/gorillamux"
+	"github.com/codingconcepts/env"
 	"github.com/go-playground/validator/v10"
 	"github.com/gorilla/handlers"
 	"github.com/hashicorp/logutils"
@@ -26,7 +26,6 @@ import (
 	"github.com/ourrootsorg/cms-server/server/docs"
 	"gocloud.dev/postgres"
 
-	// _ "github.com/jackc/pgx/v4/stdlib"
 	httpSwagger "github.com/swaggo/http-swagger"
 )
 
@@ -50,11 +49,20 @@ const (
 // @accept application/json
 // @produce application/json
 // @schemes http https
+
+// @securitydefinitions.oauth2.implicit OAuth2Implicit
+// @authorizationurl https://ourroots-jim.auth0.com/authorize?audience=https%3A%2F%2Flocalhost%3A3000%2F
+// @scope.cms Grants read and write access to the CMS
+// @scope.openid Indicates that the application intends to use OIDC to verify the user's identity
+// @scope.profile Grants access to OIDC user profile attributes
+// @scope.email Grants access to OIDC email attributes
+
 func main() {
 	env, err := ParseEnv()
 	if err != nil {
 		log.Fatalf("[FATAL] Error parsing environmet variables: %v", err)
 	}
+	log.Printf("[DEBUG] oidcAudience: %#v, oidcDomain: %#v", env.OIDCAudience, env.OIDCDomain)
 
 	filter := &logutils.LevelFilter{
 		Levels:   []logutils.LogLevel{"DEBUG", "INFO", "ERROR", "FATAL"},
@@ -63,13 +71,21 @@ func main() {
 	}
 	log.SetOutput(filter)
 	log.Printf("[INFO] env.BaseURLString: %s, env.BaseURL.Path: %s", env.BaseURLString, env.BaseURL.Path)
+
 	model.Initialize(env.BaseURL.Path)
-	ap := api.NewAPI().
-		BaseURL(*env.BaseURL).
+	ap, err := api.NewAPI()
+	if err != nil {
+		log.Fatalf("Error calling NewAPI: %v", err)
+	}
+	ap = ap.
 		BlobStoreConfig(env.Region, env.BlobStoreEndpoint, env.BlobStoreAccessKey, env.BlobStoreSecretKey, env.BlobStoreBucket, env.BlobStoreDisableSSL).
 		PubSubConfig(env.Region, env.PubSubProtocol, env.PubSubPrefix)
-	app := NewApp().BaseURL(*env.BaseURL).API(ap)
-
+	app := NewApp().BaseURL(*env.BaseURL).API(ap).OIDC(env.OIDCAudience, env.OIDCDomain)
+	if env.BaseURL.Scheme == "https" {
+		docs.SwaggerInfo.Schemes = []string{"https"}
+	} else {
+		docs.SwaggerInfo.Schemes = []string{"http"}
+	}
 	switch env.Persister {
 	case "sql":
 		log.Printf("Connecting to %s\n", env.DatabaseURL)
@@ -103,7 +119,8 @@ func main() {
 		ap.
 			CategoryPersister(p).
 			CollectionPersister(p).
-			PostPersister(p)
+			PostPersister(p).
+			UserPersister(p)
 		log.Print("[INFO] Using PostgresPersister")
 	case "memory":
 		p := persist.NewMemoryPersister(env.BaseURL.Path)
@@ -134,8 +151,6 @@ func main() {
 		// Lambda-specific setup
 		// Note that the Lamda doesn't serve static content, only the API
 		// API Gateway proxies static content requests directly to an S3 bucket
-		// API Gateway + Lambda is https-only
-		docs.SwaggerInfo.Schemes = []string{"https"}
 		adapter := gorillamux.New(r)
 		lambda.Start(func(ctx context.Context, req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 			log.Printf("[DEBUG] Lambda request %#v", req)
@@ -152,18 +167,32 @@ func main() {
 		// 	Handler(http.StripPrefix("/flutter", http.FileServer(http.Dir(flutterDir))))
 		// r.PathPrefix("/wasm/").
 		// 	Handler(http.StripPrefix("/wasm", http.FileServer(http.Dir(vectyDir))))
-		log.Fatal(http.ListenAndServe(fmt.Sprintf(":%s", env.BaseURL.Port()), // changed from Host because host doesn't work inside docker
-			handlers.LoggingHandler(os.Stdout,
-				handlers.CORS(
-					handlers.AllowedHeaders([]string{"X-Requested-With", "Content-Type", "Authorization"}),
-					handlers.AllowedMethods([]string{"GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS"}),
-					handlers.AllowedOrigins([]string{"*"}))(r))))
+		if env.BaseURL.Scheme == "https" {
+			log.Fatal(http.ListenAndServeTLS(fmt.Sprintf(":%s", env.BaseURL.Port()),
+				"server.crt", "server.key",
+				handlers.LoggingHandler(
+					os.Stdout,
+					handlers.CORS(
+						handlers.AllowedHeaders([]string{"X-Requested-With", "Content-Type", "Authorization"}),
+						handlers.AllowedMethods([]string{"GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS"}),
+						handlers.AllowedOrigins([]string{"*"}))(r)),
+			))
+		} else {
+			log.Fatal(http.ListenAndServe(fmt.Sprintf(":%s", env.BaseURL.Port()),
+				handlers.LoggingHandler(os.Stdout,
+					handlers.CORS(
+						handlers.AllowedHeaders([]string{"X-Requested-With", "Content-Type", "Authorization"}),
+						handlers.AllowedMethods([]string{"GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS"}),
+						handlers.AllowedOrigins([]string{"*"}))(r)),
+			))
+		}
 	}
 }
 
 // Env holds values parse from environment variables
 type Env struct {
-	IsLambda            bool   `env:"LAMBDA_TASK_ROOT"`
+	LambdaTaskRoot      string `env:"LAMBDA_TASK_ROOT"`
+	IsLambda            bool
 	MinLogLevel         string `env:"MIN_LOG_LEVEL" validate:"omitempty,eq=DEBUG|eq=INFO|eq=ERROR"`
 	BaseURLString       string `env:"BASE_URL" validate:"omitempty,url"`
 	Persister           string `env:"PERSISTER" validate:"required,eq=memory|eq=sql"`
@@ -177,30 +206,21 @@ type Env struct {
 	BlobStoreDisableSSL bool   `env:"BLOB_STORE_DISABLE_SSL"`
 	PubSubProtocol      string `env:"PUB_SUB_PROTOCOL"`
 	PubSubPrefix        string `env:"PUB_SUB_PREFIX"`
+	OIDCAudience        string `env:"OIDC_AUDIENCE" validate:"omitempty"`
+	OIDCDomain          string `env:"OIDC_DOMAIN" validate:"omitempty"`
 }
 
 // ParseEnv parses and validates environment variables and stores them in the Env structure
 func ParseEnv() (*Env, error) {
-	env := Env{
-		IsLambda:            os.Getenv("LAMBDA_TASK_ROOT") != "",
-		MinLogLevel:         os.Getenv("MIN_LOG_LEVEL"),
-		BaseURLString:       os.Getenv("BASE_URL"),
-		Persister:           os.Getenv("PERSISTER"),
-		DatabaseURL:         os.Getenv("DATABASE_URL"),
-		Region:              os.Getenv("AWS_REGION"),
-		BlobStoreEndpoint:   os.Getenv("BLOB_STORE_ENDPOINT"),
-		BlobStoreAccessKey:  os.Getenv("BLOB_STORE_ACCESS_KEY"),
-		BlobStoreSecretKey:  os.Getenv("BLOB_STORE_SECRET_KEY"),
-		BlobStoreBucket:     os.Getenv("BLOB_STORE_BUCKET"),
-		BlobStoreDisableSSL: strings.HasPrefix(strings.ToUpper(os.Getenv("BLOB_STORE_DISABLE_SSL")), "T"),
-		PubSubProtocol:      os.Getenv("PUB_SUB_PROTOCOL"),
-		PubSubPrefix:        os.Getenv("PUB_SUB_PREFIX"),
+	var config Env
+	if err := env.Set(&config); err != nil {
+		log.Fatal(err)
 	}
 	validate := validator.New()
 	validate.RegisterTagNameFunc(func(fld reflect.StructField) string {
 		return fld.Tag.Get("env")
 	})
-	err := validate.Struct(env)
+	err := validate.Struct(config)
 	if err != nil {
 		errs := "Error parsing environment variables:\n"
 		for _, fe := range err.(validator.ValidationErrors) {
@@ -221,19 +241,20 @@ func ParseEnv() (*Env, error) {
 		}
 		return nil, errors.New(errs)
 	}
-	if env.MinLogLevel == "" {
-		env.MinLogLevel = "DEBUG"
+	config.IsLambda = config.LambdaTaskRoot != ""
+	if config.MinLogLevel == "" {
+		config.MinLogLevel = "DEBUG"
 	}
-	if env.BaseURLString == "" {
-		env.BaseURLString = defaultURL
+	if config.BaseURLString == "" {
+		config.BaseURLString = defaultURL
 	}
-	env.BaseURL, err = url.ParseRequestURI(env.BaseURLString)
+	config.BaseURL, err = url.ParseRequestURI(config.BaseURLString)
 	if err != nil {
 		// Unreachable, if the validator does its job
-		return nil, fmt.Errorf("Unable to parse BASE_URL '%s': %v", env.BaseURLString, err)
+		return nil, fmt.Errorf("Unable to parse BASE_URL '%s': %v", config.BaseURLString, err)
 	}
-	if env.Persister == "sql" && env.DatabaseURL == "" {
+	if config.Persister == "sql" && config.DatabaseURL == "" {
 		return nil, errors.New("DATABASE_URL is required for PERSISTER=sql")
 	}
-	return &env, nil
+	return &config, nil
 }

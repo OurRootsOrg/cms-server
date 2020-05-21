@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"text/template"
+	"html/template"
 	"time"
 )
 
