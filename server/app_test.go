@@ -66,6 +66,6 @@ func (a *apiMock) PostContentRequest(ctx context.Context, contentRequest api.Con
 func (a *apiMock) GetContent(ctx context.Context, key string) ([]byte, *model.Errors) {
 	return a.result.([]byte), a.errors
 }
-func (a *apiMock) RetrieveUser(ctx context.Context, provider *oidc.Provider, token *oidc.IDToken, rawToken string) (*model.User, *model.Errors) {
+func (a *apiMock) RetrieveUser(ctx context.Context, provider api.OIDCProvider, token *oidc.IDToken, rawToken string) (*model.User, *model.Errors) {
 	return a.result.(*model.User), a.errors
 }

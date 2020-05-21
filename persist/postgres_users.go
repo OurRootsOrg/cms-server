@@ -40,7 +40,7 @@ func (p PostgresPersister) RetrieveUser(ctx context.Context, in model.UserIn) (*
 			return nil, errors.New(msg)
 		}
 		// We got a user
-		log.Printf("[DEBUG] Returning enabled user '%s'", user.ID)
+		log.Printf("[DEBUG] Returning enabled user '%#v'", user)
 		return &user, nil
 	}
 	log.Printf("[DEBUG] No user with subject '%s' found in database, so creating one", in.Subject)

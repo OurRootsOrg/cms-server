@@ -11,8 +11,13 @@ import (
 	"golang.org/x/oauth2"
 )
 
+// OIDCProvider enables mocking `*oidc.Provider`
+type OIDCProvider interface {
+	UserInfo(ctx context.Context, tokenSource oauth2.TokenSource) (*oidc.UserInfo, error)
+}
+
 // RetrieveUser constructs or retrieves a User, either from the database or cache
-func (api API) RetrieveUser(ctx context.Context, provider *oidc.Provider, token *oidc.IDToken, rawToken string) (*model.User, *model.Errors) {
+func (api API) RetrieveUser(ctx context.Context, provider OIDCProvider, token *oidc.IDToken, rawToken string) (*model.User, *model.Errors) {
 	var user model.User
 	cacheKey := token.Issuer + "|" + token.Subject
 	u, ok := api.userCache.Get(cacheKey)
@@ -20,7 +25,7 @@ func (api API) RetrieveUser(ctx context.Context, provider *oidc.Provider, token 
 		user, ok = u.(model.User)
 	}
 	if ok {
-		log.Printf("[DEBUG] Found user for key '%s' in cache", cacheKey)
+		log.Printf("[DEBUG] Found user for key '%s' in cache: %#v", cacheKey, user)
 		return &user, nil
 	}
 	// No user in cache, so look up their info and check the database
@@ -44,7 +49,11 @@ func (api API) RetrieveUser(ctx context.Context, provider *oidc.Provider, token 
 		log.Printf("[ERROR] Error getting claims: %v", err)
 	}
 	log.Printf("[DEBUG] Claims: %#v", userClaims)
-	ui, err := model.NewUserIn(userClaims["name"].(string), userInfo.Email, userInfo.EmailVerified, token.Issuer, token.Subject)
+	name := userClaims["name"]
+	if name == nil {
+		name = "<Unknown>"
+	}
+	ui, err := model.NewUserIn(name.(string), userInfo.Email, userInfo.EmailVerified, token.Issuer, token.Subject)
 	if err != nil {
 		return nil, model.NewErrors(http.StatusUnauthorized, fmt.Errorf("Failed to construct User: %v", err))
 	}
@@ -59,7 +68,7 @@ func (api API) RetrieveUser(ctx context.Context, provider *oidc.Provider, token 
 	if err != nil {
 		return nil, model.NewErrors(http.StatusUnauthorized, fmt.Errorf("Failed to retrieve user: %v", err))
 	}
-	log.Printf("[DEBUG] Adding user '%s' to cache", up.ID)
-	api.userCache.Add(cacheKey, user)
+	log.Printf("[DEBUG] Adding user '%#v' to cache with key '%s'", *up, cacheKey)
+	api.userCache.Add(cacheKey, *up)
 	return up, nil
 }

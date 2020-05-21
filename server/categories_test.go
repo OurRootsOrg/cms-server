@@ -26,7 +26,6 @@ func TestGetAllCategories(t *testing.T) {
 
 	request, _ := http.NewRequest("GET", "/categories", nil)
 	response := httptest.NewRecorder()
-	request.Header.Add("Authorization", "Bearer XYZ")
 	r.ServeHTTP(response, request)
 	assert.Equal(t, 200, response.Code, "OK response is expected")
 	var empty api.CategoryResult

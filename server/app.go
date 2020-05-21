@@ -35,7 +35,12 @@ type localAPI interface {
 	DeletePost(ctx context.Context, id string) *model.Errors
 	PostContentRequest(ctx context.Context, contentRequest api.ContentRequest) (*api.ContentResult, *model.Errors)
 	GetContent(ctx context.Context, key string) ([]byte, *model.Errors)
-	RetrieveUser(ctx context.Context, provider *oidc.Provider, token *oidc.IDToken, rawToken string) (*model.User, *model.Errors)
+	RetrieveUser(ctx context.Context, provider api.OIDCProvider, token *oidc.IDToken, rawToken string) (*model.User, *model.Errors)
+}
+
+// verifier allows use of a mock verifier for testing
+type verifier interface {
+	Verify(ctx context.Context, rawIDToken string) (*oidc.IDToken, error)
 }
 
 // App is the container for the application
@@ -45,7 +50,7 @@ type App struct {
 	oidcAudience string
 	oidcDomain   string
 	oidcProvider *oidc.Provider
-	oidcVerifier *oidc.IDTokenVerifier
+	oidcVerifier verifier
 	authDisabled bool // If set to true, this disables authentication. This should only be done in test code!
 }
 
@@ -109,14 +114,14 @@ func (app App) verifyToken(next http.Handler) http.Handler {
 		if authHeader == "" {
 			msg := "No Authorization header found"
 			log.Print("[DEBUG] " + msg)
-			ErrorResponse(w, http.StatusNotFound, msg)
+			ErrorResponse(w, http.StatusUnauthorized, msg)
 			return
 		}
 		authHeaderParts := strings.Fields(authHeader)
 		if len(authHeaderParts) != 2 || strings.ToLower(authHeaderParts[0]) != "bearer" {
 			msg := "Authorization header format must be Bearer {token}"
 			log.Print("[DEBUG] " + msg)
-			ErrorResponse(w, http.StatusNotFound, msg)
+			ErrorResponse(w, http.StatusUnauthorized, msg)
 			return
 		}
 
@@ -129,7 +134,7 @@ func (app App) verifyToken(next http.Handler) http.Handler {
 		if err != nil {
 			msg := fmt.Sprintf("Invalid token: %s", err.Error())
 			log.Print("[DEBUG] " + msg)
-			ErrorResponse(w, http.StatusNotFound, msg)
+			ErrorResponse(w, http.StatusUnauthorized, msg)
 			return
 		}
 		log.Printf("[DEBUG] Found valid token for subject '%s'", parsedToken.Subject)
