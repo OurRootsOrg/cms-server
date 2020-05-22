@@ -12,31 +12,64 @@ const apiClient = axios.create({
 });
 
 export default {
-  authRegister(user) {
-    return apiClient.post("/auth/register", user);
-  },
   categoriesCreate(category) {
-    return apiClient.post("/categories", category);
-  },
-  categoriesGetAll() {
-    console.log("categoriesGetAll", apiClient, 'auth', getInstance());
-    return getInstance().getTokenSilently().then(token => {
-      console.log('token', token);
-      return apiClient.get("/categories", {
+    return getInstance()
+      .getTokenSilently()
+      .then(token => {
+        return apiClient.post("/categories", category,{
           headers: {
             Authorization: `Bearer ${token}`
           }
         });
-    })
+      });
+  },
+  categoriesGetAll() {
+    return getInstance()
+      .getTokenSilently()
+      .then(token => {
+        return apiClient.get("/categories", {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+      });
   },
   collectionsCreate(collection) {
-    return apiClient.post("/collections", collection);
+    return getInstance()
+      .getTokenSilently()
+      .then(token => {
+        return apiClient.post("/collections", collection,{
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+      });
   },
   collectionsGetAll() {
-    return apiClient.get("/collections");
+    return getInstance()
+      .getTokenSilently()
+      .then(token => {
+        return apiClient.get("/collections", {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+      });
   },
   contentPostRequest(contentType) {
-    return apiClient.post("/content", { contentType });
+    return getInstance()
+      .getTokenSilently()
+      .then(token => {
+        return apiClient.post(
+          "/content",
+          { contentType },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`
+            }
+          }
+        );
+      });
   },
   contentPut(url, contentType, data) {
     console.log("contentPut", url, contentType, data);
@@ -48,9 +81,25 @@ export default {
     });
   },
   postsGetAll() {
-    return apiClient.get("/posts");
+    return getInstance()
+      .getTokenSilently()
+      .then(token => {
+        return apiClient.get("/posts", {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+      });
   },
   postsCreate(post) {
-    return apiClient.post("/posts", post);
+    return getInstance()
+      .getTokenSilently()
+      .then(token => {
+        return apiClient.post("/posts", post,{
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+      });
   }
 };
