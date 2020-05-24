@@ -18,19 +18,11 @@ git clone https://github.com/ourrootsorg/cms-server.git
 ```
 In the `ourroots` directory, run `make` to run unit tests and build.
 
-To run the server using the in-memory 'database':
-```
-cd server/
-PERSISTER=memory ./server
-```
-
-You should be able to access the server at http://localhost:3000/. 
-
 ## Database Setup
 
 After installing Postgres, cd into the `db` directory and run `./db_setup.sh` which should create the `cms` database and apply database migrations to create tables. Once that is done, you should be able to run the server using the database:
 ```
-PERSISTER=sql DATABASE_URL=postgres://ourroots:password@localhost:5432/cms?sslmode=disable ./server
+DATABASE_URL=postgres://ourroots:password@localhost:5432/cms?sslmode=disable ./server
 ```
 
 ## Instructions for running server and uglyui client 

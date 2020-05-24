@@ -10,13 +10,11 @@ import (
 )
 
 func TestParseEnv(t *testing.T) {
-	// All defaults (except PERSISTER, which is required)
-	// os.Setenv("LAMBDA_TASK_ROOT", "")
+	// All defaults
 	os.Unsetenv("LAMBDA_TASK_ROOT")
 	os.Setenv("BASE_URL", "")
 	os.Setenv("MIN_LOG_LEVEL", "")
-	os.Setenv("PERSISTER", "memory")
-	os.Setenv("DATABASE_URL", "")
+	os.Setenv("DATABASE_URL", "postgres://ourroots:password@localhost:5432/ourroots?sslmode=disable")
 	env, err := ParseEnv()
 	assert.NoError(t, err)
 	assert.NotNil(t, env)
@@ -26,8 +24,7 @@ func TestParseEnv(t *testing.T) {
 	assert.Equal(t, false, env.IsLambda)
 	assert.Equal(t, u, env.BaseURL)
 	assert.Equal(t, "DEBUG", env.MinLogLevel) // default
-	assert.Equal(t, "memory", env.Persister)
-	assert.Equal(t, "", env.DatabaseURL)
+	assert.Equal(t, "postgres://ourroots:password@localhost:5432/ourroots?sslmode=disable", env.DatabaseURL)
 
 	// Test Lambda
 	os.Setenv("LAMBDA_TASK_ROOT", "/tmp")
@@ -53,22 +50,8 @@ func TestParseEnv(t *testing.T) {
 	assert.Nil(t, env)
 	os.Setenv("BASE_URL", "")
 
-	// Bad PERSISTER
-	os.Setenv("PERSISTER", "xyz")
-	env, err = ParseEnv()
-	assert.Error(t, err)
-	log.Printf("Error: %v", err)
-	assert.Nil(t, env)
-
-	// Missing PERSISTER
-	os.Setenv("PERSISTER", "")
-	env, err = ParseEnv()
-	assert.Error(t, err)
-	log.Printf("Error: %v", err)
-	assert.Nil(t, env)
-
 	// Missing DATABASE_URL
-	os.Setenv("PERSISTER", "sql")
+	os.Unsetenv("DATABASE_URL")
 	env, err = ParseEnv()
 	assert.Error(t, err)
 	log.Printf("Error: %v", err)
@@ -85,7 +68,6 @@ func TestParseEnv(t *testing.T) {
 	// All bad
 	os.Setenv("BASE_URL", "bad")
 	os.Setenv("MIN_LOG_LEVEL", "WARN")
-	os.Setenv("PERSISTER", "xyz")
 	os.Setenv("DATABASE_URL", "baddb")
 	env, err = ParseEnv()
 	assert.Error(t, err)

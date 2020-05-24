@@ -51,7 +51,6 @@ services:
       - postgres
     environment:
       - BASE_URL=http://localhost:8000
-      - PERSISTER=sql
       - DATABASE_URL=postgres://ourroots:password@postgres:5432/cms?sslmode=disable
       - AWS_REGION=us-east-1
       - BLOB_STORE_BUCKET=cmsbucket

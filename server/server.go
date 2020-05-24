@@ -86,53 +86,40 @@ func main() {
 	} else {
 		docs.SwaggerInfo.Schemes = []string{"http"}
 	}
-	switch env.Persister {
-	case "sql":
-		log.Printf("Connecting to %s\n", env.DatabaseURL)
-		db, err := postgres.Open(context.TODO(), env.DatabaseURL)
-		if err != nil {
-			log.Fatalf("[FATAL] Error opening database connection: %v\n  DATABASE_URL: %s",
-				err,
-				env.DatabaseURL,
-			)
-		}
-
-		// ping the database to make sure we can connect
-		cnt := 0
-		err = errors.New("unknown error")
-		for err != nil && cnt <= 3 {
-			if cnt > 0 {
-				time.Sleep(time.Duration(math.Pow(2.0, float64(cnt))) * time.Second)
-			}
-			err = db.Ping()
-			cnt++
-		}
-		if err != nil {
-			log.Fatalf("[FATAL] Error connecting to database: %v\n DATABASE_URL: %s\n",
-				err,
-				env.DatabaseURL,
-			)
-		}
-		log.Printf("Connected to %s\n", env.DatabaseURL)
-
-		p := persist.NewPostgresPersister(env.BaseURL.Path, db)
-		ap.
-			CategoryPersister(p).
-			CollectionPersister(p).
-			PostPersister(p).
-			UserPersister(p)
-		log.Print("[INFO] Using PostgresPersister")
-	case "memory":
-		p := persist.NewMemoryPersister(env.BaseURL.Path)
-		ap.
-			CategoryPersister(p).
-			CollectionPersister(p).
-			PostPersister(p)
-		log.Print("[INFO] Using MemoryPersister")
-	default:
-		// Should never happen
-		log.Fatalf("[FATAL] Invalid PERSISTER: '%s', valid choices are 'sql' or 'memory'.", env.Persister)
+	log.Printf("Connecting to %s\n", env.DatabaseURL)
+	db, err := postgres.Open(context.TODO(), env.DatabaseURL)
+	if err != nil {
+		log.Fatalf("[FATAL] Error opening database connection: %v\n  DATABASE_URL: %s",
+			err,
+			env.DatabaseURL,
+		)
 	}
+
+	// ping the database to make sure we can connect
+	cnt := 0
+	err = errors.New("unknown error")
+	for err != nil && cnt <= 3 {
+		if cnt > 0 {
+			time.Sleep(time.Duration(math.Pow(2.0, float64(cnt))) * time.Second)
+		}
+		err = db.Ping()
+		cnt++
+	}
+	if err != nil {
+		log.Fatalf("[FATAL] Error connecting to database: %v\n DATABASE_URL: %s\n",
+			err,
+			env.DatabaseURL,
+		)
+	}
+	log.Printf("Connected to %s\n", env.DatabaseURL)
+
+	p := persist.NewPostgresPersister(env.BaseURL.Path, db)
+	ap.
+		CategoryPersister(p).
+		CollectionPersister(p).
+		PostPersister(p).
+		UserPersister(p)
+	log.Print("[INFO] Using PostgresPersister")
 	r := app.NewRouter()
 	docs.SwaggerInfo.Host = env.BaseURL.Hostname()
 	if env.BaseURL.Port() != "" {
@@ -195,8 +182,7 @@ type Env struct {
 	IsLambda            bool
 	MinLogLevel         string `env:"MIN_LOG_LEVEL" validate:"omitempty,eq=DEBUG|eq=INFO|eq=ERROR"`
 	BaseURLString       string `env:"BASE_URL" validate:"omitempty,url"`
-	Persister           string `env:"PERSISTER" validate:"required,eq=memory|eq=sql"`
-	DatabaseURL         string `env:"DATABASE_URL" validate:"omitempty,url"`
+	DatabaseURL         string `env:"DATABASE_URL" validate:"required,url"`
 	BaseURL             *url.URL
 	Region              string `env:"AWS_REGION"`
 	BlobStoreEndpoint   string `env:"BLOB_STORE_ENDPOINT"`
@@ -229,14 +215,8 @@ func ParseEnv() (*Env, error) {
 				errs += fmt.Sprintf("  Invalid MIN_LOG_LEVEL: '%v', valid values are 'DEBUG', 'INFO' or 'ERROR'\n", fe.Value())
 			case "BASE_URL":
 				errs += fmt.Sprintf("  Invalid BASE_URL: '%v' is not a valid URL\n", fe.Value())
-			case "PERSISTER":
-				if fe.Tag() == "required" {
-					errs += "  PERSISTER is required, valid values are 'memory' or 'sql'\n"
-				} else {
-					errs += fmt.Sprintf("  Invalid PERSISTER: '%v', valid values are 'memory' or 'sql'\n", fe.Value())
-				}
 			case "DATABASE_URL":
-				errs += fmt.Sprintf("  Invalid DATABASE_URL: '%v' is not a valid Postgresql URL\n", fe.Value())
+				errs += fmt.Sprintf("  Invalid DATABASE_URL: '%v' is not a valid PostgreSQL URL\n", fe.Value())
 			}
 		}
 		return nil, errors.New(errs)
@@ -252,9 +232,6 @@ func ParseEnv() (*Env, error) {
 	if err != nil {
 		// Unreachable, if the validator does its job
 		return nil, fmt.Errorf("Unable to parse BASE_URL '%s': %v", config.BaseURLString, err)
-	}
-	if config.Persister == "sql" && config.DatabaseURL == "" {
-		return nil, errors.New("DATABASE_URL is required for PERSISTER=sql")
 	}
 	return &config, nil
 }
