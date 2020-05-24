@@ -44,6 +44,8 @@ func (app App) GetAllCategories(w http.ResponseWriter, req *http.Request) {
 // @success 200 {object} model.Category "OK"
 // @failure 404 {object} model.Errors "Not found"
 // @failure 500 {object} model.Errors "Server error"
+// @Security OAuth2Implicit[cms,openid,profile,email]
+// @Security OAuth2AuthCode[cms,openid,profile,email]
 func (app App) GetCategory(w http.ResponseWriter, req *http.Request) {
 	enc := json.NewEncoder(w)
 	w.Header().Set("Content-Type", contentType)
@@ -70,6 +72,8 @@ func (app App) GetCategory(w http.ResponseWriter, req *http.Request) {
 // @success 201 {object} model.Category "OK"
 // @failure 415 {object} model.Errors "Bad Content-Type"
 // @failure 500 {object} model.Errors "Server error"
+// @Security OAuth2Implicit[cms,openid,profile,email]
+// @Security OAuth2AuthCode[cms,openid,profile,email]
 func (app App) PostCategory(w http.ResponseWriter, req *http.Request) {
 	mt, _, err := mime.ParseMediaType(req.Header.Get("Content-Type"))
 	if err != nil || mt != contentType {
@@ -111,6 +115,8 @@ func (app App) PostCategory(w http.ResponseWriter, req *http.Request) {
 // @success 200 {object} model.Category "OK"
 // @failure 415 {object} model.Errors "Bad Content-Type"
 // @failure 500 {object} model.Errors "Server error"
+// @Security OAuth2Implicit[cms,openid,profile,email]
+// @Security OAuth2AuthCode[cms,openid,profile,email]
 func (app App) PutCategory(w http.ResponseWriter, req *http.Request) {
 	mt, _, err := mime.ParseMediaType(req.Header.Get("Content-Type"))
 	if err != nil || mt != contentType {
@@ -147,6 +153,8 @@ func (app App) PutCategory(w http.ResponseWriter, req *http.Request) {
 // @Param id path integer true "Category ID"
 // @success 204 "OK"
 // @failure 500 {object} model.Errors "Server error"
+// @Security OAuth2Implicit[cms,openid,profile,email]
+// @Security OAuth2AuthCode[cms,openid,profile,email]
 func (app App) DeleteCategory(w http.ResponseWriter, req *http.Request) {
 	errors := app.api.DeleteCategory(req.Context(), req.URL.String())
 	if errors != nil {

@@ -79,6 +79,24 @@ var doc = `{
                 }
             },
             "post": {
+                "security": [
+                    {
+                        "OAuth2Implicit": [
+                            "cms",
+                            "openid",
+                            "profile",
+                            "email"
+                        ]
+                    },
+                    {
+                        "OAuth2AuthCode": [
+                            "cms",
+                            "openid",
+                            "profile",
+                            "email"
+                        ]
+                    }
+                ],
                 "consumes": [
                     "application/json"
                 ],
@@ -125,6 +143,24 @@ var doc = `{
         },
         "/categories/{id}": {
             "get": {
+                "security": [
+                    {
+                        "OAuth2Implicit": [
+                            "cms",
+                            "openid",
+                            "profile",
+                            "email"
+                        ]
+                    },
+                    {
+                        "OAuth2AuthCode": [
+                            "cms",
+                            "openid",
+                            "profile",
+                            "email"
+                        ]
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -164,6 +200,24 @@ var doc = `{
                 }
             },
             "put": {
+                "security": [
+                    {
+                        "OAuth2Implicit": [
+                            "cms",
+                            "openid",
+                            "profile",
+                            "email"
+                        ]
+                    },
+                    {
+                        "OAuth2AuthCode": [
+                            "cms",
+                            "openid",
+                            "profile",
+                            "email"
+                        ]
+                    }
+                ],
                 "consumes": [
                     "application/json"
                 ],
@@ -215,6 +269,24 @@ var doc = `{
                 }
             },
             "delete": {
+                "security": [
+                    {
+                        "OAuth2Implicit": [
+                            "cms",
+                            "openid",
+                            "profile",
+                            "email"
+                        ]
+                    },
+                    {
+                        "OAuth2AuthCode": [
+                            "cms",
+                            "openid",
+                            "profile",
+                            "email"
+                        ]
+                    }
+                ],
                 "tags": [
                     "categories"
                 ],
@@ -244,6 +316,24 @@ var doc = `{
         },
         "/collections": {
             "get": {
+                "security": [
+                    {
+                        "OAuth2Implicit": [
+                            "cms",
+                            "openid",
+                            "profile",
+                            "email"
+                        ]
+                    },
+                    {
+                        "OAuth2AuthCode": [
+                            "cms",
+                            "openid",
+                            "profile",
+                            "email"
+                        ]
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -271,6 +361,24 @@ var doc = `{
                 }
             },
             "post": {
+                "security": [
+                    {
+                        "OAuth2Implicit": [
+                            "cms",
+                            "openid",
+                            "profile",
+                            "email"
+                        ]
+                    },
+                    {
+                        "OAuth2AuthCode": [
+                            "cms",
+                            "openid",
+                            "profile",
+                            "email"
+                        ]
+                    }
+                ],
                 "consumes": [
                     "application/json"
                 ],
@@ -317,6 +425,24 @@ var doc = `{
         },
         "/collections/{id}": {
             "get": {
+                "security": [
+                    {
+                        "OAuth2Implicit": [
+                            "cms",
+                            "openid",
+                            "profile",
+                            "email"
+                        ]
+                    },
+                    {
+                        "OAuth2AuthCode": [
+                            "cms",
+                            "openid",
+                            "profile",
+                            "email"
+                        ]
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -356,6 +482,24 @@ var doc = `{
                 }
             },
             "put": {
+                "security": [
+                    {
+                        "OAuth2Implicit": [
+                            "cms",
+                            "openid",
+                            "profile",
+                            "email"
+                        ]
+                    },
+                    {
+                        "OAuth2AuthCode": [
+                            "cms",
+                            "openid",
+                            "profile",
+                            "email"
+                        ]
+                    }
+                ],
                 "consumes": [
                     "application/json"
                 ],
@@ -407,6 +551,24 @@ var doc = `{
                 }
             },
             "delete": {
+                "security": [
+                    {
+                        "OAuth2Implicit": [
+                            "cms",
+                            "openid",
+                            "profile",
+                            "email"
+                        ]
+                    },
+                    {
+                        "OAuth2AuthCode": [
+                            "cms",
+                            "openid",
+                            "profile",
+                            "email"
+                        ]
+                    }
+                ],
                 "tags": [
                     "collections"
                 ],
@@ -439,6 +601,24 @@ var doc = `{
         },
         "/content": {
             "post": {
+                "security": [
+                    {
+                        "OAuth2Implicit": [
+                            "cms",
+                            "openid",
+                            "profile",
+                            "email"
+                        ]
+                    },
+                    {
+                        "OAuth2AuthCode": [
+                            "cms",
+                            "openid",
+                            "profile",
+                            "email"
+                        ]
+                    }
+                ],
                 "consumes": [
                     "application/json"
                 ],
@@ -485,6 +665,24 @@ var doc = `{
         },
         "/posts": {
             "get": {
+                "security": [
+                    {
+                        "OAuth2Implicit": [
+                            "cms",
+                            "openid",
+                            "profile",
+                            "email"
+                        ]
+                    },
+                    {
+                        "OAuth2AuthCode": [
+                            "cms",
+                            "openid",
+                            "profile",
+                            "email"
+                        ]
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -512,6 +710,24 @@ var doc = `{
                 }
             },
             "post": {
+                "security": [
+                    {
+                        "OAuth2Implicit": [
+                            "cms",
+                            "openid",
+                            "profile",
+                            "email"
+                        ]
+                    },
+                    {
+                        "OAuth2AuthCode": [
+                            "cms",
+                            "openid",
+                            "profile",
+                            "email"
+                        ]
+                    }
+                ],
                 "consumes": [
                     "application/json"
                 ],
@@ -558,6 +774,24 @@ var doc = `{
         },
         "/posts/{id}": {
             "get": {
+                "security": [
+                    {
+                        "OAuth2Implicit": [
+                            "cms",
+                            "openid",
+                            "profile",
+                            "email"
+                        ]
+                    },
+                    {
+                        "OAuth2AuthCode": [
+                            "cms",
+                            "openid",
+                            "profile",
+                            "email"
+                        ]
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -597,6 +831,24 @@ var doc = `{
                 }
             },
             "put": {
+                "security": [
+                    {
+                        "OAuth2Implicit": [
+                            "cms",
+                            "openid",
+                            "profile",
+                            "email"
+                        ]
+                    },
+                    {
+                        "OAuth2AuthCode": [
+                            "cms",
+                            "openid",
+                            "profile",
+                            "email"
+                        ]
+                    }
+                ],
                 "consumes": [
                     "application/json"
                 ],
@@ -648,6 +900,24 @@ var doc = `{
                 }
             },
             "delete": {
+                "security": [
+                    {
+                        "OAuth2Implicit": [
+                            "cms",
+                            "openid",
+                            "profile",
+                            "email"
+                        ]
+                    },
+                    {
+                        "OAuth2AuthCode": [
+                            "cms",
+                            "openid",
+                            "profile",
+                            "email"
+                        ]
+                    }
+                ],
                 "tags": [
                     "posts"
                 ],
@@ -890,7 +1160,7 @@ var doc = `{
         "OAuth2Implicit": {
             "type": "oauth2",
             "flow": "implicit",
-            "authorizationUrl": "https://ourroots-jim.auth0.com/authorize?audience=https%3A%2F%2Flocalhost%3A3000%2F",
+            "authorizationUrl": "https://ourroots.auth0.com/authorize?audience=https%3A%2F%2Fapi.ourroots.org%3A3000%2Fpreprod",
             "scopes": {
                 "cms": " Grants read and write access to the CMS",
                 "email": " Grants access to OIDC email attributes",

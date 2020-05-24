@@ -23,7 +23,7 @@ func TestUser(t *testing.T) {
 }
 
 func makeUserIn(t *testing.T) model.UserIn {
-	in, err := model.NewUserIn("Test User", "user@example.com", false, "https://ourroots-jim.auth0.com/", "testsubject1")
+	in, err := model.NewUserIn("Test User", "user@example.com", false, "https://ourroots.auth0.com/", "testsubject1")
 	assert.NoError(t, err)
 	return in
 }

@@ -211,6 +211,17 @@ paths:
           description: Server error
           schema:
             $ref: '#/definitions/model.Errors'
+      security:
+      - OAuth2Implicit:
+        - cms
+        - openid
+        - profile
+        - email
+      - OAuth2AuthCode:
+        - cms
+        - openid
+        - profile
+        - email
       summary: adds a new Category
       tags:
       - categories
@@ -230,6 +241,17 @@ paths:
           description: Server error
           schema:
             $ref: '#/definitions/model.Errors'
+      security:
+      - OAuth2Implicit:
+        - cms
+        - openid
+        - profile
+        - email
+      - OAuth2AuthCode:
+        - cms
+        - openid
+        - profile
+        - email
       summary: deletes a Category
       tags:
       - categories
@@ -256,6 +278,17 @@ paths:
           description: Server error
           schema:
             $ref: '#/definitions/model.Errors'
+      security:
+      - OAuth2Implicit:
+        - cms
+        - openid
+        - profile
+        - email
+      - OAuth2AuthCode:
+        - cms
+        - openid
+        - profile
+        - email
       summary: gets a Category
       tags:
       - categories
@@ -290,6 +323,17 @@ paths:
           description: Server error
           schema:
             $ref: '#/definitions/model.Errors'
+      security:
+      - OAuth2Implicit:
+        - cms
+        - openid
+        - profile
+        - email
+      - OAuth2AuthCode:
+        - cms
+        - openid
+        - profile
+        - email
       summary: updates a Category
       tags:
       - categories
@@ -309,6 +353,17 @@ paths:
           description: Server error
           schema:
             $ref: '#/definitions/model.Errors'
+      security:
+      - OAuth2Implicit:
+        - cms
+        - openid
+        - profile
+        - email
+      - OAuth2AuthCode:
+        - cms
+        - openid
+        - profile
+        - email
       summary: returns all collections
       tags:
       - collections
@@ -338,6 +393,17 @@ paths:
           description: Server error
           schema:
             $ref: '#/definitions/model.Errors'
+      security:
+      - OAuth2Implicit:
+        - cms
+        - openid
+        - profile
+        - email
+      - OAuth2AuthCode:
+        - cms
+        - openid
+        - profile
+        - email
       summary: adds a new Collection
       tags:
       - collections
@@ -359,6 +425,17 @@ paths:
           description: Server error
           schema:
             $ref: '#/definitions/model.Errors'
+      security:
+      - OAuth2Implicit:
+        - cms
+        - openid
+        - profile
+        - email
+      - OAuth2AuthCode:
+        - cms
+        - openid
+        - profile
+        - email
       summary: deletes a Collection
       tags:
       - collections
@@ -385,6 +462,17 @@ paths:
           description: Server error
           schema:
             $ref: '#/definitions/model.Errors'
+      security:
+      - OAuth2Implicit:
+        - cms
+        - openid
+        - profile
+        - email
+      - OAuth2AuthCode:
+        - cms
+        - openid
+        - profile
+        - email
       summary: gets a Collection
       tags:
       - collections
@@ -419,6 +507,17 @@ paths:
           description: Server error
           schema:
             $ref: '#/definitions/model.Errors'
+      security:
+      - OAuth2Implicit:
+        - cms
+        - openid
+        - profile
+        - email
+      - OAuth2AuthCode:
+        - cms
+        - openid
+        - profile
+        - email
       summary: updates a Collection
       tags:
       - collections
@@ -449,6 +548,17 @@ paths:
           description: Server error
           schema:
             $ref: '#/definitions/model.Errors'
+      security:
+      - OAuth2Implicit:
+        - cms
+        - openid
+        - profile
+        - email
+      - OAuth2AuthCode:
+        - cms
+        - openid
+        - profile
+        - email
       summary: returns a URL for uploading content
       tags:
       - content
@@ -468,6 +578,17 @@ paths:
           description: Server error
           schema:
             $ref: '#/definitions/model.Errors'
+      security:
+      - OAuth2Implicit:
+        - cms
+        - openid
+        - profile
+        - email
+      - OAuth2AuthCode:
+        - cms
+        - openid
+        - profile
+        - email
       summary: returns all posts
       tags:
       - posts
@@ -497,6 +618,17 @@ paths:
           description: Server error
           schema:
             $ref: '#/definitions/model.Errors'
+      security:
+      - OAuth2Implicit:
+        - cms
+        - openid
+        - profile
+        - email
+      - OAuth2AuthCode:
+        - cms
+        - openid
+        - profile
+        - email
       summary: adds a new Post
       tags:
       - posts
@@ -518,6 +650,17 @@ paths:
           description: Server error
           schema:
             $ref: '#/definitions/model.Errors'
+      security:
+      - OAuth2Implicit:
+        - cms
+        - openid
+        - profile
+        - email
+      - OAuth2AuthCode:
+        - cms
+        - openid
+        - profile
+        - email
       summary: deletes a Post
       tags:
       - posts
@@ -544,6 +687,17 @@ paths:
           description: Server error
           schema:
             $ref: '#/definitions/model.Errors'
+      security:
+      - OAuth2Implicit:
+        - cms
+        - openid
+        - profile
+        - email
+      - OAuth2AuthCode:
+        - cms
+        - openid
+        - profile
+        - email
       summary: gets a Post
       tags:
       - posts
@@ -578,6 +732,17 @@ paths:
           description: Server error
           schema:
             $ref: '#/definitions/model.Errors'
+      security:
+      - OAuth2Implicit:
+        - cms
+        - openid
+        - profile
+        - email
+      - OAuth2AuthCode:
+        - cms
+        - openid
+        - profile
+        - email
       summary: updates a Post
       tags:
       - posts
@@ -586,7 +751,7 @@ schemes:
 - https
 securityDefinitions:
   OAuth2Implicit:
-    authorizationUrl: https://ourroots-jim.auth0.com/authorize?audience=https%3A%2F%2Flocalhost%3A3000%2F
+    authorizationUrl: https://ourroots.auth0.com/authorize?audience=https%3A%2F%2Fapi.ourroots.org%3A3000%2Fpreprod
     flow: implicit
     scopes:
       cms: ' Grants read and write access to the CMS'

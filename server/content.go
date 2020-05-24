@@ -20,6 +20,8 @@ import (
 // @success 200 {object} model.Category "OK"
 // @failure 415 {object} model.Errors "Bad Content-Type"
 // @failure 500 {object} model.Errors "Server error"
+// @Security OAuth2Implicit[cms,openid,profile,email]
+// @Security OAuth2AuthCode[cms,openid,profile,email]
 func (app App) PostContentRequest(w http.ResponseWriter, req *http.Request) {
 	mt, _, err := mime.ParseMediaType(req.Header.Get("Content-Type"))
 	if err != nil || mt != contentType {
