@@ -110,6 +110,7 @@ services:
     environment:
       - BASE_URL=http://localhost:8000
       - DATABASE_URL=postgres://ourroots:password@postgres:5432/cms?sslmode=disable
+      - MIGRATION_DATABASE_URL=postgres://ourroots_schema:password@postgres:5432/cms?sslmode=disable
       - AWS_REGION=us-east-1
       - BLOB_STORE_BUCKET=cmsbucket
       # this configures minio; to use S3, omit these settings and set the bucket to a bucket you own

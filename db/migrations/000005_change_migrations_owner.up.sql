@@ -1,0 +1,10 @@
+ALTER TABLE category OWNER TO ourroots_schema;
+ALTER TABLE collection OWNER TO ourroots_schema;
+ALTER TABLE post OWNER TO ourroots_schema;
+ALTER TABLE cms_user OWNER TO ourroots_schema;
+ALTER TABLE schema_migrations OWNER TO ourroots_schema;
+GRANT ALL ON TABLE category TO ourroots_schema;
+GRANT ALL ON TABLE collection TO ourroots_schema;
+GRANT ALL ON TABLE post TO ourroots_schema;
+GRANT ALL ON TABLE cms_user TO ourroots_schema;
+GRANT ALL ON TABLE schema_migrations TO ourroots_schema;

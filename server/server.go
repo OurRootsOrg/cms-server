@@ -26,6 +26,10 @@ import (
 	"github.com/ourrootsorg/cms-server/server/docs"
 	"gocloud.dev/postgres"
 
+	"github.com/golang-migrate/migrate/v4"
+	_ "github.com/golang-migrate/migrate/v4/database/postgres"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
+
 	httpSwagger "github.com/swaggo/http-swagger"
 )
 
@@ -88,8 +92,14 @@ func main() {
 	} else {
 		docs.SwaggerInfo.Schemes = []string{"http"}
 	}
-	log.Printf("Connecting to %s\n", env.DatabaseURL)
+	// Don't leak credentials from URL
+	dbURL, err := url.Parse(env.DatabaseURL)
+	if err != nil {
+		log.Fatalf("[FATAL] Bad database URL: %v", err)
+	}
+	log.Printf("[INFO] Connecting to %s\n", dbURL.Host)
 	db, err := postgres.Open(context.TODO(), env.DatabaseURL)
+	defer db.Close()
 	if err != nil {
 		log.Fatalf("[FATAL] Error opening database connection: %v\n  DATABASE_URL: %s",
 			err,
@@ -113,8 +123,7 @@ func main() {
 			env.DatabaseURL,
 		)
 	}
-	log.Printf("Connected to %s\n", env.DatabaseURL)
-
+	log.Printf("[INFO] Connected to %s\n", dbURL.Host)
 	p := persist.NewPostgresPersister(env.BaseURL.Path, db)
 	ap.
 		CategoryPersister(p).
@@ -123,6 +132,26 @@ func main() {
 		RecordPersister(p).
 		UserPersister(p)
 	log.Print("[INFO] Using PostgresPersister")
+	// Only migrate if MIGRATION_DATABASE_URL is set
+	if env.MigrationDatabaseURL != "" {
+		func() {
+			// Do database migrations
+			log.Printf("[INFO] Performing migrations, if necessary")
+			migrator, err := migrate.New("file://../db/migrations", env.MigrationDatabaseURL)
+			if err != nil {
+				log.Fatalf("[FATAL] Error creating database migrator: %v", err)
+			}
+			defer migrator.Close()
+			err = migrator.Up()
+			if err == migrate.ErrNoChange {
+				log.Print("[INFO] No migrations to perform")
+			} else if err != nil {
+				log.Fatalf("[FATAL] Error migrating database: %v", err)
+			} else {
+				log.Print("[INFO] Finished migrations")
+			}
+		}()
+	}
 	r := app.NewRouter()
 	docs.SwaggerInfo.Host = env.BaseURL.Hostname()
 	if env.BaseURL.Port() != "" {
@@ -186,6 +215,7 @@ type Env struct {
 	MinLogLevel            string `env:"MIN_LOG_LEVEL" validate:"omitempty,eq=DEBUG|eq=INFO|eq=ERROR"`
 	BaseURLString          string `env:"BASE_URL" validate:"omitempty,url"`
 	DatabaseURL            string `env:"DATABASE_URL" validate:"required,url"`
+	MigrationDatabaseURL   string `env:"MIGRATION_DATABASE_URL" validate:"omitempty,url"`
 	BaseURL                *url.URL
 	Region                 string `env:"AWS_REGION"`
 	BlobStoreEndpoint      string `env:"BLOB_STORE_ENDPOINT"`
@@ -194,7 +224,7 @@ type Env struct {
 	BlobStoreBucket        string `env:"BLOB_STORE_BUCKET"`
 	BlobStoreDisableSSL    bool   `env:"BLOB_STORE_DISABLE_SSL"`
 	PubSubProtocol         string `env:"PUB_SUB_PROTOCOL" validate:"omitempty,eq=rabbit|eq=awssqs"`
-	PubSubHost             string `env:"PUB_SUB_HOST"`
+	PubSubPrefix           string `env:"PUB_SUB_PREFIX"`
 	OIDCAudience           string `env:"OIDC_AUDIENCE" validate:"omitempty"`
 	OIDCDomain             string `env:"OIDC_DOMAIN" validate:"omitempty"`
 	ElasticsearchURLString string `env:"ELASTICSEARCH_URL" validate:"required,url"`
@@ -221,6 +251,8 @@ func ParseEnv() (*Env, error) {
 				errs += fmt.Sprintf("  Invalid BASE_URL: '%v' is not a valid URL\n", fe.Value())
 			case "DATABASE_URL":
 				errs += fmt.Sprintf("  Invalid DATABASE_URL: '%v' is not a valid PostgreSQL URL\n", fe.Value())
+			case "MIGRATION_DATABASE_URL":
+				errs += fmt.Sprintf("  Invalid MIGRATION_DATABASE_URL: '%v' is not a valid PostgreSQL URL\n", fe.Value())
 			case "PUB_SUB_PROTOCOL":
 				errs += fmt.Sprintf("  Invalid PUB_SUB_PROTOCOL: '%v', valid values are 'rabbit', 'awssqs'\n", fe.Value())
 			case "ELASTICSEARCH_URL":
