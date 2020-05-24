@@ -142,7 +142,7 @@ Resources:
           # This variable tells aws-lambda-go-api-proxy what domain name is in use
           GO_API_HOST: !Sub "https://${DomainName}"
           # Choices are 'memory' and 'sql'. Right now only 'memory' works at AWS.
-          PERSISTER: memory
+          # PERSISTER: memory
 
 
   # Give the API permission to call the Lambda
