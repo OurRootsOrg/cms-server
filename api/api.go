@@ -7,6 +7,10 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/coreos/go-oidc"
+
+	"github.com/elastic/go-elasticsearch/v7"
+
 	"github.com/ourrootsorg/cms-server/service"
 	"gocloud.dev/blob"
 
@@ -26,6 +30,28 @@ const TokenProperty TokenKey = "token"
 // UserProperty is the name of the token property in the request context
 const UserProperty TokenKey = "user"
 
+type LocalAPI interface {
+	GetCategories(context.Context) (*CategoryResult, *model.Errors)
+	GetCategory(ctx context.Context, id string) (*model.Category, *model.Errors)
+	AddCategory(ctx context.Context, in model.CategoryIn) (*model.Category, *model.Errors)
+	UpdateCategory(ctx context.Context, id string, in model.Category) (*model.Category, *model.Errors)
+	DeleteCategory(ctx context.Context, id string) *model.Errors
+	GetCollections(ctx context.Context /* filter/search criteria */) (*CollectionResult, *model.Errors)
+	GetCollection(ctx context.Context, id string) (*model.Collection, *model.Errors)
+	AddCollection(ctx context.Context, in model.CollectionIn) (*model.Collection, *model.Errors)
+	UpdateCollection(ctx context.Context, id string, in model.Collection) (*model.Collection, *model.Errors)
+	DeleteCollection(ctx context.Context, id string) *model.Errors
+	GetPosts(ctx context.Context /* filter/search criteria */) (*PostResult, *model.Errors)
+	GetPost(ctx context.Context, id string) (*model.Post, *model.Errors)
+	AddPost(ctx context.Context, in model.PostIn) (*model.Post, *model.Errors)
+	UpdatePost(ctx context.Context, id string, in model.Post) (*model.Post, *model.Errors)
+	DeletePost(ctx context.Context, id string) *model.Errors
+	PostContentRequest(ctx context.Context, contentRequest ContentRequest) (*ContentResult, *model.Errors)
+	GetContent(ctx context.Context, key string) ([]byte, *model.Errors)
+	RetrieveUser(ctx context.Context, provider OIDCProvider, token *oidc.IDToken, rawToken string) (*model.User, *model.Errors)
+	Search(ctx context.Context, req SearchRequest) (SearchResult, *model.Errors)
+}
+
 // API is the container for the apilication
 type API struct {
 	categoryPersister   model.CategoryPersister
@@ -36,6 +62,7 @@ type API struct {
 	blobStoreConfig     BlobStoreConfig
 	pubSubConfig        PubSubConfig
 	userCache           *lru.TwoQueueCache
+	es                  *elasticsearch.Client
 }
 
 // BlobStoreConfig contains configuration information for the blob store
@@ -148,5 +175,11 @@ func (api *API) getPubSubURLStr(target string) string {
 // UserPersister sets the UserPersister for the API
 func (api *API) UserPersister(p model.UserPersister) *API {
 	api.userPersister = p
+	return api
+}
+
+// Elasticsearch sets the Elasticsearch client
+func (api *API) Elasticsearch(es *elasticsearch.Client) *API {
+	api.es = es
 	return api
 }

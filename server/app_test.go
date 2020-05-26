@@ -69,3 +69,6 @@ func (a *apiMock) GetContent(ctx context.Context, key string) ([]byte, *model.Er
 func (a *apiMock) RetrieveUser(ctx context.Context, provider api.OIDCProvider, token *oidc.IDToken, rawToken string) (*model.User, *model.Errors) {
 	return a.result.(*model.User), a.errors
 }
+func (a *apiMock) Search(ctx context.Context, searchRequest api.SearchRequest) (*api.SearchResult, *model.Errors) {
+	return a.result.(*api.SearchResult), a.errors
+}
