@@ -125,7 +125,7 @@
       },
       "birthPlace": {
         "type": "text",
-        "analyzer": "standard_folding",
+        "analyzer": "simple_folding",
         "doc_values": false,
         "index_options": "docs",
         "norms": false,
