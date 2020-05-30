@@ -31,6 +31,7 @@ type API struct {
 	categoryPersister   model.CategoryPersister
 	collectionPersister model.CollectionPersister
 	postPersister       model.PostPersister
+	recordPersister     model.RecordPersister
 	userPersister       model.UserPersister
 	validate            *validator.Validate
 	blobStoreConfig     BlobStoreConfig
@@ -97,6 +98,12 @@ func (api *API) CollectionPersister(cp model.CollectionPersister) *API {
 // PostPersister sets the PostPersister for the api
 func (api *API) PostPersister(cp model.PostPersister) *API {
 	api.postPersister = cp
+	return api
+}
+
+// PostPersister sets the PostPersister for the api
+func (api *API) RecordPersister(cp model.RecordPersister) *API {
+	api.recordPersister = cp
 	return api
 }
 

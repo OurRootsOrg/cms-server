@@ -7,4 +7,4 @@ CREATE TABLE IF NOT EXISTS post (
 );
 CREATE INDEX idx_post_body ON post USING GIN (body);
 GRANT SELECT, INSERT, UPDATE, DELETE ON post TO ourroots;
-GRANT USAGE, SELECT on SEQUENCE post_id_seq to ourroots;;
+GRANT USAGE, SELECT on SEQUENCE post_id_seq to ourroots;

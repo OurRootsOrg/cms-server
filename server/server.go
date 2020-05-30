@@ -118,6 +118,7 @@ func main() {
 		CategoryPersister(p).
 		CollectionPersister(p).
 		PostPersister(p).
+		RecordPersister(p).
 		UserPersister(p)
 	log.Print("[INFO] Using PostgresPersister")
 	r := app.NewRouter()

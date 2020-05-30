@@ -56,6 +56,17 @@ type Post struct {
 	LastUpdateTime time.Time `json:"last_update_time,omitempty"`
 }
 
+// NewPostIn constructs a PostIn
+func NewPostIn(name string, collectionID string) PostIn {
+	pi := PostIn{
+		PostBody: PostBody{
+			Name: name,
+		},
+		Collection: collectionID,
+	}
+	return pi
+}
+
 // NewPost constructs a Post from a PostIn
 func NewPost(id int32, ci PostIn) Post {
 	now := time.Now()
