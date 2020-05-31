@@ -7,7 +7,7 @@ GOGET=$(GOCMD) get
 BINARY_NAME=main.lambda
 RECORDSWRITER_BINARY=recordswriter.lambda
 PG_PORT=15432
-RABBIT_PORT=25672
+RABBIT_PORT=35672
 
 all: clean test build package
 build: 
@@ -23,8 +23,7 @@ test-setup:
 	rabbitmq/wait-for-rabbitmq.sh ${RABBIT_PORT}
 test-exec:
 	DATABASE_URL="postgres://ourroots:password@localhost:$(PG_PORT)/cms?sslmode=disable" \
-    RABBIT_SERVER_URL="amqp://guest:guest@localhost:$(RABBIT_PORT)/" \
-	$(GOTEST) -v ./...
+	$(GOTEST) -v -race -p=1 ./...
 test-teardown:
 	docker-compose -f docker-compose-dependencies.yaml down --volumes
 clean:

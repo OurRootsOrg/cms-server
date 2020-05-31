@@ -29,6 +29,7 @@ func TestRecords(t *testing.T) {
 	p := persist.NewPostgresPersister("", db)
 	testApi, err := api.NewAPI()
 	assert.NoError(t, err)
+	defer testApi.Close()
 	testApi = testApi.
 		CategoryPersister(p).
 		CollectionPersister(p).
@@ -46,7 +47,7 @@ func TestRecords(t *testing.T) {
 	assert.Nil(t, err, "Error creating test post")
 	defer deleteTestPost(p, testPost)
 
-	empty, errors := testApi.GetRecords(context.TODO())
+	empty, errors := testApi.GetRecordsForPost(context.TODO(), testPost.ID)
 	assert.Nil(t, errors)
 	assert.Equal(t, 0, len(empty.Records), "Expected empty slice, got %#v", empty)
 
@@ -70,7 +71,7 @@ func TestRecords(t *testing.T) {
 	assert.Equal(t, model.ErrBadReference, errors.Errs()[0].Code, "errors.Errs()[0]: %#v", errors.Errs()[0])
 
 	// GET /records should now return the created Record
-	ret, errors := testApi.GetRecords(context.TODO())
+	ret, errors := testApi.GetRecordsForPost(context.TODO(), testPost.ID)
 	assert.Nil(t, errors)
 	assert.Equal(t, 0, len(empty.Records), "Expected empty slice, got %#v", empty)
 	assert.Equal(t, 1, len(ret.Records))
@@ -128,7 +129,7 @@ func TestRecords(t *testing.T) {
 }
 
 func createTestPost(p model.PostPersister, collectionID string) (*model.Post, error) {
-	in := model.NewPostIn("Test", collectionID)
+	in := model.NewPostIn("Test", collectionID, "")
 	created, err := p.InsertPost(context.TODO(), in)
 	if err != nil {
 		return nil, err

@@ -9,8 +9,14 @@ import (
 )
 
 // SelectRecords selects all records
-func (p PostgresPersister) SelectRecords(ctx context.Context) ([]model.Record, error) {
-	rows, err := p.db.QueryContext(ctx, "SELECT id, post_id, body, ix_hash, insert_time, last_update_time FROM record")
+func (p PostgresPersister) SelectRecordsForPost(ctx context.Context, postID string) ([]model.Record, error) {
+	var dbID int32
+	n, err := fmt.Sscanf(postID+"\n", p.pathPrefix+model.PostIDFormat+"\n", &dbID)
+	if err != nil || n != 1 {
+		// Bad ID
+		return nil, model.NewError(model.ErrBadReference, postID, "post")
+	}
+	rows, err := p.db.QueryContext(ctx, "SELECT id, post_id, body, ix_hash, insert_time, last_update_time FROM record WHERE post_id=$1", dbID)
 	if err != nil {
 		return nil, translateError(err)
 	}
@@ -136,5 +142,17 @@ func (p PostgresPersister) DeleteRecord(ctx context.Context, id string) error {
 		return model.NewError(model.ErrNotFound, id)
 	}
 	_, err = p.db.ExecContext(ctx, "DELETE FROM record WHERE id = $1", dbID)
+	return translateError(err)
+}
+
+// DeleteRecordsForPost deletes all Records for a post
+func (p PostgresPersister) DeleteRecordsForPost(ctx context.Context, postID string) error {
+	var dbID int32
+	n, err := fmt.Sscanf(postID+"\n", p.pathPrefix+model.PostIDFormat+"\n", &dbID)
+	if err != nil || n != 1 {
+		// Bad ID
+		return model.NewError(model.ErrBadReference, postID, "post")
+	}
+	_, err = p.db.ExecContext(ctx, "DELETE FROM record WHERE post_id = $1", dbID)
 	return translateError(err)
 }

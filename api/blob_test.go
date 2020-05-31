@@ -1,11 +1,13 @@
-package service
+package api
 
 import (
 	"context"
 	"fmt"
-	"github.com/stretchr/testify/assert"
 	"io/ioutil"
+	"log"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestBlobService(t *testing.T) {
@@ -13,7 +15,16 @@ func TestBlobService(t *testing.T) {
 		t.Skip("skipping tests in short mode")
 	}
 	ctx := context.TODO()
-	bucket, err := OpenBucket(ctx, "testbucket", "us-east-1", "127.0.0.1:19000", "minioaccess", "miniosecret", true)
+
+	ap, err := NewAPI()
+	if err != nil {
+		log.Fatalf("Error calling NewAPI: %v", err)
+	}
+	defer ap.Close()
+	ap = ap.
+		BlobStoreConfig("us-east-1", "127.0.0.1:19000", "minioaccess", "miniosecret", "testbucket", true)
+
+	bucket, err := ap.OpenBucket(ctx)
 	assert.NoError(t, err)
 	defer bucket.Close()
 

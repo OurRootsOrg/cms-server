@@ -17,6 +17,7 @@ func TestContent(t *testing.T) {
 	ctx := context.TODO()
 	testApi, err := api.NewAPI()
 	assert.NoError(t, err)
+	defer testApi.Close()
 	testApi.BlobStoreConfig("us-east-1", "127.0.0.1:19000",
 		"minioaccess", "miniosecret", "testbucket", true)
 	content := "Hello,World"

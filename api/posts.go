@@ -12,9 +12,11 @@ import (
 	"github.com/ourrootsorg/cms-server/persist"
 )
 
+const PostLoading = "Loading"
+const PostDraft = "Draft"
+
 type RecordsWriterMsg struct {
-	PostID     string `json:"postId"`
-	RecordsKey string `json:"recordsKey"`
+	PostID string `json:"postId"`
 }
 
 // PostResult is a paged Post result
@@ -59,7 +61,7 @@ func (api API) AddPost(ctx context.Context, in model.PostIn) (*model.Post, *mode
 	}
 	defer topic.Shutdown(ctx)
 	// set records status
-	in.RecordsStatus = "Pending"
+	in.RecordsStatus = PostLoading
 	// insert
 	post, err := api.postPersister.InsertPost(ctx, in)
 	if err == persist.ErrForeignKeyViolation {
@@ -71,8 +73,7 @@ func (api API) AddPost(ctx context.Context, in model.PostIn) (*model.Post, *mode
 	}
 	// send a message to write the records
 	msg := RecordsWriterMsg{
-		PostID:     post.ID,
-		RecordsKey: post.RecordsKey,
+		PostID: post.ID,
 	}
 	body, err := json.Marshal(msg)
 	if err != nil { // this had best never happen

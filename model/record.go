@@ -12,13 +12,14 @@ import (
 // RecordIDFormat is the format for Record IDs
 const RecordIDFormat = "/records/%d"
 
-// RecordPersister defines methods needed to persist categories
+// RecordPersister defines methods needed to persist records
 type RecordPersister interface {
-	SelectRecords(ctx context.Context) ([]Record, error)
+	SelectRecordsForPost(ctx context.Context, postID string) ([]Record, error)
 	SelectOneRecord(ctx context.Context, id string) (Record, error)
 	InsertRecord(ctx context.Context, in RecordIn) (Record, error)
 	UpdateRecord(ctx context.Context, id string, in Record) (Record, error)
 	DeleteRecord(ctx context.Context, id string) error
+	DeleteRecordsForPost(ctx context.Context, postID string) error
 }
 
 // RecordBody is the JSON body of a Record

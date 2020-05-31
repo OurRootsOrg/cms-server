@@ -29,7 +29,9 @@ func TestPosts(t *testing.T) {
 	p := persist.NewPostgresPersister("", db)
 	testApi, err := api.NewAPI()
 	assert.NoError(t, err)
+	defer testApi.Close()
 	testApi = testApi.
+		PubSubConfig("", "rabbit", "guest:guest@localhost:35672").
 		CollectionPersister(p).
 		PostPersister(p)
 

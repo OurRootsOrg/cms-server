@@ -1,10 +1,12 @@
-package service
+package api
 
 import (
 	"context"
+	"log"
+	"testing"
+
 	"github.com/stretchr/testify/assert"
 	"gocloud.dev/pubsub"
-	"testing"
 )
 
 func TestPubSubService(t *testing.T) {
@@ -12,11 +14,18 @@ func TestPubSubService(t *testing.T) {
 		t.Skip("skipping tests in short mode")
 	}
 	ctx := context.TODO()
-	urlStr := "rabbit://test"
 	content := "Hello world!"
 
+	ap, err := NewAPI()
+	if err != nil {
+		log.Fatalf("Error calling NewAPI: %v", err)
+	}
+	defer ap.Close()
+	ap = ap.
+		PubSubConfig("", "rabbit", "guest:guest@localhost:35672")
+
 	// publish to queue
-	topic, err := OpenTopic(ctx, urlStr)
+	topic, err := ap.OpenTopic(ctx, "test")
 	assert.NoError(t, err)
 	defer topic.Shutdown(ctx)
 
@@ -26,7 +35,7 @@ func TestPubSubService(t *testing.T) {
 	assert.NoError(t, err)
 
 	// read from queue
-	sub, err := OpenSubscription(ctx, urlStr)
+	sub, err := ap.OpenSubscription(ctx, "test")
 	assert.NoError(t, err)
 	defer sub.Shutdown(ctx)
 
@@ -35,4 +44,3 @@ func TestPubSubService(t *testing.T) {
 	msg.Ack()
 	assert.Equal(t, content, string(msg.Body))
 }
-

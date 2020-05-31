@@ -36,6 +36,7 @@ type localAPI interface {
 	PostContentRequest(ctx context.Context, contentRequest api.ContentRequest) (*api.ContentResult, *model.Errors)
 	GetContent(ctx context.Context, key string) ([]byte, *model.Errors)
 	RetrieveUser(ctx context.Context, provider api.OIDCProvider, token *oidc.IDToken, rawToken string) (*model.User, *model.Errors)
+	GetRecordsForPost(ctx context.Context, postID string) (*api.RecordResult, *model.Errors)
 }
 
 // verifier allows use of a mock verifier for testing
@@ -184,6 +185,8 @@ func (app App) NewRouter() *mux.Router {
 	r.Handle(app.baseURL.Path+"/posts/{id}", app.verifyToken(http.HandlerFunc(app.GetPost))).Methods("GET")
 	r.Handle(app.baseURL.Path+"/posts/{id}", app.verifyToken(http.HandlerFunc(app.PutPost))).Methods("PUT")
 	r.Handle(app.baseURL.Path+"/posts/{id}", app.verifyToken(http.HandlerFunc(app.DeletePost))).Methods("DELETE")
+
+	r.Handle(app.baseURL.Path+"/records", app.verifyToken(http.HandlerFunc(app.GetRecords))).Methods("GET")
 
 	return r
 }

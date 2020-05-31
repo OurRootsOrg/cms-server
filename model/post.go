@@ -57,10 +57,11 @@ type Post struct {
 }
 
 // NewPostIn constructs a PostIn
-func NewPostIn(name string, collectionID string) PostIn {
+func NewPostIn(name, collectionID, recordsKey string) PostIn {
 	pi := PostIn{
 		PostBody: PostBody{
-			Name: name,
+			Name:       name,
+			RecordsKey: recordsKey,
 		},
 		Collection: collectionID,
 	}

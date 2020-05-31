@@ -7,5 +7,6 @@ CREATE TABLE IF NOT EXISTS record (
   last_update_time TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 CREATE INDEX idx_record_body ON record USING GIN (body);
+CREATE INDEX idx_record_post ON record (post_id);
 GRANT SELECT, INSERT, UPDATE, DELETE ON record TO ourroots;
 GRANT USAGE, SELECT on SEQUENCE record_id_seq to ourroots;

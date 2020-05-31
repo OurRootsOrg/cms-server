@@ -1,16 +1,10 @@
 package api
 
 import (
-	"context"
-	"fmt"
-	"log"
 	"reflect"
 	"strings"
 
-	"github.com/ourrootsorg/cms-server/service"
-	"gocloud.dev/blob"
-
-	"gocloud.dev/pubsub"
+	"github.com/streadway/amqp"
 
 	"github.com/go-playground/validator/v10"
 	lru "github.com/hashicorp/golang-lru"
@@ -28,15 +22,17 @@ const UserProperty TokenKey = "user"
 
 // API is the container for the apilication
 type API struct {
-	categoryPersister   model.CategoryPersister
-	collectionPersister model.CollectionPersister
-	postPersister       model.PostPersister
-	recordPersister     model.RecordPersister
-	userPersister       model.UserPersister
-	validate            *validator.Validate
-	blobStoreConfig     BlobStoreConfig
-	pubSubConfig        PubSubConfig
-	userCache           *lru.TwoQueueCache
+	categoryPersister        model.CategoryPersister
+	collectionPersister      model.CollectionPersister
+	postPersister            model.PostPersister
+	recordPersister          model.RecordPersister
+	userPersister            model.UserPersister
+	validate                 *validator.Validate
+	blobStoreConfig          BlobStoreConfig
+	pubSubConfig             PubSubConfig
+	userCache                *lru.TwoQueueCache
+	rabbitmqTopicConn        *amqp.Connection
+	rabbitmqSubscriptionConn *amqp.Connection
 }
 
 // BlobStoreConfig contains configuration information for the blob store
@@ -53,10 +49,10 @@ type BlobStoreConfig struct {
 type PubSubConfig struct {
 	region   string
 	protocol string
-	prefix   string
+	host     string
 }
 
-// NewAPI builds an API
+// NewAPI builds an API; Close() the api when you're done with it to free up resources
 func NewAPI() (*API, error) {
 	api := &API{}
 	api.Validate(validator.New())
@@ -66,6 +62,24 @@ func NewAPI() (*API, error) {
 		return nil, err
 	}
 	return api, nil
+}
+
+// Close frees up any held resources
+func (api *API) Close() error {
+	var err error
+	if api.rabbitmqTopicConn != nil {
+		if e := api.rabbitmqTopicConn.Close(); e != nil {
+			err = e
+		}
+		api.rabbitmqTopicConn = nil
+	}
+	if api.rabbitmqSubscriptionConn != nil {
+		if e := api.rabbitmqSubscriptionConn.Close(); e != nil {
+			err = e
+		}
+		api.rabbitmqSubscriptionConn = nil
+	}
+	return err
 }
 
 // Validate sets the validate object for the api
@@ -114,42 +128,9 @@ func (api *API) BlobStoreConfig(region, endpoint, accessKeyID, secretAccessKey, 
 }
 
 // PubSubConfig configures the pub-sub service
-func (api *API) PubSubConfig(region, protocol, prefix string) *API {
-	api.pubSubConfig = PubSubConfig{region, protocol, prefix}
+func (api *API) PubSubConfig(region, protocol, host string) *API {
+	api.pubSubConfig = PubSubConfig{region, protocol, host}
 	return api
-}
-
-// OpenBucket opens a blob storage bucket; Close() the bucket when you're done with it
-func (api *API) OpenBucket(ctx context.Context) (*blob.Bucket, error) {
-	return service.OpenBucket(ctx, api.blobStoreConfig.bucket, api.blobStoreConfig.region, api.blobStoreConfig.endpoint,
-		api.blobStoreConfig.accessKey, api.blobStoreConfig.secretKey, api.blobStoreConfig.disableSSL)
-}
-
-// OpenTopic opens a topic for publishing
-// Shutdown(ctx) the topic when you're done with it
-func (api *API) OpenTopic(ctx context.Context, topic string) (*pubsub.Topic, error) {
-	return pubsub.OpenTopic(ctx, api.getPubSubURLStr(topic))
-}
-
-// OpenSubscription opens a subscription to a queue
-// Shutdown(ctx) the subscription when you're done with it, and ack() messages when you've processed them
-func (api *API) OpenSubscription(ctx context.Context, queue string) (*pubsub.Subscription, error) {
-	return pubsub.OpenSubscription(ctx, api.getPubSubURLStr(queue))
-}
-
-func (api *API) getPubSubURLStr(target string) string {
-	var urlStr string
-	switch api.pubSubConfig.protocol {
-	case "": // use rabbit as the default protocol for testing convenience
-		fallthrough
-	case "rabbit":
-		urlStr = fmt.Sprintf("rabbit://%s", target)
-	case "awssqs":
-		urlStr = fmt.Sprintf("awssqs://%s/%s?region=%s", api.pubSubConfig.prefix, target, api.pubSubConfig.region)
-	default:
-		log.Fatalf("Invalid protocol %s\n", api.pubSubConfig.protocol)
-	}
-	return urlStr
 }
 
 // UserPersister sets the UserPersister for the API

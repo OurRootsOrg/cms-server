@@ -16,9 +16,9 @@ type RecordResult struct {
 }
 
 // GetRecords holds the business logic around getting many Records
-func (api API) GetRecords(ctx context.Context /* filter/search criteria */) (*RecordResult, *model.Errors) {
+func (api API) GetRecordsForPost(ctx context.Context, postID string) (*RecordResult, *model.Errors) {
 	// TODO: handle search criteria and paged results
-	records, err := api.recordPersister.SelectRecords(ctx)
+	records, err := api.recordPersister.SelectRecordsForPost(ctx, postID)
 	if err != nil {
 		return nil, model.NewErrors(http.StatusInternalServerError, err)
 	}
@@ -82,6 +82,15 @@ func (api API) UpdateRecord(ctx context.Context, id string, in model.Record) (*m
 // DeleteRecord holds the business logic around deleting a Record
 func (api API) DeleteRecord(ctx context.Context, id string) *model.Errors {
 	err := api.recordPersister.DeleteRecord(ctx, id)
+	if err != nil {
+		return model.NewErrors(http.StatusInternalServerError, err)
+	}
+	return nil
+}
+
+// DeleteRecord holds the business logic around deleting a Record
+func (api API) DeleteRecordsForPost(ctx context.Context, postID string) *model.Errors {
+	err := api.recordPersister.DeleteRecordsForPost(ctx, postID)
 	if err != nil {
 		return model.NewErrors(http.StatusInternalServerError, err)
 	}

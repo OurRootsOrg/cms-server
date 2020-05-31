@@ -77,9 +77,10 @@ func main() {
 	if err != nil {
 		log.Fatalf("Error calling NewAPI: %v", err)
 	}
+	defer ap.Close()
 	ap = ap.
 		BlobStoreConfig(env.Region, env.BlobStoreEndpoint, env.BlobStoreAccessKey, env.BlobStoreSecretKey, env.BlobStoreBucket, env.BlobStoreDisableSSL).
-		PubSubConfig(env.Region, env.PubSubProtocol, env.PubSubPrefix)
+		PubSubConfig(env.Region, env.PubSubProtocol, env.PubSubHost)
 	app := NewApp().BaseURL(*env.BaseURL).API(ap).OIDC(env.OIDCAudience, env.OIDCDomain)
 	if env.BaseURL.Scheme == "https" {
 		docs.SwaggerInfo.Schemes = []string{"https"}
@@ -191,8 +192,8 @@ type Env struct {
 	BlobStoreSecretKey  string `env:"BLOB_STORE_SECRET_KEY"`
 	BlobStoreBucket     string `env:"BLOB_STORE_BUCKET"`
 	BlobStoreDisableSSL bool   `env:"BLOB_STORE_DISABLE_SSL"`
-	PubSubProtocol      string `env:"PUB_SUB_PROTOCOL"`
-	PubSubPrefix        string `env:"PUB_SUB_PREFIX"`
+	PubSubProtocol      string `env:"PUB_SUB_PROTOCOL" validate:"omitempty,eq=rabbit|eq=awssqs"`
+	PubSubHost          string `env:"PUB_SUB_HOST"`
 	OIDCAudience        string `env:"OIDC_AUDIENCE" validate:"omitempty"`
 	OIDCDomain          string `env:"OIDC_DOMAIN" validate:"omitempty"`
 }
@@ -218,6 +219,8 @@ func ParseEnv() (*Env, error) {
 				errs += fmt.Sprintf("  Invalid BASE_URL: '%v' is not a valid URL\n", fe.Value())
 			case "DATABASE_URL":
 				errs += fmt.Sprintf("  Invalid DATABASE_URL: '%v' is not a valid PostgreSQL URL\n", fe.Value())
+			case "PUB_SUB_PROTOCOL":
+				errs += fmt.Sprintf("  Invalid PUB_SUB_PROTOCOL: '%v', valid values are 'rabbit', 'awssqs'\n", fe.Value())
 			}
 		}
 		return nil, errors.New(errs)

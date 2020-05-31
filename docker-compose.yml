@@ -47,6 +47,8 @@ services:
     image: recordswriter
     depends_on:
       - postgres
+      - minio
+      - rabbitmq
     environment:
       - BASE_URL=http://localhost:8000
       - DATABASE_URL=postgres://ourroots:password@postgres:5432/cms?sslmode=disable
@@ -57,10 +59,9 @@ services:
       - BLOB_STORE_ACCESS_KEY=minioaccess
       - BLOB_STORE_SECRET_KEY=miniosecret
       - BLOB_STORE_DISABLE_SSL=true
-      # this configures rabbitmq; to use SQS, set the protocol to awssqs and the prefix to sqs.us-east-1.amazonaws.com/<accountid>
+      # this configures rabbitmq; to use SQS, set the protocol to awssqs and the host to sqs.us-east-1.amazonaws.com/<accountid>
       - PUB_SUB_PROTOCOL=rabbit
-      - PUB_SUB_PREFIX=
-      - RABBIT_SERVER_URL=amqp://guest:guest@rabbitmq:5672/
+      - PUB_SUB_HOST=guest:guest@rabbitmq:5672
     networks:
       - mynetwork
 
@@ -83,10 +84,9 @@ services:
       - BLOB_STORE_ACCESS_KEY=minioaccess
       - BLOB_STORE_SECRET_KEY=miniosecret
       - BLOB_STORE_DISABLE_SSL=true
-      # this configures rabbitmq; to use SQS, set the protocol to awssqs and the prefix to sqs.us-east-1.amazonaws.com/<accountid>
+      # this configures rabbitmq; to use SQS, set the protocol to awssqs and the host to sqs.us-east-1.amazonaws.com/<accountid>
       - PUB_SUB_PROTOCOL=rabbit
-      - PUB_SUB_PREFIX=
-      - RABBIT_SERVER_URL=amqp://guest:guest@rabbitmq:5672/
+      - PUB_SUB_HOST=guest:guest@rabbitmq:5672
       - OIDC_DOMAIN=ourroots.auth0.com
       - OIDC_AUDIENCE=https://api.ourroots.org/preprod
     networks:
