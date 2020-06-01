@@ -114,9 +114,13 @@ func (api API) UpdatePost(ctx context.Context, id string, in model.Post) (*model
 
 // DeletePost holds the business logic around deleting a Post
 func (api API) DeletePost(ctx context.Context, id string) *model.Errors {
-	err := api.postPersister.DeletePost(ctx, id)
-	if err != nil {
+	// delete records for post first so we don't have referential integrity errors
+	if err := api.DeleteRecordsForPost(ctx, id); err != nil {
 		return model.NewErrors(http.StatusInternalServerError, err)
 	}
+	if err := api.postPersister.DeletePost(ctx, id); err != nil {
+		return model.NewErrors(http.StatusInternalServerError, err)
+	}
+
 	return nil
 }

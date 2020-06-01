@@ -187,19 +187,19 @@ func main() {
 		msg, err := sub.Receive(ctx)
 		if err != nil {
 			log.Printf("[ERROR] Receiving message %v\n", err)
-			break
+			continue
 		}
 		var rwMsg api.RecordsWriterMsg
 		err = json.Unmarshal(msg.Body, &rwMsg)
 		if err != nil {
 			log.Printf("[ERROR] Unmarshalling message %v\n", err)
-			break
+			continue
 		}
 		// process message
 		errs := processMessage(ctx, ap, rwMsg)
 		if errs != nil {
 			log.Printf("[ERROR] Processing message %v\n", errs)
-			break
+			continue
 		}
 		msg.Ack()
 	}

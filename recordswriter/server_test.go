@@ -73,7 +73,7 @@ func TestRecordsWriter(t *testing.T) {
 		},
 		Collection: testCollection.ID,
 	}
-	testPost, errors := testApi.AddPost(context.TODO(), in)
+	testPost, errors := testApi.AddPost(ctx, in)
 	assert.Nil(t, errors)
 
 	var post *model.Post
@@ -85,6 +85,7 @@ func TestRecordsWriter(t *testing.T) {
 		if post.RecordsStatus == api.PostDraft {
 			break
 		}
+		log.Printf("Waiting for recordswriter %d\n", i)
 		time.Sleep(1 * time.Second)
 	}
 	assert.Equal(t, api.PostDraft, post.RecordsStatus, "Expected post to be Draft, got %s", post.RecordsStatus)
@@ -94,18 +95,14 @@ func TestRecordsWriter(t *testing.T) {
 	assert.Nil(t, errors)
 	assert.Equal(t, 2, len(records.Records), "Expected two records, got %#v", records)
 
-	// delete records for post
-	errors = testApi.DeleteRecordsForPost(ctx, testPost.ID)
+	// delete post
+	errors = testApi.DeletePost(ctx, testPost.ID)
 	assert.Nil(t, errors)
 
-	// read records for post
+	// records should be removed
 	records, errors = testApi.GetRecordsForPost(ctx, testPost.ID)
 	assert.Nil(t, errors)
 	assert.Equal(t, 0, len(records.Records), "Expected empty slice, got %#v", records)
-
-	// delete post
-	errors = testApi.DeletePost(context.TODO(), testPost.ID)
-	assert.Nil(t, errors)
 }
 
 func createTestCategory(p model.CategoryPersister) (*model.Category, error) {

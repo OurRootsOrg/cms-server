@@ -33,7 +33,8 @@ func TestPosts(t *testing.T) {
 	testApi = testApi.
 		PubSubConfig("", "rabbit", "guest:guest@localhost:35672").
 		CollectionPersister(p).
-		PostPersister(p)
+		PostPersister(p).
+		RecordPersister(p)
 
 	// Add a test category and test collection for referential integrity
 	testCategory, err := createTestCategory(p)
