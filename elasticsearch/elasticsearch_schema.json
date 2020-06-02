@@ -173,6 +173,13 @@
         "norms": false,
         "similarity": "boolean"
       },
+      "post": {
+        "type": "keyword",
+        "doc_values": false,
+        "index_options": "docs",
+        "norms": false,
+        "similarity": "boolean"
+      },
       "lastModified": {
         "type": "date",
         "doc_values": false,

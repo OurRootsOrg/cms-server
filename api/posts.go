@@ -3,6 +3,8 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"log"
 	"net/http"
 
@@ -14,8 +16,15 @@ import (
 
 const PostLoading = "Loading"
 const PostDraft = "Draft"
+const PostPublishing = "Publishing"
+const PostPublished = "Published"
+const PostPublishComplete = "PublishComplete"
 
 type RecordsWriterMsg struct {
+	PostID string `json:"postId"`
+}
+
+type PublisherMsg struct {
 	PostID string `json:"postId"`
 }
 
@@ -56,7 +65,7 @@ func (api API) AddPost(ctx context.Context, in model.PostIn) (*model.Post, *mode
 	// prepare to send a message
 	topic, err := api.OpenTopic(ctx, "recordswriter")
 	if err != nil {
-		log.Printf("[ERROR] Can't open topic %v", err)
+		log.Printf("[ERROR] Can't open recordswriter topic %v", err)
 		return nil, model.NewErrors(http.StatusInternalServerError, err)
 	}
 	defer topic.Shutdown(ctx)
@@ -94,6 +103,33 @@ func (api API) UpdatePost(ctx context.Context, id string, in model.Post) (*model
 	if err != nil {
 		return nil, model.NewErrors(http.StatusBadRequest, err)
 	}
+
+	// read current records status
+	currPost, errs := api.GetPost(ctx, id)
+	if errs != nil {
+		return nil, errs
+	}
+
+	// validate new records status
+	var topic *pubsub.Topic
+	err = errors.New(fmt.Sprintf("cannot change records status from %s to %s", currPost.RecordsStatus, in.RecordsStatus))
+	if currPost.RecordsStatus == in.RecordsStatus {
+		err = nil
+	} else if currPost.RecordsStatus == PostDraft && in.RecordsStatus == PostPublished {
+		// prepare to send a message
+		topic, err = api.OpenTopic(ctx, "publisher")
+		if err != nil {
+			log.Printf("[ERROR] Can't open publisher topic %v", err)
+			return nil, model.NewErrors(http.StatusInternalServerError, err)
+		}
+		defer topic.Shutdown(ctx)
+		in.RecordsStatus = PostPublishing
+		err = nil
+	} else if currPost.RecordsStatus == PostPublishing && in.RecordsStatus == PostPublishComplete {
+		in.RecordsStatus = PostPublished
+		err = nil
+	}
+
 	post, err := api.postPersister.UpdatePost(ctx, id, in)
 	if er, ok := err.(model.Error); ok {
 		if er.Code == model.ErrConcurrentUpdate {
@@ -109,6 +145,24 @@ func (api API) UpdatePost(ctx context.Context, id string, in model.Post) (*model
 	} else if err != nil {
 		return nil, model.NewErrors(http.StatusInternalServerError, err)
 	}
+
+	if currPost.RecordsStatus == PostDraft && in.RecordsStatus == PostPublishing {
+		// send a message to publish the post
+		msg := PublisherMsg{
+			PostID: post.ID,
+		}
+		body, err := json.Marshal(msg)
+		if err != nil { // this had best never happen
+			log.Printf("[ERROR] Can't marshal message %v", err)
+			return nil, model.NewErrors(http.StatusInternalServerError, err)
+		}
+		err = topic.Send(ctx, &pubsub.Message{Body: body})
+		if err != nil { // this had best never happen
+			log.Printf("[ERROR] Can't send message %v", err)
+			return nil, model.NewErrors(http.StatusInternalServerError, err)
+		}
+	}
+
 	return &post, nil
 }
 

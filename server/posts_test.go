@@ -179,13 +179,13 @@ func TestPutPost(t *testing.T) {
 
 	in, buf := makePostIn(t)
 	now := time.Now().Truncate(0) // Truncate(0) truncates monotonic time
-	coll := model.Post{
+	post := model.Post{
 		ID:             "/posts/1",
 		PostIn:         in,
 		InsertTime:     now,
 		LastUpdateTime: now,
 	}
-	am.result = &coll
+	am.result = &post
 	am.errors = nil
 
 	request, _ := http.NewRequest("PUT", "/posts/1", buf)
@@ -228,7 +228,9 @@ func TestDeletePost(t *testing.T) {
 func makePostIn(t *testing.T) (model.PostIn, *bytes.Buffer) {
 	in := model.PostIn{
 		PostBody: model.PostBody{
-			Name: "First",
+			Name:          "First",
+			RecordsKey:    "key",
+			RecordsStatus: api.PostDraft,
 		},
 		Collection: "/collections/1",
 	}

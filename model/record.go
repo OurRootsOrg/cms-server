@@ -56,6 +56,17 @@ type Record struct {
 	LastUpdateTime time.Time `json:"last_update_time,omitempty"`
 }
 
+// NewRecordIn constructs a RecordIn
+func NewRecordIn(data map[string]string, postID string) RecordIn {
+	ri := RecordIn{
+		RecordBody: RecordBody{
+			Data: data,
+		},
+		Post: postID,
+	}
+	return ri
+}
+
 // NewRecord constructs a Record from a RecordIn
 func NewRecord(id int32, ci RecordIn) Record {
 	now := time.Now()

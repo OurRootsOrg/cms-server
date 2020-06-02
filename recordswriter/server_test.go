@@ -137,16 +137,3 @@ func createTestCollection(p model.CollectionPersister, categoryID string) (*mode
 func deleteTestCollection(p model.CollectionPersister, collection *model.Collection) error {
 	return p.DeleteCollection(context.TODO(), collection.ID)
 }
-
-func createTestPost(p model.PostPersister, collectionID, recordsKey string) (*model.Post, error) {
-	in := model.NewPostIn("Test", collectionID, recordsKey)
-	created, err := p.InsertPost(context.TODO(), in)
-	if err != nil {
-		return nil, err
-	}
-	return &created, err
-}
-
-func deleteTestPost(p model.PostPersister, post *model.Post) error {
-	return p.DeletePost(context.TODO(), post.ID)
-}

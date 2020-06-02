@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -12,31 +13,55 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/ourrootsorg/cms-server/persist"
-	"gocloud.dev/postgres"
-
-	"github.com/elastic/go-elasticsearch/v7"
-
-	"github.com/aws/aws-lambda-go/events"
-	"github.com/aws/aws-lambda-go/lambda"
-	"github.com/awslabs/aws-lambda-go-api-proxy/gorillamux"
 	"github.com/codingconcepts/env"
+	"github.com/elastic/go-elasticsearch/v7"
 	"github.com/go-playground/validator/v10"
-	"github.com/gorilla/handlers"
 	"github.com/hashicorp/logutils"
 	"github.com/ourrootsorg/cms-server/api"
-	"github.com/ourrootsorg/cms-server/server/docs"
-	httpSwagger "github.com/swaggo/http-swagger"
+	"github.com/ourrootsorg/cms-server/model"
+	"github.com/ourrootsorg/cms-server/persist"
+	"gocloud.dev/postgres"
 )
 
-const (
-	defaultURL = "http://localhost:3001"
-)
+const defaultURL = "http://localhost:3000"
+
+func processMessage(ctx context.Context, ap *api.API, msg api.PublisherMsg) *model.Errors {
+	log.Printf("[DEBUG] processing %s\n", msg.PostID)
+
+	// read post
+	post, errs := ap.GetPost(ctx, msg.PostID)
+	if errs != nil {
+		log.Printf("[ERROR] GetPost %v\n", errs)
+		return errs
+	}
+	if post.RecordsStatus != api.PostPublishing {
+		log.Printf("[WARN] post not publishing %s -> %s\n", post.ID, post.RecordsStatus)
+		return nil
+	}
+
+	// index post
+	if err := ap.IndexPost(ctx, post); err != nil {
+		log.Printf("[ERROR] indexPost %v\n", err)
+		return model.NewErrors(http.StatusInternalServerError, err)
+	}
+
+	// update post.recordsStatus = Published
+	post.RecordsStatus = api.PostPublishComplete
+	_, errs = ap.UpdatePost(ctx, post.ID, *post)
+	if errs != nil {
+		log.Printf("[ERROR] UpdatePost %v\n", errs)
+	}
+
+	return errs
+}
 
 func main() {
+	ctx := context.Background()
+
+	// parse environment
 	env, err := ParseEnv()
 	if err != nil {
-		log.Fatalf("[FATAL] Error parsing environmet variables: %v", err)
+		log.Fatalf("[FATAL] Error parsing environment variables: %v", err)
 	}
 
 	filter := &logutils.LevelFilter{
@@ -45,28 +70,24 @@ func main() {
 		Writer:   os.Stderr,
 	}
 	log.SetOutput(filter)
-	log.Printf("[INFO] env.ElasticsearchURLString: %s", env.ElasticsearchURLString)
 
+	// configure api
 	ap, err := api.NewAPI()
 	if err != nil {
 		log.Fatalf("Error calling NewAPI: %v", err)
 	}
-	app := NewApp().BaseURL(*env.BaseURL).API(ap)
-	if env.BaseURL.Scheme == "https" {
-		docs.SwaggerInfo.Schemes = []string{"https"}
-	} else {
-		docs.SwaggerInfo.Schemes = []string{"http"}
-	}
+	defer ap.Close()
+	ap = ap.
+		PubSubConfig(env.Region, env.PubSubProtocol, env.PubSubHost)
 
-	log.Printf("Connecting to %s\n", env.DatabaseURL)
-	db, err := postgres.Open(context.TODO(), env.DatabaseURL)
+	// configure postgres
+	db, err := postgres.Open(ctx, env.DatabaseURL)
 	if err != nil {
 		log.Fatalf("[FATAL] Error opening database connection: %v\n  DATABASE_URL: %s",
 			err,
 			env.DatabaseURL,
 		)
 	}
-
 	// ping the database to make sure we can connect
 	cnt := 0
 	err = errors.New("unknown error")
@@ -84,14 +105,15 @@ func main() {
 		)
 	}
 	log.Printf("Connected to %s\n", env.DatabaseURL)
-
 	p := persist.NewPostgresPersister(env.BaseURL.Path, db)
 	ap.
 		CategoryPersister(p).
-		CollectionPersister(p)
+		CollectionPersister(p).
+		PostPersister(p).
+		RecordPersister(p)
 	log.Print("[INFO] Using PostgresPersister")
 
-	// elasticsearch
+	// configure elasticsearch
 	log.Printf("Connecting to %s\n", env.ElasticsearchURLString)
 	es, err := elasticsearch.NewClient(elasticsearch.Config{
 		Addresses: []string{
@@ -127,70 +149,45 @@ func main() {
 	ap = ap.Elasticsearch(es)
 	log.Print("[INFO] Using Elasticsearch")
 
-	r := app.NewRouter()
-	docs.SwaggerInfo.Host = env.BaseURL.Hostname()
-	if env.BaseURL.Port() != "" {
-		docs.SwaggerInfo.Host += ":" + env.BaseURL.Port()
+	// subscribe to publisher queue
+	sub, err := ap.OpenSubscription(ctx, "publisher")
+	if err != nil {
+		log.Fatalf("[FATAL] Can't open subscription %v\n", err)
 	}
-	docs.SwaggerInfo.BasePath = env.BaseURL.Path
-	r.PathPrefix(env.BaseURL.Path + "/swagger/").Handler(httpSwagger.Handler(
-		httpSwagger.URL(env.BaseURLString+"/swagger/doc.json"), //The url pointing to API definition
-		httpSwagger.DeepLinking(true),
-		httpSwagger.DocExpansion("none"),
-		httpSwagger.DomID("#swagger-ui"),
-	))
-	r.NotFoundHandler = http.HandlerFunc(NotFound)
+	defer sub.Shutdown(ctx)
 
-	if env.IsLambda {
-		// Lambda-specific setup
-		// Note that the Lamda doesn't serve static content, only the API
-		// API Gateway proxies static content requests directly to an S3 bucket
-		adapter := gorillamux.New(r)
-		lambda.Start(func(ctx context.Context, req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-			log.Printf("[DEBUG] Lambda request %#v", req)
-			// If no name is provided in the HTTP request body, throw an error
-			return adapter.ProxyWithContext(ctx, req)
-		})
-		log.Fatal("Lambda exiting...")
-	} else {
-		// If we're not running in Lambda we also serve the static content.
-		// This is useful in development. It might also be in a traditional server deploy, but requirements
-		// for all of this are TBD.
-		// uiDir := "../ui/build/web"
-		// r.PathPrefix("/flutter/").
-		// 	Handler(http.StripPrefix("/flutter", http.FileServer(http.Dir(flutterDir))))
-		// r.PathPrefix("/wasm/").
-		// 	Handler(http.StripPrefix("/wasm", http.FileServer(http.Dir(vectyDir))))
-		if env.BaseURL.Scheme == "https" {
-			log.Fatal(http.ListenAndServeTLS(fmt.Sprintf(":%s", env.BaseURL.Port()),
-				"server.crt", "server.key",
-				handlers.LoggingHandler(
-					os.Stdout,
-					handlers.CORS(
-						handlers.AllowedHeaders([]string{"X-Requested-With", "Content-Type", "Authorization"}),
-						handlers.AllowedMethods([]string{"GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS"}),
-						handlers.AllowedOrigins([]string{"*"}))(r)),
-			))
-		} else {
-			log.Fatal(http.ListenAndServe(fmt.Sprintf(":%s", env.BaseURL.Port()),
-				handlers.LoggingHandler(os.Stdout,
-					handlers.CORS(
-						handlers.AllowedHeaders([]string{"X-Requested-With", "Content-Type", "Authorization"}),
-						handlers.AllowedMethods([]string{"GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS"}),
-						handlers.AllowedOrigins([]string{"*"}))(r)),
-			))
+	// loop over messages
+	for {
+		msg, err := sub.Receive(ctx)
+		if err != nil {
+			log.Printf("[ERROR] Receiving message %v\n", err)
+			continue
 		}
+		var pMsg api.PublisherMsg
+		err = json.Unmarshal(msg.Body, &pMsg)
+		if err != nil {
+			log.Printf("[ERROR] Unmarshalling message %v\n", err)
+			continue
+		}
+		// process message
+		errs := processMessage(ctx, ap, pMsg)
+		if errs != nil {
+			log.Printf("[ERROR] Processing message %v\n", errs)
+			continue
+		}
+		msg.Ack()
 	}
 }
 
 // Env holds values parse from environment variables
 type Env struct {
-	LambdaTaskRoot         string `env:"LAMBDA_TASK_ROOT"`
-	IsLambda               bool
 	MinLogLevel            string `env:"MIN_LOG_LEVEL" validate:"omitempty,eq=DEBUG|eq=INFO|eq=ERROR"`
 	BaseURLString          string `env:"BASE_URL" validate:"omitempty,url"`
-	BaseURL                *url.URL
 	DatabaseURL            string `env:"DATABASE_URL" validate:"required,url"`
+	BaseURL                *url.URL
+	Region                 string `env:"AWS_REGION"`
+	PubSubProtocol         string `env:"PUB_SUB_PROTOCOL" validate:"omitempty,eq=rabbit|eq=awssqs"`
+	PubSubHost             string `env:"PUB_SUB_HOST"`
 	ElasticsearchURLString string `env:"ELASTICSEARCH_URL" validate:"required,url"`
 }
 
@@ -211,15 +208,18 @@ func ParseEnv() (*Env, error) {
 			switch fe.Field() {
 			case "MIN_LOG_LEVEL":
 				errs += fmt.Sprintf("  Invalid MIN_LOG_LEVEL: '%v', valid values are 'DEBUG', 'INFO' or 'ERROR'\n", fe.Value())
+			case "BASE_URL":
+				errs += fmt.Sprintf("  Invalid BASE_URL: '%v' is not a valid URL\n", fe.Value())
 			case "DATABASE_URL":
 				errs += fmt.Sprintf("  Invalid DATABASE_URL: '%v' is not a valid PostgreSQL URL\n", fe.Value())
+			case "PUB_SUB_PROTOCOL":
+				errs += fmt.Sprintf("  Invalid PUB_SUB_PROTOCOL: '%v', valid values are 'rabbit', 'awssqs'\n", fe.Value())
 			case "ELASTICSEARCH_URL":
 				errs += fmt.Sprintf("  Invalid ELASTICSEARCH_URL: '%v' is not a valid URL\n", fe.Value())
 			}
 		}
 		return nil, errors.New(errs)
 	}
-	config.IsLambda = config.LambdaTaskRoot != ""
 	if config.MinLogLevel == "" {
 		config.MinLogLevel = "DEBUG"
 	}

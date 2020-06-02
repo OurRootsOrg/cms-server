@@ -4,6 +4,7 @@ import NProgress from "nprogress";
 import Home from "../views/Home.vue";
 import NotFound from "../views/NotFound.vue";
 import NetworkIssue from "../views/NetworkIssue.vue";
+import store from "../store";
 
 Vue.use(VueRouter);
 
@@ -47,6 +48,27 @@ const routes = [
     path: "/posts/create",
     name: "posts-create",
     component: () => import(/* webpackChunkName: "about" */ "../views/PostsCreate.vue")
+  },
+  {
+    path: "/posts/:pid",
+    name: "post-show",
+    component: () => import(/* webpackChunkName: "about" */ "../views/PostShow.vue"),
+    props: true,
+    beforeEnter(routeTo, routeFrom, next) {
+      store
+        .dispatch("postsGetOne", "/posts/" + routeTo.params.pid)
+        .then(post => {
+          routeTo.params.post = post;
+          next();
+        })
+        .catch(error => {
+          if (error.response && error.response.status === 404) {
+            next({ name: "404", params: { resource: "post" } });
+          } else {
+            next({ name: "network-issue" });
+          }
+        });
+    }
   },
   {
     path: "/users",

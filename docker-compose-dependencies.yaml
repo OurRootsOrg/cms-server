@@ -35,6 +35,36 @@ services:
     networks:
       - mynetwork_test
 
+  elasticsearch_test:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.7.0
+    ports:
+      - "19200:9200"
+    environment:
+      - discovery.type=single-node
+    command: ["sh", "-c", "./bin/elasticsearch-plugin install analysis-phonetic && /usr/local/bin/docker-entrypoint.sh"]
+    networks:
+      - mynetwork_test
+
+  publisher_test:
+    build:
+      context: .
+      dockerfile: Dockerfile.publisher
+    image: publisher
+    depends_on:
+      - postgres_test
+      - rabbitmq_test
+      - elasticsearch_test
+    environment:
+      - BASE_URL=http://localhost:8000
+      - DATABASE_URL=postgres://ourroots:password@postgres_test:5432/cms?sslmode=disable
+      - AWS_REGION=us-east-1
+      # this configures rabbitmq; to use SQS, set the protocol to awssqs and the host to sqs.us-east-1.amazonaws.com/<accountid>
+      - PUB_SUB_PROTOCOL=rabbit
+      - PUB_SUB_HOST=guest:guest@rabbitmq_test:5672
+      - ELASTICSEARCH_URL=http://elasticsearch_test:9200
+    networks:
+      - mynetwork_test
+
   recordswriter_test:
     build:
       context: .

@@ -11,8 +11,14 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"sync/atomic"
+	"time"
 	"unicode"
 	"unicode/utf8"
+
+	"github.com/cenkalti/backoff/v4"
+	"github.com/elastic/go-elasticsearch/v7"
+	"github.com/elastic/go-elasticsearch/v7/esutil"
 
 	"golang.org/x/text/runes"
 	"golang.org/x/text/transform"
@@ -187,6 +193,193 @@ type RangeAggRange struct {
 	To   int    `json:"to,omitempty'"`
 }
 
+func PingElasticsearch(es *elasticsearch.Client) error {
+	var r map[string]interface{}
+
+	res, err := es.Info()
+	if err != nil {
+		return err
+	}
+	defer res.Body.Close()
+	if res.IsError() {
+		return errors.New(res.String())
+	}
+	// Deserialize the response into a map.
+	if err := json.NewDecoder(res.Body).Decode(&r); err != nil {
+		return err
+	}
+	// Print client and server version numbers.
+	log.Printf("Client: %s", elasticsearch.Version)
+	log.Printf("Server: %s", r["version"].(map[string]interface{})["number"])
+	return nil
+}
+
+const numWorkers = 5
+
+// IndexPost
+func (api API) IndexPost(ctx context.Context, post *model.Post) error {
+	var countSuccessful uint64
+	retryBackoff := backoff.NewExponentialBackOff()
+
+	postID := post.ID[strings.LastIndex(post.ID, "/")+1:]
+	lastModified := strconv.FormatInt(time.Now().Unix()*1000, 10)
+
+	// read collection for post
+	collection, errs := api.GetCollection(ctx, post.Collection)
+	if errs != nil {
+		log.Printf("[ERROR] GetCollection %v\n", errs)
+		return errs
+	}
+	// read collection for post
+	category, errs := api.GetCategory(ctx, collection.Category)
+	if errs != nil {
+		log.Printf("[ERROR] GetCategory %v\n", errs)
+		return errs
+	}
+	// read records for post
+	records, errs := api.GetRecordsForPost(ctx, post.ID)
+	if errs != nil {
+		log.Printf("[ERROR] GetRecordsForPost %v\n", errs)
+		return errs
+	}
+
+	// create the client
+	es, err := elasticsearch.NewClient(elasticsearch.Config{
+		// Retry on 429 TooManyRequests statuses
+		RetryOnStatus: []int{502, 503, 504, 429},
+
+		// Configure the backoff function
+		RetryBackoff: func(i int) time.Duration {
+			if i == 1 {
+				retryBackoff.Reset()
+			}
+			return retryBackoff.NextBackOff()
+		},
+
+		// Retry up to 5 attempts
+		//
+		MaxRetries: 5,
+	})
+	if err != nil {
+		log.Printf("[ERROR] Error creating the client: %s", err)
+		return err
+	}
+
+	// create the bulk indexer
+	bi, err := esutil.NewBulkIndexer(esutil.BulkIndexerConfig{
+		Index:      "records",  // The default index name
+		Client:     es,         // The Elasticsearch client
+		NumWorkers: numWorkers, // The number of worker goroutines
+	})
+	if err != nil {
+		log.Printf("[ERROR] Error creating the bulk indexer: %s", err)
+		return err
+	}
+	biClosed := false
+	defer func() {
+		if !biClosed {
+			_ = bi.Close(ctx)
+		}
+	}()
+
+	for _, record := range records.Records {
+		m := map[string]string{}
+		for k, v := range record.Data {
+			m[k] = v
+		}
+		m["post"] = postID
+		m["collection"] = collection.Name
+		m["category"] = category.Name
+		m["lastModified"] = lastModified
+		data, err := json.Marshal(m)
+		if err != nil {
+			log.Printf("[ERROR] Cannot encode record %s: %v", record.ID, err)
+			return err
+		}
+
+		// Add an item to the BulkIndexer
+		err = bi.Add(
+			context.Background(),
+			esutil.BulkIndexerItem{
+				// Action field configures the operation to perform (index, create, delete, update)
+				Action: "index",
+
+				// DocumentID is the (optional) document ID
+				DocumentID: getElasticID(record.ID),
+
+				// Body is an `io.Reader` with the payload
+				Body: bytes.NewReader(data),
+
+				// OnSuccess is called for each successful operation
+				OnSuccess: func(ctx context.Context, item esutil.BulkIndexerItem, res esutil.BulkIndexerResponseItem) {
+					atomic.AddUint64(&countSuccessful, 1)
+				},
+
+				// OnFailure is called for each failed operation
+				OnFailure: func(ctx context.Context, item esutil.BulkIndexerItem, res esutil.BulkIndexerResponseItem, err error) {
+					if err != nil {
+						log.Printf("[ERROR]: %s", err)
+					} else {
+						log.Printf("[ERROR]: %s: %s", res.Error.Type, res.Error.Reason)
+					}
+				},
+			},
+		)
+		if err != nil {
+			log.Printf("[ERROR] Unexpected error %s: %v", record.ID, err)
+			return err
+		}
+	}
+
+	if err := bi.Close(ctx); err != nil {
+		log.Printf("[ERROR] Unexpected error %v\n", err)
+		return err
+	}
+	biClosed = true
+
+	biStats := bi.Stats()
+	if biStats.NumFailed > 0 {
+		msg := fmt.Sprintf("[ERROR] Failed to index %d records\n", biStats.NumFailed)
+		log.Printf(msg)
+		return errors.New(msg)
+	}
+
+	log.Printf("[INFO] Indexed %d records\n", biStats.NumFlushed)
+	return nil
+}
+
+func (api API) SearchByID(ctx context.Context, recordID string) (SearchResult, *model.Errors) {
+	res, err := api.es.Get("records", getElasticID(recordID),
+		api.es.Get.WithContext(ctx),
+	)
+	if err != nil {
+		log.Printf("[ERROR] SearchByID %v", err)
+		return nil, model.NewErrors(http.StatusInternalServerError, err)
+	}
+	defer res.Body.Close()
+
+	if res.IsError() {
+		var e map[string]interface{}
+		if err := json.NewDecoder(res.Body).Decode(&e); err != nil {
+			log.Printf("Error parsing the response body: %v", err)
+			return nil, model.NewErrors(http.StatusInternalServerError, err)
+		} else {
+			// Print the response status and error information.
+			msg := fmt.Sprintf("[%s] %#v\n", res.Status(), e)
+			log.Println(msg)
+			return nil, model.NewErrors(http.StatusInternalServerError, errors.New(msg))
+		}
+	}
+
+	var r map[string]interface{}
+	if err := json.NewDecoder(res.Body).Decode(&r); err != nil {
+		log.Printf("Error parsing the response body: %s\n", err)
+		return nil, model.NewErrors(http.StatusInternalServerError, err)
+	}
+
+	return r, nil
+}
+
 // Search
 func (api API) Search(ctx context.Context, req SearchRequest) (SearchResult, *model.Errors) {
 	search := constructSearchQuery(req)
@@ -231,6 +424,8 @@ func (api API) Search(ctx context.Context, req SearchRequest) (SearchResult, *mo
 		log.Printf("Error parsing the response body: %s\n", err)
 		return nil, model.NewErrors(http.StatusInternalServerError, err)
 	}
+
+	// TODO remove
 	// Print the response status, number of results, and request duration.
 	log.Printf(
 		"[%s] %d hits; took: %dms",
@@ -242,13 +437,13 @@ func (api API) Search(ctx context.Context, req SearchRequest) (SearchResult, *mo
 	for _, hit := range r["hits"].(map[string]interface{})["hits"].([]interface{}) {
 		log.Printf(" * ID=%s, %s", hit.(map[string]interface{})["_id"], hit.(map[string]interface{})["_source"])
 	}
-
-	log.Println(strings.Repeat("=", 37))
-
-	// TODO remove
 	r["query"] = search
 
 	return r, nil
+}
+
+func getElasticID(recordID string) string {
+	return recordID[strings.LastIndex(recordID, "/")+1:]
 }
 
 func constructSearchQuery(req SearchRequest) Search {

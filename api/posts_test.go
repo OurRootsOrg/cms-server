@@ -58,6 +58,7 @@ func TestPosts(t *testing.T) {
 	}
 	created, errors := testApi.AddPost(context.TODO(), in)
 	assert.Nil(t, errors)
+	defer deleteTestPost(p, created)
 	assert.Equal(t, in.Name, created.Name, "Expected Name to match")
 	assert.NotEmpty(t, created.ID)
 	assert.Equal(t, in.Collection, created.Collection)

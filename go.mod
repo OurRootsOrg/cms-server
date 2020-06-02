@@ -8,6 +8,7 @@ require (
 	github.com/aws/aws-lambda-go v1.16.0
 	github.com/aws/aws-sdk-go v1.19.45
 	github.com/awslabs/aws-lambda-go-api-proxy v0.6.0
+	github.com/cenkalti/backoff/v4 v4.0.2
 	github.com/codingconcepts/env v0.0.0-20190614135724-bb4545dff6a4
 	github.com/coreos/go-oidc v2.2.1+incompatible
 	github.com/elastic/go-elasticsearch/v7 v7.7.0

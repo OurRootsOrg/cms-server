@@ -124,7 +124,7 @@ func main() {
 	// parse environment
 	env, err := ParseEnv()
 	if err != nil {
-		log.Fatalf("[FATAL] Error parsing environmet variables: %v", err)
+		log.Fatalf("[FATAL] Error parsing environment variables: %v", err)
 	}
 
 	filter := &logutils.LevelFilter{
