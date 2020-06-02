@@ -17,28 +17,6 @@ import (
 
 const contentType = "application/json"
 
-type localAPI interface {
-	GetCategories(context.Context) (*api.CategoryResult, *model.Errors)
-	GetCategory(ctx context.Context, id string) (*model.Category, *model.Errors)
-	AddCategory(ctx context.Context, in model.CategoryIn) (*model.Category, *model.Errors)
-	UpdateCategory(ctx context.Context, id string, in model.Category) (*model.Category, *model.Errors)
-	DeleteCategory(ctx context.Context, id string) *model.Errors
-	GetCollections(ctx context.Context /* filter/search criteria */) (*api.CollectionResult, *model.Errors)
-	GetCollection(ctx context.Context, id string) (*model.Collection, *model.Errors)
-	AddCollection(ctx context.Context, in model.CollectionIn) (*model.Collection, *model.Errors)
-	UpdateCollection(ctx context.Context, id string, in model.Collection) (*model.Collection, *model.Errors)
-	DeleteCollection(ctx context.Context, id string) *model.Errors
-	GetPosts(ctx context.Context /* filter/search criteria */) (*api.PostResult, *model.Errors)
-	GetPost(ctx context.Context, id string) (*model.Post, *model.Errors)
-	AddPost(ctx context.Context, in model.PostIn) (*model.Post, *model.Errors)
-	UpdatePost(ctx context.Context, id string, in model.Post) (*model.Post, *model.Errors)
-	DeletePost(ctx context.Context, id string) *model.Errors
-	PostContentRequest(ctx context.Context, contentRequest api.ContentRequest) (*api.ContentResult, *model.Errors)
-	GetContent(ctx context.Context, key string) ([]byte, *model.Errors)
-	RetrieveUser(ctx context.Context, provider api.OIDCProvider, token *oidc.IDToken, rawToken string) (*model.User, *model.Errors)
-	GetRecordsForPost(ctx context.Context, postID string) (*api.RecordResult, *model.Errors)
-}
-
 // verifier allows use of a mock verifier for testing
 type verifier interface {
 	Verify(ctx context.Context, rawIDToken string) (*oidc.IDToken, error)
@@ -47,7 +25,7 @@ type verifier interface {
 // App is the container for the application
 type App struct {
 	baseURL      url.URL
-	api          localAPI
+	api          api.LocalAPI
 	oidcAudience string
 	oidcDomain   string
 	oidcProvider *oidc.Provider
@@ -70,7 +48,7 @@ func (app *App) BaseURL(url url.URL) *App {
 }
 
 // API sets the API object for the app
-func (app *App) API(api localAPI) *App {
+func (app *App) API(api api.LocalAPI) *App {
 	app.api = api
 	return app
 }

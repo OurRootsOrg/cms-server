@@ -11,4 +11,10 @@ docker_build('recordswriter', '.', dockerfile='Dockerfile.recordswriter',
     sync('.', '/cms'),
     run('go generate && go build -o server', trigger=''),
     restart_container()
+    ])
+docker_build('search', '.', dockerfile='Dockerfile.search',
+  live_update = [
+    sync('.', '/cms'),
+    run('go generate && go build -o search', trigger=''),
+    restart_container()
   ])

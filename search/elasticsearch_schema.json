@@ -1,0 +1,192 @@
+{
+  "settings": {
+    "number_of_shards" : 3,
+    "number_of_replicas" : 0,
+    "index": {
+      "analysis": {
+        "analyzer": {
+          "simple_folding": {
+            "tokenizer": "lowercase",
+            "filter": [
+              "asciifolding"
+            ]
+          },
+          "standard_folding": {
+            "tokenizer": "standard",
+            "filter": [
+              "lowercase",
+              "asciifolding"
+            ]
+          },
+          "refined_soundex": {
+            "tokenizer": "lowercase",
+            "filter": [
+              "asciifolding",
+              "refined_soundex_filter"
+            ]
+          },
+          "nysiis": {
+            "tokenizer": "lowercase",
+            "filter": [
+              "asciifolding",
+              "nysiis_filter"
+            ]
+          }
+        },
+        "filter": {
+          "refined_soundex_filter": {
+            "type": "phonetic",
+            "encoder": "refined_soundex"
+          },
+          "nysiis_filter": {
+            "type": "phonetic",
+            "encoder": "nysiis"
+          }
+        }
+      }
+    }
+  },
+  "mappings": {
+    "_source": {
+      "enabled": true
+    },
+    "dynamic": "strict",
+    "properties": {
+      "given": {
+        "type": "text",
+        "analyzer": "simple_folding",
+        "doc_values": false,
+        "index_options": "docs",
+        "norms": false,
+        "similarity": "boolean",
+        "fields": {
+          "narrow": {
+            "type": "text",
+            "analyzer": "nysiis",
+            "doc_values": false,
+            "index_options": "docs",
+            "norms": false,
+            "similarity": "boolean"
+          },
+          "broad": {
+            "type": "text",
+            "analyzer": "refined_soundex",
+            "doc_values": false,
+            "index_options": "docs",
+            "norms": false,
+            "similarity": "boolean"
+          }
+        }
+      },
+      "surname": {
+        "type": "text",
+        "analyzer": "simple_folding",
+        "doc_values": false,
+        "index_options": "docs",
+        "norms": false,
+        "similarity": "boolean",
+        "fields": {
+          "narrow": {
+            "type": "text",
+            "analyzer": "nysiis",
+            "doc_values": false,
+            "index_options": "docs",
+            "norms": false,
+            "similarity": "boolean"
+          },
+          "broad": {
+            "type": "text",
+            "analyzer": "refined_soundex",
+            "doc_values": false,
+            "index_options": "docs",
+            "norms": false,
+            "similarity": "boolean"
+          }
+        }
+      },
+      "birthDate": {
+        "type": "object",
+        "enabled": false
+      },
+      "birthDateStd": {
+        "type": "integer",
+        "doc_values": false,
+        "similarity": "boolean"
+      },
+      "birthYear": {
+        "type": "short",
+        "doc_values": false,
+        "similarity": "boolean"
+      },
+      "birthDecade": {
+        "type": "short",
+        "doc_values": true,
+        "similarity": "boolean"
+      },
+      "birthPlace": {
+        "type": "text",
+        "analyzer": "simple_folding",
+        "doc_values": false,
+        "index_options": "docs",
+        "norms": false,
+        "similarity": "boolean"
+      },
+      "birthPlace1": {
+        "type": "keyword",
+        "doc_values": true,
+        "index_options": "docs",
+        "norms": false,
+        "similarity": "boolean"
+      },
+      "birthPlace2": {
+        "type": "keyword",
+        "doc_values": true,
+        "index_options": "docs",
+        "norms": false,
+        "similarity": "boolean"
+      },
+      "birthPlace3": {
+        "type": "keyword",
+        "doc_values": true,
+        "index_options": "docs",
+        "norms": false,
+        "similarity": "boolean"
+      },
+      "birthPlace4": {
+        "type": "keyword",
+        "doc_values": true,
+        "index_options": "docs",
+        "norms": false,
+        "similarity": "boolean"
+      },
+      "category": {
+        "type": "keyword",
+        "doc_values": true,
+        "index_options": "docs",
+        "norms": false,
+        "similarity": "boolean"
+      },
+      "collection": {
+        "type": "keyword",
+        "doc_values": true,
+        "index_options": "docs",
+        "norms": false,
+        "similarity": "boolean"
+      },
+      "lastModified": {
+        "type": "date",
+        "doc_values": false,
+        "index_options": "docs",
+        "similarity": "boolean"
+      },
+      "keywords": {
+        "type": "text",
+        "analyzer": "standard_folding",
+        "doc_values": false,
+        "index_options": "docs",
+        "norms": false,
+        "similarity": "boolean"
+      }
+    }
+  }
+}

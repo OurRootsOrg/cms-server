@@ -10,12 +10,14 @@ require (
 	github.com/awslabs/aws-lambda-go-api-proxy v0.6.0
 	github.com/codingconcepts/env v0.0.0-20190614135724-bb4545dff6a4
 	github.com/coreos/go-oidc v2.2.1+incompatible
+	github.com/elastic/go-elasticsearch/v7 v7.7.0
 	github.com/go-openapi/spec v0.19.7 // indirect
 	github.com/go-openapi/swag v0.19.9 // indirect
 	github.com/go-playground/validator/v10 v10.2.0
 	github.com/golang/protobuf v1.4.0 // indirect
 	github.com/gorilla/handlers v1.4.2
 	github.com/gorilla/mux v1.7.4
+	github.com/gorilla/schema v1.1.0
 	github.com/hashicorp/golang-lru v0.5.4
 	github.com/hashicorp/logutils v1.0.0
 	github.com/lib/pq v1.2.0
@@ -32,6 +34,7 @@ require (
 	golang.org/x/net v0.0.0-20200501053045-e0ff5e5a1de5 // indirect
 	golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45
 	golang.org/x/sys v0.0.0-20200420163511-1957bb5e6d1f // indirect
+	golang.org/x/text v0.3.2
 	golang.org/x/tools v0.0.0-20200501205727-542909fd9944 // indirect
 	gopkg.in/square/go-jose.v2 v2.5.1 // indirect
 	gopkg.in/yaml.v2 v2.2.8 // indirect

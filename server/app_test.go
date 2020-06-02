@@ -60,15 +60,22 @@ func (a *apiMock) UpdatePost(ctx context.Context, id string, in model.Post) (*mo
 func (a *apiMock) DeletePost(ctx context.Context, id string) *model.Errors {
 	return a.errors
 }
+
 func (a *apiMock) PostContentRequest(ctx context.Context, contentRequest api.ContentRequest) (*api.ContentResult, *model.Errors) {
 	return a.result.(*api.ContentResult), a.errors
 }
 func (a *apiMock) GetContent(ctx context.Context, key string) ([]byte, *model.Errors) {
 	return a.result.([]byte), a.errors
 }
+
 func (a *apiMock) RetrieveUser(ctx context.Context, provider api.OIDCProvider, token *oidc.IDToken, rawToken string) (*model.User, *model.Errors) {
 	return a.result.(*model.User), a.errors
 }
+
 func (a *apiMock) GetRecordsForPost(ctx context.Context, postID string) (*api.RecordResult, *model.Errors) {
 	return a.result.(*api.RecordResult), a.errors
+}
+
+func (a *apiMock) Search(ctx context.Context, searchRequest api.SearchRequest) (api.SearchResult, *model.Errors) {
+	return a.result.(api.SearchResult), a.errors
 }
