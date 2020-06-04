@@ -12,11 +12,6 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/ourrootsorg/cms-server/persist"
-	"gocloud.dev/postgres"
-
-	"github.com/elastic/go-elasticsearch/v7"
-
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/awslabs/aws-lambda-go-api-proxy/gorillamux"
@@ -25,8 +20,10 @@ import (
 	"github.com/gorilla/handlers"
 	"github.com/hashicorp/logutils"
 	"github.com/ourrootsorg/cms-server/api"
+	"github.com/ourrootsorg/cms-server/persist"
 	"github.com/ourrootsorg/cms-server/server/docs"
 	httpSwagger "github.com/swaggo/http-swagger"
+	"gocloud.dev/postgres"
 )
 
 const (
@@ -51,13 +48,10 @@ func main() {
 	if err != nil {
 		log.Fatalf("Error calling NewAPI: %v", err)
 	}
-	app := NewApp().BaseURL(*env.BaseURL).API(ap)
-	if env.BaseURL.Scheme == "https" {
-		docs.SwaggerInfo.Schemes = []string{"https"}
-	} else {
-		docs.SwaggerInfo.Schemes = []string{"http"}
-	}
+	defer ap.Close()
+	ap = ap.ElasticsearchConfig(env.ElasticsearchURLString)
 
+	// postgres
 	log.Printf("Connecting to %s\n", env.DatabaseURL)
 	db, err := postgres.Open(context.TODO(), env.DatabaseURL)
 	if err != nil {
@@ -66,7 +60,6 @@ func main() {
 			env.DatabaseURL,
 		)
 	}
-
 	// ping the database to make sure we can connect
 	cnt := 0
 	err = errors.New("unknown error")
@@ -84,48 +77,18 @@ func main() {
 		)
 	}
 	log.Printf("Connected to %s\n", env.DatabaseURL)
-
 	p := persist.NewPostgresPersister(env.BaseURL.Path, db)
 	ap.
 		CategoryPersister(p).
 		CollectionPersister(p)
 	log.Print("[INFO] Using PostgresPersister")
 
-	// elasticsearch
-	log.Printf("Connecting to %s\n", env.ElasticsearchURLString)
-	es, err := elasticsearch.NewClient(elasticsearch.Config{
-		Addresses: []string{
-			env.ElasticsearchURLString,
-		},
-	})
-	if err != nil {
-		log.Fatalf("[FATAL] Error opening elasticsearch connection: %v\n  ELASTICSEARCH_URL: %s",
-			err,
-			env.ElasticsearchURLString,
-		)
+	app := NewApp().BaseURL(*env.BaseURL).API(ap)
+	if env.BaseURL.Scheme == "https" {
+		docs.SwaggerInfo.Schemes = []string{"https"}
+	} else {
+		docs.SwaggerInfo.Schemes = []string{"http"}
 	}
-	// ping elasticsearch to make sure we can connect
-	cnt = 0
-	err = errors.New("unknown error")
-	for err != nil && cnt <= 3 {
-		if cnt > 0 {
-			time.Sleep(time.Duration(math.Pow(2.0, float64(cnt))) * time.Second)
-		}
-		err = api.PingElasticsearch(es)
-		if err != nil {
-			log.Printf("Elasticsearch connection error %v", err)
-		}
-		cnt++
-	}
-	if err != nil {
-		log.Fatalf("[FATAL] Error connecting to elasticsearch: %v\n ELASTICSEARCH_URL: %s\n",
-			err,
-			env.ElasticsearchURLString,
-		)
-	}
-	log.Printf("Connected to %s\n", env.ElasticsearchURLString)
-	ap = ap.Elasticsearch(es)
-	log.Print("[INFO] Using Elasticsearch")
 
 	r := app.NewRouter()
 	docs.SwaggerInfo.Host = env.BaseURL.Hostname()

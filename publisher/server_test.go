@@ -7,8 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/elastic/go-elasticsearch/v7"
-
 	"github.com/ourrootsorg/cms-server/api"
 	"github.com/ourrootsorg/cms-server/model"
 	"github.com/ourrootsorg/cms-server/persist"
@@ -26,22 +24,16 @@ func TestPublisher(t *testing.T) {
 	db, err := postgres.Open(ctx, os.Getenv("DATABASE_URL"))
 	assert.NoError(t, err)
 	p := persist.NewPostgresPersister("", db)
-	es, err := elasticsearch.NewClient(elasticsearch.Config{
-		Addresses: []string{
-			"http://localhost:19200",
-		},
-	})
-	assert.NoError(t, err)
 	testApi, err := api.NewAPI()
 	assert.NoError(t, err)
 	defer testApi.Close()
 	testApi = testApi.
 		PubSubConfig("", "rabbit", "guest:guest@localhost:35672").
+		ElasticsearchConfig("http://localhost:19200").
 		CategoryPersister(p).
 		CollectionPersister(p).
 		PostPersister(p).
-		RecordPersister(p).
-		Elasticsearch(es)
+		RecordPersister(p)
 
 	// Add a test category and test collection and test post for referential integrity
 	testCategory, err := createTestCategory(p)

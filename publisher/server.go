@@ -14,7 +14,6 @@ import (
 	"time"
 
 	"github.com/codingconcepts/env"
-	"github.com/elastic/go-elasticsearch/v7"
 	"github.com/go-playground/validator/v10"
 	"github.com/hashicorp/logutils"
 	"github.com/ourrootsorg/cms-server/api"
@@ -78,7 +77,8 @@ func main() {
 	}
 	defer ap.Close()
 	ap = ap.
-		PubSubConfig(env.Region, env.PubSubProtocol, env.PubSubHost)
+		PubSubConfig(env.Region, env.PubSubProtocol, env.PubSubHost).
+		ElasticsearchConfig(env.ElasticsearchURLString)
 
 	// configure postgres
 	db, err := postgres.Open(ctx, env.DatabaseURL)
@@ -112,42 +112,6 @@ func main() {
 		PostPersister(p).
 		RecordPersister(p)
 	log.Print("[INFO] Using PostgresPersister")
-
-	// configure elasticsearch
-	log.Printf("Connecting to %s\n", env.ElasticsearchURLString)
-	es, err := elasticsearch.NewClient(elasticsearch.Config{
-		Addresses: []string{
-			env.ElasticsearchURLString,
-		},
-	})
-	if err != nil {
-		log.Fatalf("[FATAL] Error opening elasticsearch connection: %v\n  ELASTICSEARCH_URL: %s",
-			err,
-			env.ElasticsearchURLString,
-		)
-	}
-	// ping elasticsearch to make sure we can connect
-	cnt = 0
-	err = errors.New("unknown error")
-	for err != nil && cnt <= 3 {
-		if cnt > 0 {
-			time.Sleep(time.Duration(math.Pow(2.0, float64(cnt))) * time.Second)
-		}
-		err = api.PingElasticsearch(es)
-		if err != nil {
-			log.Printf("Elasticsearch connection error %v", err)
-		}
-		cnt++
-	}
-	if err != nil {
-		log.Fatalf("[FATAL] Error connecting to elasticsearch: %v\n ELASTICSEARCH_URL: %s\n",
-			err,
-			env.ElasticsearchURLString,
-		)
-	}
-	log.Printf("Connected to %s\n", env.ElasticsearchURLString)
-	ap = ap.Elasticsearch(es)
-	log.Print("[INFO] Using Elasticsearch")
 
 	// subscribe to publisher queue
 	sub, err := ap.OpenSubscription(ctx, "publisher")

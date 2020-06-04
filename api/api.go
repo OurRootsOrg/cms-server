@@ -2,8 +2,15 @@ package api
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
+	"log"
+	"math"
 	"reflect"
 	"strings"
+	"time"
+
+	"github.com/cenkalti/backoff/v4"
 
 	"github.com/coreos/go-oidc"
 	"github.com/streadway/amqp"
@@ -168,7 +175,67 @@ func (api *API) UserPersister(p model.UserPersister) *API {
 }
 
 // Elasticsearch sets the Elasticsearch client
-func (api *API) Elasticsearch(es *elasticsearch.Client) *API {
+func (api *API) ElasticsearchConfig(esURL string) *API {
+	retryBackoff := backoff.NewExponentialBackOff()
+
+	log.Printf("Connecting to %s\n", esURL)
+	es, err := elasticsearch.NewClient(elasticsearch.Config{
+		Addresses: []string{esURL},
+		// Retry on 429 TooManyRequests statuses
+		RetryOnStatus: []int{502, 503, 504, 429},
+		// Configure the backoff function
+		RetryBackoff: func(i int) time.Duration {
+			if i == 1 {
+				retryBackoff.Reset()
+			}
+			return retryBackoff.NextBackOff()
+		},
+		// Retry up to 5 attempts
+		MaxRetries: 5,
+	})
+	if err != nil {
+		log.Fatalf("[FATAL] Error opening elasticsearch connection: %v\n  ELASTICSEARCH_URL: %s", err, esURL)
+	}
+
+	// ping elasticsearch to make sure we can connect
+	cnt := 0
+	err = errors.New("unknown error")
+	for err != nil && cnt <= 3 {
+		if cnt > 0 {
+			time.Sleep(time.Duration(math.Pow(2.0, float64(cnt))) * time.Second)
+		}
+		err = pingElasticsearch(es)
+		if err != nil {
+			log.Printf("Elasticsearch connection error %v", err)
+		}
+		cnt++
+	}
+	if err != nil {
+		log.Fatalf("[FATAL] Error connecting to elasticsearch: %v\n ELASTICSEARCH_URL: %s\n", err, esURL)
+	}
+	log.Printf("Connected to elasticsearch %s\n", esURL)
+
 	api.es = es
 	return api
+}
+
+func pingElasticsearch(es *elasticsearch.Client) error {
+	var r map[string]interface{}
+
+	res, err := es.Info()
+	if err != nil {
+		return err
+	}
+	defer res.Body.Close()
+	if res.IsError() {
+		return errors.New(res.String())
+	}
+	// Deserialize the response into a map.
+	if err := json.NewDecoder(res.Body).Decode(&r); err != nil {
+		return err
+	}
+	// Print client and server version numbers.
+	log.Printf("[DEBUG] Elasticsearch client: %s", elasticsearch.Version)
+	log.Printf("[DEBUG] Elasticsearch server: %s", r["version"].(map[string]interface{})["number"])
+	return nil
 }
