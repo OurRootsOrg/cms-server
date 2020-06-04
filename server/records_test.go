@@ -14,15 +14,15 @@ import (
 )
 
 func TestGetRecordsForPost(t *testing.T) {
-	am := &apiMock{}
+	am := &api.ApiMock{}
 	app := NewApp().API(am)
 	app.authDisabled = true
 	r := app.NewRouter()
 
 	// Empty result
 	cr := api.RecordResult{}
-	am.result = &cr
-	am.errors = nil
+	am.Result = &cr
+	am.Errors = nil
 
 	request, _ := http.NewRequest("GET", "/records?post=/posts/1", nil)
 	response := httptest.NewRecorder()
@@ -51,8 +51,8 @@ func TestGetRecordsForPost(t *testing.T) {
 			},
 		},
 	}
-	am.result = &cr
-	am.errors = nil
+	am.Result = &cr
+	am.Errors = nil
 	request, _ = http.NewRequest("GET", "/records?post=/posts/1", nil)
 	response = httptest.NewRecorder()
 	r.ServeHTTP(response, request)
@@ -69,8 +69,8 @@ func TestGetRecordsForPost(t *testing.T) {
 	assert.Equal(t, cr.Records[0], ret.Records[0])
 
 	// error result
-	am.result = (*api.RecordResult)(nil)
-	am.errors = model.NewErrors(http.StatusInternalServerError, assert.AnError)
+	am.Result = (*api.RecordResult)(nil)
+	am.Errors = model.NewErrors(http.StatusInternalServerError, assert.AnError)
 	request, _ = http.NewRequest("GET", "/records?post=/posts/1", nil)
 	response = httptest.NewRecorder()
 	r.ServeHTTP(response, request)
@@ -85,7 +85,7 @@ func TestGetRecordsForPost(t *testing.T) {
 	}
 	assert.NotNil(t, errRet)
 	assert.Equal(t, 1, len(errRet))
-	assert.Equal(t, am.errors.Errs(), errRet)
+	assert.Equal(t, am.Errors.Errs(), errRet)
 }
 
 func makeRecordIn(t *testing.T) (model.RecordIn, *bytes.Buffer) {

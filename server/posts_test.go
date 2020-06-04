@@ -14,15 +14,15 @@ import (
 )
 
 func TestGetAllPosts(t *testing.T) {
-	am := &apiMock{}
+	am := &api.ApiMock{}
 	app := NewApp().API(am)
 	app.authDisabled = true
 	r := app.NewRouter()
 
 	// Empty result
 	cr := api.PostResult{}
-	am.result = &cr
-	am.errors = nil
+	am.Result = &cr
+	am.Errors = nil
 
 	request, _ := http.NewRequest("GET", "/posts", nil)
 	response := httptest.NewRecorder()
@@ -51,8 +51,8 @@ func TestGetAllPosts(t *testing.T) {
 			},
 		},
 	}
-	am.result = &cr
-	am.errors = nil
+	am.Result = &cr
+	am.Errors = nil
 	request, _ = http.NewRequest("GET", "/posts", nil)
 	response = httptest.NewRecorder()
 	r.ServeHTTP(response, request)
@@ -69,8 +69,8 @@ func TestGetAllPosts(t *testing.T) {
 	assert.Equal(t, cr.Posts[0], ret.Posts[0])
 
 	// error result
-	am.result = (*api.PostResult)(nil)
-	am.errors = model.NewErrors(http.StatusInternalServerError, assert.AnError)
+	am.Result = (*api.PostResult)(nil)
+	am.Errors = model.NewErrors(http.StatusInternalServerError, assert.AnError)
 	request, _ = http.NewRequest("GET", "/posts", nil)
 	response = httptest.NewRecorder()
 	r.ServeHTTP(response, request)
@@ -85,10 +85,10 @@ func TestGetAllPosts(t *testing.T) {
 	}
 	assert.NotNil(t, errRet)
 	assert.Equal(t, 1, len(errRet))
-	assert.Equal(t, am.errors.Errs(), errRet)
+	assert.Equal(t, am.Errors.Errs(), errRet)
 }
 func TestGetPost(t *testing.T) {
-	am := &apiMock{}
+	am := &api.ApiMock{}
 	app := NewApp().API(am)
 	app.authDisabled = true
 	r := app.NewRouter()
@@ -98,8 +98,8 @@ func TestGetPost(t *testing.T) {
 		ID:     "/posts/1",
 		PostIn: ci,
 	}
-	am.result = post
-	am.errors = nil
+	am.Result = post
+	am.Errors = nil
 	var ret model.Post
 
 	request, _ := http.NewRequest("GET", "/posts/1", nil)
@@ -113,8 +113,8 @@ func TestGetPost(t *testing.T) {
 	assert.Equal(t, *post, ret)
 
 	post = nil
-	am.result = post
-	am.errors = model.NewErrors(http.StatusNotFound, model.NewError(model.ErrNotFound, "/posts/1"))
+	am.Result = post
+	am.Errors = model.NewErrors(http.StatusNotFound, model.NewError(model.ErrNotFound, "/posts/1"))
 
 	request, _ = http.NewRequest("GET", "/posts/1", nil)
 	response = httptest.NewRecorder()
@@ -130,24 +130,24 @@ func TestGetPost(t *testing.T) {
 	}
 	assert.NotNil(t, errRet)
 	assert.Equal(t, 1, len(errRet))
-	assert.Equal(t, am.errors.Errs(), errRet)
+	assert.Equal(t, am.Errors.Errs(), errRet)
 }
 
 func TestPostPost(t *testing.T) {
-	am := &apiMock{}
+	am := &api.ApiMock{}
 	app := NewApp().API(am)
 	app.authDisabled = true
 	r := app.NewRouter()
 
 	in, buf := makePostIn(t)
 	now := time.Now().Truncate(0) // Truncate(0) truncates monotonic time
-	am.result = &model.Post{
+	am.Result = &model.Post{
 		ID:             "/posts/1",
 		PostIn:         in,
 		InsertTime:     now,
 		LastUpdateTime: now,
 	}
-	am.errors = nil
+	am.Errors = nil
 
 	request, _ := http.NewRequest("POST", "/posts", buf)
 	request.Header.Add("Content-Type", contentType)
@@ -172,7 +172,7 @@ func TestPostPost(t *testing.T) {
 }
 
 func TestPutPost(t *testing.T) {
-	am := &apiMock{}
+	am := &api.ApiMock{}
 	app := NewApp().API(am)
 	app.authDisabled = true
 	r := app.NewRouter()
@@ -185,8 +185,8 @@ func TestPutPost(t *testing.T) {
 		InsertTime:     now,
 		LastUpdateTime: now,
 	}
-	am.result = &post
-	am.errors = nil
+	am.Result = &post
+	am.Errors = nil
 
 	request, _ := http.NewRequest("PUT", "/posts/1", buf)
 	request.Header.Add("Content-Type", contentType)
@@ -211,13 +211,13 @@ func TestPutPost(t *testing.T) {
 }
 
 func TestDeletePost(t *testing.T) {
-	am := &apiMock{}
+	am := &api.ApiMock{}
 	app := NewApp().API(am)
 	app.authDisabled = true
 	r := app.NewRouter()
 
-	am.result = nil
-	am.errors = nil
+	am.Result = nil
+	am.Errors = nil
 
 	request, _ := http.NewRequest("DELETE", "/posts/1", nil)
 	response := httptest.NewRecorder()

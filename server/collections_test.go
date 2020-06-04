@@ -14,15 +14,15 @@ import (
 )
 
 func TestGetAllCollections(t *testing.T) {
-	am := &apiMock{}
+	am := &api.ApiMock{}
 	app := NewApp().API(am)
 	app.authDisabled = true
 	r := app.NewRouter()
 
 	// Empty result
 	cr := api.CollectionResult{}
-	am.result = &cr
-	am.errors = nil
+	am.Result = &cr
+	am.Errors = nil
 
 	request, _ := http.NewRequest("GET", "/collections", nil)
 	response := httptest.NewRecorder()
@@ -51,8 +51,8 @@ func TestGetAllCollections(t *testing.T) {
 			},
 		},
 	}
-	am.result = &cr
-	am.errors = nil
+	am.Result = &cr
+	am.Errors = nil
 	request, _ = http.NewRequest("GET", "/collections", nil)
 	response = httptest.NewRecorder()
 	r.ServeHTTP(response, request)
@@ -69,8 +69,8 @@ func TestGetAllCollections(t *testing.T) {
 	assert.Equal(t, cr.Collections[0], ret.Collections[0])
 
 	// error result
-	am.result = (*api.CollectionResult)(nil)
-	am.errors = model.NewErrors(http.StatusInternalServerError, assert.AnError)
+	am.Result = (*api.CollectionResult)(nil)
+	am.Errors = model.NewErrors(http.StatusInternalServerError, assert.AnError)
 	request, _ = http.NewRequest("GET", "/collections", nil)
 	response = httptest.NewRecorder()
 	r.ServeHTTP(response, request)
@@ -85,10 +85,10 @@ func TestGetAllCollections(t *testing.T) {
 	}
 	assert.NotNil(t, errRet)
 	assert.Equal(t, 1, len(errRet))
-	assert.Equal(t, am.errors.Errs(), errRet)
+	assert.Equal(t, am.Errors.Errs(), errRet)
 }
 func TestGetCollection(t *testing.T) {
-	am := &apiMock{}
+	am := &api.ApiMock{}
 	app := NewApp().API(am)
 	app.authDisabled = true
 	r := app.NewRouter()
@@ -98,8 +98,8 @@ func TestGetCollection(t *testing.T) {
 		ID:           "/collections/1",
 		CollectionIn: ci,
 	}
-	am.result = collection
-	am.errors = nil
+	am.Result = collection
+	am.Errors = nil
 	var ret model.Collection
 
 	request, _ := http.NewRequest("GET", "/collections/1", nil)
@@ -113,8 +113,8 @@ func TestGetCollection(t *testing.T) {
 	assert.Equal(t, *collection, ret)
 
 	collection = nil
-	am.result = collection
-	am.errors = model.NewErrors(http.StatusNotFound, model.NewError(model.ErrNotFound, "/collections/1"))
+	am.Result = collection
+	am.Errors = model.NewErrors(http.StatusNotFound, model.NewError(model.ErrNotFound, "/collections/1"))
 
 	request, _ = http.NewRequest("GET", "/collections/1", nil)
 	response = httptest.NewRecorder()
@@ -130,24 +130,24 @@ func TestGetCollection(t *testing.T) {
 	}
 	assert.NotNil(t, errRet)
 	assert.Equal(t, 1, len(errRet))
-	assert.Equal(t, am.errors.Errs(), errRet)
+	assert.Equal(t, am.Errors.Errs(), errRet)
 }
 
 func TestPostCollection(t *testing.T) {
-	am := &apiMock{}
+	am := &api.ApiMock{}
 	app := NewApp().API(am)
 	app.authDisabled = true
 	r := app.NewRouter()
 
 	in, buf := makeCollectionIn(t)
 	now := time.Now().Truncate(0) // Truncate(0) truncates monotonic time
-	am.result = &model.Collection{
+	am.Result = &model.Collection{
 		ID:             "/collections/1",
 		CollectionIn:   in,
 		InsertTime:     now,
 		LastUpdateTime: now,
 	}
-	am.errors = nil
+	am.Errors = nil
 
 	request, _ := http.NewRequest("POST", "/collections", buf)
 	request.Header.Add("Content-Type", contentType)
@@ -172,7 +172,7 @@ func TestPostCollection(t *testing.T) {
 }
 
 func TestPutCollection(t *testing.T) {
-	am := &apiMock{}
+	am := &api.ApiMock{}
 	app := NewApp().API(am)
 	app.authDisabled = true
 	r := app.NewRouter()
@@ -185,8 +185,8 @@ func TestPutCollection(t *testing.T) {
 		InsertTime:     now,
 		LastUpdateTime: now,
 	}
-	am.result = &coll
-	am.errors = nil
+	am.Result = &coll
+	am.Errors = nil
 
 	request, _ := http.NewRequest("PUT", "/collections/1", buf)
 	request.Header.Add("Content-Type", contentType)
@@ -211,13 +211,13 @@ func TestPutCollection(t *testing.T) {
 }
 
 func TestDeleteCollection(t *testing.T) {
-	am := &apiMock{}
+	am := &api.ApiMock{}
 	app := NewApp().API(am)
 	app.authDisabled = true
 	r := app.NewRouter()
 
-	am.result = nil
-	am.errors = nil
+	am.Result = nil
+	am.Errors = nil
 
 	request, _ := http.NewRequest("DELETE", "/collections/1", nil)
 	response := httptest.NewRecorder()

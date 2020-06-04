@@ -26,7 +26,7 @@ func (m *mockVerifier) Verify(ctx context.Context, rawIDToken string) (*oidc.IDT
 }
 
 func TestAuth(t *testing.T) {
-	am := &apiMock{}
+	am := &api.ApiMock{}
 	app := NewApp().API(am)
 	m := mockVerifier{}
 	app.oidcVerifier = &m
@@ -73,8 +73,8 @@ func TestAuth(t *testing.T) {
 
 	// "Good" token
 	expectedUser := model.User{}
-	am.result = &expectedUser
-	am.errors = nil
+	am.Result = &expectedUser
+	am.Errors = nil
 
 	parsedToken := oidc.IDToken{}
 	m.On("Verify", mock.Anything, "Abc").Once().Return(&parsedToken, nil)
