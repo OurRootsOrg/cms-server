@@ -13,6 +13,7 @@
     "core-js": "^3.6.4",
     "flatfile-csv-importer": "^0.2.9",
     "nprogress": "^0.2.0",
+    "tabulator-tables": "^4.6.3",
     "vue": "^2.6.11",
     "vue-router": "^3.1.6",
     "vuelidate": "^0.7.5",

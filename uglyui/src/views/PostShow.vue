@@ -2,29 +2,45 @@
   <div class="posts-show">
     <h1>Show Post</h1>
     <p>
-      <strong>{{ post.name }}</strong>
+      <strong>{{ posts.post.name }}</strong>
     </p>
-    <p>Status: {{ post.recordsStatus }}</p>
+    <p>Status: {{ posts.post.recordsStatus }}</p>
     <BaseButton
-      v-if="post.recordsStatus === 'Draft'"
+      v-if="posts.post.recordsStatus === 'Draft'"
       v-on:click="publish"
       class="submit-button"
       buttonClass="-fill-gradient"
       >Publish</BaseButton
     >
+    <Tabulator :data="records.recordsList.map(r => r.data)" :columns="columns" />
   </div>
 </template>
 
 <script>
 import NProgress from "nprogress";
+import Tabulator from "../components/Tabulator";
+import { mapState } from "vuex";
+import store from "@/store";
 
 export default {
-  props: {
-    post: {
-      type: Object,
-      required: true
-    }
+  components: { Tabulator },
+  data() {
+    return {
+      columns: [
+        { title: "Given", field: "given" },
+        { title: "Surname", field: "surname" }
+      ]
+    };
   },
+  beforeRouteEnter(routeTo, routeFrom, next) {
+    Promise.all([
+      store.dispatch("postsGetOne", "/posts/" + routeTo.params.pid),
+      store.dispatch("recordsGetForPost", "/posts/" + routeTo.params.pid)
+    ]).then(() => {
+      next();
+    });
+  },
+  computed: mapState(["posts", "records"]),
   methods: {
     publish() {
       this.post.recordsStatus = "Published";

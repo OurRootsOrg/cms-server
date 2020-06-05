@@ -11,6 +11,16 @@ const apiClient = axios.create({
   timeout: 10000
 });
 
+const searchClient = axios.create({
+  baseURL: `http://localhost:8001`,
+  withCredentials: false, // This is the default
+  headers: {
+    Accept: "application/json",
+    "Content-Type": "application/json"
+  },
+  timeout: 10000
+});
+
 export default {
   categoriesCreate(category) {
     return getInstance()
@@ -123,5 +133,23 @@ export default {
           }
         });
       });
+  },
+  recordsGetForPost(postId) {
+    return getInstance()
+      .getTokenSilently()
+      .then(token => {
+        return apiClient.get("/records", {
+          params: { post: postId },
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+      });
+  },
+  search(query) {
+    console.log("!!!search", query);
+    return searchClient.get("/search", {
+      params: query
+    });
   }
 };
