@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"fmt"
 
+	"github.com/lib/pq"
+
 	"github.com/ourrootsorg/cms-server/model"
 )
 
@@ -18,6 +20,43 @@ func (p PostgresPersister) SelectCollections(ctx context.Context) ([]model.Colle
 	}
 	defer rows.Close()
 	collections := make([]model.Collection, 0)
+	for rows.Next() {
+		var dbID int32
+		var categoryID int32
+		var collection model.Collection
+		err := rows.Scan(&dbID, &categoryID, &collection.CollectionBody, &collection.InsertTime, &collection.LastUpdateTime)
+		if err != nil {
+			return nil, translateError(err)
+		}
+		collection.ID = model.MakeCollectionID(dbID)
+		collection.Category = model.MakeCategoryID(categoryID)
+		collections = append(collections, collection)
+	}
+	return collections, nil
+}
+
+// SelectManyCollections selects many collections
+func (p PostgresPersister) SelectManyCollections(ctx context.Context, ids []string) ([]model.Collection, error) {
+	collections := make([]model.Collection, 0)
+	if len(ids) == 0 {
+		return collections, nil
+	}
+	var dbIDs []int32
+	for _, id := range ids {
+		var dbID int32
+		n, err := fmt.Sscanf(id+"\n", p.pathPrefix+model.CollectionIDFormat+"\n", &dbID)
+		if err != nil || n != 1 {
+			// Bad ID
+			return nil, model.NewError(model.ErrBadReference, id, "collection")
+		}
+		dbIDs = append(dbIDs, dbID)
+	}
+
+	rows, err := p.db.QueryContext(ctx, "SELECT id, category_id, body, insert_time, last_update_time FROM collection WHERE id = ANY($1)", pq.Array(dbIDs))
+	if err != nil {
+		return nil, translateError(err)
+	}
+	defer rows.Close()
 	for rows.Next() {
 		var dbID int32
 		var categoryID int32

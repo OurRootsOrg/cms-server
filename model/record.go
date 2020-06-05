@@ -15,6 +15,7 @@ const RecordIDFormat = "/records/%d"
 // RecordPersister defines methods needed to persist records
 type RecordPersister interface {
 	SelectRecordsForPost(ctx context.Context, postID string) ([]Record, error)
+	SelectManyRecords(ctx context.Context, ids []string) ([]Record, error)
 	SelectOneRecord(ctx context.Context, id string) (Record, error)
 	InsertRecord(ctx context.Context, in RecordIn) (Record, error)
 	UpdateRecord(ctx context.Context, id string, in Record) (Record, error)

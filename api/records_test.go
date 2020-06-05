@@ -77,6 +77,12 @@ func TestRecords(t *testing.T) {
 	assert.Equal(t, 1, len(ret.Records))
 	assert.Equal(t, *created, ret.Records[0])
 
+	// GET many records should now return the created Record
+	records, errors := testApi.GetManyRecords(context.TODO(), []string{created.ID})
+	assert.Nil(t, errors)
+	assert.Equal(t, 1, len(records))
+	assert.Equal(t, *created, records[0])
+
 	// GET /records/{id} should now return the created Record
 	ret2, errors := testApi.GetRecord(context.TODO(), created.ID)
 	assert.Nil(t, errors)

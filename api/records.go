@@ -15,7 +15,7 @@ type RecordResult struct {
 	NextPage string         `json:"next_page"`
 }
 
-// GetRecords holds the business logic around getting many Records
+// GetRecords holds the business logic around getting all Records for a post
 func (api API) GetRecordsForPost(ctx context.Context, postID string) (*RecordResult, *model.Errors) {
 	// TODO: handle search criteria and paged results
 	records, err := api.recordPersister.SelectRecordsForPost(ctx, postID)
@@ -23,6 +23,15 @@ func (api API) GetRecordsForPost(ctx context.Context, postID string) (*RecordRes
 		return nil, model.NewErrors(http.StatusInternalServerError, err)
 	}
 	return &RecordResult{Records: records}, nil
+}
+
+// GetManyRecords holds the business logic around getting many Records
+func (api API) GetManyRecords(ctx context.Context, ids []string) ([]model.Record, *model.Errors) {
+	records, err := api.recordPersister.SelectManyRecords(ctx, ids)
+	if err != nil {
+		return nil, model.NewErrors(http.StatusInternalServerError, err)
+	}
+	return records, nil
 }
 
 // GetRecord holds the business logic around getting a Record

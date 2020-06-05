@@ -15,7 +15,7 @@ type CollectionResult struct {
 	NextPage    string             `json:"next_page"`
 }
 
-// GetCollections holds the business logic around getting many Collections
+// GetCollections holds the business logic around getting all Collections
 func (api API) GetCollections(ctx context.Context /* filter/search criteria */) (*CollectionResult, *model.Errors) {
 	// TODO: handle search criteria and paged results
 	cols, err := api.collectionPersister.SelectCollections(ctx)
@@ -23,6 +23,15 @@ func (api API) GetCollections(ctx context.Context /* filter/search criteria */) 
 		return nil, model.NewErrors(http.StatusInternalServerError, err)
 	}
 	return &CollectionResult{Collections: cols}, nil
+}
+
+// GetManyCollections holds the business logic around getting many Collections
+func (api API) GetManyCollections(ctx context.Context, ids []string) ([]model.Collection, *model.Errors) {
+	colls, err := api.collectionPersister.SelectManyCollections(ctx, ids)
+	if err != nil {
+		return nil, model.NewErrors(http.StatusInternalServerError, err)
+	}
+	return colls, nil
 }
 
 // GetCollection holds the business logic around getting a Collection

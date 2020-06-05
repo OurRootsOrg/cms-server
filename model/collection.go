@@ -16,6 +16,7 @@ const CollectionIDFormat = "/collections/%d"
 // CollectionPersister defines methods needed to persist categories
 type CollectionPersister interface {
 	SelectCollections(ctx context.Context) ([]Collection, error)
+	SelectManyCollections(ctx context.Context, ids []string) ([]Collection, error)
 	SelectOneCollection(ctx context.Context, id string) (Collection, error)
 	InsertCollection(ctx context.Context, in CollectionIn) (Collection, error)
 	UpdateCollection(ctx context.Context, id string, in Collection) (Collection, error)

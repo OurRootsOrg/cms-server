@@ -5,10 +5,11 @@ import (
 	"database/sql"
 	"fmt"
 
+	"github.com/lib/pq"
 	"github.com/ourrootsorg/cms-server/model"
 )
 
-// SelectRecords selects all records
+// SelectRecordsForPost selects all records for a post
 func (p PostgresPersister) SelectRecordsForPost(ctx context.Context, postID string) ([]model.Record, error) {
 	var dbID int32
 	n, err := fmt.Sscanf(postID+"\n", p.pathPrefix+model.PostIDFormat+"\n", &dbID)
@@ -22,6 +23,43 @@ func (p PostgresPersister) SelectRecordsForPost(ctx context.Context, postID stri
 	}
 	defer rows.Close()
 	records := make([]model.Record, 0)
+	for rows.Next() {
+		var dbID int32
+		var postID int32
+		var record model.Record
+		err := rows.Scan(&dbID, &postID, &record.RecordBody, &record.IxHash, &record.InsertTime, &record.LastUpdateTime)
+		if err != nil {
+			return nil, translateError(err)
+		}
+		record.ID = model.MakeRecordID(dbID)
+		record.Post = model.MakePostID(postID)
+		records = append(records, record)
+	}
+	return records, nil
+}
+
+// SelectManyRecords selects many records
+func (p PostgresPersister) SelectManyRecords(ctx context.Context, ids []string) ([]model.Record, error) {
+	records := make([]model.Record, 0)
+	if len(ids) == 0 {
+		return records, nil
+	}
+	var dbIDs []int32
+	for _, id := range ids {
+		var dbID int32
+		n, err := fmt.Sscanf(id+"\n", p.pathPrefix+model.RecordIDFormat+"\n", &dbID)
+		if err != nil || n != 1 {
+			// Bad ID
+			return nil, model.NewError(model.ErrBadReference, id, "record")
+		}
+		dbIDs = append(dbIDs, dbID)
+	}
+
+	rows, err := p.db.QueryContext(ctx, "SELECT id, post_id, body, ix_hash, insert_time, last_update_time FROM record WHERE id = ANY($1)", pq.Array(dbIDs))
+	if err != nil {
+		return nil, translateError(err)
+	}
+	defer rows.Close()
 	for rows.Next() {
 		var dbID int32
 		var postID int32
