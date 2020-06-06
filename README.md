@@ -50,6 +50,7 @@ tilt up                         # run the server and dependencies
 cd db && ./db_setup.sh && cd ..   # do this once to set up the database
                                   # make sure you have psql (postgres client) available on your path
 open http://localhost:9000      # launch the minio browser and create a bucket named "cmsbucket" -- do this once
+cd elasticsearch && ./es_setup.sh && cd ..   # do this once to set up elasticsearch
 tilt down && tilt up            # do this once after you've set up the database to restart the server
                                   # alternatively, run docker-compose down && docker-compose up --build
 cd ../uglyui                    # the directory for the uglyui client
