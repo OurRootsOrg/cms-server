@@ -129,8 +129,6 @@ type SearchRequest struct {
 	Collection      string `schema:"collection"`
 }
 
-type SearchResult map[string]interface{}
-
 type Search struct {
 	Query  Query          `json:"query,omitempty"`
 	Aggs   map[string]Agg `json:"aggs,omitempty"`
@@ -197,7 +195,7 @@ const numWorkers = 5
 func (api API) IndexPost(ctx context.Context, post *model.Post) error {
 	var countSuccessful uint64
 
-	postID := post.ID[strings.LastIndex(post.ID, "/")+1:]
+	postID := justID(post.ID)
 	lastModified := strconv.FormatInt(time.Now().Unix()*1000, 10)
 
 	// read collection for post
@@ -237,12 +235,18 @@ func (api API) IndexPost(ctx context.Context, post *model.Post) error {
 	}()
 
 	for _, record := range records.Records {
-		m := map[string]string{}
+		m := map[string]interface{}{}
 		for k, v := range record.Data {
 			m[k] = v
 		}
+		collectionID, err := strconv.Atoi(justID(collection.ID))
+		if err != nil {
+			log.Printf("[ERROR] Error parsing collection id %s\n", collection.ID)
+			return err
+		}
 		m["post"] = postID
 		m["collection"] = collection.Name
+		m["collectionId"] = collectionID
 		m["category"] = category.Name
 		m["lastModified"] = lastModified
 		data, err := json.Marshal(m)
@@ -258,8 +262,8 @@ func (api API) IndexPost(ctx context.Context, post *model.Post) error {
 				// Action field configures the operation to perform (index, create, delete, update)
 				Action: "index",
 
-				// DocumentID is the (optional) document ID
-				DocumentID: getElasticID(record.ID),
+				// TODO deal with multiple roles in a record
+				DocumentID: justID(record.ID),
 
 				// Body is an `io.Reader` with the payload
 				Body: bytes.NewReader(data),
@@ -302,8 +306,8 @@ func (api API) IndexPost(ctx context.Context, post *model.Post) error {
 	return nil
 }
 
-func (api API) SearchByID(ctx context.Context, recordID string) (SearchResult, *model.Errors) {
-	res, err := api.es.Get("records", getElasticID(recordID),
+func (api API) SearchByID(ctx context.Context, id string) (*model.SearchHit, *model.Errors) {
+	res, err := api.es.Get("records", justID(id),
 		api.es.Get.WithContext(ctx),
 	)
 	if err != nil {
@@ -325,17 +329,56 @@ func (api API) SearchByID(ctx context.Context, recordID string) (SearchResult, *
 		}
 	}
 
+	// get hit data
 	var r map[string]interface{}
 	if err := json.NewDecoder(res.Body).Decode(&r); err != nil {
 		log.Printf("Error parsing the response body: %s\n", err)
 		return nil, model.NewErrors(http.StatusInternalServerError, err)
 	}
+	if !r["found"].(bool) {
+		msg := fmt.Sprintf("Record ID %s not found\n", id)
+		return nil, model.NewErrors(http.StatusNotFound, errors.New(msg))
+	}
+	hitData, err := getHitData(r)
+	if err != nil {
+		return nil, model.NewErrors(http.StatusInternalServerError, err)
+	}
 
-	return r, nil
+	// read record and collection
+	record, errs := api.GetRecord(ctx, hitData.RecordID)
+	if errs != nil {
+		log.Printf("[WARN] record not found %s\n", hitData.RecordID)
+		return nil, errs
+	}
+	collection, errs := api.GetCollection(ctx, hitData.CollectionID)
+	if errs != nil {
+		log.Printf("[WARN] collection not found %s\n", hitData.CollectionID)
+		return nil, errs
+	}
+
+	return &model.SearchHit{
+		ID:             model.MakeSearchID(hitData.ID),
+		Person:         constructSearchPerson(hitData.Role, record),
+		Record:         constructSearchRecord(record),
+		CollectionName: collection.Name,
+		CollectionID:   collection.ID,
+	}, nil
+}
+
+func (api API) SearchDeleteByID(ctx context.Context, id string) *model.Errors {
+	res, err := api.es.Delete("records", justID(id),
+		api.es.Delete.WithContext(ctx),
+	)
+	if err != nil {
+		log.Printf("[ERROR] DeleteByID %v", err)
+		return model.NewErrors(http.StatusInternalServerError, err)
+	}
+	defer res.Body.Close()
+	return nil
 }
 
 // Search
-func (api API) Search(ctx context.Context, req SearchRequest) (SearchResult, *model.Errors) {
+func (api API) Search(ctx context.Context, req *SearchRequest) (*model.SearchResult, *model.Errors) {
 	search := constructSearchQuery(req)
 
 	var buf bytes.Buffer
@@ -344,6 +387,7 @@ func (api API) Search(ctx context.Context, req SearchRequest) (SearchResult, *mo
 		return nil, model.NewErrors(http.StatusInternalServerError, err)
 	}
 	log.Printf("[DEBUG] Request=%v Query=%s\n", req, string(buf.Bytes()))
+
 	res, err := api.es.Search(
 		api.es.Search.WithContext(ctx),
 		api.es.Search.WithIndex("records"),
@@ -373,32 +417,95 @@ func (api API) Search(ctx context.Context, req SearchRequest) (SearchResult, *mo
 		}
 	}
 
+	// get hit datas
 	var r map[string]interface{}
 	if err := json.NewDecoder(res.Body).Decode(&r); err != nil {
 		log.Printf("Error parsing the response body: %s\n", err)
 		return nil, model.NewErrors(http.StatusInternalServerError, err)
 	}
+	total := int(r["hits"].(map[string]interface{})["total"].(map[string]interface{})["value"].(float64))
+	var hitDatas []HitData
+	var recordIDs []string
+	var collectionIDs []string
+	for _, hit := range r["hits"].(map[string]interface{})["hits"].([]interface{}) {
+		hitData, err := getHitData(hit.(map[string]interface{}))
+		if err != nil {
+			return nil, model.NewErrors(http.StatusInternalServerError, err)
+		}
+		hitDatas = append(hitDatas, *hitData)
+		recordIDs = append(recordIDs, hitData.RecordID)
+		found := false
+		for _, id := range collectionIDs {
+			if hitData.CollectionID == id {
+				found = true
+				break
+			}
+		}
+		if !found {
+			collectionIDs = append(collectionIDs, hitData.CollectionID)
+		}
+	}
 
-	// Print the response status, number of results, and request duration.
-	//log.Printf(
-	//	"[%s] %d hits; took: %dms",
-	//	res.Status(),
-	//	int(r["hits"].(map[string]interface{})["total"].(map[string]interface{})["value"].(float64)),
-	//	int(r["took"].(float64)),
-	//)
-	//// Print the ID and document source for each hit.
-	//for _, hit := range r["hits"].(map[string]interface{})["hits"].([]interface{}) {
-	//	log.Printf(" * ID=%s, %s", hit.(map[string]interface{})["_id"], hit.(map[string]interface{})["_source"])
-	//}
+	// read records and collections
+	records, errs := api.GetManyRecords(ctx, recordIDs)
+	if errs != nil {
+		return nil, errs
+	}
+	collections, errs := api.GetManyCollections(ctx, collectionIDs)
+	if errs != nil {
+		return nil, errs
+	}
 
-	return r, nil
+	// construct search hits
+	hits := []model.SearchHit{}
+	for _, hitData := range hitDatas {
+		// get record
+		var record model.Record
+		found := false
+		for _, item := range records {
+			if item.ID == hitData.RecordID {
+				found = true
+				record = item
+				break
+			}
+		}
+		if !found {
+			msg := fmt.Sprintf("[WARN] record %s not found\n", hitData.RecordID)
+			return nil, model.NewErrors(http.StatusInternalServerError, errors.New(msg))
+		}
+
+		// gte collection
+		var collection model.Collection
+		found = false
+		for _, item := range collections {
+			if item.ID == hitData.CollectionID {
+				found = true
+				collection = item
+				break
+			}
+		}
+		if !found {
+			msg := fmt.Sprintf("[WARN] collection %s not found\n", hitData.CollectionID)
+			return nil, model.NewErrors(http.StatusInternalServerError, errors.New(msg))
+		}
+
+		// construct search hit
+		hits = append(hits, model.SearchHit{
+			ID:     model.MakeSearchID(hitData.ID),
+			Person: constructSearchPerson(hitData.Role, &record),
+			//Record:         constructSearchRecord(&record), // only return record in search by id
+			CollectionName: collection.Name,
+			CollectionID:   collection.ID,
+		})
+	}
+
+	return &model.SearchResult{
+		Total: total,
+		Hits:  hits,
+	}, nil
 }
 
-func getElasticID(recordID string) string {
-	return recordID[strings.LastIndex(recordID, "/")+1:]
-}
-
-func constructSearchQuery(req SearchRequest) Search {
+func constructSearchQuery(req *SearchRequest) *Search {
 	mustQueries := []Query{}
 	shouldQueries := []Query{}
 	filterQueries := []Query{}
@@ -511,7 +618,7 @@ func constructSearchQuery(req SearchRequest) Search {
 	addCenturyAgg(aggs, "otherCentury", "otherDecade", req.OtherCenturyFacet)
 	addTermsAgg(aggs, "otherDecade", len(req.OtherCentury) > 0 && req.OtherDecadeFacet)
 
-	return Search{
+	return &Search{
 		Query: Query{
 			Bool: &BoolQuery{
 				Must:   mustQueries,
@@ -519,8 +626,7 @@ func constructSearchQuery(req SearchRequest) Search {
 				Filter: filterQueries,
 			},
 		},
-		Aggs:   aggs,
-		Source: []string{"given", "surname", "birthDate", "birthPlace", "category", "collection", "lastMod", "keywords"},
+		Aggs: aggs,
 	}
 }
 
@@ -943,4 +1049,59 @@ func asciifold(s string) (string, error) {
 		result = s // return as-is
 	}
 	return result, err
+}
+
+type HitData struct {
+	ID           string
+	RecordID     string
+	Role         string
+	CollectionID string
+}
+
+var idRoleMap = map[string]string{
+	"f": "Father",
+	"m": "Mother",
+	"s": "Spouse",
+	"o": "Other",
+}
+
+func getHitData(r map[string]interface{}) (*HitData, error) {
+	id := r["_id"].(string)
+	idParts := strings.Split(id, "_")
+	role := "Principal"
+	if len(idParts) > 1 {
+		role = idRoleMap[idParts[1]]
+	}
+	rid, err := strconv.Atoi(idParts[0])
+	if err != nil {
+		return nil, err
+	}
+	if r["_source"] == nil || r["_source"].(map[string]interface{})["collectionId"] == nil {
+		msg := fmt.Sprintf("Missing collectionID %#v\n", r)
+		log.Printf("[ERROR] %s\n", msg)
+		return nil, errors.New(msg)
+	}
+
+	return &HitData{
+		ID:           id,
+		RecordID:     model.MakeRecordID(int32(rid)),
+		Role:         role,
+		CollectionID: model.MakeCollectionID(int32(r["_source"].(map[string]interface{})["collectionId"].(float64))),
+	}, nil
+}
+
+func constructSearchPerson(role string, record *model.Record) model.SearchPerson {
+	// TODO lots more to do here with roles
+	return model.SearchPerson{
+		Name: fmt.Sprintf("%s %s", record.Data["given"], record.Data["surname"]),
+		Role: role,
+	}
+}
+
+func constructSearchRecord(record *model.Record) map[string]string {
+	return record.Data
+}
+
+func justID(id string) string {
+	return id[strings.LastIndex(id, "/")+1:]
 }

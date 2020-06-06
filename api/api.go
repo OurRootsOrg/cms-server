@@ -51,7 +51,9 @@ type LocalAPI interface {
 	GetContent(ctx context.Context, key string) ([]byte, *model.Errors)
 	RetrieveUser(ctx context.Context, provider OIDCProvider, token *oidc.IDToken, rawToken string) (*model.User, *model.Errors)
 	GetRecordsForPost(ctx context.Context, postID string) (*RecordResult, *model.Errors)
-	Search(ctx context.Context, req SearchRequest) (SearchResult, *model.Errors)
+	Search(ctx context.Context, req *SearchRequest) (*model.SearchResult, *model.Errors)
+	SearchByID(ctx context.Context, id string) (*model.SearchHit, *model.Errors)
+	SearchDeleteByID(ctx context.Context, id string) *model.Errors
 }
 
 // API is the container for the apilication

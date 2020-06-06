@@ -31,7 +31,6 @@ export default {
   methods: {
     go() {
       NProgress.start();
-      console.log("!!!search query=", this.query);
       this.$store
         .dispatch("search", {
           given: this.query.given,

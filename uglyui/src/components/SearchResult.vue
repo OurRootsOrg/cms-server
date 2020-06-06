@@ -1,8 +1,8 @@
 <template>
   <div class="result">
-    <div>Given: {{ result._source.given }}</div>
-    <div>Surname: {{ result._source.surname }}</div>
-    <div>Collection: {{ result._source.collection }}</div>
+    <div>Name: {{ result.person.name }}</div>
+    <div>Role: {{ result.person.role }}</div>
+    <div>Collection: {{ result.collectionName }}</div>
   </div>
 </template>
 

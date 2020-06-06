@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/gorilla/mux"
+
 	"github.com/ourrootsorg/cms-server/api"
 
 	"github.com/gorilla/schema"
@@ -21,7 +23,7 @@ func (app App) Search(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	result, errors := app.api.Search(req.Context(), searchRequest)
+	result, errors := app.api.Search(req.Context(), &searchRequest)
 	if errors != nil {
 		ErrorsResponse(w, errors)
 		return
@@ -30,6 +32,24 @@ func (app App) Search(w http.ResponseWriter, req *http.Request) {
 	enc := json.NewEncoder(w)
 	w.Header().Set("Content-Type", contentType)
 	err = enc.Encode(result)
+	if err != nil {
+		serverError(w, err)
+		return
+	}
+}
+
+func (app App) SearchByID(w http.ResponseWriter, req *http.Request) {
+	vars := mux.Vars(req)
+
+	result, errors := app.api.SearchByID(req.Context(), vars["id"])
+	if errors != nil {
+		ErrorsResponse(w, errors)
+		return
+	}
+
+	enc := json.NewEncoder(w)
+	w.Header().Set("Content-Type", contentType)
+	err := enc.Encode(result)
 	if err != nil {
 		serverError(w, err)
 		return

@@ -7,9 +7,8 @@ export const state = {
 
 export const mutations = {
   SEARCH_SET(state, search) {
-    console.log("!!!Search ", search);
-    state.searchList = search["hits"]["hits"];
-    state.searchTotal = search["hits"]["total"]["value"];
+    state.searchList = search["hits"];
+    state.searchTotal = search["total"];
   }
 };
 

@@ -79,8 +79,8 @@ func main() {
 	log.Printf("Connected to %s\n", env.DatabaseURL)
 	p := persist.NewPostgresPersister(env.BaseURL.Path, db)
 	ap.
-		CategoryPersister(p).
-		CollectionPersister(p)
+		CollectionPersister(p).
+		RecordPersister(p)
 	log.Print("[INFO] Using PostgresPersister")
 
 	app := NewApp().BaseURL(*env.BaseURL).API(ap)

@@ -62,6 +62,7 @@ func (app App) NewRouter() *mux.Router {
 	r.HandleFunc(app.baseURL.Path+"/index.html", app.GetIndex).Methods("GET")
 
 	r.HandleFunc(app.baseURL.Path+"/search", app.Search).Methods("GET")
+	r.HandleFunc(app.baseURL.Path+"/search/{id}", app.SearchByID).Methods("GET")
 
 	return r
 }

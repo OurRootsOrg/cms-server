@@ -43,10 +43,10 @@ export default {
   computed: mapState(["posts", "records"]),
   methods: {
     publish() {
-      this.post.recordsStatus = "Published";
+      this.posts.post.recordsStatus = "Published";
       NProgress.start();
       this.$store
-        .dispatch("postsUpdate", this.post)
+        .dispatch("postsUpdate", this.posts.post)
         .then(() => {
           this.$router.push({
             name: "posts-list"

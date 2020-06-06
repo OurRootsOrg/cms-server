@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -74,11 +75,13 @@ func TestPublisher(t *testing.T) {
 	}
 	assert.Equal(t, api.PostPublished, post.RecordsStatus, "Expected post to be Published, got %s", post.RecordsStatus)
 
-	// search records for post
+	// search records by id
 	for _, testRecord := range testRecords {
-		res, err := testApi.SearchByID(ctx, testRecord.ID)
+		searchID := model.MakeSearchID(testRecord.ID[strings.LastIndex(testRecord.ID, "/")+1:])
+		res, err := testApi.SearchByID(ctx, searchID)
 		assert.Nil(t, err)
-		assert.True(t, res["found"].(bool), "Record not found")
+		assert.Equal(t, searchID, res.ID, "Record not found")
+		assert.Equal(t, testCollection.ID, res.CollectionID, "Collection not found")
 	}
 
 	// delete post

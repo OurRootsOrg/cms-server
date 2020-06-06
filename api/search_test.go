@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -58,20 +59,33 @@ func TestSearch(t *testing.T) {
 	// index post
 	err = testApi.IndexPost(ctx, testPost)
 	assert.Nil(t, err, "Error indexing post")
-	time.Sleep(5 * time.Second)
+	time.Sleep(1 * time.Second)
+	defer func() {
+		for _, record := range records {
+			_ = testApi.SearchDeleteByID(ctx, record.ID)
+		}
+	}()
 
 	// search by id
-	res, errs := testApi.SearchByID(ctx, records[0].ID)
+	searchID := model.MakeSearchID(records[0].ID[strings.LastIndex(records[0].ID, "/")+1:])
+	hit, errs := testApi.SearchByID(ctx, searchID)
 	assert.Nil(t, errs, "Error searching by id")
-	assert.True(t, res["found"].(bool), "Record not found")
+	assert.Equal(t, searchID, hit.ID)
+	assert.Equal(t, "Principal", hit.Person.Role)
+	assert.Equal(t, "Fred Flintstone", hit.Person.Name)
+	assert.Equal(t, testCollection.ID, hit.CollectionID)
+	assert.Equal(t, testCollection.Name, hit.CollectionName)
+	assert.Equal(t, "Fred", hit.Record["given"])
 
 	// search
-	res, errs = testApi.Search(ctx, api.SearchRequest{Given: "Fred"})
+	res, errs := testApi.Search(ctx, &api.SearchRequest{Given: "Fred"})
 	assert.Nil(t, errs, "Error searching by id")
-	assert.GreaterOrEqual(t,
-		res["hits"].(map[string]interface{})["total"].(map[string]interface{})["value"].(float64),
-		float64(1),
-		"Indexed record not found in search")
+	assert.GreaterOrEqual(t, res.Total, 1)
+	assert.GreaterOrEqual(t, len(res.Hits), 1)
+	assert.Equal(t, "Fred Flintstone", res.Hits[0].Person.Name)
+	assert.Equal(t, testCollection.ID, res.Hits[0].CollectionID)
+	assert.Equal(t, testCollection.Name, res.Hits[0].CollectionName)
+	assert.Nil(t, res.Hits[0].Record)
 }
 
 var recordData = []map[string]string{

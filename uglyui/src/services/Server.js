@@ -147,7 +147,6 @@ export default {
       });
   },
   search(query) {
-    console.log("!!!search", query);
     return searchClient.get("/search", {
       params: query
     });

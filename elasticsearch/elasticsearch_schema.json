@@ -48,7 +48,10 @@
   },
   "mappings": {
     "_source": {
-      "enabled": true
+      "enabled": true,
+      "includes": [
+        "collectionId"
+      ]
     },
     "dynamic": "strict",
     "properties": {
@@ -172,6 +175,10 @@
         "index_options": "docs",
         "norms": false,
         "similarity": "boolean"
+      },
+      "collectionId": {
+        "type": "object",
+        "enabled": false
       },
       "post": {
         "type": "keyword",

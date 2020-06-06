@@ -76,7 +76,13 @@ func (a *ApiMock) GetRecordsForPost(ctx context.Context, postID string) (*Record
 	return a.Result.(*RecordResult), a.Errors
 }
 
-func (a *ApiMock) Search(ctx context.Context, searchRequest SearchRequest) (SearchResult, *model.Errors) {
+func (a *ApiMock) Search(ctx context.Context, searchRequest *SearchRequest) (*model.SearchResult, *model.Errors) {
 	a.Request = searchRequest
-	return a.Result.(SearchResult), a.Errors
+	return a.Result.(*model.SearchResult), a.Errors
+}
+func (a *ApiMock) SearchByID(ctx context.Context, id string) (*model.SearchHit, *model.Errors) {
+	return a.Result.(*model.SearchHit), a.Errors
+}
+func (a *ApiMock) SearchDeleteByID(ctx context.Context, id string) *model.Errors {
+	return a.Errors
 }
