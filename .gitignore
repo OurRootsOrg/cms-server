@@ -9,6 +9,7 @@ deploy/awslambda/main.lambda.zip
 *.dylib
 uglyui/dist/
 output-*.cf.yaml
+uglyui/dist/
 
 # Test binary, built with `go test -c`
 *.test
@@ -19,7 +20,6 @@ output-*.cf.yaml
 # Dependency directories (remove the comment below to include it)
 # vendor/
 uglyui/node_modules/
-02-calling-an-api/node_modules/
 
 # IDEs
 .idea/

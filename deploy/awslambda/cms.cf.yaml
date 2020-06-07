@@ -1,0 +1,213 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: OurRoots CMS Server
+Transform: AWS::Serverless-2016-10-31
+Parameters:
+  EnvironmentName:
+    Description: Name of this CMS deployment
+    Type: String
+
+  DomainName:
+    Type: String
+    Description: FQDN the app will be hosted at
+    # This assumes that the DNS for this domain is configured elsewhere
+    # TODO: Allow for various delegation and Route 53 scenarios
+
+  CertificateArn:
+    Type: String
+    Description: ARN of the Certificate Manager cert to use for the domain
+    # TODO: Optionally create the certificate
+Resources:
+  OurRootsCMSApi:
+    Type: "AWS::ApiGatewayV2::Api"
+    Properties:
+      Name: !Ref EnvironmentName
+      ProtocolType: HTTP
+      Version: "0.1"
+
+  ApiStage:
+    Type: "AWS::ApiGatewayV2::Stage"
+    Properties:
+      StageName: "$default"
+      AutoDeploy: true
+      ApiId: !Ref OurRootsCMSApi
+      AccessLogSettings:
+        DestinationArn:
+          Fn::GetAtt: [ ApiLogGroup , Arn ]
+        Format: '$context.identity.sourceIp - - [$context.requestTime] "$context.httpMethod $context.path $context.protocol" $context.status $context.responseLength - "$context.identity.userAgent" $context.requestId' # Common Log Format plus a couple extra fields
+      # DefaultRouteSettings:
+      #   DetailedMetricsEnabled: true
+      #   ThrottlingBurstLimit: 10
+      #   ThrottlingRateLimit: 10
+
+  ApiLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "${EnvironmentName}/API-Gateway/access-logs"
+      RetentionInDays: 7
+
+  ApiRoute:
+    Type: "AWS::ApiGatewayV2::Route"
+    Properties:
+      ApiId: !Ref OurRootsCMSApi
+      RouteKey: "ANY /api/{proxy+}"
+      # RouteKey: "$default"
+      AuthorizationType: NONE
+      Target: !Join
+        - /
+        - - integrations
+          - !Ref APIIntegration
+
+  APIIntegration:
+    Type: "AWS::ApiGatewayV2::Integration"
+    Properties:
+      ApiId: !Ref OurRootsCMSApi
+      Description: Lambda Integration
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !Sub "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${OurRootsCMSFunction.Arn}/invocations"
+      PayloadFormatVersion: "1.0"
+
+  # GETs to /* go to the bucket root
+  UIRoute:
+    Type: "AWS::ApiGatewayV2::Route"
+    Properties:
+      ApiId: !Ref OurRootsCMSApi
+      RouteKey: "GET /{proxy+}"
+      AuthorizationType: NONE
+      Target: !Join
+        - /
+        - - integrations
+          - !Ref UIIntegration
+
+  UIIntegration:
+    Type: "AWS::ApiGatewayV2::Integration"
+    Properties:
+      ApiId: !Ref OurRootsCMSApi
+      Description: Site Bucket Integration
+      IntegrationType: HTTP_PROXY
+      IntegrationUri: !Join [ '/', [ Fn::ImportValue: !Sub "${EnvironmentName}-CMSSiteBucketURL" , '{proxy}' ] ]
+      IntegrationMethod: GET
+      PayloadFormatVersion: "1.0"
+
+  # Map the domain name passed as a parameter to the API Gateway API
+  OurRootsCMSDomainName:
+    Type: "AWS::ApiGatewayV2::DomainName"
+    Properties:
+      DomainName: !Ref DomainName
+      DomainNameConfigurations:
+        - EndpointType: REGIONAL
+          CertificateArn: !Ref CertificateArn
+
+  OurRootsCMSApiMapping:
+    Type: "AWS::ApiGatewayV2::ApiMapping"
+    Properties:
+      DomainName: !Ref OurRootsCMSDomainName
+      ApiId: !Ref OurRootsCMSApi
+      Stage: !Ref ApiStage
+
+  # Define the Lambda function
+  OurRootsCMSFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: server/main.lambda
+      CodeUri: main.lambda.zip
+      Runtime: go1.x
+      MemorySize: 128
+      Policies: 
+        - AWSLambdaBasicExecutionRole
+        - AWSLambdaVPCAccessExecutionRole
+        # S3 CMSBlobStoreBucket
+        - Version: '2012-10-17' 
+          Statement:
+            - Effect: Allow
+              Action:
+                - s3:GetObject
+                - s3:GetObjectACL
+                - s3:PutObject
+                - s3:PutObjectACL
+              Resource: 
+                Fn::Join: 
+                  - ''
+                  -
+                    - 'arn:aws:s3:::'
+                    - Fn::ImportValue: !Sub "${EnvironmentName}-CMSBlobStoreBucketName"
+                    - '/*'
+        # SQS Queue
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - sqs:*
+              Resource: 
+                Fn::ImportValue: !Sub "${EnvironmentName}-CMSRecordsWriterQueueARN"
+        # Secrets Manager
+        - Version: '2012-10-17' 
+          Statement:
+            - Effect: "Allow"
+              Action: "secretsmanager:GetSecretValue"
+              Resource: 
+                Fn::ImportValue: !Sub "${EnvironmentName}-AuroraMasterSecretARN"
+        - Version: '2012-10-17' 
+          Statement:
+            - Effect: "Allow"
+              Action: "secretsmanager:GetSecretValue"
+              Resource: 
+                Fn::ImportValue: !Sub "${EnvironmentName}-AuroraAppSecretARN"
+      VpcConfig:
+        SecurityGroupIds:
+          - Fn::ImportValue: !Sub "${EnvironmentName}-OurRootsCMSFunctionSecurityGroup"
+        SubnetIds:
+          # - Fn::ImportValue: !Sub "${EnvironmentName}-PublicSubnet1"  
+          # - Fn::ImportValue: !Sub "${EnvironmentName}-PublicSubnet2"
+          - Fn::ImportValue: !Sub "${EnvironmentName}-PrivateSubnet1"  
+          - Fn::ImportValue: !Sub "${EnvironmentName}-PrivateSubnet2"
+      Timeout: 60
+      Environment:
+        Variables:
+          # This variable tells our server code what domain name and path prefix is in use
+          BASE_URL: !Sub "https://${DomainName}/api"
+          # BASE_URL: !Sub "https://${DomainName}"
+          # This variable tells aws-lambda-go-api-proxy what domain name is in use
+          GO_API_HOST: !Sub "https://${DomainName}"
+          MIGRATION_DATABASE_URL: !Join 
+            - ''
+            -
+              - 'postgres://{{resolve:secretsmanager:'
+              - Fn::ImportValue: !Sub "${EnvironmentName}-AuroraMasterSecretARN"
+              - ':SecretString:username}}:{{resolve:secretsmanager:'
+              - Fn::ImportValue: !Sub "${EnvironmentName}-AuroraMasterSecretARN"
+              - ':SecretString:password}}@'
+              - Fn::ImportValue: !Sub "${EnvironmentName}-CMSPostgresAddress"
+              - ':'
+              - Fn::ImportValue: !Sub "${EnvironmentName}-CMSPostgresPort"
+              - '/cms'
+          DATABASE_URL: !Join 
+            - ''
+            -
+              - 'postgres://{{resolve:secretsmanager:'
+              - Fn::ImportValue: !Sub "${EnvironmentName}-AuroraAppSecretARN"
+              - ':SecretString:username}}:{{resolve:secretsmanager:'
+              - Fn::ImportValue: !Sub "${EnvironmentName}-AuroraAppSecretARN"
+              - ':SecretString:password}}@'
+              - Fn::ImportValue: !Sub "${EnvironmentName}-CMSPostgresAddress"
+              - ':'
+              - Fn::ImportValue: !Sub "${EnvironmentName}-CMSPostgresPort"
+              - '/cms'
+          BLOB_STORE_BUCKET: 
+            Fn::ImportValue:
+              !Sub "${EnvironmentName}-CMSBlobStoreBucketName"
+          RECORDS_WRITER_QUEUE_URL:
+            Fn::ImportValue:
+              !Sub "${EnvironmentName}-CMSRecordsWriterQueueURL"
+          PUB_SUB_PROTOCOL: "awssqs"
+          PUB_SUB_PREFIX: !Sub "sqs.${AWS::Region}.amazonaws.com/${AWS::AccountId}"
+          OIDC_DOMAIN: 'ourroots.auth0.com'
+          OIDC_AUDIENCE: 'https://api.ourroots.org/preprod'
+
+  # Give the API permission to call the Lambda
+  OurRootsCMSFunctionPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: 'lambda:InvokeFunction'
+      FunctionName: !Ref OurRootsCMSFunction
+      Principal: 'apigateway.amazonaws.com'
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${OurRootsCMSApi}/*/*"
