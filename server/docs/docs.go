@@ -1160,7 +1160,7 @@ var doc = `{
         "OAuth2Implicit": {
             "type": "oauth2",
             "flow": "implicit",
-            "authorizationUrl": "https://ourroots.auth0.com/authorize?audience=https%3A%2F%2Fapi.ourroots.org%3A3000%2Fpreprod",
+            "authorizationUrl": "https://ourroots.auth0.com/authorize?audience=https%3A%2F%2Fapi.ourroots.org%2Fpreprod",
             "scopes": {
                 "cms": " Grants read and write access to the CMS",
                 "email": " Grants access to OIDC email attributes",
