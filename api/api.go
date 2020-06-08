@@ -202,7 +202,7 @@ func (api *API) ElasticsearchConfig(esURL string) *API {
 	// ping elasticsearch to make sure we can connect
 	cnt := 0
 	err = errors.New("unknown error")
-	for err != nil && cnt <= 3 {
+	for err != nil && cnt <= 5 {
 		if cnt > 0 {
 			time.Sleep(time.Duration(math.Pow(2.0, float64(cnt))) * time.Second)
 		}
