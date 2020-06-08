@@ -60,3 +60,13 @@ npm run serve                   # run the ugly client
 tilt down                       # clean up docker images when done
                                   # alternatively, run docker-compose down
 ```
+
+# Saving and restoring elasticsearch volume data
+### creates /tmp/cms_esdata.tar.bz2 from cms_esdata
+```
+docker run --rm -v cms_esdata:/volume -v /tmp:/backup alpine tar -cjf /backup/cms_esdata.tar.bz2 -C /volume ./
+```
+### restores /tmp/cms_esdata.tar.bz2 into cms_esdata
+```
+docker run --rm -v cms_esdata:/volume -v /tmp:/backup alpine sh -c "rm -rf /volume/* /volume/..?* /volume/.[!.]* ; tar -C /volume/ -xjf /backup/cms_esdata.tar.bz2"
+```
