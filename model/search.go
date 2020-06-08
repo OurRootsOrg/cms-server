@@ -6,11 +6,13 @@ import "fmt"
 const SearchIDFormat = "/search/%s"
 
 type SearchResult struct {
-	Hits  []SearchHit `json:"hits"`
-	Total int         `json:"total"`
+	Hits     []SearchHit `json:"hits"`
+	Total    int         `json:"total"`
+	MaxScore float64     `json:"maxScore"`
 }
 type SearchHit struct {
 	ID             string            `json:"id"`
+	Score          float64           `json:"score"`
 	Person         SearchPerson      `json:"person,omitempty"`
 	Record         map[string]string `json:"record,omitempty"` // only returned on search by id
 	CollectionName string            `json:"collectionName"`

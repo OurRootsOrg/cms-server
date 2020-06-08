@@ -152,7 +152,7 @@ func (api *API) PostPersister(cp model.PostPersister) *API {
 	return api
 }
 
-// PostPersister sets the PostPersister for the api
+// RecordPersister sets the RecordPersister for the api
 func (api *API) RecordPersister(cp model.RecordPersister) *API {
 	api.recordPersister = cp
 	return api

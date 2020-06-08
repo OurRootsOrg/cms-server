@@ -25,8 +25,8 @@ func (api API) GetRecordsForPost(ctx context.Context, postID string) (*RecordRes
 	return &RecordResult{Records: records}, nil
 }
 
-// GetManyRecords holds the business logic around getting many Records
-func (api API) GetManyRecords(ctx context.Context, ids []string) ([]model.Record, *model.Errors) {
+// GetRecordsByID holds the business logic around getting many Records
+func (api API) GetRecordsByID(ctx context.Context, ids []string) ([]model.Record, *model.Errors) {
 	records, err := api.recordPersister.SelectManyRecords(ctx, ids)
 	if err != nil {
 		return nil, model.NewErrors(http.StatusInternalServerError, err)

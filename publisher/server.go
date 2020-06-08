@@ -34,7 +34,7 @@ func processMessage(ctx context.Context, ap *api.API, msg api.PublisherMsg) *mod
 		return errs
 	}
 	if post.RecordsStatus != api.PostPublishing {
-		log.Printf("[WARN] post not publishing %s -> %s\n", post.ID, post.RecordsStatus)
+		log.Printf("[ERROR] post not publishing %s -> %s\n", post.ID, post.RecordsStatus)
 		return nil
 	}
 

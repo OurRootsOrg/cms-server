@@ -70,7 +70,7 @@ func TestCollections(t *testing.T) {
 	assert.Equal(t, *created, ret.Collections[0])
 
 	// GET many collections should now return the created Collection
-	colls, errors := testApi.GetManyCollections(context.TODO(), []string{created.ID})
+	colls, errors := testApi.GetCollectionsByID(context.TODO(), []string{created.ID})
 	assert.Nil(t, errors)
 	assert.Equal(t, 1, len(colls))
 	assert.Equal(t, *created, colls[0])

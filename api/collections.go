@@ -25,8 +25,8 @@ func (api API) GetCollections(ctx context.Context /* filter/search criteria */) 
 	return &CollectionResult{Collections: cols}, nil
 }
 
-// GetManyCollections holds the business logic around getting many Collections
-func (api API) GetManyCollections(ctx context.Context, ids []string) ([]model.Collection, *model.Errors) {
+// GetCollectionsByID holds the business logic around getting many Collections
+func (api API) GetCollectionsByID(ctx context.Context, ids []string) ([]model.Collection, *model.Errors) {
 	colls, err := api.collectionPersister.SelectManyCollections(ctx, ids)
 	if err != nil {
 		return nil, model.NewErrors(http.StatusInternalServerError, err)

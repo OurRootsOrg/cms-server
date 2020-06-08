@@ -39,7 +39,7 @@ func processMessage(ctx context.Context, ap *api.API, msg api.RecordsWriterMsg) 
 		return errs
 	}
 	if post.RecordsStatus != api.PostLoading {
-		log.Printf("[WARN] post not pending %s -> %s\n", post.ID, post.RecordsStatus)
+		log.Printf("[ERROR] post not pending %s -> %s\n", post.ID, post.RecordsStatus)
 		return nil
 	}
 

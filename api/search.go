@@ -189,6 +189,46 @@ type RangeAggRange struct {
 	To   int    `json:"to,omitempty'"`
 }
 
+type ESErrorResponse struct {
+	Error ESError `json:"error"`
+}
+type ESError struct {
+	Type   string `json:"string"`
+	Reason string `json:"reason"`
+}
+
+type ESSearchResponse struct {
+	Took     int            `json:"took"`
+	TimedOut bool           `json:"timed_out"`
+	Shards   ESSearchShards `json:"_shards"`
+	Hits     ESSearchHits   `json:"hits"`
+}
+type ESSearchShards struct {
+	Total      int `json:"total"`
+	Successful int `json:"successful"`
+	Skipped    int `json:"skipped"`
+	Failed     int `json:"failed"`
+}
+type ESSearchHits struct {
+	Total    ESSearchTotal `json:"total"`
+	MaxScore float64       `json:"max_score"`
+	Hits     []ESSearchHit `json:"hits"`
+}
+type ESSearchTotal struct {
+	Value    int    `json:"value"`
+	Relation string `json:"relation"`
+}
+type ESSearchHit struct {
+	ID      string         `json:"_id"`
+	Version int            `json:"_version"` // only in search by id
+	Found   bool           `json:"found"`    // only in search by id
+	Score   float64        `json:"_score"`   // only in search
+	Source  ESSearchSource `json:"_source"`
+}
+type ESSearchSource struct {
+	CollectionID int32 `json:"collectionId"`
+}
+
 const numWorkers = 5
 
 // IndexPost
@@ -317,29 +357,29 @@ func (api API) SearchByID(ctx context.Context, id string) (*model.SearchHit, *mo
 	defer res.Body.Close()
 
 	if res.IsError() {
-		var e map[string]interface{}
+		var e ESErrorResponse
 		if err := json.NewDecoder(res.Body).Decode(&e); err != nil {
 			log.Printf("Error parsing the response body: %v", err)
 			return nil, model.NewErrors(http.StatusInternalServerError, err)
 		} else {
 			// Print the response status and error information.
-			msg := fmt.Sprintf("[%s] %#v\n", res.Status(), e)
+			msg := fmt.Sprintf("[%s] %s: %s", res.Status(), e.Error.Type, e.Error.Reason)
 			log.Println(msg)
 			return nil, model.NewErrors(http.StatusInternalServerError, errors.New(msg))
 		}
 	}
 
 	// get hit data
-	var r map[string]interface{}
-	if err := json.NewDecoder(res.Body).Decode(&r); err != nil {
+	var hit ESSearchHit
+	if err := json.NewDecoder(res.Body).Decode(&hit); err != nil {
 		log.Printf("Error parsing the response body: %s\n", err)
 		return nil, model.NewErrors(http.StatusInternalServerError, err)
 	}
-	if !r["found"].(bool) {
-		msg := fmt.Sprintf("Record ID %s not found\n", id)
+	if !hit.Found {
+		msg := fmt.Sprintf("[ERROR] record ID %s not found\n", id)
 		return nil, model.NewErrors(http.StatusNotFound, errors.New(msg))
 	}
-	hitData, err := getHitData(r)
+	hitData, err := getHitData(hit)
 	if err != nil {
 		return nil, model.NewErrors(http.StatusInternalServerError, err)
 	}
@@ -347,12 +387,12 @@ func (api API) SearchByID(ctx context.Context, id string) (*model.SearchHit, *mo
 	// read record and collection
 	record, errs := api.GetRecord(ctx, hitData.RecordID)
 	if errs != nil {
-		log.Printf("[WARN] record not found %s\n", hitData.RecordID)
+		log.Printf("[ERROR] record not found %s\n", hitData.RecordID)
 		return nil, errs
 	}
 	collection, errs := api.GetCollection(ctx, hitData.CollectionID)
 	if errs != nil {
-		log.Printf("[WARN] collection not found %s\n", hitData.CollectionID)
+		log.Printf("[ERROR] collection not found %s\n", hitData.CollectionID)
 		return nil, errs
 	}
 
@@ -401,34 +441,29 @@ func (api API) Search(ctx context.Context, req *SearchRequest) (*model.SearchRes
 	defer res.Body.Close()
 
 	if res.IsError() {
-		var e map[string]interface{}
+		var e ESErrorResponse
 		if err := json.NewDecoder(res.Body).Decode(&e); err != nil {
 			log.Printf("Error parsing the response body: %v", err)
 			return nil, model.NewErrors(http.StatusInternalServerError, err)
 		} else {
 			// Print the response status and error information.
-			msg := fmt.Sprintf("[%s] %s: %s",
-				res.Status(),
-				e["error"].(map[string]interface{})["type"],
-				e["error"].(map[string]interface{})["reason"],
-			)
+			msg := fmt.Sprintf("[%s] %s: %s", res.Status(), e.Error.Type, e.Error.Reason)
 			log.Println(msg)
 			return nil, model.NewErrors(http.StatusInternalServerError, errors.New(msg))
 		}
 	}
 
 	// get hit datas
-	var r map[string]interface{}
+	var r ESSearchResponse
 	if err := json.NewDecoder(res.Body).Decode(&r); err != nil {
 		log.Printf("Error parsing the response body: %s\n", err)
 		return nil, model.NewErrors(http.StatusInternalServerError, err)
 	}
-	total := int(r["hits"].(map[string]interface{})["total"].(map[string]interface{})["value"].(float64))
 	var hitDatas []HitData
 	var recordIDs []string
 	var collectionIDs []string
-	for _, hit := range r["hits"].(map[string]interface{})["hits"].([]interface{}) {
-		hitData, err := getHitData(hit.(map[string]interface{}))
+	for _, hit := range r.Hits.Hits {
+		hitData, err := getHitData(hit)
 		if err != nil {
 			return nil, model.NewErrors(http.StatusInternalServerError, err)
 		}
@@ -447,11 +482,11 @@ func (api API) Search(ctx context.Context, req *SearchRequest) (*model.SearchRes
 	}
 
 	// read records and collections
-	records, errs := api.GetManyRecords(ctx, recordIDs)
+	records, errs := api.GetRecordsByID(ctx, recordIDs)
 	if errs != nil {
 		return nil, errs
 	}
-	collections, errs := api.GetManyCollections(ctx, collectionIDs)
+	collections, errs := api.GetCollectionsByID(ctx, collectionIDs)
 	if errs != nil {
 		return nil, errs
 	}
@@ -470,7 +505,7 @@ func (api API) Search(ctx context.Context, req *SearchRequest) (*model.SearchRes
 			}
 		}
 		if !found {
-			msg := fmt.Sprintf("[WARN] record %s not found\n", hitData.RecordID)
+			msg := fmt.Sprintf("[ERROR] record %s not found\n", hitData.RecordID)
 			return nil, model.NewErrors(http.StatusInternalServerError, errors.New(msg))
 		}
 
@@ -485,7 +520,7 @@ func (api API) Search(ctx context.Context, req *SearchRequest) (*model.SearchRes
 			}
 		}
 		if !found {
-			msg := fmt.Sprintf("[WARN] collection %s not found\n", hitData.CollectionID)
+			msg := fmt.Sprintf("[ERROR] collection %s not found\n", hitData.CollectionID)
 			return nil, model.NewErrors(http.StatusInternalServerError, errors.New(msg))
 		}
 
@@ -500,8 +535,9 @@ func (api API) Search(ctx context.Context, req *SearchRequest) (*model.SearchRes
 	}
 
 	return &model.SearchResult{
-		Total: total,
-		Hits:  hits,
+		Total:    r.Hits.Total.Value,
+		MaxScore: r.Hits.MaxScore,
+		Hits:     hits,
 	}, nil
 }
 
@@ -648,7 +684,7 @@ func constructNameQueries(label, value string, fuzziness int, isGiven bool) []Qu
 		if strings.ContainsAny(v, "*?") {
 			v, err := asciifold(strings.ToLower(v))
 			if err != nil {
-				log.Printf("[WARN] unable to fold %s\n", v)
+				log.Printf("[INFO] unable to fold %s\n", v)
 			}
 
 			// TODO disallow wildcards within the first 3 characters?
@@ -787,7 +823,7 @@ func constructPlaceQueries(label, value string, fuzziness int) []Query {
 		for _, v := range splitWord(value) {
 			v, err := asciifold(strings.ToLower(v))
 			if err != nil {
-				log.Printf("[WARN] unable to fold %s\n", v)
+				log.Printf("[INFO] unable to fold %s\n", v)
 			}
 			if strings.HasPrefix(v, "~") && !strings.ContainsAny(v, "*?") {
 				queries = append(queries, Query{
@@ -1065,9 +1101,8 @@ var idRoleMap = map[string]string{
 	"o": "Other",
 }
 
-func getHitData(r map[string]interface{}) (*HitData, error) {
-	id := r["_id"].(string)
-	idParts := strings.Split(id, "_")
+func getHitData(r ESSearchHit) (*HitData, error) {
+	idParts := strings.Split(r.ID, "_")
 	role := "Principal"
 	if len(idParts) > 1 {
 		role = idRoleMap[idParts[1]]
@@ -1076,17 +1111,17 @@ func getHitData(r map[string]interface{}) (*HitData, error) {
 	if err != nil {
 		return nil, err
 	}
-	if r["_source"] == nil || r["_source"].(map[string]interface{})["collectionId"] == nil {
-		msg := fmt.Sprintf("Missing collectionID %#v\n", r)
+	if r.Source.CollectionID == 0 {
+		msg := fmt.Sprintf("Missing collectionID for ID %s\n", r.ID)
 		log.Printf("[ERROR] %s\n", msg)
 		return nil, errors.New(msg)
 	}
 
 	return &HitData{
-		ID:           id,
+		ID:           r.ID,
 		RecordID:     model.MakeRecordID(int32(rid)),
 		Role:         role,
-		CollectionID: model.MakeCollectionID(int32(r["_source"].(map[string]interface{})["collectionId"].(float64))),
+		CollectionID: model.MakeCollectionID(r.Source.CollectionID),
 	}, nil
 }
 
