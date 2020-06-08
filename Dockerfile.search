@@ -1,7 +1,0 @@
-FROM golang:1.14
-EXPOSE 8001
-WORKDIR /cms/search
-COPY . /cms
-RUN go get -u github.com/swaggo/swag/cmd/swag
-RUN go generate && go build -o search
-CMD ./search

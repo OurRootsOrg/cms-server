@@ -106,6 +106,7 @@ services:
       - "8000:8000"
     depends_on:
       - postgres
+      - elasticsearch
     environment:
       - BASE_URL=http://localhost:8000
       - DATABASE_URL=postgres://ourroots:password@postgres:5432/cms?sslmode=disable
@@ -121,22 +122,6 @@ services:
       - PUB_SUB_HOST=guest:guest@rabbitmq:5672
       - OIDC_DOMAIN=ourroots.auth0.com
       - OIDC_AUDIENCE=https://api.ourroots.org/preprod
-    networks:
-      - mynetwork
-
-  search:
-    build:
-      context: .
-      dockerfile: Dockerfile.search
-    image: search
-    ports:
-      - "8001:8001"
-    depends_on:
-      - postgres
-      - elasticsearch
-    environment:
-      - BASE_URL=http://localhost:8001
-      - DATABASE_URL=postgres://ourroots:password@postgres:5432/cms?sslmode=disable
       - ELASTICSEARCH_URL=http://elasticsearch:9200
     networks:
       - mynetwork

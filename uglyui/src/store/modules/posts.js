@@ -80,11 +80,7 @@ export const actions = {
         dispatch("notificationsAdd", notification, { root: true });
       });
   },
-  postsGetOne({ commit, getters, state }, id) {
-    if (id === state.post.id) {
-      return state.post;
-    }
-
+  postsGetOne({ commit, getters }, id) {
     let post = getters.getPostById(id);
 
     if (post) {

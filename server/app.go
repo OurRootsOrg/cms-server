@@ -166,6 +166,10 @@ func (app App) NewRouter() *mux.Router {
 
 	r.Handle(app.baseURL.Path+"/records", app.verifyToken(http.HandlerFunc(app.GetRecords))).Methods("GET")
 
+	// search doesn't require a token for now
+	r.HandleFunc(app.baseURL.Path+"/search", app.Search).Methods("GET")
+	r.HandleFunc(app.baseURL.Path+"/search/{id}", app.SearchByID).Methods("GET")
+
 	return r
 }
 
