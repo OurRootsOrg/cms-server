@@ -77,9 +77,11 @@ func main() {
 	if err != nil {
 		log.Fatalf("Error calling NewAPI: %v", err)
 	}
+	defer ap.Close()
 	ap = ap.
 		BlobStoreConfig(env.Region, env.BlobStoreEndpoint, env.BlobStoreAccessKey, env.BlobStoreSecretKey, env.BlobStoreBucket, env.BlobStoreDisableSSL).
-		PubSubConfig(env.Region, env.PubSubProtocol, env.PubSubPrefix)
+		PubSubConfig(env.Region, env.PubSubProtocol, env.PubSubHost).
+		ElasticsearchConfig(env.ElasticsearchURLString)
 	app := NewApp().BaseURL(*env.BaseURL).API(ap).OIDC(env.OIDCAudience, env.OIDCDomain)
 	if env.BaseURL.Scheme == "https" {
 		docs.SwaggerInfo.Schemes = []string{"https"}
@@ -118,6 +120,7 @@ func main() {
 		CategoryPersister(p).
 		CollectionPersister(p).
 		PostPersister(p).
+		RecordPersister(p).
 		UserPersister(p)
 	log.Print("[INFO] Using PostgresPersister")
 	r := app.NewRouter()
@@ -178,22 +181,23 @@ func main() {
 
 // Env holds values parse from environment variables
 type Env struct {
-	LambdaTaskRoot      string `env:"LAMBDA_TASK_ROOT"`
-	IsLambda            bool
-	MinLogLevel         string `env:"MIN_LOG_LEVEL" validate:"omitempty,eq=DEBUG|eq=INFO|eq=ERROR"`
-	BaseURLString       string `env:"BASE_URL" validate:"omitempty,url"`
-	DatabaseURL         string `env:"DATABASE_URL" validate:"required,url"`
-	BaseURL             *url.URL
-	Region              string `env:"AWS_REGION"`
-	BlobStoreEndpoint   string `env:"BLOB_STORE_ENDPOINT"`
-	BlobStoreAccessKey  string `env:"BLOB_STORE_ACCESS_KEY"`
-	BlobStoreSecretKey  string `env:"BLOB_STORE_SECRET_KEY"`
-	BlobStoreBucket     string `env:"BLOB_STORE_BUCKET"`
-	BlobStoreDisableSSL bool   `env:"BLOB_STORE_DISABLE_SSL"`
-	PubSubProtocol      string `env:"PUB_SUB_PROTOCOL"`
-	PubSubPrefix        string `env:"PUB_SUB_PREFIX"`
-	OIDCAudience        string `env:"OIDC_AUDIENCE" validate:"omitempty"`
-	OIDCDomain          string `env:"OIDC_DOMAIN" validate:"omitempty"`
+	LambdaTaskRoot         string `env:"LAMBDA_TASK_ROOT"`
+	IsLambda               bool
+	MinLogLevel            string `env:"MIN_LOG_LEVEL" validate:"omitempty,eq=DEBUG|eq=INFO|eq=ERROR"`
+	BaseURLString          string `env:"BASE_URL" validate:"omitempty,url"`
+	DatabaseURL            string `env:"DATABASE_URL" validate:"required,url"`
+	BaseURL                *url.URL
+	Region                 string `env:"AWS_REGION"`
+	BlobStoreEndpoint      string `env:"BLOB_STORE_ENDPOINT"`
+	BlobStoreAccessKey     string `env:"BLOB_STORE_ACCESS_KEY"`
+	BlobStoreSecretKey     string `env:"BLOB_STORE_SECRET_KEY"`
+	BlobStoreBucket        string `env:"BLOB_STORE_BUCKET"`
+	BlobStoreDisableSSL    bool   `env:"BLOB_STORE_DISABLE_SSL"`
+	PubSubProtocol         string `env:"PUB_SUB_PROTOCOL" validate:"omitempty,eq=rabbit|eq=awssqs"`
+	PubSubHost             string `env:"PUB_SUB_HOST"`
+	OIDCAudience           string `env:"OIDC_AUDIENCE" validate:"omitempty"`
+	OIDCDomain             string `env:"OIDC_DOMAIN" validate:"omitempty"`
+	ElasticsearchURLString string `env:"ELASTICSEARCH_URL" validate:"required,url"`
 }
 
 // ParseEnv parses and validates environment variables and stores them in the Env structure
@@ -217,6 +221,10 @@ func ParseEnv() (*Env, error) {
 				errs += fmt.Sprintf("  Invalid BASE_URL: '%v' is not a valid URL\n", fe.Value())
 			case "DATABASE_URL":
 				errs += fmt.Sprintf("  Invalid DATABASE_URL: '%v' is not a valid PostgreSQL URL\n", fe.Value())
+			case "PUB_SUB_PROTOCOL":
+				errs += fmt.Sprintf("  Invalid PUB_SUB_PROTOCOL: '%v', valid values are 'rabbit', 'awssqs'\n", fe.Value())
+			case "ELASTICSEARCH_URL":
+				errs += fmt.Sprintf("  Invalid ELASTICSEARCH_URL: '%v' is not a valid URL\n", fe.Value())
 			}
 		}
 		return nil, errors.New(errs)

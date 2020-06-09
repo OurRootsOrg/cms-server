@@ -6,3 +6,15 @@ docker_build('server', '.', dockerfile='Dockerfile.server',
     run('go generate && go build -o server', trigger=''),
     restart_container()
   ])
+docker_build('publisher', '.', dockerfile='Dockerfile.publisher',
+  live_update = [
+    sync('.', '/cms'),
+    run('go generate && go build -o server', trigger=''),
+    restart_container()
+  ])
+docker_build('recordswriter', '.', dockerfile='Dockerfile.recordswriter',
+  live_update = [
+    sync('.', '/cms'),
+    run('go generate && go build -o server', trigger=''),
+    restart_container()
+  ])

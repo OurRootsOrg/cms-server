@@ -14,15 +14,15 @@ import (
 )
 
 func TestGetAllCategories(t *testing.T) {
-	am := &apiMock{}
+	am := &api.ApiMock{}
 	app := NewApp().API(am)
 	app.authDisabled = true
 	r := app.NewRouter()
 
 	// Empty result
 	cr := api.CategoryResult{}
-	am.result = &cr
-	am.errors = nil
+	am.Result = &cr
+	am.Errors = nil
 
 	request, _ := http.NewRequest("GET", "/categories", nil)
 	response := httptest.NewRecorder()
@@ -52,8 +52,8 @@ func TestGetAllCategories(t *testing.T) {
 			},
 		},
 	}
-	am.result = &cr
-	am.errors = nil
+	am.Result = &cr
+	am.Errors = nil
 	request, _ = http.NewRequest("GET", "/categories", nil)
 	response = httptest.NewRecorder()
 	r.ServeHTTP(response, request)
@@ -70,8 +70,8 @@ func TestGetAllCategories(t *testing.T) {
 	assert.Equal(t, cr.Categories[0], ret.Categories[0])
 
 	// error result
-	am.result = (*api.CategoryResult)(nil)
-	am.errors = model.NewErrors(http.StatusInternalServerError, assert.AnError)
+	am.Result = (*api.CategoryResult)(nil)
+	am.Errors = model.NewErrors(http.StatusInternalServerError, assert.AnError)
 	request, _ = http.NewRequest("GET", "/categories", nil)
 	response = httptest.NewRecorder()
 	r.ServeHTTP(response, request)
@@ -86,10 +86,10 @@ func TestGetAllCategories(t *testing.T) {
 	}
 	assert.NotNil(t, errRet)
 	assert.Equal(t, 1, len(errRet))
-	assert.Equal(t, am.errors.Errs(), errRet)
+	assert.Equal(t, am.Errors.Errs(), errRet)
 }
 func TestGetCategory(t *testing.T) {
-	am := &apiMock{}
+	am := &api.ApiMock{}
 	app := NewApp().API(am)
 	app.authDisabled = true
 	r := app.NewRouter()
@@ -100,8 +100,8 @@ func TestGetCategory(t *testing.T) {
 			Name: "Name",
 		},
 	}
-	am.result = category
-	am.errors = nil
+	am.Result = category
+	am.Errors = nil
 	var ret model.Category
 
 	request, _ := http.NewRequest("GET", "/categories/1", nil)
@@ -115,8 +115,8 @@ func TestGetCategory(t *testing.T) {
 	assert.Equal(t, *category, ret)
 
 	category = nil
-	am.result = category
-	am.errors = model.NewErrors(http.StatusNotFound, model.NewError(model.ErrNotFound, "/categories/1"))
+	am.Result = category
+	am.Errors = model.NewErrors(http.StatusNotFound, model.NewError(model.ErrNotFound, "/categories/1"))
 
 	request, _ = http.NewRequest("GET", "/categories/1", nil)
 	response = httptest.NewRecorder()
@@ -132,24 +132,24 @@ func TestGetCategory(t *testing.T) {
 	}
 	assert.NotNil(t, errRet)
 	assert.Equal(t, 1, len(errRet))
-	assert.Equal(t, am.errors.Errs(), errRet)
+	assert.Equal(t, am.Errors.Errs(), errRet)
 }
 
 func TestPostCategory(t *testing.T) {
-	am := &apiMock{}
+	am := &api.ApiMock{}
 	app := NewApp().API(am)
 	app.authDisabled = true
 	r := app.NewRouter()
 
 	in, buf := makeCategoryIn(t)
 	now := time.Now().Truncate(0) // Truncate(0) truncates monotonic time
-	am.result = &model.Category{
+	am.Result = &model.Category{
 		ID:             "/categories/1",
 		CategoryBody:   in.CategoryBody,
 		InsertTime:     now,
 		LastUpdateTime: now,
 	}
-	am.errors = nil
+	am.Errors = nil
 
 	request, _ := http.NewRequest("POST", "/categories", buf)
 	request.Header.Add("Content-Type", contentType)
@@ -172,7 +172,7 @@ func TestPostCategory(t *testing.T) {
 }
 
 func TestPutCategory(t *testing.T) {
-	am := &apiMock{}
+	am := &api.ApiMock{}
 	app := NewApp().API(am)
 	app.authDisabled = true
 	r := app.NewRouter()
@@ -185,8 +185,8 @@ func TestPutCategory(t *testing.T) {
 		InsertTime:     now,
 		LastUpdateTime: now,
 	}
-	am.result = &cat
-	am.errors = nil
+	am.Result = &cat
+	am.Errors = nil
 
 	request, _ := http.NewRequest("PUT", "/categories/1", buf)
 	request.Header.Add("Content-Type", contentType)
@@ -209,13 +209,13 @@ func TestPutCategory(t *testing.T) {
 }
 
 func TestDeleteCategory(t *testing.T) {
-	am := &apiMock{}
+	am := &api.ApiMock{}
 	app := NewApp().API(am)
 	app.authDisabled = true
 	r := app.NewRouter()
 
-	am.result = nil
-	am.errors = nil
+	am.Result = nil
+	am.Errors = nil
 
 	request, _ := http.NewRequest("DELETE", "/categories/1", nil)
 	response := httptest.NewRecorder()

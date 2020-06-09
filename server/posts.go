@@ -7,6 +7,8 @@ import (
 	"mime"
 	"net/http"
 
+	"github.com/ourrootsorg/cms-server/api"
+
 	"github.com/ourrootsorg/cms-server/model"
 )
 
@@ -130,6 +132,11 @@ func (app App) PutPost(w http.ResponseWriter, req *http.Request) {
 	err = json.NewDecoder(req.Body).Decode(&in)
 	if err != nil {
 		msg := fmt.Sprintf("Bad request: %v", err)
+		ErrorResponse(w, http.StatusBadRequest, msg)
+		return
+	}
+	if in.RecordsStatus != api.PostDraft && in.RecordsStatus != api.PostPublished {
+		msg := fmt.Sprintf("Records status must be Draft or Published: %v", err)
 		ErrorResponse(w, http.StatusBadRequest, msg)
 		return
 	}

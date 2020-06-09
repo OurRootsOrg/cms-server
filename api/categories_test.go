@@ -29,6 +29,7 @@ func TestCategories(t *testing.T) {
 	p := persist.NewPostgresPersister("", db)
 	ap, err := api.NewAPI()
 	assert.NoError(t, err)
+	defer ap.Close()
 	testApi := ap.CategoryPersister(p)
 
 	empty, errors := testApi.GetCategories(context.TODO())

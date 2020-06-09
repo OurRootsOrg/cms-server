@@ -1,0 +1,7 @@
+FROM golang:1.14
+EXPOSE 8000
+WORKDIR /cms/publisher
+COPY . /cms
+RUN go get -u github.com/swaggo/swag/cmd/swag
+RUN go generate && go build -o server
+CMD ./server

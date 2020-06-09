@@ -40,6 +40,63 @@ services:
     networks:
       - mynetwork
 
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.7.0
+    ports:
+      - "9200:9200"
+    environment:
+      - discovery.type=single-node
+    volumes:
+      - cms_esdata:/usr/share/elasticsearch/data
+    command: ["sh", "-c", "./bin/elasticsearch-plugin install analysis-phonetic && /usr/local/bin/docker-entrypoint.sh"]
+    networks:
+      - mynetwork
+
+  publisher:
+    build:
+      context: .
+      dockerfile: Dockerfile.publisher
+    image: publisher
+    depends_on:
+      - postgres
+      - rabbitmq
+      - elasticsearch
+    environment:
+      - BASE_URL=http://localhost:8000
+      - DATABASE_URL=postgres://ourroots:password@postgres:5432/cms?sslmode=disable
+      - AWS_REGION=us-east-1
+      # this configures rabbitmq; to use SQS, set the protocol to awssqs and the host to sqs.us-east-1.amazonaws.com/<accountid>
+      - PUB_SUB_PROTOCOL=rabbit
+      - PUB_SUB_HOST=guest:guest@rabbitmq:5672
+      - ELASTICSEARCH_URL=http://elasticsearch:9200
+    networks:
+      - mynetwork
+
+  recordswriter:
+    build:
+      context: .
+      dockerfile: Dockerfile.recordswriter
+    image: recordswriter
+    depends_on:
+      - postgres
+      - minio
+      - rabbitmq
+    environment:
+      - BASE_URL=http://localhost:8000
+      - DATABASE_URL=postgres://ourroots:password@postgres:5432/cms?sslmode=disable
+      - AWS_REGION=us-east-1
+      - BLOB_STORE_BUCKET=cmsbucket
+      # this configures minio; to use S3, omit these settings and set the bucket to a bucket you own
+      - BLOB_STORE_ENDPOINT=minio:9000
+      - BLOB_STORE_ACCESS_KEY=minioaccess
+      - BLOB_STORE_SECRET_KEY=miniosecret
+      - BLOB_STORE_DISABLE_SSL=true
+      # this configures rabbitmq; to use SQS, set the protocol to awssqs and the host to sqs.us-east-1.amazonaws.com/<accountid>
+      - PUB_SUB_PROTOCOL=rabbit
+      - PUB_SUB_HOST=guest:guest@rabbitmq:5672
+    networks:
+      - mynetwork
+
   server:
     build:
       context: .
@@ -49,6 +106,7 @@ services:
       - "8000:8000"
     depends_on:
       - postgres
+      - elasticsearch
     environment:
       - BASE_URL=http://localhost:8000
       - DATABASE_URL=postgres://ourroots:password@postgres:5432/cms?sslmode=disable
@@ -59,12 +117,12 @@ services:
       - BLOB_STORE_ACCESS_KEY=minioaccess
       - BLOB_STORE_SECRET_KEY=miniosecret
       - BLOB_STORE_DISABLE_SSL=true
-      # this configures rabbitmq; to use SQS, set the protocol to awssqs and the prefix to sqs.us-east-1.amazonaws.com/<accountid>
+      # this configures rabbitmq; to use SQS, set the protocol to awssqs and the host to sqs.us-east-1.amazonaws.com/<accountid>
       - PUB_SUB_PROTOCOL=rabbit
-      - PUB_SUB_PREFIX=
-      - RABBIT_SERVER_URL=amqp://guest:guest@rabbitmq:5672/
+      - PUB_SUB_HOST=guest:guest@rabbitmq:5672
       - OIDC_DOMAIN=ourroots.auth0.com
       - OIDC_AUDIENCE=https://api.ourroots.org/preprod
+      - ELASTICSEARCH_URL=http://elasticsearch:9200
     networks:
       - mynetwork
 
@@ -72,6 +130,8 @@ volumes:
   cms_pgdata:
     external: true
   cms_s3data:
+    external: true
+  cms_esdata:
     external: true
 
 networks:

@@ -15,6 +15,7 @@ func TestParseEnv(t *testing.T) {
 	os.Setenv("BASE_URL", "")
 	os.Setenv("MIN_LOG_LEVEL", "")
 	os.Setenv("DATABASE_URL", "postgres://ourroots:password@localhost:5432/ourroots?sslmode=disable")
+	os.Setenv("ELASTICSEARCH_URL", "http://localhost:9200")
 	env, err := ParseEnv()
 	assert.NoError(t, err)
 	assert.NotNil(t, env)
@@ -65,10 +66,19 @@ func TestParseEnv(t *testing.T) {
 	assert.Nil(t, env)
 	os.Setenv("DATABASE_URL", "")
 
+	// Bad ELASTICSEARCH_URL
+	os.Setenv("ELASTICSEARCH_URL", "bades")
+	env, err = ParseEnv()
+	assert.Error(t, err)
+	log.Printf("Error: %v", err)
+	assert.Nil(t, env)
+	os.Setenv("ELASTICSEARCH_URL", "")
+
 	// All bad
 	os.Setenv("BASE_URL", "bad")
 	os.Setenv("MIN_LOG_LEVEL", "WARN")
 	os.Setenv("DATABASE_URL", "baddb")
+	os.Setenv("ELASTICSEARCH_URL", "bades")
 	env, err = ParseEnv()
 	assert.Error(t, err)
 	log.Printf("Error: %v", err)

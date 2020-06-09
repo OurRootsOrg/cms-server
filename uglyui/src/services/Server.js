@@ -16,7 +16,7 @@ export default {
     return getInstance()
       .getTokenSilently()
       .then(token => {
-        return apiClient.post("/categories", category,{
+        return apiClient.post("/categories", category, {
           headers: {
             Authorization: `Bearer ${token}`
           }
@@ -38,7 +38,7 @@ export default {
     return getInstance()
       .getTokenSilently()
       .then(token => {
-        return apiClient.post("/collections", collection,{
+        return apiClient.post("/collections", collection, {
           headers: {
             Authorization: `Bearer ${token}`
           }
@@ -91,15 +91,54 @@ export default {
         });
       });
   },
-  postsCreate(post) {
+  postsGetOne(id) {
     return getInstance()
       .getTokenSilently()
       .then(token => {
-        return apiClient.post("/posts", post,{
+        return apiClient.get(id, {
           headers: {
             Authorization: `Bearer ${token}`
           }
         });
       });
+  },
+  postsCreate(post) {
+    return getInstance()
+      .getTokenSilently()
+      .then(token => {
+        return apiClient.post("/posts", post, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+      });
+  },
+  postsUpdate(post) {
+    return getInstance()
+      .getTokenSilently()
+      .then(token => {
+        return apiClient.put(post.id, post, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+      });
+  },
+  recordsGetForPost(postId) {
+    return getInstance()
+      .getTokenSilently()
+      .then(token => {
+        return apiClient.get("/records", {
+          params: { post: postId },
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+      });
+  },
+  search(query) {
+    return apiClient.get("/search", {
+      params: query
+    });
   }
 };

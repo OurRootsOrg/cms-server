@@ -49,6 +49,11 @@ const routes = [
     component: () => import(/* webpackChunkName: "about" */ "../views/PostsCreate.vue")
   },
   {
+    path: "/posts/:pid",
+    name: "post-show",
+    component: () => import(/* webpackChunkName: "about" */ "../views/PostShow.vue")
+  },
+  {
     path: "/users",
     name: "users-list",
     component: () => import(/* webpackChunkName: "about" */ "../views/UsersList.vue")

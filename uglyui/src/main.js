@@ -15,11 +15,7 @@ Vue.use(Auth0Plugin, {
   clientId,
   audience,
   onRedirectCallback: appState => {
-    router.push(
-      appState && appState.targetUrl
-        ? appState.targetUrl
-        : window.location.pathname
-    );
+    router.push(appState && appState.targetUrl ? appState.targetUrl : window.location.pathname);
   }
 });
 

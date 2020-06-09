@@ -3,6 +3,8 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"log"
 	"net/http"
 
@@ -12,9 +14,18 @@ import (
 	"github.com/ourrootsorg/cms-server/persist"
 )
 
+const PostLoading = "Loading"
+const PostDraft = "Draft"
+const PostPublishing = "Publishing"
+const PostPublished = "Published"
+const PostPublishComplete = "PublishComplete"
+
 type RecordsWriterMsg struct {
-	PostID     string `json:"postId"`
-	RecordsKey string `json:"recordsKey"`
+	PostID string `json:"postId"`
+}
+
+type PublisherMsg struct {
+	PostID string `json:"postId"`
 }
 
 // PostResult is a paged Post result
@@ -54,12 +65,12 @@ func (api API) AddPost(ctx context.Context, in model.PostIn) (*model.Post, *mode
 	// prepare to send a message
 	topic, err := api.OpenTopic(ctx, "recordswriter")
 	if err != nil {
-		log.Printf("[ERROR] Can't open topic %v", err)
+		log.Printf("[ERROR] Can't open recordswriter topic %v", err)
 		return nil, model.NewErrors(http.StatusInternalServerError, err)
 	}
 	defer topic.Shutdown(ctx)
 	// set records status
-	in.RecordsStatus = "Pending"
+	in.RecordsStatus = PostLoading
 	// insert
 	post, err := api.postPersister.InsertPost(ctx, in)
 	if err == persist.ErrForeignKeyViolation {
@@ -71,8 +82,7 @@ func (api API) AddPost(ctx context.Context, in model.PostIn) (*model.Post, *mode
 	}
 	// send a message to write the records
 	msg := RecordsWriterMsg{
-		PostID:     post.ID,
-		RecordsKey: post.RecordsKey,
+		PostID: post.ID,
 	}
 	body, err := json.Marshal(msg)
 	if err != nil { // this had best never happen
@@ -93,6 +103,33 @@ func (api API) UpdatePost(ctx context.Context, id string, in model.Post) (*model
 	if err != nil {
 		return nil, model.NewErrors(http.StatusBadRequest, err)
 	}
+
+	// read current records status
+	currPost, errs := api.GetPost(ctx, id)
+	if errs != nil {
+		return nil, errs
+	}
+
+	// validate new records status
+	var topic *pubsub.Topic
+	err = errors.New(fmt.Sprintf("cannot change records status from %s to %s", currPost.RecordsStatus, in.RecordsStatus))
+	if currPost.RecordsStatus == in.RecordsStatus {
+		err = nil
+	} else if currPost.RecordsStatus == PostDraft && in.RecordsStatus == PostPublished {
+		// prepare to send a message
+		topic, err = api.OpenTopic(ctx, "publisher")
+		if err != nil {
+			log.Printf("[ERROR] Can't open publisher topic %v", err)
+			return nil, model.NewErrors(http.StatusInternalServerError, err)
+		}
+		defer topic.Shutdown(ctx)
+		in.RecordsStatus = PostPublishing
+		err = nil
+	} else if currPost.RecordsStatus == PostPublishing && in.RecordsStatus == PostPublishComplete {
+		in.RecordsStatus = PostPublished
+		err = nil
+	}
+
 	post, err := api.postPersister.UpdatePost(ctx, id, in)
 	if er, ok := err.(model.Error); ok {
 		if er.Code == model.ErrConcurrentUpdate {
@@ -108,14 +145,36 @@ func (api API) UpdatePost(ctx context.Context, id string, in model.Post) (*model
 	} else if err != nil {
 		return nil, model.NewErrors(http.StatusInternalServerError, err)
 	}
+
+	if currPost.RecordsStatus == PostDraft && in.RecordsStatus == PostPublishing {
+		// send a message to publish the post
+		msg := PublisherMsg{
+			PostID: post.ID,
+		}
+		body, err := json.Marshal(msg)
+		if err != nil { // this had best never happen
+			log.Printf("[ERROR] Can't marshal message %v", err)
+			return nil, model.NewErrors(http.StatusInternalServerError, err)
+		}
+		err = topic.Send(ctx, &pubsub.Message{Body: body})
+		if err != nil { // this had best never happen
+			log.Printf("[ERROR] Can't send message %v", err)
+			return nil, model.NewErrors(http.StatusInternalServerError, err)
+		}
+	}
+
 	return &post, nil
 }
 
 // DeletePost holds the business logic around deleting a Post
 func (api API) DeletePost(ctx context.Context, id string) *model.Errors {
-	err := api.postPersister.DeletePost(ctx, id)
-	if err != nil {
+	// delete records for post first so we don't have referential integrity errors
+	if err := api.DeleteRecordsForPost(ctx, id); err != nil {
 		return model.NewErrors(http.StatusInternalServerError, err)
 	}
+	if err := api.postPersister.DeletePost(ctx, id); err != nil {
+		return model.NewErrors(http.StatusInternalServerError, err)
+	}
+
 	return nil
 }

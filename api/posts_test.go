@@ -29,9 +29,12 @@ func TestPosts(t *testing.T) {
 	p := persist.NewPostgresPersister("", db)
 	testApi, err := api.NewAPI()
 	assert.NoError(t, err)
+	defer testApi.Close()
 	testApi = testApi.
+		PubSubConfig("", "rabbit", "guest:guest@localhost:35672").
 		CollectionPersister(p).
-		PostPersister(p)
+		PostPersister(p).
+		RecordPersister(p)
 
 	// Add a test category and test collection for referential integrity
 	testCategory, err := createTestCategory(p)
@@ -55,6 +58,7 @@ func TestPosts(t *testing.T) {
 	}
 	created, errors := testApi.AddPost(context.TODO(), in)
 	assert.Nil(t, errors)
+	defer deleteTestPost(p, created)
 	assert.Equal(t, in.Name, created.Name, "Expected Name to match")
 	assert.NotEmpty(t, created.ID)
 	assert.Equal(t, in.Collection, created.Collection)

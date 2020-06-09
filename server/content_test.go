@@ -12,16 +12,16 @@ import (
 )
 
 func TestPostContentRequest(t *testing.T) {
-	am := &apiMock{}
+	am := &api.ApiMock{}
 	app := NewApp().API(am)
 	app.authDisabled = true
 	r := app.NewRouter()
 
-	am.result = &api.ContentResult{
+	am.Result = &api.ContentResult{
 		Key:    "path/key",
 		PutURL: "https://s3.example.com/bucket/path/key",
 	}
-	am.errors = nil
+	am.Errors = nil
 
 	request, _ := http.NewRequest("POST", "/content", strings.NewReader("{\"contentType\": \"text/csv\"}"))
 	request.Header.Add("Content-Type", contentType)

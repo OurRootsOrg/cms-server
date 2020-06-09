@@ -39,6 +39,7 @@ func TestUsers(t *testing.T) {
 	p := persist.NewPostgresPersister("", db)
 	testApi, err := api.NewAPI()
 	assert.NoError(t, err)
+	defer testApi.Close()
 	testApi = testApi.UserPersister(p)
 
 	// model.User(&model.User{ID:"/users/1", UserIn:model.UserIn{UserBody:model.UserBody{Name:"<Unknown>", Email:"somebody@example.com", EmailConfirmed:true, Issuer:"https://flybynight.com", Subject:"user1", Enabled:true}}, InsertTime:time.Time{wall:0x1b4b8898, ext:63725606053, loc:(*time.Location)(0xc0000b4780)},
@@ -95,6 +96,7 @@ func TestUsers(t *testing.T) {
 	// New API, in DB and not cache
 	testApi, err = api.NewAPI()
 	assert.NoError(t, err)
+	defer testApi.Close()
 	testApi = testApi.UserPersister(p)
 
 	provider.On("UserInfo", ctx, oauth2.StaticTokenSource(&oauth2.Token{

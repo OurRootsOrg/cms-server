@@ -2,6 +2,12 @@
   <div id="app">
     <div id="nav">
       <div>
+        <h3>Home</h3>
+        <ul>
+          <li><router-link to="/">Go</router-link></li>
+        </ul>
+      </div>
+      <div>
         <h3>Dashboard</h3>
         <ul>
           <li><router-link to="/dashboard">Go</router-link></li>

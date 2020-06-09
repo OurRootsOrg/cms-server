@@ -29,6 +29,7 @@ func TestCollections(t *testing.T) {
 	p := persist.NewPostgresPersister("", db)
 	ap, err := api.NewAPI()
 	assert.NoError(t, err)
+	defer ap.Close()
 	testApi := ap.
 		CategoryPersister(p).
 		CollectionPersister(p)
@@ -67,6 +68,12 @@ func TestCollections(t *testing.T) {
 	assert.Equal(t, 0, len(empty.Collections), "Expected empty slice, got %#v", empty)
 	assert.Equal(t, 1, len(ret.Collections))
 	assert.Equal(t, *created, ret.Collections[0])
+
+	// GET many collections should now return the created Collection
+	colls, errors := testApi.GetCollectionsByID(context.TODO(), []string{created.ID})
+	assert.Nil(t, errors)
+	assert.Equal(t, 1, len(colls))
+	assert.Equal(t, *created, colls[0])
 
 	// GET /collections/{id} should now return the created Collection
 	ret2, errors := testApi.GetCollection(context.TODO(), created.ID)
