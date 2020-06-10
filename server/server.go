@@ -84,7 +84,7 @@ func main() {
 	defer ap.Close()
 	ap = ap.
 		BlobStoreConfig(env.Region, env.BlobStoreEndpoint, env.BlobStoreAccessKey, env.BlobStoreSecretKey, env.BlobStoreBucket, env.BlobStoreDisableSSL).
-		PubSubConfig(env.Region, env.PubSubProtocol, env.PubSubHost).
+		PubSubConfig(env.Region, env.PubSubProtocol, env.PubSubPrefix).
 		ElasticsearchConfig(env.ElasticsearchURLString)
 	app := NewApp().BaseURL(*env.BaseURL).API(ap).OIDC(env.OIDCAudience, env.OIDCDomain)
 	if env.BaseURL.Scheme == "https" {

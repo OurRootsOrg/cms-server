@@ -1,4 +1,1 @@
 DROP TABLE IF EXISTS cms_user;
--- DROP TABLE IF EXISTS log;
--- DROP TABLE IF EXISTS submission;
--- DROP TABLE IF EXISTS record;

@@ -86,7 +86,7 @@ type BlobStoreConfig struct {
 type PubSubConfig struct {
 	region   string
 	protocol string
-	host     string
+	prefix   string
 }
 
 // NewAPI builds an API; Close() the api when you're done with it to free up resources
@@ -165,8 +165,8 @@ func (api *API) BlobStoreConfig(region, endpoint, accessKeyID, secretAccessKey, 
 }
 
 // PubSubConfig configures the pub-sub service
-func (api *API) PubSubConfig(region, protocol, host string) *API {
-	api.pubSubConfig = PubSubConfig{region, protocol, host}
+func (api *API) PubSubConfig(region, protocol, prefix string) *API {
+	api.pubSubConfig = PubSubConfig{region, protocol, prefix}
 	return api
 }
 

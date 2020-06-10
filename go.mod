@@ -7,7 +7,7 @@ require (
 	github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751
 	github.com/aws/aws-lambda-go v1.16.0
 	github.com/aws/aws-sdk-go v1.19.45
-	github.com/awslabs/aws-lambda-go-api-proxy v0.6.0
+	github.com/awslabs/aws-lambda-go-api-proxy v0.6.1-0.20200609195354-9acdb20aee66
 	github.com/cenkalti/backoff/v4 v4.0.2
 	github.com/codingconcepts/env v0.0.0-20190614135724-bb4545dff6a4
 	github.com/coreos/go-oidc v2.2.1+incompatible
@@ -39,5 +39,3 @@ require (
 	gopkg.in/square/go-jose.v2 v2.5.1 // indirect
 	gopkg.in/yaml.v2 v2.2.8 // indirect
 )
-
-// replace github.com/awslabs/aws-lambda-go-api-proxy => /Users/jim/jimprojects/aws-lambda-go-api-proxy

@@ -21,7 +21,7 @@ import (
 func (api *API) OpenTopic(ctx context.Context, topicName string) (*pubsub.Topic, error) {
 	cnt := 0
 	err := errors.New("unknown error")
-	urlStr := getPubSubURLStr(api.pubSubConfig.protocol, api.pubSubConfig.region, api.pubSubConfig.host, topicName)
+	urlStr := getPubSubURLStr(api.pubSubConfig, topicName)
 	conn := api.rabbitmqTopicConn
 	var topic *pubsub.Topic
 	for err != nil && cnt <= 5 {
@@ -59,7 +59,7 @@ func (api *API) OpenTopic(ctx context.Context, topicName string) (*pubsub.Topic,
 func (api *API) OpenSubscription(ctx context.Context, queue string) (*pubsub.Subscription, error) {
 	cnt := 0
 	err := errors.New("unknown error")
-	urlStr := getPubSubURLStr(api.pubSubConfig.protocol, api.pubSubConfig.region, api.pubSubConfig.host, queue)
+	urlStr := getPubSubURLStr(api.pubSubConfig, queue)
 	conn := api.rabbitmqSubscriptionConn
 	var subscription *pubsub.Subscription
 	for err != nil && cnt <= 5 {
@@ -92,9 +92,9 @@ func (api *API) OpenSubscription(ctx context.Context, queue string) (*pubsub.Sub
 	return subscription, err
 }
 
-func getPubSubURLStr(protocol, region, host, target string) string {
-	if protocol == "awssqs" {
-		return fmt.Sprintf("awssqs://%s/%s?region=%s", host, target, region)
+func getPubSubURLStr(config PubSubConfig, target string) string {
+	if config.protocol == "awssqs" {
+		return fmt.Sprintf("awssqs://%s/%s", config.prefix, target)
 	}
-	return fmt.Sprintf("amqp://%s/", host)
+	return fmt.Sprintf("amqp://%s/", config.prefix)
 }
