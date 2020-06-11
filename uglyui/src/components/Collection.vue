@@ -1,7 +1,10 @@
 <template>
   <div>
     <div>
-      <strong>{{ collection.name }}</strong> (in {{ category.name }})
+      <router-link class="post-link" :to="{ name: 'collection-edit', params: { cid: extractId(collection.id) } }">{{
+        collection.name
+      }}</router-link>
+      (in {{ category.name }})
     </div>
   </div>
 </template>
@@ -11,6 +14,13 @@ export default {
   props: {
     collection: Object,
     category: Object
+  },
+  computed: {
+    extractId() {
+      return id => {
+        return id.substring(id.lastIndexOf("/") + 1);
+      };
+    }
   }
 };
 </script>

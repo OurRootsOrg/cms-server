@@ -6,8 +6,30 @@ const DEFAULT_REDIRECT_CALLBACK = () => window.history.replaceState({}, document
 
 let instance;
 
-/** Returns the current instance of the SDK */
-export const getInstance = () => instance;
+/** Returns the current instance of the SDK after it is finished loading */
+export const getAuth = () => {
+  if (!instance) {
+    return null;
+  }
+  if (!instance.loading) {
+    return Promise.resolve(instance);
+  }
+  const delay = 100;
+  return new Promise((resolve, reject) => {
+    let total = 0;
+    let timer = setInterval(() => {
+      if (total > 10000) {
+        clearInterval(timer);
+        reject("Not logged in");
+      }
+      if (!instance.loading) {
+        clearInterval(timer);
+        resolve(instance);
+      }
+      total += delay;
+    }, delay);
+  });
+};
 
 /** Creates an instance of the Auth0 SDK. If one has already been created, it returns that instance */
 export const useAuth0 = ({
