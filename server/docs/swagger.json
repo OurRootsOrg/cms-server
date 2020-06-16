@@ -936,6 +936,123 @@
                     }
                 }
             }
+        },
+        "/records": {
+            "get": {
+                "security": [
+                    {
+                        "OAuth2Implicit": [
+                            "cms",
+                            "openid",
+                            "profile",
+                            "email"
+                        ]
+                    },
+                    {
+                        "OAuth2AuthCode": [
+                            "cms",
+                            "openid",
+                            "profile",
+                            "email"
+                        ]
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "records"
+                ],
+                "summary": "returns all records",
+                "operationId": "getRecords",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.Record"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "$ref": "#/definitions/model.Errors"
+                        }
+                    }
+                }
+            }
+        },
+        "/search": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "search"
+                ],
+                "summary": "returns search results",
+                "operationId": "search",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.SearchResult"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "$ref": "#/definitions/model.Errors"
+                        }
+                    }
+                }
+            }
+        },
+        "/search/{id}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "search"
+                ],
+                "summary": "returns a single search result",
+                "operationId": "searchByID",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Search Result ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.SearchHit"
+                        }
+                    },
+                    "404": {
+                        "description": "Not found",
+                        "schema": {
+                            "$ref": "#/definitions/model.Errors"
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "$ref": "#/definitions/model.Errors"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -1141,6 +1258,132 @@
                 },
                 "recordsStatus": {
                     "type": "string"
+                }
+            }
+        },
+        "model.Record": {
+            "type": "object",
+            "required": [
+                "data",
+                "id",
+                "post"
+            ],
+            "properties": {
+                "data": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "id": {
+                    "type": "string",
+                    "example": "/records/999"
+                },
+                "insert_time": {
+                    "type": "string"
+                },
+                "ix_hash": {
+                    "type": "string"
+                },
+                "last_update_time": {
+                    "type": "string"
+                },
+                "post": {
+                    "type": "string",
+                    "example": "/posts/999"
+                }
+            }
+        },
+        "model.SearchEvent": {
+            "type": "object",
+            "properties": {
+                "date": {
+                    "type": "string"
+                },
+                "place": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.SearchHit": {
+            "type": "object",
+            "properties": {
+                "collection": {
+                    "type": "string"
+                },
+                "collectionName": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "person": {
+                    "type": "object",
+                    "$ref": "#/definitions/model.SearchPerson"
+                },
+                "record": {
+                    "description": "only returned on search by id",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "score": {
+                    "type": "number"
+                }
+            }
+        },
+        "model.SearchPerson": {
+            "type": "object",
+            "properties": {
+                "events": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.SearchEvent"
+                    }
+                },
+                "name": {
+                    "type": "string"
+                },
+                "relationships": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.SearchRelationship"
+                    }
+                },
+                "role": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.SearchRelationship": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.SearchResult": {
+            "type": "object",
+            "properties": {
+                "hits": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.SearchHit"
+                    }
+                },
+                "maxScore": {
+                    "type": "number"
+                },
+                "total": {
+                    "type": "integer"
                 }
             }
         }

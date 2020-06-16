@@ -142,6 +142,90 @@ definitions:
     - name
     - recordsKey
     type: object
+  model.Record:
+    properties:
+      data:
+        additionalProperties:
+          type: string
+        type: object
+      id:
+        example: /records/999
+        type: string
+      insert_time:
+        type: string
+      ix_hash:
+        type: string
+      last_update_time:
+        type: string
+      post:
+        example: /posts/999
+        type: string
+    required:
+    - data
+    - id
+    - post
+    type: object
+  model.SearchEvent:
+    properties:
+      date:
+        type: string
+      place:
+        type: string
+      type:
+        type: string
+    type: object
+  model.SearchHit:
+    properties:
+      collection:
+        type: string
+      collectionName:
+        type: string
+      id:
+        type: string
+      person:
+        $ref: '#/definitions/model.SearchPerson'
+        type: object
+      record:
+        additionalProperties:
+          type: string
+        description: only returned on search by id
+        type: object
+      score:
+        type: number
+    type: object
+  model.SearchPerson:
+    properties:
+      events:
+        items:
+          $ref: '#/definitions/model.SearchEvent'
+        type: array
+      name:
+        type: string
+      relationships:
+        items:
+          $ref: '#/definitions/model.SearchRelationship'
+        type: array
+      role:
+        type: string
+    type: object
+  model.SearchRelationship:
+    properties:
+      name:
+        type: string
+      type:
+        type: string
+    type: object
+  model.SearchResult:
+    properties:
+      hits:
+        items:
+          $ref: '#/definitions/model.SearchHit'
+        type: array
+      maxScore:
+        type: number
+      total:
+        type: integer
+    type: object
 host: api.ourroots.org
 info:
   contact:
@@ -746,6 +830,82 @@ paths:
       summary: updates a Post
       tags:
       - posts
+  /records:
+    get:
+      operationId: getRecords
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.Record'
+            type: array
+        "500":
+          description: Server error
+          schema:
+            $ref: '#/definitions/model.Errors'
+      security:
+      - OAuth2Implicit:
+        - cms
+        - openid
+        - profile
+        - email
+      - OAuth2AuthCode:
+        - cms
+        - openid
+        - profile
+        - email
+      summary: returns all records
+      tags:
+      - records
+  /search:
+    get:
+      operationId: search
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.SearchResult'
+            type: array
+        "500":
+          description: Server error
+          schema:
+            $ref: '#/definitions/model.Errors'
+      summary: returns search results
+      tags:
+      - search
+  /search/{id}:
+    get:
+      operationId: searchByID
+      parameters:
+      - description: Search Result ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.SearchHit'
+        "404":
+          description: Not found
+          schema:
+            $ref: '#/definitions/model.Errors'
+        "500":
+          description: Server error
+          schema:
+            $ref: '#/definitions/model.Errors'
+      summary: returns a single search result
+      tags:
+      - search
 schemes:
 - http
 - https

@@ -31,7 +31,8 @@ func TestPosts(t *testing.T) {
 	assert.NoError(t, err)
 	defer testApi.Close()
 	testApi = testApi.
-		PubSubConfig("", "rabbit", "guest:guest@localhost:35672").
+		QueueConfig("recordswriter", "amqp://guest:guest@localhost:35672/").
+		QueueConfig("publisher", "amqp://guest:guest@localhost:35672/").
 		CollectionPersister(p).
 		PostPersister(p).
 		RecordPersister(p)

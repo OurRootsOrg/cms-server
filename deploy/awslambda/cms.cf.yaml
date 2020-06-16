@@ -104,7 +104,7 @@ Resources:
       ApiId: !Ref OurRootsCMSApi
       Stage: !Ref ApiStage
 
-  # Define the Lambda function
+  # Define the API Lambda function
   OurRootsCMSFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -152,15 +152,25 @@ Resources:
               Action: "secretsmanager:GetSecretValue"
               Resource: 
                 Fn::ImportValue: !Sub "${EnvironmentName}-AuroraAppSecretARN"
+        # Elasticsearch Domain
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: "Allow"
+              Action: 'es:ESHttp*'
+              Resource: !Join 
+                - ''
+                -
+                  - Fn::ImportValue: !Sub "${EnvironmentName}-ElasticsearchDomainARN"
+                  - '/*'
       VpcConfig:
         SecurityGroupIds:
-          - Fn::ImportValue: !Sub "${EnvironmentName}-OurRootsCMSFunctionSecurityGroup"
+          - Fn::ImportValue: !Sub "${EnvironmentName}-LambdaFunctionSecurityGroup"
         SubnetIds:
           # - Fn::ImportValue: !Sub "${EnvironmentName}-PublicSubnet1"  
           # - Fn::ImportValue: !Sub "${EnvironmentName}-PublicSubnet2"
           - Fn::ImportValue: !Sub "${EnvironmentName}-PrivateSubnet1"  
           - Fn::ImportValue: !Sub "${EnvironmentName}-PrivateSubnet2"
-      Timeout: 60
+      Timeout: 50
       Environment:
         Variables:
           # This variable tells our server code what domain name and path prefix is in use
@@ -195,13 +205,20 @@ Resources:
           BLOB_STORE_BUCKET: 
             Fn::ImportValue:
               !Sub "${EnvironmentName}-CMSBlobStoreBucketName"
-          RECORDS_WRITER_QUEUE_URL:
+          PUB_SUB_RECORDSWRITER_URL:
             Fn::ImportValue:
               !Sub "${EnvironmentName}-CMSRecordsWriterQueueURL"
-          PUB_SUB_PROTOCOL: "awssqs"
-          PUB_SUB_PREFIX: !Sub "sqs.${AWS::Region}.amazonaws.com/${AWS::AccountId}"
+          PUB_SUB_PUBLISHER_URL:
+            Fn::ImportValue:
+              !Sub "${EnvironmentName}-CMSPublisherQueueURL"
           OIDC_DOMAIN: 'ourroots.auth0.com'
           OIDC_AUDIENCE: 'https://api.ourroots.org/preprod'
+          ELASTICSEARCH_URL: !Join 
+            - ''
+            -
+              - 'https://'
+              - Fn::ImportValue: !Sub "${EnvironmentName}-ElasticsearchDomainEndpoint"
+              - '/'
 
   # Give the API permission to call the Lambda
   OurRootsCMSFunctionPermission:
@@ -211,3 +228,186 @@ Resources:
       FunctionName: !Ref OurRootsCMSFunction
       Principal: 'apigateway.amazonaws.com'
       SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${OurRootsCMSApi}/*/*"
+
+  # Define the API Lambda function
+  RecordsWriterFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: recordswriter/main.lambda
+      CodeUri: recordswriter.lambda.zip
+      Runtime: go1.x
+      MemorySize: 128
+      Policies: 
+        - AWSLambdaBasicExecutionRole
+        - AWSLambdaVPCAccessExecutionRole
+        # S3 CMSBlobStoreBucket
+        - Version: '2012-10-17' 
+          Statement:
+            - Effect: Allow
+              Action:
+                - s3:GetObject
+                - s3:GetObjectACL
+                - s3:PutObject
+                - s3:PutObjectACL
+              Resource: 
+                Fn::Join: 
+                  - ''
+                  -
+                    - 'arn:aws:s3:::'
+                    - Fn::ImportValue: !Sub "${EnvironmentName}-CMSBlobStoreBucketName"
+                    - '/*'
+        # SQS Queue
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - sqs:*
+              Resource: 
+                Fn::ImportValue: !Sub "${EnvironmentName}-CMSRecordsWriterQueueARN"
+        # Secrets Manager
+        - Version: '2012-10-17' 
+          Statement:
+            - Effect: "Allow"
+              Action: "secretsmanager:GetSecretValue"
+              Resource: 
+                Fn::ImportValue: !Sub "${EnvironmentName}-AuroraMasterSecretARN"
+        - Version: '2012-10-17' 
+          Statement:
+            - Effect: "Allow"
+              Action: "secretsmanager:GetSecretValue"
+              Resource: 
+                Fn::ImportValue: !Sub "${EnvironmentName}-AuroraAppSecretARN"
+      VpcConfig:
+        SecurityGroupIds:
+          - Fn::ImportValue: !Sub "${EnvironmentName}-LambdaFunctionSecurityGroup"
+        SubnetIds:
+          - Fn::ImportValue: !Sub "${EnvironmentName}-PrivateSubnet1"  
+          - Fn::ImportValue: !Sub "${EnvironmentName}-PrivateSubnet2"
+      Timeout: 60
+      Environment:
+        Variables:
+          # This variable tells our server code what domain name and path prefix is in use
+          BASE_URL: !Sub "https://${DomainName}/api"
+          DATABASE_URL: !Join 
+            - ''
+            -
+              - 'postgres://{{resolve:secretsmanager:'
+              - Fn::ImportValue: !Sub "${EnvironmentName}-AuroraAppSecretARN"
+              - ':SecretString:username}}:{{resolve:secretsmanager:'
+              - Fn::ImportValue: !Sub "${EnvironmentName}-AuroraAppSecretARN"
+              - ':SecretString:password}}@'
+              - Fn::ImportValue: !Sub "${EnvironmentName}-CMSPostgresAddress"
+              - ':'
+              - Fn::ImportValue: !Sub "${EnvironmentName}-CMSPostgresPort"
+              - '/cms'
+          BLOB_STORE_BUCKET: 
+            Fn::ImportValue:
+              !Sub "${EnvironmentName}-CMSBlobStoreBucketName"
+          PUB_SUB_RECORDSWRITER_URL:
+            Fn::ImportValue:
+              !Sub "${EnvironmentName}-CMSRecordsWriterQueueURL"
+      Events:
+        MySQSEvent:
+          Type: SQS
+          Properties:
+            Queue: 
+              Fn::ImportValue: !Sub "${EnvironmentName}-CMSRecordsWriterQueueARN"
+            BatchSize: 1
+
+  # Define the Publisher Lambda function
+  PublisherFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: publisher/main.lambda
+      CodeUri: publisher.lambda.zip
+      Runtime: go1.x
+      MemorySize: 128
+      Policies: 
+        - AWSLambdaBasicExecutionRole
+        - AWSLambdaVPCAccessExecutionRole
+        # S3 CMSBlobStoreBucket
+        - Version: '2012-10-17' 
+          Statement:
+            - Effect: Allow
+              Action:
+                - s3:GetObject
+                - s3:GetObjectACL
+                - s3:PutObject
+                - s3:PutObjectACL
+              Resource: 
+                Fn::Join: 
+                  - ''
+                  -
+                    - 'arn:aws:s3:::'
+                    - Fn::ImportValue: !Sub "${EnvironmentName}-CMSBlobStoreBucketName"
+                    - '/*'
+        # SQS Queue
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - sqs:*
+              Resource: 
+                Fn::ImportValue: !Sub "${EnvironmentName}-CMSPublisherQueueARN"
+        # Secrets Manager
+        - Version: '2012-10-17' 
+          Statement:
+            - Effect: "Allow"
+              Action: "secretsmanager:GetSecretValue"
+              Resource: 
+                Fn::ImportValue: !Sub "${EnvironmentName}-AuroraMasterSecretARN"
+        - Version: '2012-10-17' 
+          Statement:
+            - Effect: "Allow"
+              Action: "secretsmanager:GetSecretValue"
+              Resource: 
+                Fn::ImportValue: !Sub "${EnvironmentName}-AuroraAppSecretARN"
+        # Elasticsearch Domain
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: "Allow"
+              Action: 'es:ESHttp*'
+              Resource: !Join 
+                - ''
+                -
+                  - Fn::ImportValue: !Sub "${EnvironmentName}-ElasticsearchDomainARN"
+                  - '/*'
+      VpcConfig:
+        SecurityGroupIds:
+          - Fn::ImportValue: !Sub "${EnvironmentName}-LambdaFunctionSecurityGroup"
+        SubnetIds:
+          - Fn::ImportValue: !Sub "${EnvironmentName}-PrivateSubnet1"  
+          - Fn::ImportValue: !Sub "${EnvironmentName}-PrivateSubnet2"
+      Timeout: 60
+      Environment:
+        Variables:
+          # This variable tells our server code what domain name and path prefix is in use
+          BASE_URL: !Sub "https://${DomainName}/api"
+          DATABASE_URL: !Join 
+            - ''
+            -
+              - 'postgres://{{resolve:secretsmanager:'
+              - Fn::ImportValue: !Sub "${EnvironmentName}-AuroraAppSecretARN"
+              - ':SecretString:username}}:{{resolve:secretsmanager:'
+              - Fn::ImportValue: !Sub "${EnvironmentName}-AuroraAppSecretARN"
+              - ':SecretString:password}}@'
+              - Fn::ImportValue: !Sub "${EnvironmentName}-CMSPostgresAddress"
+              - ':'
+              - Fn::ImportValue: !Sub "${EnvironmentName}-CMSPostgresPort"
+              - '/cms'
+          PUB_SUB_PUBLISHER_URL:
+            Fn::ImportValue:
+              !Sub "${EnvironmentName}-CMSPublisherQueueURL"
+          ELASTICSEARCH_URL: !Join 
+            - ''
+            -
+              - 'https://'
+              - Fn::ImportValue: !Sub "${EnvironmentName}-ElasticsearchDomainEndpoint"
+              - '/'
+      Events:
+        MySQSEvent:
+          Type: SQS
+          Properties:
+            Queue: 
+              Fn::ImportValue: !Sub "${EnvironmentName}-CMSPublisherQueueARN"
+            BatchSize: 1

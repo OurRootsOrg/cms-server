@@ -6,7 +6,8 @@ require (
 	github.com/DATA-DOG/go-sqlmock v1.4.1
 	github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751
 	github.com/aws/aws-lambda-go v1.16.0
-	github.com/aws/aws-sdk-go v1.19.45
+	github.com/aws/aws-sdk-go v1.32.2
+	github.com/aws/aws-sdk-go-v2 v0.23.0 // indirect
 	github.com/awslabs/aws-lambda-go-api-proxy v0.6.1-0.20200609195354-9acdb20aee66
 	github.com/cenkalti/backoff/v4 v4.0.2
 	github.com/codingconcepts/env v0.0.0-20190614135724-bb4545dff6a4
@@ -22,6 +23,7 @@ require (
 	github.com/gorilla/schema v1.1.0
 	github.com/hashicorp/golang-lru v0.5.4
 	github.com/hashicorp/logutils v1.0.0
+	github.com/jriquelme/awsgosigv4 v0.0.0-20200515043227-0e5300b5f3e2
 	github.com/lib/pq v1.3.0
 	github.com/mailru/easyjson v0.7.1 // indirect
 	github.com/pquerna/cachecontrol v0.0.0-20180517163645-1555304b9b35 // indirect

@@ -66,8 +66,8 @@ services:
       - DATABASE_URL=postgres://ourroots:password@postgres:5432/cms?sslmode=disable
       - AWS_REGION=us-east-1
       # this configures rabbitmq; to use SQS, set the protocol to awssqs and the host to sqs.us-east-1.amazonaws.com/<accountid>
-      - PUB_SUB_PROTOCOL=rabbit
-      - PUB_SUB_HOST=guest:guest@rabbitmq:5672
+      - PUB_SUB_RECORDSWRITER_URL=amqp://guest:guest@rabbitmq_test:5672/
+      - PUB_SUB_PUBLISHER_URL=amqp://guest:guest@rabbitmq_test:5672/
       - ELASTICSEARCH_URL=http://elasticsearch:9200
     networks:
       - mynetwork
@@ -92,8 +92,8 @@ services:
       - BLOB_STORE_SECRET_KEY=miniosecret
       - BLOB_STORE_DISABLE_SSL=true
       # this configures rabbitmq; to use SQS, set the protocol to awssqs and the host to sqs.us-east-1.amazonaws.com/<accountid>
-      - PUB_SUB_PROTOCOL=rabbit
-      - PUB_SUB_HOST=guest:guest@rabbitmq:5672
+      - PUB_SUB_RECORDSWRITER_URL=amqp://guest:guest@rabbitmq_test:5672/
+      - PUB_SUB_PUBLISHER_URL=amqp://guest:guest@rabbitmq_test:5672/
     networks:
       - mynetwork
 
@@ -119,8 +119,8 @@ services:
       - BLOB_STORE_SECRET_KEY=miniosecret
       - BLOB_STORE_DISABLE_SSL=true
       # this configures rabbitmq; to use SQS, set the protocol to awssqs and the host to sqs.us-east-1.amazonaws.com/<accountid>
-      - PUB_SUB_PROTOCOL=rabbit
-      - PUB_SUB_HOST=guest:guest@rabbitmq:5672
+      - PUB_SUB_RECORDSWRITER_URL=amqp://guest:guest@rabbitmq_test:5672/
+      - PUB_SUB_PUBLISHER_URL=amqp://guest:guest@rabbitmq_test:5672/
       - OIDC_DOMAIN=ourroots.auth0.com
       - OIDC_AUDIENCE=https://api.ourroots.org/preprod
       - ELASTICSEARCH_URL=http://elasticsearch:9200

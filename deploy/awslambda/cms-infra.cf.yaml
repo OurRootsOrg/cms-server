@@ -205,21 +205,21 @@ Resources:
       GroupDescription: "Security group with no ingress rule"
       VpcId: !Ref VPC
 
-  OurRootsCMSFunctionSecurityGroup:
+  LambdaFunctionSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupDescription:  !Join [ " - ", [ "Security group for CMS Lambda ENIs", !Ref 'AWS::StackName' ] ] 
       VpcId: !Ref VPC
       Tags:
       - Key: Name
-        Value: !Sub '${AWS::StackName}-OurRootsCMSFunctionSecurityGroup'
+        Value: !Sub '${AWS::StackName}-LambdaFunctionSecurityGroup'
 
-  OurRootsCMSFunctionSecurityGroupIngress:
+  LambdaFunctionSecurityGroupIngress:
     Type: 'AWS::EC2::SecurityGroupIngress'
     Properties:
-      GroupId: !GetAtt 'OurRootsCMSFunctionSecurityGroup.GroupId'
+      GroupId: !GetAtt 'LambdaFunctionSecurityGroup.GroupId'
       IpProtocol: '-1'
-      SourceSecurityGroupId: !Ref OurRootsCMSFunctionSecurityGroup
+      SourceSecurityGroupId: !Ref LambdaFunctionSecurityGroup
       Description: 'Self Reference'
 
   AuroraMasterSecret:
@@ -316,7 +316,7 @@ Resources:
       - IpProtocol: tcp
         FromPort: 5432
         ToPort: 5432
-        SourceSecurityGroupId: !Ref OurRootsCMSFunctionSecurityGroup
+        SourceSecurityGroupId: !Ref LambdaFunctionSecurityGroup
         Description: 'Access to Lambda Security Group'
       VpcId: !Ref VPC
       Tags:
@@ -392,6 +392,7 @@ Resources:
     Type: AWS::SQS::Queue
     Properties: 
       QueueName: "recordswriter"
+      VisibilityTimeout: 180
       # ContentBasedDeduplication: Boolean
       # DelaySeconds: Integer
       # FifoQueue: Boolean
@@ -399,7 +400,49 @@ Resources:
       # KmsMasterKeyId: String
       # MaximumMessageSize: Integer
       # MessageRetentionPeriod: Integer
-  
+    # TODO: Add dead letter queue
+
+  CMSPublisherQueue:
+    Type: AWS::SQS::Queue
+    Properties: 
+      QueueName: "publisher"
+      VisibilityTimeout: 180
+    # TODO: Add dead letter queue
+
+  ElasticsearchDomain:
+    Type: 'AWS::Elasticsearch::Domain'
+    Properties:
+      DomainName: !Sub ${EnvironmentName}-es
+      ElasticsearchClusterConfig:
+        # DedicatedMasterEnabled: 'true'
+        # InstanceCount: '2'
+        # ZoneAwarenessEnabled: 'true'
+        InstanceType: t2.small.elasticsearch
+        # DedicatedMasterType: c4.large.elasticsearch
+        # DedicatedMasterCount: '3'
+      ElasticsearchVersion: '7.4'
+      EBSOptions:
+        EBSEnabled: true
+        VolumeSize: 10
+        VolumeType: standard # One of gp2, io1, standard
+      AccessPolicies:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !Ref AWS::AccountId
+            Action: 'es:ESHttp*'
+            Resource: !Sub 'arn:aws:es:${AWS::Region}:${AWS::AccountId}:domain/${EnvironmentName}-es/*'
+      # LogPublishingOptions:
+      #   SEARCH_SLOW_LOGS:
+      #     CloudWatchLogsLogGroupArn: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:${EnvironmentName}/ElasticSearch/search-slow-logs'
+      #     Enabled: true
+      #   INDEX_SLOW_LOGS:
+      #     CloudWatchLogsLogGroupArn: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:${EnvironmentName}/ElasticSearch/index-slow-logs'
+      #     Enabled: true
+      #   ES_APPLICATION_LOGS:
+      #     CloudWatchLogsLogGroupArn: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:${EnvironmentName}/ElasticSearch/application-logs'
+      #     Enabled: true  
 Outputs:
   CMSSiteBucketName:
     Description: CMS Site Bucket Name
@@ -439,6 +482,14 @@ Outputs:
     Value: !GetAtt CMSRecordsWriterQueue.Arn
     Export:
       Name: !Sub "${EnvironmentName}-CMSRecordsWriterQueueARN"
+  CMSPublisherQueueURL:
+    Value: !Ref CMSPublisherQueue
+    Export:
+      Name: !Sub "${EnvironmentName}-CMSPublisherQueueURL"
+  CMSPublisherQueueARN:
+    Value: !GetAtt CMSPublisherQueue.Arn
+    Export:
+      Name: !Sub "${EnvironmentName}-CMSPublisherQueueARN"
   PublicSubnet1:
     Value: !Ref PublicSubnet1
     Export:
@@ -455,11 +506,20 @@ Outputs:
     Value: !Ref PrivateSubnet2
     Export:
       Name: !Sub "${EnvironmentName}-PrivateSubnet2"
-  OurRootsCMSFunctionSecurityGroup:
-    Value: !Ref OurRootsCMSFunctionSecurityGroup
+  LambdaFunctionSecurityGroup:
+    Value: !Ref LambdaFunctionSecurityGroup
     Export:
-      Name: !Sub "${EnvironmentName}-OurRootsCMSFunctionSecurityGroup"
+      Name: !Sub "${EnvironmentName}-LambdaFunctionSecurityGroup"
   AuroraDBClusterID:
     Value: !Ref AuroraDBCluster
     Export:
       Name: !Sub "${EnvironmentName}-AuroraDBClusterID"
+  ElasticsearchDomainARN:
+    Value: !GetAtt ElasticsearchDomain.DomainArn
+    Export:
+      Name: !Sub "${EnvironmentName}-ElasticsearchDomainARN"
+  ElasticsearchDomainEndpoint:
+    Value: !GetAtt ElasticsearchDomain.DomainEndpoint
+    Export:
+      Name: !Sub "${EnvironmentName}-ElasticsearchDomainEndpoint"
+  

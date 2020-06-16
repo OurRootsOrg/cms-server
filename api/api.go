@@ -6,6 +6,7 @@ import (
 	"errors"
 	"log"
 	"math"
+	"net/http"
 	"reflect"
 	"strings"
 	"time"
@@ -84,9 +85,12 @@ type BlobStoreConfig struct {
 
 // PubSubConfig contains configuration information for the pub sub service
 type PubSubConfig struct {
-	region   string
-	protocol string
-	prefix   string
+	queueURL map[string]string
+}
+
+// QueueURL returns the URL for a queue
+func (c PubSubConfig) QueueURL(queueName string) string {
+	return c.queueURL[queueName]
 }
 
 // NewAPI builds an API; Close() the api when you're done with it to free up resources
@@ -98,6 +102,7 @@ func NewAPI() (*API, error) {
 	if err != nil {
 		return nil, err
 	}
+	api.pubSubConfig = PubSubConfig{queueURL: map[string]string{}}
 	return api, nil
 }
 
@@ -164,9 +169,9 @@ func (api *API) BlobStoreConfig(region, endpoint, accessKeyID, secretAccessKey, 
 	return api
 }
 
-// PubSubConfig configures the pub-sub service
-func (api *API) PubSubConfig(region, protocol, prefix string) *API {
-	api.pubSubConfig = PubSubConfig{region, protocol, prefix}
+// QueueConfig configures the recordswriter queue
+func (api *API) QueueConfig(queueName, queueURL string) *API {
+	api.pubSubConfig.queueURL[queueName] = queueURL
 	return api
 }
 
@@ -176,8 +181,8 @@ func (api *API) UserPersister(p model.UserPersister) *API {
 	return api
 }
 
-// Elasticsearch sets the Elasticsearch client
-func (api *API) ElasticsearchConfig(esURL string) *API {
+// ElasticsearchConfig sets the Elasticsearch client
+func (api *API) ElasticsearchConfig(esURL string, transport http.RoundTripper) *API {
 	retryBackoff := backoff.NewExponentialBackOff()
 
 	log.Printf("Connecting to %s\n", esURL)
@@ -194,6 +199,7 @@ func (api *API) ElasticsearchConfig(esURL string) *API {
 		},
 		// Retry up to 5 attempts
 		MaxRetries: 5,
+		Transport:  transport,
 	})
 	if err != nil {
 		log.Fatalf("[FATAL] Error opening elasticsearch connection: %v\n  ELASTICSEARCH_URL: %s", err, esURL)

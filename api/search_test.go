@@ -40,7 +40,7 @@ func TestSearch(t *testing.T) {
 		CollectionPersister(p).
 		PostPersister(p).
 		RecordPersister(p).
-		ElasticsearchConfig("http://localhost:19200")
+		ElasticsearchConfig("http://localhost:19200", nil)
 
 	// Add a test category and test collection and test post and test records
 	testCategory, err := createTestCategory(p)

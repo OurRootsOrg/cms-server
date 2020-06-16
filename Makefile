@@ -14,8 +14,8 @@ ES_PORT=19200
 all: clean test build package
 build: 
 	cd server && go generate && $(GOBUILD) && GOOS=linux $(GOBUILD) -o $(BINARY_NAME)
-	cd publisher && go generate && $(GOBUILD) && GOOS=linux $(GOBUILD) -o $(PUBLISHER_BINARY)
-	cd recordswriter && go generate && $(GOBUILD) && GOOS=linux $(GOBUILD) -o $(RECORDSWRITER_BINARY)
+	cd publisher && $(GOBUILD) && GOOS=linux $(GOBUILD) -o $(PUBLISHER_BINARY)
+	cd recordswriter && $(GOBUILD) && GOOS=linux $(GOBUILD) -o $(RECORDSWRITER_BINARY)
 package:
 	zip -r deploy/awslambda/$(BINARY_NAME).zip server/$(BINARY_NAME) db/migrations/*
 	zip -r deploy/awslambda/${PUBLISHER_BINARY}.zip publisher/$(PUBLISHER_BINARY)
