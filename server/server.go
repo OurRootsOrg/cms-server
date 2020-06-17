@@ -190,9 +190,11 @@ func main() {
 		// API Gateway proxies static content requests directly to an S3 bucket
 		adapter := gorillamux.New(r)
 		lambda.Start(func(ctx context.Context, req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-			log.Printf("[DEBUG] Lambda request %#v", req)
+			log.Printf("[DEBUG] Start %s %s, request: %#v", req.HTTPMethod, req.Path, req)
 			// If no name is provided in the HTTP request body, throw an error
-			return adapter.ProxyWithContext(ctx, req)
+			resp, err := adapter.ProxyWithContext(ctx, req)
+			log.Printf("[DEBUG] End %s %s status %d, response: %#v", req.HTTPMethod, req.Path, resp.StatusCode, resp)
+			return resp, err
 		})
 		log.Fatal("Lambda exiting...")
 	} else {

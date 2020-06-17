@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 )
 
@@ -21,6 +22,7 @@ func (app App) GetRecords(w http.ResponseWriter, req *http.Request) {
 		ErrorResponse(w, http.StatusBadRequest, "post query parameter required")
 		return
 	}
+	log.Printf("[DEBUG] Get records for post ID: %s", postID)
 	enc := json.NewEncoder(w)
 	w.Header().Set("Content-Type", contentType)
 	cols, errors := app.api.GetRecordsForPost(req.Context(), postID)

@@ -175,7 +175,6 @@ Resources:
         Variables:
           # This variable tells our server code what domain name and path prefix is in use
           BASE_URL: !Sub "https://${DomainName}/api"
-          # BASE_URL: !Sub "https://${DomainName}"
           # This variable tells aws-lambda-go-api-proxy what domain name is in use
           GO_API_HOST: !Sub "https://${DomainName}"
           MIGRATION_DATABASE_URL: !Join 
@@ -233,7 +232,7 @@ Resources:
   RecordsWriterFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: recordswriter/main.lambda
+      Handler: recordswriter/recordswriter.lambda
       CodeUri: recordswriter.lambda.zip
       Runtime: go1.x
       MemorySize: 128
@@ -318,7 +317,7 @@ Resources:
   PublisherFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: publisher/main.lambda
+      Handler: publisher/publisher.lambda
       CodeUri: publisher.lambda.zip
       Runtime: go1.x
       MemorySize: 128

@@ -30,9 +30,11 @@ func (api *API) OpenTopic(ctx context.Context, topicName string) (*pubsub.Topic,
 		}
 		cnt++
 
-		if strings.HasPrefix(urlStr, "awssqs:") {
+		switch {
+		case strings.HasPrefix(urlStr, "https://sqs."): // AWS SQS https URL
+			urlStr = "awssqs" + urlStr[5:]
 			topic, err = pubsub.OpenTopic(ctx, urlStr)
-		} else { // rabbit
+		case strings.HasPrefix(urlStr, "amqp:"): // Rabbit
 			if conn == nil {
 				conn, err = amqp.Dial(urlStr)
 				if err != nil {
@@ -42,6 +44,8 @@ func (api *API) OpenTopic(ctx context.Context, topicName string) (*pubsub.Topic,
 				}
 			}
 			topic = rabbitpubsub.OpenTopic(conn, topicName, nil)
+		default:
+			topic, err = pubsub.OpenTopic(ctx, urlStr)
 		}
 	}
 	if err != nil {

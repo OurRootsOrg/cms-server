@@ -6,6 +6,10 @@ Parameters:
     Description: Name of this CMS deployment
     Type: String
 
+  DomainName:
+    Type: String
+    Description: FQDN the app will be hosted at
+
   VpcCIDR:
     Description: Please enter the IP range (CIDR notation) for this VPC
     Type: String
@@ -387,6 +391,14 @@ Resources:
     Type: AWS::S3::Bucket
     Properties:
       BucketName: !Sub "${EnvironmentName}-cms-blob-store"
+      CorsConfiguration:
+        CorsRules:
+        - AllowedHeaders: ['*']
+          AllowedMethods: [GET, PUT, HEAD, POST, DELETE]
+          AllowedOrigins: ['*']
+          # AllowedOrigins: [!Ref DomainName]
+          MaxAge: 3600
+
     # DeletionPolicy: Retain
 
   CMSRecordsWriterQueue:
