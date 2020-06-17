@@ -5,22 +5,18 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"html/template"
 	"time"
 )
 
-// CollectionIDFormat is the format for Collection IDs
-const CollectionIDFormat = "/collections/%d"
-
 // CollectionPersister defines methods needed to persist categories
 type CollectionPersister interface {
 	SelectCollections(ctx context.Context) ([]Collection, error)
-	SelectManyCollections(ctx context.Context, ids []string) ([]Collection, error)
-	SelectOneCollection(ctx context.Context, id string) (Collection, error)
+	SelectCollectionsByID(ctx context.Context, ids []uint32) ([]Collection, error)
+	SelectOneCollection(ctx context.Context, id uint32) (Collection, error)
 	InsertCollection(ctx context.Context, in CollectionIn) (Collection, error)
-	UpdateCollection(ctx context.Context, id string, in Collection) (Collection, error)
-	DeleteCollection(ctx context.Context, id string) error
+	UpdateCollection(ctx context.Context, id uint32, in Collection) (Collection, error)
+	DeleteCollection(ctx context.Context, id uint32) error
 }
 
 // CollectionBody is the JSON body of a Collection
@@ -47,19 +43,19 @@ func (cb *CollectionBody) Scan(value interface{}) error {
 // CollectionIn is the payload to create or update a Collection
 type CollectionIn struct {
 	CollectionBody
-	Category string `json:"category,omitempty" example:"/categories/999" validate:"required"`
+	Category uint32 `json:"category,omitempty" example:"999" validate:"required"`
 }
 
 // Collection represents a set of related Records
 type Collection struct {
-	ID string `json:"id,omitempty" example:"/collections/999" validate:"required"`
+	ID uint32 `json:"id,omitempty" example:"999" validate:"required"`
 	CollectionIn
 	InsertTime     time.Time `json:"insert_time,omitempty"`
 	LastUpdateTime time.Time `json:"last_update_time,omitempty"`
 }
 
 // NewCollectionIn constructs a CollectionIn
-func NewCollectionIn(name string, categoryID string) CollectionIn {
+func NewCollectionIn(name string, categoryID uint32) CollectionIn {
 	ci := CollectionIn{
 		CollectionBody: CollectionBody{
 			Name: name,
@@ -70,10 +66,10 @@ func NewCollectionIn(name string, categoryID string) CollectionIn {
 }
 
 // NewCollection constructs a Collection from a CollectionIn
-func NewCollection(id int32, ci CollectionIn) Collection {
+func NewCollection(id uint32, ci CollectionIn) Collection {
 	now := time.Now()
 	c := Collection{
-		ID: MakeCollectionID(id),
+		ID: id,
 		CollectionIn: CollectionIn{
 			CollectionBody: ci.CollectionBody,
 			Category:       ci.Category,
@@ -82,9 +78,4 @@ func NewCollection(id int32, ci CollectionIn) Collection {
 		LastUpdateTime: now,
 	}
 	return c
-}
-
-// MakeCollectionID builds a Collection ID string from an integer ID
-func MakeCollectionID(id int32) string {
-	return pathPrefix + fmt.Sprintf(CollectionIDFormat, id)
 }

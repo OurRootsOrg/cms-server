@@ -16,13 +16,12 @@ import (
 // already exist.
 func (p PostgresPersister) RetrieveUser(ctx context.Context, in model.UserIn) (*model.User, error) {
 	var user model.User
-	var dbID int32
 	log.Printf("[DEBUG] Looking up subject '%s' in database", in.Subject)
 	err := p.db.QueryRowContext(ctx, `SELECT id, body, insert_time, last_update_time 
 		FROM cms_user
 		WHERE body->>'iss'=$1 AND body->>'sub'=$2`, in.Issuer, in.Subject).
 		Scan(
-			&dbID,
+			&user.ID,
 			&user.UserBody,
 			&user.InsertTime,
 			&user.LastUpdateTime,
@@ -33,9 +32,8 @@ func (p PostgresPersister) RetrieveUser(ctx context.Context, in model.UserIn) (*
 	}
 	if err == nil {
 		log.Printf("[DEBUG] Found subject '%s' in database", in.Subject)
-		user.ID = model.MakeUserID(dbID)
 		if !user.Enabled {
-			msg := fmt.Sprintf("User '%s' is not enabled", user.ID)
+			msg := fmt.Sprintf("User '%d' is not enabled", user.ID)
 			log.Printf("[DEBUG] %s", msg)
 			return nil, errors.New(msg)
 		}
@@ -50,12 +48,11 @@ func (p PostgresPersister) RetrieveUser(ctx context.Context, in model.UserIn) (*
 		 RETURNING id, body, insert_time, last_update_time`,
 		in.UserBody).
 		Scan(
-			&dbID,
+			&user.ID,
 			&user.UserBody,
 			&user.InsertTime,
 			&user.LastUpdateTime,
 		)
-	user.ID = model.MakeUserID(dbID)
-	log.Printf("[DEBUG] Created user '%s'", user.ID)
+	log.Printf("[DEBUG] Created user '%d'", user.ID)
 	return &user, translateError(err)
 }

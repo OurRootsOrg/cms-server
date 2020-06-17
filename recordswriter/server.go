@@ -39,23 +39,23 @@ func processMessage(ctx context.Context, ap *api.API, rawMsg []byte) error {
 		return nil // Don't return an error, because parsing will never succeed
 	}
 
-	log.Printf("[DEBUG] processing %s", msg.PostID)
+	log.Printf("[DEBUG] processing %d", msg.PostID)
 
 	// read post
 	post, errs := ap.GetPost(ctx, msg.PostID)
 	if errs != nil {
-		log.Printf("[ERROR] Error calling GetPost on %s: %v", msg.PostID, errs)
+		log.Printf("[ERROR] Error calling GetPost on %d: %v", msg.PostID, errs)
 		return errs
 	}
 	if post.RecordsStatus != api.PostLoading {
-		log.Printf("[ERROR] post not pending %s -> %s\n", post.ID, post.RecordsStatus)
+		log.Printf("[ERROR] post not pending %d -> %s\n", post.ID, post.RecordsStatus)
 		return nil
 	}
 
 	// delete any previous records for post
 	errs = ap.DeleteRecordsForPost(ctx, post.ID)
 	if errs != nil {
-		log.Printf("[ERROR] DeleteRecordsForPost on %s: %v\n", post.ID, errs)
+		log.Printf("[ERROR] DeleteRecordsForPost on %d: %v\n", post.ID, errs)
 		return errs
 	}
 

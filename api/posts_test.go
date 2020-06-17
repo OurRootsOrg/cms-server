@@ -65,7 +65,7 @@ func TestPosts(t *testing.T) {
 	assert.Equal(t, in.Collection, created.Collection)
 
 	// Add with bad collection reference
-	in.Collection = in.Collection + "88"
+	in.Collection = in.Collection + 88
 	_, errors = testApi.AddPost(context.TODO(), in)
 	assert.Len(t, errors.Errs(), 1)
 	assert.Equal(t, model.ErrBadReference, errors.Errs()[0].Code, "errors.Errs()[0]: %#v", errors.Errs()[0])
@@ -83,14 +83,14 @@ func TestPosts(t *testing.T) {
 	assert.Equal(t, created, ret2)
 
 	// Bad request - no collection
-	in.Collection = ""
+	in.Collection = 0
 	_, errors = testApi.AddPost(context.TODO(), in)
 	if assert.Len(t, errors.Errs(), 1, "errors.Errs(): %#v", errors.Errs()) {
 		assert.Equal(t, errors.Errs()[0].Code, model.ErrRequired)
 	}
 
 	// Post not found
-	_, errors = testApi.GetPost(context.TODO(), created.ID+"99")
+	_, errors = testApi.GetPost(context.TODO(), created.ID+99)
 	assert.NotNil(t, errors)
 	assert.Len(t, errors.Errs(), 1)
 	assert.Equal(t, model.ErrNotFound, errors.Errs()[0].Code, "errors.Errs()[0]: %#v", errors.Errs()[0])
@@ -104,12 +104,12 @@ func TestPosts(t *testing.T) {
 	assert.Equal(t, ret2.Name, updated.Name, "Expected Name to match")
 
 	// Update non-existant
-	_, errors = testApi.UpdatePost(context.TODO(), updated.ID+"99", *updated)
+	_, errors = testApi.UpdatePost(context.TODO(), updated.ID+99, *updated)
 	assert.Len(t, errors.Errs(), 1)
 	assert.Equal(t, model.ErrNotFound, errors.Errs()[0].Code, "errors.Errs()[0]: %#v", errors.Errs()[0])
 
 	// Update with bad collection
-	updated.Collection = updated.Collection + "99"
+	updated.Collection = updated.Collection + 99
 	_, errors = testApi.UpdatePost(context.TODO(), updated.ID, *updated)
 	assert.Len(t, errors.Errs(), 1)
 	assert.Equal(t, model.ErrBadReference, errors.Errs()[0].Code, "errors.Errs()[0]: %#v", errors.Errs()[0])
@@ -128,7 +128,7 @@ func TestPosts(t *testing.T) {
 	assert.Nil(t, errors)
 }
 
-func createTestCollection(p model.CollectionPersister, categoryID string) (*model.Collection, error) {
+func createTestCollection(p model.CollectionPersister, categoryID uint32) (*model.Collection, error) {
 	in := model.NewCollectionIn("Test", categoryID)
 	created, err := p.InsertCollection(context.TODO(), in)
 	if err != nil {

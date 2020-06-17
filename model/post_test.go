@@ -17,14 +17,14 @@ func TestPost(t *testing.T) {
 	assert.NoError(t, err)
 	// log.Printf("PostBody JSON: %s", string(js))
 	in = model.PostIn{}
-	c := model.NewPost(int32(rand.Int31()), in)
+	c := model.NewPost(uint32(rand.Int31()), in)
 	err = json.Unmarshal(js, &c)
 	assert.NoError(t, err)
 	// log.Printf("Post: %#v", c)
 	js, err = json.Marshal(c)
 	assert.NoError(t, err)
 	// log.Printf("Post JSON: %s", string(js))
-	c.Collection = "/collections/999"
+	c.Collection = 999
 	js, err = json.Marshal(c)
 	assert.NoError(t, err)
 	// log.Printf("Post JSON: %s", string(js))

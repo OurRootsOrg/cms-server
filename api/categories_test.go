@@ -60,7 +60,7 @@ func TestCategories(t *testing.T) {
 	assert.Equal(t, created, ret2)
 
 	// Category not found
-	_, errors = testApi.GetCategory(context.TODO(), created.ID+"99")
+	_, errors = testApi.GetCategory(context.TODO(), created.ID+99)
 	assert.NotNil(t, errors)
 	assert.Len(t, errors.Errs(), 1)
 	assert.Equal(t, model.ErrNotFound, errors.Errs()[0].Code, "errors.Errs()[0]: %#v", errors.Errs()[0])
@@ -73,7 +73,7 @@ func TestCategories(t *testing.T) {
 	assert.Equal(t, ret2.Name, updated.Name, "Expected Name to match")
 
 	// Update non-existent
-	_, errors = testApi.UpdateCategory(context.TODO(), created.ID+"99", *created)
+	_, errors = testApi.UpdateCategory(context.TODO(), created.ID+99, *created)
 	assert.Len(t, errors.Errs(), 1)
 	assert.Equal(t, model.ErrNotFound, errors.Errs()[0].Code, "errors.Errs()[0]: %#v", errors.Errs()[0])
 

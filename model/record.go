@@ -5,22 +5,18 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"time"
 )
 
-// RecordIDFormat is the format for Record IDs
-const RecordIDFormat = "/records/%d"
-
 // RecordPersister defines methods needed to persist records
 type RecordPersister interface {
-	SelectRecordsForPost(ctx context.Context, postID string) ([]Record, error)
-	SelectManyRecords(ctx context.Context, ids []string) ([]Record, error)
-	SelectOneRecord(ctx context.Context, id string) (Record, error)
+	SelectRecordsForPost(ctx context.Context, postID uint32) ([]Record, error)
+	SelectRecordsByID(ctx context.Context, ids []uint32) ([]Record, error)
+	SelectOneRecord(ctx context.Context, id uint32) (Record, error)
 	InsertRecord(ctx context.Context, in RecordIn) (Record, error)
-	UpdateRecord(ctx context.Context, id string, in Record) (Record, error)
-	DeleteRecord(ctx context.Context, id string) error
-	DeleteRecordsForPost(ctx context.Context, postID string) error
+	UpdateRecord(ctx context.Context, id uint32, in Record) (Record, error)
+	DeleteRecord(ctx context.Context, id uint32) error
+	DeleteRecordsForPost(ctx context.Context, postID uint32) error
 }
 
 // RecordBody is the JSON body of a Record
@@ -45,12 +41,12 @@ func (cb *RecordBody) Scan(value interface{}) error {
 // RecordIn is the payload to create or update a Record
 type RecordIn struct {
 	RecordBody
-	Post string `json:"post,omitempty" example:"/posts/999" validate:"required"`
+	Post uint32 `json:"post,omitempty" example:"999" validate:"required"`
 }
 
 // Record represents a set of related Records
 type Record struct {
-	ID string `json:"id,omitempty" example:"/records/999" validate:"required"`
+	ID uint32 `json:"id,omitempty" example:"999" validate:"required"`
 	RecordIn
 	IxHash         string    `json:"ix_hash,omitempty"`
 	InsertTime     time.Time `json:"insert_time,omitempty"`
@@ -58,7 +54,7 @@ type Record struct {
 }
 
 // NewRecordIn constructs a RecordIn
-func NewRecordIn(data map[string]string, postID string) RecordIn {
+func NewRecordIn(data map[string]string, postID uint32) RecordIn {
 	ri := RecordIn{
 		RecordBody: RecordBody{
 			Data: data,
@@ -69,10 +65,10 @@ func NewRecordIn(data map[string]string, postID string) RecordIn {
 }
 
 // NewRecord constructs a Record from a RecordIn
-func NewRecord(id int32, ci RecordIn) Record {
+func NewRecord(id uint32, ci RecordIn) Record {
 	now := time.Now()
 	c := Record{
-		ID: MakeRecordID(id),
+		ID: id,
 		RecordIn: RecordIn{
 			RecordBody: ci.RecordBody,
 			Post:       ci.Post,
@@ -81,9 +77,4 @@ func NewRecord(id int32, ci RecordIn) Record {
 		LastUpdateTime: now,
 	}
 	return c
-}
-
-// MakeRecordID builds a Record ID string from an integer ID
-func MakeRecordID(id int32) string {
-	return pathPrefix + fmt.Sprintf(RecordIDFormat, id)
 }

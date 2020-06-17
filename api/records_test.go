@@ -65,7 +65,7 @@ func TestRecords(t *testing.T) {
 	assert.Equal(t, in.Post, created.Post)
 
 	// Add with bad post reference
-	in.Post = in.Post + "88"
+	in.Post = in.Post + 88
 	_, errors = testApi.AddRecord(context.TODO(), in)
 	assert.Len(t, errors.Errs(), 1)
 	assert.Equal(t, model.ErrBadReference, errors.Errs()[0].Code, "errors.Errs()[0]: %#v", errors.Errs()[0])
@@ -78,7 +78,7 @@ func TestRecords(t *testing.T) {
 	assert.Equal(t, *created, ret.Records[0])
 
 	// GET many records should now return the created Record
-	records, errors := testApi.GetRecordsByID(context.TODO(), []string{created.ID})
+	records, errors := testApi.GetRecordsByID(context.TODO(), []uint32{created.ID})
 	assert.Nil(t, errors)
 	assert.Equal(t, 1, len(records))
 	assert.Equal(t, *created, records[0])
@@ -89,14 +89,14 @@ func TestRecords(t *testing.T) {
 	assert.Equal(t, created, ret2)
 
 	// Bad request - no post
-	in.Post = ""
+	in.Post = 0
 	_, errors = testApi.AddRecord(context.TODO(), in)
 	if assert.Len(t, errors.Errs(), 1, "errors.Errs(): %#v", errors.Errs()) {
 		assert.Equal(t, errors.Errs()[0].Code, model.ErrRequired)
 	}
 
 	// Record not found
-	_, errors = testApi.GetRecord(context.TODO(), created.ID+"99")
+	_, errors = testApi.GetRecord(context.TODO(), created.ID+99)
 	assert.NotNil(t, errors)
 	assert.Len(t, errors.Errs(), 1)
 	assert.Equal(t, model.ErrNotFound, errors.Errs()[0].Code, "errors.Errs()[0]: %#v", errors.Errs()[0])
@@ -110,12 +110,12 @@ func TestRecords(t *testing.T) {
 	assert.Equal(t, ret2.Data, updated.Data, "Expected Name to match")
 
 	// Update non-existant
-	_, errors = testApi.UpdateRecord(context.TODO(), updated.ID+"99", *updated)
+	_, errors = testApi.UpdateRecord(context.TODO(), updated.ID+99, *updated)
 	assert.Len(t, errors.Errs(), 1)
 	assert.Equal(t, model.ErrNotFound, errors.Errs()[0].Code, "errors.Errs()[0]: %#v", errors.Errs()[0])
 
 	// Update with bad post
-	updated.Post = updated.Post + "99"
+	updated.Post = updated.Post + 99
 	_, errors = testApi.UpdateRecord(context.TODO(), updated.ID, *updated)
 	assert.Len(t, errors.Errs(), 1)
 	assert.Equal(t, model.ErrBadReference, errors.Errs()[0].Code, "errors.Errs()[0]: %#v", errors.Errs()[0])
@@ -134,7 +134,7 @@ func TestRecords(t *testing.T) {
 	assert.Nil(t, errors)
 }
 
-func createTestPost(p model.PostPersister, collectionID string) (*model.Post, error) {
+func createTestPost(p model.PostPersister, collectionID uint32) (*model.Post, error) {
 	in := model.NewPostIn("Test", collectionID, "")
 	created, err := p.InsertPost(context.TODO(), in)
 	if err != nil {

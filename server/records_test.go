@@ -24,7 +24,7 @@ func TestGetRecordsForPost(t *testing.T) {
 	am.Result = &cr
 	am.Errors = nil
 
-	request, _ := http.NewRequest("GET", "/records?post=/posts/1", nil)
+	request, _ := http.NewRequest("GET", "/records?post=1", nil)
 	response := httptest.NewRecorder()
 	r.ServeHTTP(response, request)
 	assert.Equal(t, 200, response.Code, "OK response is expected")
@@ -44,7 +44,7 @@ func TestGetRecordsForPost(t *testing.T) {
 	cr = api.RecordResult{
 		Records: []model.Record{
 			{
-				ID:             "/records/1",
+				ID:             1,
 				RecordIn:       ci,
 				InsertTime:     now,
 				LastUpdateTime: now,
@@ -53,7 +53,7 @@ func TestGetRecordsForPost(t *testing.T) {
 	}
 	am.Result = &cr
 	am.Errors = nil
-	request, _ = http.NewRequest("GET", "/records?post=/posts/1", nil)
+	request, _ = http.NewRequest("GET", "/records?post=1", nil)
 	response = httptest.NewRecorder()
 	r.ServeHTTP(response, request)
 	assert.Equal(t, 200, response.Code, "OK response is expected")
@@ -71,7 +71,7 @@ func TestGetRecordsForPost(t *testing.T) {
 	// error result
 	am.Result = (*api.RecordResult)(nil)
 	am.Errors = model.NewErrors(http.StatusInternalServerError, assert.AnError)
-	request, _ = http.NewRequest("GET", "/records?post=/posts/1", nil)
+	request, _ = http.NewRequest("GET", "/records?post=1", nil)
 	response = httptest.NewRecorder()
 	r.ServeHTTP(response, request)
 	assert.Equal(t, 500, response.Code)
@@ -95,7 +95,7 @@ func makeRecordIn(t *testing.T) (model.RecordIn, *bytes.Buffer) {
 				"foo": "bar",
 			},
 		},
-		Post: "/posts/1",
+		Post: 1,
 	}
 	buf := new(bytes.Buffer)
 	enc := json.NewEncoder(buf)
