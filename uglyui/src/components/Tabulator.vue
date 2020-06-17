@@ -30,6 +30,9 @@ export default {
     },
     virtualDom: {
       type: Boolean
+    },
+    cellEdited: {
+      type: Function
     }
   },
   data() {
@@ -59,6 +62,11 @@ export default {
       virtualDom: this.virtualDom,
       rowMoved: function() {
         self.$emit("updated", self.tabulator.getData());
+      },
+      cellEdited: function(cell) {
+        if (self.cellEdited) {
+          self.cellEdited(cell);
+        }
       }
     });
   }

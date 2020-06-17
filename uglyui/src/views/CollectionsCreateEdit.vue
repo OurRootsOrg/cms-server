@@ -157,6 +157,14 @@ export default {
     updateData(data) {
       this.collection.fields = data;
     },
+    // cellEdited(cell) {
+    //   if (cell.getField() === "header") {
+    //     cell
+    //       .getRow()
+    //       .getCell("regex")
+    //       .setValue(cell.getValue(), true);
+    //   }
+    // },
     createEditCollection() {
       this.collection.fields = this.collection.fields.filter(f => f.header && f.name);
       if (this.collection.fields.length === 0) {
