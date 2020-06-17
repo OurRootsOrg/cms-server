@@ -401,11 +401,17 @@ Resources:
 
     # DeletionPolicy: Retain
 
+  CMSDeadLetterQueue:
+    Type: AWS::SQS::Queue
+
   CMSRecordsWriterQueue:
     Type: AWS::SQS::Queue
     Properties: 
       QueueName: "recordswriter"
       VisibilityTimeout: 180
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt CMSDeadLetterQueue.Arn
+        maxReceiveCount: 3
       # ContentBasedDeduplication: Boolean
       # DelaySeconds: Integer
       # FifoQueue: Boolean
@@ -413,14 +419,15 @@ Resources:
       # KmsMasterKeyId: String
       # MaximumMessageSize: Integer
       # MessageRetentionPeriod: Integer
-    # TODO: Add dead letter queue
 
   CMSPublisherQueue:
     Type: AWS::SQS::Queue
     Properties: 
       QueueName: "publisher"
       VisibilityTimeout: 180
-    # TODO: Add dead letter queue
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt CMSDeadLetterQueue.Arn
+        maxReceiveCount: 3
 
   ElasticsearchDomain:
     Type: 'AWS::Elasticsearch::Domain'
