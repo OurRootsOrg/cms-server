@@ -8,6 +8,7 @@ deploy/awslambda/main.lambda.zip
 *.so
 *.dylib
 output-ourroots.cf.yaml
+uglyui/dist/
 
 # Test binary, built with `go test -c`
 *.test

@@ -1,7 +1,10 @@
 FROM golang:1.14
 EXPOSE 8000
 WORKDIR /cms/server
-COPY . /cms
+COPY go.mod /cms
+COPY go.sum /cms
+RUN go mod download
 RUN go get -u github.com/swaggo/swag/cmd/swag
+COPY . /cms
 RUN go generate && go build -o server
 CMD ./server
