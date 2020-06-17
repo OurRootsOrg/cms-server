@@ -2,7 +2,7 @@ import axios from "axios";
 import { getInstance } from "../auth";
 
 const apiClient = axios.create({
-  baseURL: `http://localhost:8000`,
+  baseURL: process.env.VUE_APP_API_BASE_URL,
   withCredentials: false, // This is the default
   headers: {
     Accept: "application/json",

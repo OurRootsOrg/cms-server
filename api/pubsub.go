@@ -24,7 +24,7 @@ func (api *API) OpenTopic(ctx context.Context, topicName string) (*pubsub.Topic,
 	urlStr := getPubSubURLStr(api.pubSubConfig.protocol, api.pubSubConfig.region, api.pubSubConfig.host, topicName)
 	conn := api.rabbitmqTopicConn
 	var topic *pubsub.Topic
-	for err != nil && cnt <= 4 {
+	for err != nil && cnt <= 5 {
 		if cnt > 0 {
 			time.Sleep(time.Duration(math.Pow(2.0, float64(cnt))) * time.Second)
 		}
@@ -36,6 +36,7 @@ func (api *API) OpenTopic(ctx context.Context, topicName string) (*pubsub.Topic,
 			if conn == nil {
 				conn, err = amqp.Dial(urlStr)
 				if err != nil {
+					log.Printf("[INFO] Rabbit dialed try %d error %v\n", cnt, err)
 					conn = nil
 					continue
 				}
@@ -61,7 +62,7 @@ func (api *API) OpenSubscription(ctx context.Context, queue string) (*pubsub.Sub
 	urlStr := getPubSubURLStr(api.pubSubConfig.protocol, api.pubSubConfig.region, api.pubSubConfig.host, queue)
 	conn := api.rabbitmqSubscriptionConn
 	var subscription *pubsub.Subscription
-	for err != nil && cnt <= 4 {
+	for err != nil && cnt <= 5 {
 		if cnt > 0 {
 			time.Sleep(time.Duration(math.Pow(2.0, float64(cnt))) * time.Second)
 		}
@@ -73,6 +74,7 @@ func (api *API) OpenSubscription(ctx context.Context, queue string) (*pubsub.Sub
 			if conn == nil {
 				conn, err = amqp.Dial(urlStr)
 				if err != nil {
+					log.Printf("[INFO] Rabbit dialed try %d error %v\n", cnt, err)
 					conn = nil
 					continue
 				}
