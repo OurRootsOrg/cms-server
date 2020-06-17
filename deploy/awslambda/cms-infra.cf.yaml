@@ -466,83 +466,165 @@ Resources:
       #   ES_APPLICATION_LOGS:
       #     CloudWatchLogsLogGroupArn: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:${EnvironmentName}/ElasticSearch/application-logs'
       #     Enabled: true
-Outputs:
-  CMSSiteBucketName:
-    Description: CMS Site Bucket Name
-    Value: !Ref SiteBucket
-    Export:
-      Name: !Sub "${EnvironmentName}-CMSSiteBucketName"
-  CMSSiteBucketURL:
-    Description: CMS Site Bucket Website URL
-    Value: !GetAtt SiteBucket.WebsiteURL
-    Export:
+  CMSSiteBucketURLParam:
+    Type: AWS::SSM::Parameter
+    Properties:
       Name: !Sub "${EnvironmentName}-CMSSiteBucketURL"
-  CMSPostgresAddress:
-    Value: !GetAtt AuroraDBCluster.Endpoint.Address
-    Export:
+      Description: CMS Site Bucket Website URL
+      Type: String
+      Value: !GetAtt SiteBucket.WebsiteURL
+  CMSPostgresAddressParam:
+    Type: AWS::SSM::Parameter
+    Properties:
       Name: !Sub "${EnvironmentName}-CMSPostgresAddress"
-  CMSPostgresPort:
-    Value: !GetAtt AuroraDBCluster.Endpoint.Port
-    Export:
+      Type: String
+      Value: !GetAtt AuroraDBCluster.Endpoint.Address
+  CMSPostgresPortParam:
+    Type: AWS::SSM::Parameter
+    Properties:
       Name: !Sub "${EnvironmentName}-CMSPostgresPort"
-  AuroraMasterSecretARN:
-    Value: !Ref AuroraMasterSecret
-    Export:
+      Type: String
+      Value: !GetAtt AuroraDBCluster.Endpoint.Port
+  AuroraMasterSecretARNParam:
+    Type: AWS::SSM::Parameter
+    Properties:
       Name: !Sub "${EnvironmentName}-AuroraMasterSecretARN"
-  AuroraAppSecretARN:
-    Value: !Ref AuroraAppSecret
-    Export:
+      Type: String
+      Value: !Ref AuroraMasterSecret
+  AuroraAppSecretARNParam:
+    Type: AWS::SSM::Parameter
+    Properties:
       Name: !Sub "${EnvironmentName}-AuroraAppSecretARN"
-  CMSBlobStoreBucketName:
-    Value: !Ref CMSBlobStoreBucket
-    Export:
+      Type: String
+      Value: !Ref AuroraAppSecret
+  CMSBlobStoreBucketNameParam:
+    Type: AWS::SSM::Parameter
+    Properties:
       Name: !Sub "${EnvironmentName}-CMSBlobStoreBucketName"
-  CMSRecordsWriterQueueURL:
-    Value: !Ref CMSRecordsWriterQueue
-    Export:
+      Type: String
+      Value: !Ref CMSBlobStoreBucket
+  CMSRecordsWriterQueueURLParam:
+    Type: AWS::SSM::Parameter
+    Properties:
       Name: !Sub "${EnvironmentName}-CMSRecordsWriterQueueURL"
-  CMSRecordsWriterQueueARN:
-    Value: !GetAtt CMSRecordsWriterQueue.Arn
-    Export:
+      Type: String
+      Value: !Ref CMSRecordsWriterQueue
+  CMSRecordsWriterQueueARNParam:
+    Type: AWS::SSM::Parameter
+    Properties:
       Name: !Sub "${EnvironmentName}-CMSRecordsWriterQueueARN"
-  CMSPublisherQueueURL:
-    Value: !Ref CMSPublisherQueue
-    Export:
+      Type: String
+      Value: !GetAtt CMSRecordsWriterQueue.Arn
+  CMSPublisherQueueURLParam:
+    Type: AWS::SSM::Parameter
+    Properties:
       Name: !Sub "${EnvironmentName}-CMSPublisherQueueURL"
-  CMSPublisherQueueARN:
-    Value: !GetAtt CMSPublisherQueue.Arn
-    Export:
+      Type: String
+      Value: !Ref CMSPublisherQueue
+  CMSPublisherQueueARNParam:
+    Type: AWS::SSM::Parameter
+    Properties:
       Name: !Sub "${EnvironmentName}-CMSPublisherQueueARN"
-  PublicSubnet1:
-    Value: !Ref PublicSubnet1
-    Export:
-      Name: !Sub "${EnvironmentName}-PublicSubnet1"
-  PublicSubnet2:
-    Value: !Ref PublicSubnet2
-    Export:
-      Name: !Sub "${EnvironmentName}-PublicSubnet2"
-  PrivateSubnet1:
-    Value: !Ref PrivateSubnet1
-    Export:
-      Name: !Sub "${EnvironmentName}-PrivateSubnet1"
-  PrivateSubnet2:
-    Value: !Ref PrivateSubnet2
-    Export:
-      Name: !Sub "${EnvironmentName}-PrivateSubnet2"
-  LambdaFunctionSecurityGroup:
-    Value: !Ref LambdaFunctionSecurityGroup
-    Export:
-      Name: !Sub "${EnvironmentName}-LambdaFunctionSecurityGroup"
-  AuroraDBClusterID:
-    Value: !Ref AuroraDBCluster
-    Export:
-      Name: !Sub "${EnvironmentName}-AuroraDBClusterID"
-  ElasticsearchDomainARN:
-    Value: !GetAtt ElasticsearchDomain.DomainArn
-    Export:
+      Type: String
+      Value: !GetAtt CMSPublisherQueue.Arn
+  ElasticsearchDomainARNParam:
+    Type: AWS::SSM::Parameter
+    Properties:
       Name: !Sub "${EnvironmentName}-ElasticsearchDomainARN"
-  ElasticsearchDomainEndpoint:
-    Value: !GetAtt ElasticsearchDomain.DomainEndpoint
-    Export:
+      Type: String
+      Value: !GetAtt ElasticsearchDomain.DomainArn
+  LambdaFunctionSecurityGroupParam:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub "${EnvironmentName}-LambdaFunctionSecurityGroup"
+      Type: String
+      Value: !Ref LambdaFunctionSecurityGroup
+  PrivateSubnet1Param:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub "${EnvironmentName}-PrivateSubnet1"
+      Type: String
+      Value: !Ref PrivateSubnet1
+  PrivateSubnet2Param:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub "${EnvironmentName}-PrivateSubnet2"
+      Type: String
+      Value: !Ref PrivateSubnet2
+  ElasticsearchDomainEndpointParam:
+    Type: AWS::SSM::Parameter
+    Properties:
       Name: !Sub "${EnvironmentName}-ElasticsearchDomainEndpoint"
+      Type: String
+      Value: !GetAtt ElasticsearchDomain.DomainEndpoint
+
+# Outputs:
+#   CMSPostgresAddress:
+#     Value: !GetAtt AuroraDBCluster.Endpoint.Address
+#     Export:
+#       Name: !Sub "${EnvironmentName}-CMSPostgresAddress"
+#   CMSPostgresPort:
+#     Value: !GetAtt AuroraDBCluster.Endpoint.Port
+#     Export:
+#       Name: !Sub "${EnvironmentName}-CMSPostgresPort"
+#   AuroraMasterSecretARN:
+#     Value: !Ref AuroraMasterSecret
+#     Export:
+#       Name: !Sub "${EnvironmentName}-AuroraMasterSecretARN"
+#   AuroraAppSecretARN:
+#     Value: !Ref AuroraAppSecret
+#     Export:
+#       Name: !Sub "${EnvironmentName}-AuroraAppSecretARN"
+#   CMSBlobStoreBucketName:
+#     Value: !Ref CMSBlobStoreBucket
+#     Export:
+#       Name: !Sub "${EnvironmentName}-CMSBlobStoreBucketName"
+#   CMSRecordsWriterQueueURL:
+#     Value: !Ref CMSRecordsWriterQueue
+#     Export:
+#       Name: !Sub "${EnvironmentName}-CMSRecordsWriterQueueURL"
+#   CMSRecordsWriterQueueARN:
+#     Value: !GetAtt CMSRecordsWriterQueue.Arn
+#     Export:
+#       Name: !Sub "${EnvironmentName}-CMSRecordsWriterQueueARN"
+#   CMSPublisherQueueURL:
+#     Value: !Ref CMSPublisherQueue
+#     Export:
+#       Name: !Sub "${EnvironmentName}-CMSPublisherQueueURL"
+#   CMSPublisherQueueARN:
+#     Value: !GetAtt CMSPublisherQueue.Arn
+#     Export:
+#       Name: !Sub "${EnvironmentName}-CMSPublisherQueueARN"
+#   PublicSubnet1:
+#     Value: !Ref PublicSubnet1
+#     Export:
+#       Name: !Sub "${EnvironmentName}-PublicSubnet1"
+#   PublicSubnet2:
+#     Value: !Ref PublicSubnet2
+#     Export:
+#       Name: !Sub "${EnvironmentName}-PublicSubnet2"
+#   PrivateSubnet1:
+#     Value: !Ref PrivateSubnet1
+#     Export:
+#       Name: !Sub "${EnvironmentName}-PrivateSubnet1"
+#   PrivateSubnet2:
+#     Value: !Ref PrivateSubnet2
+#     Export:
+#       Name: !Sub "${EnvironmentName}-PrivateSubnet2"
+#   LambdaFunctionSecurityGroup:
+#     Value: !Ref LambdaFunctionSecurityGroup
+#     Export:
+#       Name: !Sub "${EnvironmentName}-LambdaFunctionSecurityGroup"
+#   AuroraDBClusterID:
+#     Value: !Ref AuroraDBCluster
+#     Export:
+#       Name: !Sub "${EnvironmentName}-AuroraDBClusterID"
+#   ElasticsearchDomainARN:
+#     Value: !GetAtt ElasticsearchDomain.DomainArn
+#     Export:
+#       Name: !Sub "${EnvironmentName}-ElasticsearchDomainARN"
+#   ElasticsearchDomainEndpoint:
+#     Value: !GetAtt ElasticsearchDomain.DomainEndpoint
+#     Export:
+#       Name: !Sub "${EnvironmentName}-ElasticsearchDomainEndpoint"
 
