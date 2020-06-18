@@ -1025,7 +1025,7 @@
                 "operationId": "searchByID",
                 "parameters": [
                     {
-                        "type": "integer",
+                        "type": "string",
                         "description": "Search Result ID",
                         "name": "id",
                         "in": "path",
@@ -1080,8 +1080,8 @@
                     "$ref": "#/definitions/model.FieldDefSet"
                 },
                 "id": {
-                    "type": "string",
-                    "example": "/categories/999"
+                    "type": "integer",
+                    "example": 999
                 },
                 "insert_time": {
                     "type": "string"
@@ -1128,15 +1128,15 @@
             ],
             "properties": {
                 "category": {
-                    "type": "string",
-                    "example": "/categories/999"
+                    "type": "integer",
+                    "example": 999
                 },
                 "citation_template": {
                     "type": "string"
                 },
                 "id": {
-                    "type": "string",
-                    "example": "/collections/999"
+                    "type": "integer",
+                    "example": 999
                 },
                 "insert_time": {
                     "type": "string"
@@ -1160,8 +1160,8 @@
             ],
             "properties": {
                 "category": {
-                    "type": "string",
-                    "example": "/categories/999"
+                    "type": "integer",
+                    "example": 999
                 },
                 "citation_template": {
                     "type": "string"
@@ -1214,12 +1214,12 @@
             ],
             "properties": {
                 "collection": {
-                    "type": "string",
-                    "example": "/collections/999"
+                    "type": "integer",
+                    "example": 999
                 },
                 "id": {
-                    "type": "string",
-                    "example": "/posts/999"
+                    "type": "integer",
+                    "example": 999
                 },
                 "insert_time": {
                     "type": "string"
@@ -1247,8 +1247,8 @@
             ],
             "properties": {
                 "collection": {
-                    "type": "string",
-                    "example": "/collections/999"
+                    "type": "integer",
+                    "example": 999
                 },
                 "name": {
                     "type": "string"
@@ -1276,8 +1276,8 @@
                     }
                 },
                 "id": {
-                    "type": "string",
-                    "example": "/records/999"
+                    "type": "integer",
+                    "example": 999
                 },
                 "insert_time": {
                     "type": "string"
@@ -1289,8 +1289,8 @@
                     "type": "string"
                 },
                 "post": {
-                    "type": "string",
-                    "example": "/posts/999"
+                    "type": "integer",
+                    "example": 999
                 }
             }
         },
@@ -1312,7 +1312,7 @@
             "type": "object",
             "properties": {
                 "collection": {
-                    "type": "string"
+                    "type": "integer"
                 },
                 "collectionName": {
                     "type": "string"

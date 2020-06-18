@@ -26,7 +26,7 @@ func TestCollections(t *testing.T) {
 			os.Getenv("DATABASE_URL"),
 		)
 	}
-	p := persist.NewPostgresPersister("", db)
+	p := persist.NewPostgresPersister(db)
 	ap, err := api.NewAPI()
 	assert.NoError(t, err)
 	defer ap.Close()

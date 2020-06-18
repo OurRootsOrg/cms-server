@@ -30,7 +30,7 @@ func TestRecordsWriter(t *testing.T) {
 			os.Getenv("DATABASE_URL"),
 		)
 	}
-	p := persist.NewPostgresPersister("", db)
+	p := persist.NewPostgresPersister(db)
 	testAPI, err := api.NewAPI()
 	assert.NoError(t, err)
 	defer testAPI.Close()

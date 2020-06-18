@@ -30,7 +30,7 @@ func TestSearch(t *testing.T) {
 			os.Getenv("DATABASE_URL"),
 		)
 	}
-	p := persist.NewPostgresPersister("", db)
+	p := persist.NewPostgresPersister(db)
 	assert.NoError(t, err)
 	testApi, err := api.NewAPI()
 	assert.NoError(t, err)

@@ -162,7 +162,7 @@ func main() {
 		)
 	}
 	log.Printf("[INFO] Connected to %s\n", dbURL.Host)
-	p := persist.NewPostgresPersister(env.BaseURL.Path, db)
+	p := persist.NewPostgresPersister(db)
 	ap.
 		CategoryPersister(p).
 		CollectionPersister(p).

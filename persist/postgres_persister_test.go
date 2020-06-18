@@ -18,7 +18,7 @@ func TestSelectCategories(t *testing.T) {
 	db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
 	assert.NoError(t, err)
 	defer db.Close()
-	p := persist.NewPostgresPersister("", db)
+	p := persist.NewPostgresPersister(db)
 	in := makeCategoryIn(t)
 	js, err := json.Marshal(in)
 	assert.NoError(t, err)
@@ -45,7 +45,7 @@ func TestSelectOneCategory(t *testing.T) {
 	db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
 	assert.NoError(t, err)
 	defer db.Close()
-	p := persist.NewPostgresPersister("", db)
+	p := persist.NewPostgresPersister(db)
 
 	cb := makeCategoryIn(t)
 	js, err := json.Marshal(cb)
@@ -70,7 +70,7 @@ func TestInsertCategory(t *testing.T) {
 	db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
 	assert.NoError(t, err)
 	defer db.Close()
-	p := persist.NewPostgresPersister("", db)
+	p := persist.NewPostgresPersister(db)
 	cb := makeCategoryIn(t)
 	js, err := json.Marshal(cb)
 	assert.NoError(t, err)
@@ -93,7 +93,7 @@ func TestUpdateCategory(t *testing.T) {
 	db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
 	assert.NoError(t, err)
 	defer db.Close()
-	p := persist.NewPostgresPersister("", db)
+	p := persist.NewPostgresPersister(db)
 	in := makeCategory(t)
 	js, err := json.Marshal(in.CategoryBody)
 	assert.NoError(t, err)
@@ -115,7 +115,7 @@ func TestDeleteCategory(t *testing.T) {
 	db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
 	assert.NoError(t, err)
 	defer db.Close()
-	p := persist.NewPostgresPersister("", db)
+	p := persist.NewPostgresPersister(db)
 	mock.ExpectExec("DELETE FROM category WHERE id = $1").
 		WithArgs(1).WillReturnResult(sqlmock.NewResult(0, 1))
 	err = p.DeleteCategory(context.TODO(), 1)
@@ -128,7 +128,7 @@ func TestSelectCollections(t *testing.T) {
 	db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
 	assert.NoError(t, err)
 	defer db.Close()
-	p := persist.NewPostgresPersister("", db)
+	p := persist.NewPostgresPersister(db)
 	in := makeCollectionIn(t)
 	js, err := json.Marshal(in.CollectionBody)
 	assert.NoError(t, err)
@@ -158,7 +158,7 @@ func TestSelectOneCollection(t *testing.T) {
 	db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
 	assert.NoError(t, err)
 	defer db.Close()
-	p := persist.NewPostgresPersister("", db)
+	p := persist.NewPostgresPersister(db)
 
 	cb := makeCollectionIn(t)
 	js, err := json.Marshal(cb)
@@ -182,14 +182,14 @@ func TestInsertCollection(t *testing.T) {
 	db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
 	assert.NoError(t, err)
 	defer db.Close()
-	p := persist.NewPostgresPersister("", db)
+	p := persist.NewPostgresPersister(db)
 	in := makeCollectionIn(t)
 	js, err := json.Marshal(in.CollectionBody)
 	assert.NoError(t, err)
 
 	now := time.Now()
-	mock.ExpectQuery(`INSERT INTO collection (category_id, body) 
-	VALUES ($1, $2) 
+	mock.ExpectQuery(`INSERT INTO collection (category_id, body)
+	VALUES ($1, $2)
 	RETURNING id, category_id, body, insert_time, last_update_time`).
 		WithArgs(in.Category, []byte(js)).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "category_id", "body", "insert_time", "last_update_time"}).
@@ -207,13 +207,13 @@ func TestUpdateCollection(t *testing.T) {
 	db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
 	assert.NoError(t, err)
 	defer db.Close()
-	p := persist.NewPostgresPersister("", db)
+	p := persist.NewPostgresPersister(db)
 	in := makeCollection(t)
 	js, err := json.Marshal(in.CollectionBody)
 	assert.NoError(t, err)
 
 	now := time.Now()
-	mock.ExpectQuery(`UPDATE collection SET body = $1, category_id = $2, last_update_time = CURRENT_TIMESTAMP 
+	mock.ExpectQuery(`UPDATE collection SET body = $1, category_id = $2, last_update_time = CURRENT_TIMESTAMP
 	WHERE id = $3 AND last_update_time = $4
 	RETURNING id, category_id, body, insert_time, last_update_time`).
 		WithArgs([]byte(js), in.Category, 1, in.LastUpdateTime).
@@ -231,7 +231,7 @@ func TestDeleteCollection(t *testing.T) {
 	db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
 	assert.NoError(t, err)
 	defer db.Close()
-	p := persist.NewPostgresPersister("", db)
+	p := persist.NewPostgresPersister(db)
 	mock.ExpectExec("DELETE FROM collection WHERE id = $1").
 		WithArgs(1).WillReturnResult(sqlmock.NewResult(0, 1))
 	err = p.DeleteCollection(context.TODO(), 1)

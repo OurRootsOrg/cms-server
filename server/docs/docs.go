@@ -1036,7 +1036,7 @@ var doc = `{
                 "operationId": "searchByID",
                 "parameters": [
                     {
-                        "type": "integer",
+                        "type": "string",
                         "description": "Search Result ID",
                         "name": "id",
                         "in": "path",
@@ -1091,8 +1091,8 @@ var doc = `{
                     "$ref": "#/definitions/model.FieldDefSet"
                 },
                 "id": {
-                    "type": "string",
-                    "example": "/categories/999"
+                    "type": "integer",
+                    "example": 999
                 },
                 "insert_time": {
                     "type": "string"
@@ -1139,15 +1139,15 @@ var doc = `{
             ],
             "properties": {
                 "category": {
-                    "type": "string",
-                    "example": "/categories/999"
+                    "type": "integer",
+                    "example": 999
                 },
                 "citation_template": {
                     "type": "string"
                 },
                 "id": {
-                    "type": "string",
-                    "example": "/collections/999"
+                    "type": "integer",
+                    "example": 999
                 },
                 "insert_time": {
                     "type": "string"
@@ -1171,8 +1171,8 @@ var doc = `{
             ],
             "properties": {
                 "category": {
-                    "type": "string",
-                    "example": "/categories/999"
+                    "type": "integer",
+                    "example": 999
                 },
                 "citation_template": {
                     "type": "string"
@@ -1225,12 +1225,12 @@ var doc = `{
             ],
             "properties": {
                 "collection": {
-                    "type": "string",
-                    "example": "/collections/999"
+                    "type": "integer",
+                    "example": 999
                 },
                 "id": {
-                    "type": "string",
-                    "example": "/posts/999"
+                    "type": "integer",
+                    "example": 999
                 },
                 "insert_time": {
                     "type": "string"
@@ -1258,8 +1258,8 @@ var doc = `{
             ],
             "properties": {
                 "collection": {
-                    "type": "string",
-                    "example": "/collections/999"
+                    "type": "integer",
+                    "example": 999
                 },
                 "name": {
                     "type": "string"
@@ -1287,8 +1287,8 @@ var doc = `{
                     }
                 },
                 "id": {
-                    "type": "string",
-                    "example": "/records/999"
+                    "type": "integer",
+                    "example": 999
                 },
                 "insert_time": {
                     "type": "string"
@@ -1300,8 +1300,8 @@ var doc = `{
                     "type": "string"
                 },
                 "post": {
-                    "type": "string",
-                    "example": "/posts/999"
+                    "type": "integer",
+                    "example": 999
                 }
             }
         },
@@ -1323,7 +1323,7 @@ var doc = `{
             "type": "object",
             "properties": {
                 "collection": {
-                    "type": "string"
+                    "type": "integer"
                 },
                 "collectionName": {
                     "type": "string"

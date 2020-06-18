@@ -14,8 +14,8 @@ definitions:
         description: example:"{\"int_field\":\"Int\", \"string_field\":\"String\"}"
         type: object
       id:
-        example: /categories/999
-        type: string
+        example: 999
+        type: integer
       insert_time:
         type: string
       last_update_time:
@@ -46,13 +46,13 @@ definitions:
   model.Collection:
     properties:
       category:
-        example: /categories/999
-        type: string
+        example: 999
+        type: integer
       citation_template:
         type: string
       id:
-        example: /collections/999
-        type: string
+        example: 999
+        type: integer
       insert_time:
         type: string
       last_update_time:
@@ -69,8 +69,8 @@ definitions:
   model.CollectionIn:
     properties:
       category:
-        example: /categories/999
-        type: string
+        example: 999
+        type: integer
       citation_template:
         type: string
       location:
@@ -105,11 +105,11 @@ definitions:
   model.Post:
     properties:
       collection:
-        example: /collections/999
-        type: string
+        example: 999
+        type: integer
       id:
-        example: /posts/999
-        type: string
+        example: 999
+        type: integer
       insert_time:
         type: string
       last_update_time:
@@ -129,8 +129,8 @@ definitions:
   model.PostIn:
     properties:
       collection:
-        example: /collections/999
-        type: string
+        example: 999
+        type: integer
       name:
         type: string
       recordsKey:
@@ -149,8 +149,8 @@ definitions:
           type: string
         type: object
       id:
-        example: /records/999
-        type: string
+        example: 999
+        type: integer
       insert_time:
         type: string
       ix_hash:
@@ -158,8 +158,8 @@ definitions:
       last_update_time:
         type: string
       post:
-        example: /posts/999
-        type: string
+        example: 999
+        type: integer
     required:
     - data
     - id
@@ -177,7 +177,7 @@ definitions:
   model.SearchHit:
     properties:
       collection:
-        type: string
+        type: integer
       collectionName:
         type: string
       id:
@@ -887,7 +887,7 @@ paths:
         in: path
         name: id
         required: true
-        type: integer
+        type: string
       produces:
       - application/json
       responses:
