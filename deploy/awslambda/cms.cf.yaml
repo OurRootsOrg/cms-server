@@ -170,6 +170,13 @@ Resources:
                 - sqs:*
               Resource:
                 !Ref "CMSRecordsWriterQueueARN"
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - sqs:*
+              Resource:
+                !Ref "CMSPublisherQueueARN"
         # Secrets Manager
         - Version: '2012-10-17'
           Statement:
