@@ -34,24 +34,24 @@ const UserProperty TokenKey = "user"
 
 type LocalAPI interface {
 	GetCategories(context.Context) (*CategoryResult, *model.Errors)
-	GetCategory(ctx context.Context, id string) (*model.Category, *model.Errors)
+	GetCategory(ctx context.Context, id uint32) (*model.Category, *model.Errors)
 	AddCategory(ctx context.Context, in model.CategoryIn) (*model.Category, *model.Errors)
-	UpdateCategory(ctx context.Context, id string, in model.Category) (*model.Category, *model.Errors)
-	DeleteCategory(ctx context.Context, id string) *model.Errors
+	UpdateCategory(ctx context.Context, id uint32, in model.Category) (*model.Category, *model.Errors)
+	DeleteCategory(ctx context.Context, id uint32) *model.Errors
 	GetCollections(ctx context.Context /* filter/search criteria */) (*CollectionResult, *model.Errors)
-	GetCollection(ctx context.Context, id string) (*model.Collection, *model.Errors)
+	GetCollection(ctx context.Context, id uint32) (*model.Collection, *model.Errors)
 	AddCollection(ctx context.Context, in model.CollectionIn) (*model.Collection, *model.Errors)
-	UpdateCollection(ctx context.Context, id string, in model.Collection) (*model.Collection, *model.Errors)
-	DeleteCollection(ctx context.Context, id string) *model.Errors
+	UpdateCollection(ctx context.Context, id uint32, in model.Collection) (*model.Collection, *model.Errors)
+	DeleteCollection(ctx context.Context, id uint32) *model.Errors
 	GetPosts(ctx context.Context /* filter/search criteria */) (*PostResult, *model.Errors)
-	GetPost(ctx context.Context, id string) (*model.Post, *model.Errors)
+	GetPost(ctx context.Context, id uint32) (*model.Post, *model.Errors)
 	AddPost(ctx context.Context, in model.PostIn) (*model.Post, *model.Errors)
-	UpdatePost(ctx context.Context, id string, in model.Post) (*model.Post, *model.Errors)
-	DeletePost(ctx context.Context, id string) *model.Errors
+	UpdatePost(ctx context.Context, id uint32, in model.Post) (*model.Post, *model.Errors)
+	DeletePost(ctx context.Context, id uint32) *model.Errors
 	PostContentRequest(ctx context.Context, contentRequest ContentRequest) (*ContentResult, *model.Errors)
 	GetContent(ctx context.Context, key string) ([]byte, *model.Errors)
 	RetrieveUser(ctx context.Context, provider OIDCProvider, token *oidc.IDToken, rawToken string) (*model.User, *model.Errors)
-	GetRecordsForPost(ctx context.Context, postID string) (*RecordResult, *model.Errors)
+	GetRecordsForPost(ctx context.Context, postid uint32) (*RecordResult, *model.Errors)
 	Search(ctx context.Context, req *SearchRequest) (*model.SearchResult, *model.Errors)
 	SearchByID(ctx context.Context, id string) (*model.SearchHit, *model.Errors)
 	SearchDeleteByID(ctx context.Context, id string) *model.Errors

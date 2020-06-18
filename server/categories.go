@@ -47,9 +47,14 @@ func (app App) GetAllCategories(w http.ResponseWriter, req *http.Request) {
 // @Security OAuth2Implicit[cms,openid,profile,email]
 // @Security OAuth2AuthCode[cms,openid,profile,email]
 func (app App) GetCategory(w http.ResponseWriter, req *http.Request) {
+	catID, errors := getIDFromRequest(req)
+	if errors != nil {
+		ErrorsResponse(w, errors)
+		return
+	}
 	enc := json.NewEncoder(w)
 	w.Header().Set("Content-Type", contentType)
-	category, errors := app.api.GetCategory(req.Context(), req.URL.String())
+	category, errors := app.api.GetCategory(req.Context(), catID)
 	if errors != nil {
 		ErrorsResponse(w, errors)
 		return
@@ -118,6 +123,11 @@ func (app App) PostCategory(w http.ResponseWriter, req *http.Request) {
 // @Security OAuth2Implicit[cms,openid,profile,email]
 // @Security OAuth2AuthCode[cms,openid,profile,email]
 func (app App) PutCategory(w http.ResponseWriter, req *http.Request) {
+	catID, errors := getIDFromRequest(req)
+	if errors != nil {
+		ErrorsResponse(w, errors)
+		return
+	}
 	mt, _, err := mime.ParseMediaType(req.Header.Get("Content-Type"))
 	if err != nil || mt != contentType {
 		msg := fmt.Sprintf("Bad Content-Type '%s'", mt)
@@ -131,7 +141,7 @@ func (app App) PutCategory(w http.ResponseWriter, req *http.Request) {
 		ErrorResponse(w, http.StatusBadRequest, msg)
 		return
 	}
-	category, errors := app.api.UpdateCategory(req.Context(), req.URL.String(), in)
+	category, errors := app.api.UpdateCategory(req.Context(), catID, in)
 	if errors != nil {
 		ErrorsResponse(w, errors)
 		return
@@ -156,7 +166,12 @@ func (app App) PutCategory(w http.ResponseWriter, req *http.Request) {
 // @Security OAuth2Implicit[cms,openid,profile,email]
 // @Security OAuth2AuthCode[cms,openid,profile,email]
 func (app App) DeleteCategory(w http.ResponseWriter, req *http.Request) {
-	errors := app.api.DeleteCategory(req.Context(), req.URL.String())
+	catID, errors := getIDFromRequest(req)
+	if errors != nil {
+		ErrorsResponse(w, errors)
+		return
+	}
+	errors = app.api.DeleteCategory(req.Context(), catID)
 	if errors != nil {
 		ErrorsResponse(w, errors)
 		return

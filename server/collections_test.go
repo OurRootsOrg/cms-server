@@ -44,7 +44,7 @@ func TestGetAllCollections(t *testing.T) {
 	cr = api.CollectionResult{
 		Collections: []model.Collection{
 			{
-				ID:             "/collections/1",
+				ID:             1,
 				CollectionIn:   ci,
 				InsertTime:     now,
 				LastUpdateTime: now,
@@ -95,7 +95,7 @@ func TestGetCollection(t *testing.T) {
 
 	ci, _ := makeCollectionIn(t)
 	collection := &model.Collection{
-		ID:           "/collections/1",
+		ID:           1,
 		CollectionIn: ci,
 	}
 	am.Result = collection
@@ -142,7 +142,7 @@ func TestPostCollection(t *testing.T) {
 	in, buf := makeCollectionIn(t)
 	now := time.Now().Truncate(0) // Truncate(0) truncates monotonic time
 	am.Result = &model.Collection{
-		ID:             "/collections/1",
+		ID:             1,
 		CollectionIn:   in,
 		InsertTime:     now,
 		LastUpdateTime: now,
@@ -180,7 +180,7 @@ func TestPutCollection(t *testing.T) {
 	in, buf := makeCollectionIn(t)
 	now := time.Now().Truncate(0) // Truncate(0) truncates monotonic time
 	coll := model.Collection{
-		ID:             "/collections/1",
+		ID:             1,
 		CollectionIn:   in,
 		InsertTime:     now,
 		LastUpdateTime: now,
@@ -230,7 +230,7 @@ func makeCollectionIn(t *testing.T) (model.CollectionIn, *bytes.Buffer) {
 		CollectionBody: model.CollectionBody{
 			Name: "First",
 		},
-		Category: "/categories/1",
+		Category: 1,
 	}
 	buf := new(bytes.Buffer)
 	enc := json.NewEncoder(buf)

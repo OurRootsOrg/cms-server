@@ -4,7 +4,7 @@ import (
 	"context"
 	"log"
 	"os"
-	"strings"
+	"strconv"
 	"testing"
 	"time"
 
@@ -77,7 +77,7 @@ func TestPublisher(t *testing.T) {
 
 	// search records by id
 	for _, testRecord := range testRecords {
-		searchID := model.MakeSearchID(testRecord.ID[strings.LastIndex(testRecord.ID, "/")+1:])
+		searchID := strconv.Itoa(int(testRecord.ID))
 		res, err := testAPI.SearchByID(ctx, searchID)
 		assert.Nil(t, err)
 		assert.Equal(t, searchID, res.ID, "Record not found")
@@ -109,7 +109,7 @@ func deleteTestCategory(p model.CategoryPersister, category *model.Category) err
 	return p.DeleteCategory(context.TODO(), category.ID)
 }
 
-func createTestCollection(p model.CollectionPersister, categoryID string) (*model.Collection, error) {
+func createTestCollection(p model.CollectionPersister, categoryID uint32) (*model.Collection, error) {
 	in := model.NewCollectionIn("Test", categoryID)
 	created, err := p.InsertCollection(context.TODO(), in)
 	if err != nil {
@@ -122,7 +122,7 @@ func deleteTestCollection(p model.CollectionPersister, collection *model.Collect
 	return p.DeleteCollection(context.TODO(), collection.ID)
 }
 
-func createTestPost(p model.PostPersister, collectionID string) (*model.Post, error) {
+func createTestPost(p model.PostPersister, collectionID uint32) (*model.Post, error) {
 	in := model.NewPostIn("Test", collectionID, "test")
 	created, err := p.InsertPost(context.TODO(), in)
 	if err != nil {
@@ -146,7 +146,7 @@ var recordData = []map[string]string{
 	},
 }
 
-func createTestRecords(p model.RecordPersister, postID string) ([]model.Record, error) {
+func createTestRecords(p model.RecordPersister, postID uint32) ([]model.Record, error) {
 	var records []model.Record
 	for _, data := range recordData {
 		in := model.NewRecordIn(data, postID)

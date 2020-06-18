@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 
 	"gocloud.dev/pubsub"
 
@@ -21,11 +22,11 @@ const PostPublished = "Published"
 const PostPublishComplete = "PublishComplete"
 
 type RecordsWriterMsg struct {
-	PostID string `json:"postId"`
+	PostID uint32 `json:"postId"`
 }
 
 type PublisherMsg struct {
-	PostID string `json:"postId"`
+	PostID uint32 `json:"postId"`
 }
 
 // PostResult is a paged Post result
@@ -45,10 +46,10 @@ func (api API) GetPosts(ctx context.Context /* filter/search criteria */) (*Post
 }
 
 // GetPost holds the business logic around getting a Post
-func (api API) GetPost(ctx context.Context, id string) (*model.Post, *model.Errors) {
+func (api API) GetPost(ctx context.Context, id uint32) (*model.Post, *model.Errors) {
 	post, err := api.postPersister.SelectOnePost(ctx, id)
 	if err == persist.ErrNoRows {
-		return nil, model.NewErrors(http.StatusNotFound, model.NewError(model.ErrNotFound, id))
+		return nil, model.NewErrors(http.StatusNotFound, model.NewError(model.ErrNotFound, strconv.Itoa(int(id))))
 	} else if err != nil {
 		return nil, model.NewErrors(http.StatusInternalServerError, err)
 	}
@@ -75,7 +76,7 @@ func (api API) AddPost(ctx context.Context, in model.PostIn) (*model.Post, *mode
 	post, err := api.postPersister.InsertPost(ctx, in)
 	if err == persist.ErrForeignKeyViolation {
 		log.Printf("[ERROR] Invalid collection reference: %v", err)
-		return nil, model.NewErrors(http.StatusBadRequest, model.NewError(model.ErrBadReference, in.Collection, "collection"))
+		return nil, model.NewErrors(http.StatusBadRequest, model.NewError(model.ErrBadReference, strconv.Itoa(int(in.Collection)), "collection"))
 	} else if err != nil {
 		log.Printf("[ERROR] Internal server error: %v", err)
 		return nil, model.NewErrors(http.StatusInternalServerError, err)
@@ -98,7 +99,7 @@ func (api API) AddPost(ctx context.Context, in model.PostIn) (*model.Post, *mode
 }
 
 // UpdatePost holds the business logic around updating a Post
-func (api API) UpdatePost(ctx context.Context, id string, in model.Post) (*model.Post, *model.Errors) {
+func (api API) UpdatePost(ctx context.Context, id uint32, in model.Post) (*model.Post, *model.Errors) {
 	err := api.validate.Struct(in)
 	if err != nil {
 		return nil, model.NewErrors(http.StatusBadRequest, err)
@@ -141,7 +142,7 @@ func (api API) UpdatePost(ctx context.Context, id string, in model.Post) (*model
 	}
 	if err == persist.ErrForeignKeyViolation {
 		log.Printf("[ERROR] Invalid collection reference: %v", err)
-		return nil, model.NewErrors(http.StatusBadRequest, model.NewError(model.ErrBadReference, in.Collection, "collection"))
+		return nil, model.NewErrors(http.StatusBadRequest, model.NewError(model.ErrBadReference, strconv.Itoa(int(in.Collection)), "collection"))
 	} else if err != nil {
 		return nil, model.NewErrors(http.StatusInternalServerError, err)
 	}
@@ -167,7 +168,7 @@ func (api API) UpdatePost(ctx context.Context, id string, in model.Post) (*model
 }
 
 // DeletePost holds the business logic around deleting a Post
-func (api API) DeletePost(ctx context.Context, id string) *model.Errors {
+func (api API) DeletePost(ctx context.Context, id uint32) *model.Errors {
 	// delete records for post first so we don't have referential integrity errors
 	if err := api.DeleteRecordsForPost(ctx, id); err != nil {
 		return model.NewErrors(http.StatusInternalServerError, err)

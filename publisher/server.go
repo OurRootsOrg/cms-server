@@ -37,22 +37,22 @@ func processMessage(ctx context.Context, ap *api.API, rawMsg []byte) *model.Erro
 		return nil // Don't return an error, because parsing will never succeed
 	}
 
-	log.Printf("[DEBUG] processing %s\n", msg.PostID)
+	log.Printf("[DEBUG] processing %d\n", msg.PostID)
 
 	// read post
 	post, errs := ap.GetPost(ctx, msg.PostID)
 	if errs != nil {
-		log.Printf("[ERROR] Error calling GetPost on %s: %v", msg.PostID, errs)
+		log.Printf("[ERROR] Error calling GetPost on %d: %v", msg.PostID, errs)
 		return errs
 	}
 	if post.RecordsStatus != api.PostPublishing {
-		log.Printf("[ERROR] post not publishing %s -> %s", post.ID, post.RecordsStatus)
+		log.Printf("[ERROR] post not publishing %d -> %s", post.ID, post.RecordsStatus)
 		return nil
 	}
 
 	// index post
 	if err := ap.IndexPost(ctx, post); err != nil {
-		log.Printf("[ERROR] Error calling IndexPost on %s: %v", post.ID, err)
+		log.Printf("[ERROR] Error calling IndexPost on %d: %v", post.ID, err)
 		return model.NewErrors(http.StatusInternalServerError, err)
 	}
 
@@ -60,7 +60,7 @@ func processMessage(ctx context.Context, ap *api.API, rawMsg []byte) *model.Erro
 	post.RecordsStatus = api.PostPublishComplete
 	_, errs = ap.UpdatePost(ctx, post.ID, *post)
 	if errs != nil {
-		log.Printf("[ERROR] Error calling UpdatePost on %s: %v", post.ID, errs)
+		log.Printf("[ERROR] Error calling UpdatePost on %d: %v", post.ID, errs)
 	}
 
 	return errs

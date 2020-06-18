@@ -44,7 +44,7 @@ func TestUsers(t *testing.T) {
 
 	// model.User(&model.User{ID:"/users/1", UserIn:model.UserIn{UserBody:model.UserBody{Name:"<Unknown>", Email:"somebody@example.com", EmailConfirmed:true, Issuer:"https://flybynight.com", Subject:"user1", Enabled:true}}, InsertTime:time.Time{wall:0x1b4b8898, ext:63725606053, loc:(*time.Location)(0xc0000b4780)},
 	expectedUser := model.User{
-		ID: "/users/1",
+		ID: 1,
 		UserIn: model.UserIn{
 			UserBody: model.UserBody{
 				Name:           "<Unknown>",

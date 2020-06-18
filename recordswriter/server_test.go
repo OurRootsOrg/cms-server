@@ -125,7 +125,7 @@ func deleteTestCategory(p model.CategoryPersister, category *model.Category) err
 	return p.DeleteCategory(context.TODO(), category.ID)
 }
 
-func createTestCollection(p model.CollectionPersister, categoryID string) (*model.Collection, error) {
+func createTestCollection(p model.CollectionPersister, categoryID uint32) (*model.Collection, error) {
 	in := model.NewCollectionIn("Test", categoryID)
 	created, err := p.InsertCollection(context.TODO(), in)
 	if err != nil {

@@ -17,16 +17,13 @@ func Initialize(p string) {
 
 var pathPrefix string
 
-// CategoryIDFormat is the format for Category IDs.
-const CategoryIDFormat = "/categories/%d"
-
 // CategoryPersister defines methods needed to persist categories
 type CategoryPersister interface {
 	SelectCategories(ctx context.Context) ([]Category, error)
-	SelectOneCategory(ctx context.Context, id string) (Category, error)
+	SelectOneCategory(ctx context.Context, id uint32) (Category, error)
 	InsertCategory(ctx context.Context, in CategoryIn) (Category, error)
-	UpdateCategory(ctx context.Context, id string, body Category) (Category, error)
-	DeleteCategory(ctx context.Context, id string) error
+	UpdateCategory(ctx context.Context, id uint32, body Category) (Category, error)
+	DeleteCategory(ctx context.Context, id uint32) error
 }
 
 // CategoryIn is the payload to create or update a category
@@ -78,21 +75,16 @@ func (cb *CategoryBody) Scan(value interface{}) error {
 
 // Category represents a set of collections that all contain the same fields
 type Category struct {
-	ID string `json:"id,omitempty" example:"/categories/999" validate:"required,omitempty"`
+	ID uint32 `json:"id,omitempty" example:"999" validate:"required,omitempty"`
 	CategoryBody
 	InsertTime     time.Time `json:"insert_time,omitempty"`
 	LastUpdateTime time.Time `json:"last_update_time,omitempty"`
 }
 
 // NewCategory constructs a Category from an id and body
-func NewCategory(id int32, in CategoryIn) Category {
+func NewCategory(id uint32, in CategoryIn) Category {
 	return Category{
-		ID:           MakeCategoryID(id),
+		ID:           id,
 		CategoryBody: in.CategoryBody,
 	}
-}
-
-// MakeCategoryID builds a Category ID string from an integer ID
-func MakeCategoryID(id int32) string {
-	return pathPrefix + fmt.Sprintf(CategoryIDFormat, id)
 }

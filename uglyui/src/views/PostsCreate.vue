@@ -104,8 +104,8 @@ export default {
   methods: {
     launch() {
       let post = this.post;
+      post.collection = +post.collection; // convert to a number
       let store = this.$store;
-      console.log("post", post, "store", store);
       this.$v.$touch();
       if (!this.$v.$invalid) {
         importer.setCustomer({ userId: 1, email: "dallan@gmail.com" });

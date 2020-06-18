@@ -34,8 +34,8 @@ export default {
   },
   beforeRouteEnter(routeTo, routeFrom, next) {
     Promise.all([
-      store.dispatch("postsGetOne", "/posts/" + routeTo.params.pid),
-      store.dispatch("recordsGetForPost", "/posts/" + routeTo.params.pid)
+      store.dispatch("postsGetOne", routeTo.params.pid),
+      store.dispatch("recordsGetForPost", routeTo.params.pid)
     ]).then(() => {
       next();
     });

@@ -48,9 +48,14 @@ func (app App) GetCollections(w http.ResponseWriter, req *http.Request) {
 // @Security OAuth2Implicit[cms,openid,profile,email]
 // @Security OAuth2AuthCode[cms,openid,profile,email]
 func (app App) GetCollection(w http.ResponseWriter, req *http.Request) {
+	collID, errors := getIDFromRequest(req)
+	if errors != nil {
+		ErrorsResponse(w, errors)
+		return
+	}
 	enc := json.NewEncoder(w)
 	w.Header().Set("Content-Type", contentType)
-	collection, errors := app.api.GetCollection(req.Context(), req.URL.String())
+	collection, errors := app.api.GetCollection(req.Context(), collID)
 	if errors != nil {
 		ErrorsResponse(w, errors)
 		return
@@ -120,6 +125,11 @@ func (app App) PostCollection(w http.ResponseWriter, req *http.Request) {
 // @Security OAuth2Implicit[cms,openid,profile,email]
 // @Security OAuth2AuthCode[cms,openid,profile,email]
 func (app App) PutCollection(w http.ResponseWriter, req *http.Request) {
+	collID, errors := getIDFromRequest(req)
+	if errors != nil {
+		ErrorsResponse(w, errors)
+		return
+	}
 	mt, _, err := mime.ParseMediaType(req.Header.Get("Content-Type"))
 	if err != nil || mt != contentType {
 		msg := fmt.Sprintf("Bad Content-Type '%s'", mt)
@@ -133,7 +143,7 @@ func (app App) PutCollection(w http.ResponseWriter, req *http.Request) {
 		ErrorResponse(w, http.StatusBadRequest, msg)
 		return
 	}
-	collection, errors := app.api.UpdateCollection(req.Context(), req.URL.String(), in)
+	collection, errors := app.api.UpdateCollection(req.Context(), collID, in)
 	if errors != nil {
 		ErrorsResponse(w, errors)
 		return
@@ -158,7 +168,12 @@ func (app App) PutCollection(w http.ResponseWriter, req *http.Request) {
 // @Security OAuth2Implicit[cms,openid,profile,email]
 // @Security OAuth2AuthCode[cms,openid,profile,email]
 func (app App) DeleteCollection(w http.ResponseWriter, req *http.Request) {
-	errors := app.api.DeleteCollection(req.Context(), req.URL.String())
+	collID, errors := getIDFromRequest(req)
+	if errors != nil {
+		ErrorsResponse(w, errors)
+		return
+	}
+	errors = app.api.DeleteCollection(req.Context(), collID)
 	if errors != nil {
 		ErrorsResponse(w, errors)
 		return

@@ -50,9 +50,14 @@ func (app App) GetPosts(w http.ResponseWriter, req *http.Request) {
 // @Security OAuth2Implicit[cms,openid,profile,email]
 // @Security OAuth2AuthCode[cms,openid,profile,email]
 func (app App) GetPost(w http.ResponseWriter, req *http.Request) {
+	postID, errors := getIDFromRequest(req)
+	if errors != nil {
+		ErrorsResponse(w, errors)
+		return
+	}
 	enc := json.NewEncoder(w)
 	w.Header().Set("Content-Type", contentType)
-	post, errors := app.api.GetPost(req.Context(), req.URL.String())
+	post, errors := app.api.GetPost(req.Context(), postID)
 	if errors != nil {
 		ErrorsResponse(w, errors)
 		return
@@ -122,6 +127,11 @@ func (app App) PostPost(w http.ResponseWriter, req *http.Request) {
 // @Security OAuth2Implicit[cms,openid,profile,email]
 // @Security OAuth2AuthCode[cms,openid,profile,email]
 func (app App) PutPost(w http.ResponseWriter, req *http.Request) {
+	postID, errors := getIDFromRequest(req)
+	if errors != nil {
+		ErrorsResponse(w, errors)
+		return
+	}
 	mt, _, err := mime.ParseMediaType(req.Header.Get("Content-Type"))
 	if err != nil || mt != contentType {
 		msg := fmt.Sprintf("Bad Content-Type '%s'", mt)
@@ -140,7 +150,7 @@ func (app App) PutPost(w http.ResponseWriter, req *http.Request) {
 		ErrorResponse(w, http.StatusBadRequest, msg)
 		return
 	}
-	post, errors := app.api.UpdatePost(req.Context(), req.URL.String(), in)
+	post, errors := app.api.UpdatePost(req.Context(), postID, in)
 	if errors != nil {
 		ErrorsResponse(w, errors)
 		return
@@ -165,7 +175,12 @@ func (app App) PutPost(w http.ResponseWriter, req *http.Request) {
 // @Security OAuth2Implicit[cms,openid,profile,email]
 // @Security OAuth2AuthCode[cms,openid,profile,email]
 func (app App) DeletePost(w http.ResponseWriter, req *http.Request) {
-	errors := app.api.DeletePost(req.Context(), req.URL.String())
+	postID, errors := getIDFromRequest(req)
+	if errors != nil {
+		ErrorsResponse(w, errors)
+		return
+	}
+	errors = app.api.DeletePost(req.Context(), postID)
 	if errors != nil {
 		ErrorsResponse(w, errors)
 		return
