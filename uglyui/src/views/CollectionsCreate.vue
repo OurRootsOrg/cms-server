@@ -69,14 +69,12 @@ export default {
   },
   methods: {
     createCollection() {
-      let coll = Object.assign({}, this.collection, {
-        category: this.collection.category
-      });
+      this.collection.category = +this.collection.category; // convert to a number
       this.$v.$touch();
       if (!this.$v.$invalid) {
         NProgress.start();
         this.$store
-          .dispatch("collectionsCreate", coll)
+          .dispatch("collectionsCreate", this.collection)
           .then(() => {
             this.$router.push({
               name: "collections-list"
