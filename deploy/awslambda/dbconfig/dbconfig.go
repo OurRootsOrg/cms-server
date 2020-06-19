@@ -8,9 +8,9 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/cloudformation"
 	"github.com/aws/aws-sdk-go/service/rdsdataservice"
 	"github.com/aws/aws-sdk-go/service/secretsmanager"
+	"github.com/aws/aws-sdk-go/service/ssm"
 	"github.com/aws/aws-sdk-go/service/sts"
 )
 
@@ -20,22 +20,36 @@ func main() {
 	}
 	envName := os.Args[1]
 	sess := session.Must(session.NewSession())
-	// Get the secret ARNs from CF
-	cfSvc := cloudformation.New(sess)
-	leo, err := cfSvc.ListExports(&cloudformation.ListExportsInput{})
+	ssmSvc := ssm.New(sess)
+	gpi := &ssm.GetParametersInput{
+		Names: []*string{
+			aws.String(envName + "-AuroraMasterSecretARN"),
+			aws.String(envName + "-AuroraAppSecretARN"),
+			aws.String(envName + "-AuroraDBClusterID"),
+		},
+	}
+	gpo, err := ssmSvc.GetParameters(gpi)
 	if err != nil {
-		log.Fatalf("Error listing exports: %v", err)
+		log.Fatalf("Error getting parameters: %v", err)
+	}
+	if len(gpo.InvalidParameters) > 0 {
+		msg := "Invalid parameters: "
+		for _, ip := range gpo.InvalidParameters {
+			msg += *ip + " "
+		}
+		log.Print(msg)
 	}
 	var masterSecretARN, appSecretARN, auroraDBClusterID *string
-	for _, e := range leo.Exports {
-		if *e.Name == envName+"-AuroraMasterSecretARN" {
-			masterSecretARN = e.Value
-		} else if *e.Name == envName+"-AuroraAppSecretARN" {
-			appSecretARN = e.Value
-		} else if *e.Name == envName+"-AuroraDBClusterID" {
-			auroraDBClusterID = e.Value
+	for _, p := range gpo.Parameters {
+		if *p.Name == envName+"-AuroraMasterSecretARN" {
+			masterSecretARN = p.Value
+		} else if *p.Name == envName+"-AuroraAppSecretARN" {
+			appSecretARN = p.Value
+		} else if *p.Name == envName+"-AuroraDBClusterID" {
+			auroraDBClusterID = p.Value
 		}
 	}
+	log.Printf("Parameters: masterSecretARN: %s, appSecretARN: %s, auroraDBClusterID: %s", *masterSecretARN, *appSecretARN, *auroraDBClusterID)
 	// Get the app username and password from Secrets Manager
 	secretSvc := secretsmanager.New(session.New())
 	gsvi := &secretsmanager.GetSecretValueInput{

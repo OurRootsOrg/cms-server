@@ -557,6 +557,12 @@ Resources:
       Name: !Sub "${EnvironmentName}-ElasticsearchDomainEndpoint"
       Type: String
       Value: !GetAtt ElasticsearchDomain.DomainEndpoint
+  AuroraDBClusterIDParam:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub "${EnvironmentName}-AuroraDBClusterID"
+      Type: String
+      Value: !Ref AuroraDBCluster
 
 # Outputs:
 #   CMSPostgresAddress:
