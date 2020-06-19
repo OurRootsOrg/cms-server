@@ -21,8 +21,7 @@ func TestPubSubService(t *testing.T) {
 		log.Fatalf("Error calling NewAPI: %v", err)
 	}
 	defer ap.Close()
-	ap = ap.
-		PubSubConfig("", "rabbit", "guest:guest@localhost:35672")
+	ap = ap.QueueConfig("test", "amqp://guest:guest@localhost:35672/")
 
 	// publish to queue
 	topic, err := ap.OpenTopic(ctx, "test")

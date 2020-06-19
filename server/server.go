@@ -10,11 +10,13 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"path/filepath"
 	"reflect"
 	"time"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
+	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/awslabs/aws-lambda-go-api-proxy/gorillamux"
 	"github.com/codingconcepts/env"
 	"github.com/go-playground/validator/v10"
@@ -26,6 +28,11 @@ import (
 	"github.com/ourrootsorg/cms-server/server/docs"
 	"gocloud.dev/postgres"
 
+	"github.com/golang-migrate/migrate/v4"
+	_ "github.com/golang-migrate/migrate/v4/database/postgres"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
+
+	awsgosignv4 "github.com/jriquelme/awsgosigv4"
 	httpSwagger "github.com/swaggo/http-swagger"
 )
 
@@ -51,13 +58,15 @@ const (
 // @schemes http https
 
 // @securitydefinitions.oauth2.implicit OAuth2Implicit
-// @authorizationurl https://ourroots.auth0.com/authorize?audience=https%3A%2F%2Fapi.ourroots.org%3A3000%2Fpreprod
+// @authorizationurl https://ourroots.auth0.com/authorize?audience=https%3A%2F%2Fapi.ourroots.org%2Fpreprod
 // @scope.cms Grants read and write access to the CMS
 // @scope.openid Indicates that the application intends to use OIDC to verify the user's identity
 // @scope.profile Grants access to OIDC user profile attributes
 // @scope.email Grants access to OIDC email attributes
 
 func main() {
+	progdir := filepath.Dir(os.Args[0]) + "/"
+	log.Printf("program: %s, dir: %s", os.Args[0], progdir)
 	env, err := ParseEnv()
 	if err != nil {
 		log.Fatalf("[FATAL] Error parsing environmet variables: %v", err)
@@ -77,19 +86,58 @@ func main() {
 	if err != nil {
 		log.Fatalf("Error calling NewAPI: %v", err)
 	}
+	var esTransport http.RoundTripper
+	if env.IsLambda {
+		credentials := credentials.NewEnvCredentials()
+		esTransport = &awsgosignv4.SignV4SDKV1{
+			RoundTripper: http.DefaultTransport,
+			Credentials:  credentials,
+			Region:       env.Region,
+			Service:      "es",
+			Now:          time.Now,
+		}
+	}
 	defer ap.Close()
 	ap = ap.
 		BlobStoreConfig(env.Region, env.BlobStoreEndpoint, env.BlobStoreAccessKey, env.BlobStoreSecretKey, env.BlobStoreBucket, env.BlobStoreDisableSSL).
-		PubSubConfig(env.Region, env.PubSubProtocol, env.PubSubHost).
-		ElasticsearchConfig(env.ElasticsearchURLString)
+		QueueConfig("publisher", env.PubSubPublisherURL).
+		QueueConfig("recordswriter", env.PubSubRecordsWriterURL).
+		ElasticsearchConfig(env.ElasticsearchURLString, esTransport)
 	app := NewApp().BaseURL(*env.BaseURL).API(ap).OIDC(env.OIDCAudience, env.OIDCDomain)
 	if env.BaseURL.Scheme == "https" {
 		docs.SwaggerInfo.Schemes = []string{"https"}
 	} else {
 		docs.SwaggerInfo.Schemes = []string{"http"}
 	}
-	log.Printf("Connecting to %s\n", env.DatabaseURL)
+	// Only migrate if MIGRATION_DATABASE_URL is set
+	if env.MigrationDatabaseURL != "" {
+		func() {
+			// Do database migrations
+			log.Printf("[DEBUG] env.MigrationDatabaseURL = '%s'", env.MigrationDatabaseURL)
+			log.Printf("[INFO] Performing migrations, if necessary")
+			migrator, err := migrate.New("file://"+progdir+"../db/migrations", env.MigrationDatabaseURL)
+			if err != nil {
+				log.Fatalf("[FATAL] Error creating database migrator: %v", err)
+			}
+			defer migrator.Close()
+			err = migrator.Up()
+			if err == migrate.ErrNoChange {
+				log.Print("[INFO] No migrations to perform")
+			} else if err != nil {
+				log.Fatalf("[FATAL] Error migrating database: %v", err)
+			} else {
+				log.Print("[INFO] Finished migrations")
+			}
+		}()
+	}
+	// Don't leak credentials from URL
+	dbURL, err := url.Parse(env.DatabaseURL)
+	if err != nil {
+		log.Fatalf("[FATAL] Bad database URL: %v", err)
+	}
+	log.Printf("[INFO] Connecting to %s\n", dbURL.Host)
 	db, err := postgres.Open(context.TODO(), env.DatabaseURL)
+	defer db.Close()
 	if err != nil {
 		log.Fatalf("[FATAL] Error opening database connection: %v\n  DATABASE_URL: %s",
 			err,
@@ -113,9 +161,8 @@ func main() {
 			env.DatabaseURL,
 		)
 	}
-	log.Printf("Connected to %s\n", env.DatabaseURL)
-
-	p := persist.NewPostgresPersister(env.BaseURL.Path, db)
+	log.Printf("[INFO] Connected to %s\n", dbURL.Host)
+	p := persist.NewPostgresPersister(db)
 	ap.
 		CategoryPersister(p).
 		CollectionPersister(p).
@@ -143,9 +190,11 @@ func main() {
 		// API Gateway proxies static content requests directly to an S3 bucket
 		adapter := gorillamux.New(r)
 		lambda.Start(func(ctx context.Context, req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-			log.Printf("[DEBUG] Lambda request %#v", req)
+			log.Printf("[DEBUG] Start %s %s, request: %#v", req.HTTPMethod, req.Path, req)
 			// If no name is provided in the HTTP request body, throw an error
-			return adapter.ProxyWithContext(ctx, req)
+			resp, err := adapter.ProxyWithContext(ctx, req)
+			log.Printf("[DEBUG] End %s %s status %d, response: %#v", req.HTTPMethod, req.Path, resp.StatusCode, resp)
+			return resp, err
 		})
 		log.Fatal("Lambda exiting...")
 	} else {
@@ -186,6 +235,7 @@ type Env struct {
 	MinLogLevel            string `env:"MIN_LOG_LEVEL" validate:"omitempty,eq=DEBUG|eq=INFO|eq=ERROR"`
 	BaseURLString          string `env:"BASE_URL" validate:"omitempty,url"`
 	DatabaseURL            string `env:"DATABASE_URL" validate:"required,url"`
+	MigrationDatabaseURL   string `env:"MIGRATION_DATABASE_URL" validate:"omitempty,url"`
 	BaseURL                *url.URL
 	Region                 string `env:"AWS_REGION"`
 	BlobStoreEndpoint      string `env:"BLOB_STORE_ENDPOINT"`
@@ -193,8 +243,8 @@ type Env struct {
 	BlobStoreSecretKey     string `env:"BLOB_STORE_SECRET_KEY"`
 	BlobStoreBucket        string `env:"BLOB_STORE_BUCKET"`
 	BlobStoreDisableSSL    bool   `env:"BLOB_STORE_DISABLE_SSL"`
-	PubSubProtocol         string `env:"PUB_SUB_PROTOCOL" validate:"omitempty,eq=rabbit|eq=awssqs"`
-	PubSubHost             string `env:"PUB_SUB_HOST"`
+	PubSubRecordsWriterURL string `env:"PUB_SUB_RECORDSWRITER_URL" validate:"required,url"`
+	PubSubPublisherURL     string `env:"PUB_SUB_PUBLISHER_URL" validate:"required,url"`
 	OIDCAudience           string `env:"OIDC_AUDIENCE" validate:"omitempty"`
 	OIDCDomain             string `env:"OIDC_DOMAIN" validate:"omitempty"`
 	ElasticsearchURLString string `env:"ELASTICSEARCH_URL" validate:"required,url"`
@@ -221,8 +271,12 @@ func ParseEnv() (*Env, error) {
 				errs += fmt.Sprintf("  Invalid BASE_URL: '%v' is not a valid URL\n", fe.Value())
 			case "DATABASE_URL":
 				errs += fmt.Sprintf("  Invalid DATABASE_URL: '%v' is not a valid PostgreSQL URL\n", fe.Value())
-			case "PUB_SUB_PROTOCOL":
-				errs += fmt.Sprintf("  Invalid PUB_SUB_PROTOCOL: '%v', valid values are 'rabbit', 'awssqs'\n", fe.Value())
+			case "MIGRATION_DATABASE_URL":
+				errs += fmt.Sprintf("  Invalid MIGRATION_DATABASE_URL: '%v' is not a valid PostgreSQL URL\n", fe.Value())
+			case "PUB_SUB_RECORDSWRITER_URL":
+				errs += fmt.Sprintf("  Invalid PUB_SUB_RECORDSWRITER_URL: '%v'is not a valid URL\n", fe.Value())
+			case "PUB_SUB_PUBLISHER_URL":
+				errs += fmt.Sprintf("  Invalid PUB_SUB_PUBLISHER_URL: '%v'is not a valid URL\n", fe.Value())
 			case "ELASTICSEARCH_URL":
 				errs += fmt.Sprintf("  Invalid ELASTICSEARCH_URL: '%v' is not a valid URL\n", fe.Value())
 			}

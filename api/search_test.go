@@ -4,7 +4,7 @@ import (
 	"context"
 	"log"
 	"os"
-	"strings"
+	"strconv"
 	"testing"
 	"time"
 
@@ -30,7 +30,7 @@ func TestSearch(t *testing.T) {
 			os.Getenv("DATABASE_URL"),
 		)
 	}
-	p := persist.NewPostgresPersister("", db)
+	p := persist.NewPostgresPersister(db)
 	assert.NoError(t, err)
 	testApi, err := api.NewAPI()
 	assert.NoError(t, err)
@@ -40,7 +40,7 @@ func TestSearch(t *testing.T) {
 		CollectionPersister(p).
 		PostPersister(p).
 		RecordPersister(p).
-		ElasticsearchConfig("http://localhost:19200")
+		ElasticsearchConfig("http://localhost:19200", nil)
 
 	// Add a test category and test collection and test post and test records
 	testCategory, err := createTestCategory(p)
@@ -62,12 +62,12 @@ func TestSearch(t *testing.T) {
 	time.Sleep(1 * time.Second)
 	defer func() {
 		for _, record := range records {
-			_ = testApi.SearchDeleteByID(ctx, record.ID)
+			_ = testApi.SearchDeleteByID(ctx, strconv.Itoa(int(record.ID)))
 		}
 	}()
 
 	// search by id
-	searchID := model.MakeSearchID(records[0].ID[strings.LastIndex(records[0].ID, "/")+1:])
+	searchID := strconv.Itoa(int(records[0].ID))
 	hit, errs := testApi.SearchByID(ctx, searchID)
 	assert.Nil(t, errs, "Error searching by id")
 	assert.Equal(t, searchID, hit.ID)
@@ -99,7 +99,7 @@ var recordData = []map[string]string{
 	},
 }
 
-func createTestRecords(p model.RecordPersister, postID string) ([]model.Record, error) {
+func createTestRecords(p model.RecordPersister, postID uint32) ([]model.Record, error) {
 	var records []model.Record
 	for _, data := range recordData {
 		in := model.NewRecordIn(data, postID)

@@ -95,7 +95,7 @@ export default {
     return getInstance()
       .getTokenSilently()
       .then(token => {
-        return apiClient.get(id, {
+        return apiClient.get(`/posts/${id}`, {
           headers: {
             Authorization: `Bearer ${token}`
           }
@@ -117,7 +117,7 @@ export default {
     return getInstance()
       .getTokenSilently()
       .then(token => {
-        return apiClient.put(post.id, post, {
+        return apiClient.put(`/posts/${post.id}`, post, {
           headers: {
             Authorization: `Bearer ${token}`
           }

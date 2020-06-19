@@ -18,14 +18,14 @@ func TestRecord(t *testing.T) {
 	assert.NoError(t, err)
 	// log.Printf("RecordBody JSON: %s", string(js))
 	in = model.RecordIn{}
-	c := model.NewRecord(int32(rand.Int31()), in)
+	c := model.NewRecord(uint32(rand.Int31()), in)
 	err = json.Unmarshal(js, &c)
 	assert.NoError(t, err)
 	// log.Printf("Record: %#v", c)
 	js, err = json.Marshal(c)
 	assert.NoError(t, err)
 	// log.Printf("Record JSON: %s", string(js))
-	c.Post = "/posts/999"
+	c.Post = 999
 	js, err = json.Marshal(c)
 	assert.NoError(t, err)
 	// log.Printf("Record JSON: %s", string(js))

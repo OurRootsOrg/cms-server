@@ -30,20 +30,20 @@ func TestRecordsWriter(t *testing.T) {
 			os.Getenv("DATABASE_URL"),
 		)
 	}
-	p := persist.NewPostgresPersister("", db)
-	testApi, err := api.NewAPI()
+	p := persist.NewPostgresPersister(db)
+	testAPI, err := api.NewAPI()
 	assert.NoError(t, err)
-	defer testApi.Close()
-	testApi = testApi.
+	defer testAPI.Close()
+	testAPI = testAPI.
 		BlobStoreConfig("us-east-1", "127.0.0.1:19000", "minioaccess", "miniosecret", "testbucket", true).
-		PubSubConfig("", "rabbit", "guest:guest@localhost:35672").
+		QueueConfig("recordswriter", "amqp://guest:guest@localhost:35672/").
 		CategoryPersister(p).
 		CollectionPersister(p).
 		PostPersister(p).
 		RecordPersister(p)
 
 	// write an object to a bucket
-	bucket, err := testApi.OpenBucket(ctx)
+	bucket, err := testAPI.OpenBucket(ctx)
 	assert.NoError(t, err)
 	defer bucket.Close()
 
@@ -73,14 +73,14 @@ func TestRecordsWriter(t *testing.T) {
 		},
 		Collection: testCollection.ID,
 	}
-	testPost, errors := testApi.AddPost(ctx, in)
+	testPost, errors := testAPI.AddPost(ctx, in)
 	assert.Nil(t, errors)
 
 	var post *model.Post
 	// wait up to 10 seconds
 	for i := 0; i < 10; i++ {
 		// read post and look for Ready
-		post, errors = testApi.GetPost(ctx, testPost.ID)
+		post, errors = testAPI.GetPost(ctx, testPost.ID)
 		assert.Nil(t, errors)
 		if post.RecordsStatus == api.PostDraft {
 			break
@@ -91,16 +91,16 @@ func TestRecordsWriter(t *testing.T) {
 	assert.Equal(t, api.PostDraft, post.RecordsStatus, "Expected post to be Draft, got %s", post.RecordsStatus)
 
 	// read records for post
-	records, errors := testApi.GetRecordsForPost(ctx, testPost.ID)
+	records, errors := testAPI.GetRecordsForPost(ctx, testPost.ID)
 	assert.Nil(t, errors)
 	assert.Equal(t, 2, len(records.Records), "Expected two records, got %#v", records)
 
 	// delete post
-	errors = testApi.DeletePost(ctx, testPost.ID)
+	errors = testAPI.DeletePost(ctx, testPost.ID)
 	assert.Nil(t, errors)
 
 	// records should be removed
-	records, errors = testApi.GetRecordsForPost(ctx, testPost.ID)
+	records, errors = testAPI.GetRecordsForPost(ctx, testPost.ID)
 	assert.Nil(t, errors)
 	assert.Equal(t, 0, len(records.Records), "Expected empty slice, got %#v", records)
 }
@@ -125,7 +125,7 @@ func deleteTestCategory(p model.CategoryPersister, category *model.Category) err
 	return p.DeleteCategory(context.TODO(), category.ID)
 }
 
-func createTestCollection(p model.CollectionPersister, categoryID string) (*model.Collection, error) {
+func createTestCollection(p model.CollectionPersister, categoryID uint32) (*model.Collection, error) {
 	in := model.NewCollectionIn("Test", categoryID)
 	created, err := p.InsertCollection(context.TODO(), in)
 	if err != nil {

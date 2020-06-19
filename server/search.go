@@ -52,7 +52,7 @@ func (app App) Search(w http.ResponseWriter, req *http.Request) {
 // @router /search/{id} [get]
 // @tags search
 // @id searchByID
-// @Param id path integer true "Search Result ID"
+// @Param id path string true "Search Result ID"
 // @produce application/json
 // @success 200 {object} model.SearchHit "OK"
 // @failure 404 {object} model.Errors "Not found"

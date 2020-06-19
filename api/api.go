@@ -6,6 +6,7 @@ import (
 	"errors"
 	"log"
 	"math"
+	"net/http"
 	"reflect"
 	"strings"
 	"time"
@@ -33,24 +34,24 @@ const UserProperty TokenKey = "user"
 
 type LocalAPI interface {
 	GetCategories(context.Context) (*CategoryResult, *model.Errors)
-	GetCategory(ctx context.Context, id string) (*model.Category, *model.Errors)
+	GetCategory(ctx context.Context, id uint32) (*model.Category, *model.Errors)
 	AddCategory(ctx context.Context, in model.CategoryIn) (*model.Category, *model.Errors)
-	UpdateCategory(ctx context.Context, id string, in model.Category) (*model.Category, *model.Errors)
-	DeleteCategory(ctx context.Context, id string) *model.Errors
+	UpdateCategory(ctx context.Context, id uint32, in model.Category) (*model.Category, *model.Errors)
+	DeleteCategory(ctx context.Context, id uint32) *model.Errors
 	GetCollections(ctx context.Context /* filter/search criteria */) (*CollectionResult, *model.Errors)
-	GetCollection(ctx context.Context, id string) (*model.Collection, *model.Errors)
+	GetCollection(ctx context.Context, id uint32) (*model.Collection, *model.Errors)
 	AddCollection(ctx context.Context, in model.CollectionIn) (*model.Collection, *model.Errors)
-	UpdateCollection(ctx context.Context, id string, in model.Collection) (*model.Collection, *model.Errors)
-	DeleteCollection(ctx context.Context, id string) *model.Errors
+	UpdateCollection(ctx context.Context, id uint32, in model.Collection) (*model.Collection, *model.Errors)
+	DeleteCollection(ctx context.Context, id uint32) *model.Errors
 	GetPosts(ctx context.Context /* filter/search criteria */) (*PostResult, *model.Errors)
-	GetPost(ctx context.Context, id string) (*model.Post, *model.Errors)
+	GetPost(ctx context.Context, id uint32) (*model.Post, *model.Errors)
 	AddPost(ctx context.Context, in model.PostIn) (*model.Post, *model.Errors)
-	UpdatePost(ctx context.Context, id string, in model.Post) (*model.Post, *model.Errors)
-	DeletePost(ctx context.Context, id string) *model.Errors
+	UpdatePost(ctx context.Context, id uint32, in model.Post) (*model.Post, *model.Errors)
+	DeletePost(ctx context.Context, id uint32) *model.Errors
 	PostContentRequest(ctx context.Context, contentRequest ContentRequest) (*ContentResult, *model.Errors)
 	GetContent(ctx context.Context, key string) ([]byte, *model.Errors)
 	RetrieveUser(ctx context.Context, provider OIDCProvider, token *oidc.IDToken, rawToken string) (*model.User, *model.Errors)
-	GetRecordsForPost(ctx context.Context, postID string) (*RecordResult, *model.Errors)
+	GetRecordsForPost(ctx context.Context, postid uint32) (*RecordResult, *model.Errors)
 	Search(ctx context.Context, req *SearchRequest) (*model.SearchResult, *model.Errors)
 	SearchByID(ctx context.Context, id string) (*model.SearchHit, *model.Errors)
 	SearchDeleteByID(ctx context.Context, id string) *model.Errors
@@ -84,9 +85,12 @@ type BlobStoreConfig struct {
 
 // PubSubConfig contains configuration information for the pub sub service
 type PubSubConfig struct {
-	region   string
-	protocol string
-	host     string
+	queueURL map[string]string
+}
+
+// QueueURL returns the URL for a queue
+func (c PubSubConfig) QueueURL(queueName string) string {
+	return c.queueURL[queueName]
 }
 
 // NewAPI builds an API; Close() the api when you're done with it to free up resources
@@ -98,6 +102,7 @@ func NewAPI() (*API, error) {
 	if err != nil {
 		return nil, err
 	}
+	api.pubSubConfig = PubSubConfig{queueURL: map[string]string{}}
 	return api, nil
 }
 
@@ -164,9 +169,9 @@ func (api *API) BlobStoreConfig(region, endpoint, accessKeyID, secretAccessKey, 
 	return api
 }
 
-// PubSubConfig configures the pub-sub service
-func (api *API) PubSubConfig(region, protocol, host string) *API {
-	api.pubSubConfig = PubSubConfig{region, protocol, host}
+// QueueConfig configures the recordswriter queue
+func (api *API) QueueConfig(queueName, queueURL string) *API {
+	api.pubSubConfig.queueURL[queueName] = queueURL
 	return api
 }
 
@@ -176,8 +181,8 @@ func (api *API) UserPersister(p model.UserPersister) *API {
 	return api
 }
 
-// Elasticsearch sets the Elasticsearch client
-func (api *API) ElasticsearchConfig(esURL string) *API {
+// ElasticsearchConfig sets the Elasticsearch client
+func (api *API) ElasticsearchConfig(esURL string, transport http.RoundTripper) *API {
 	retryBackoff := backoff.NewExponentialBackOff()
 
 	log.Printf("Connecting to %s\n", esURL)
@@ -194,6 +199,7 @@ func (api *API) ElasticsearchConfig(esURL string) *API {
 		},
 		// Retry up to 5 attempts
 		MaxRetries: 5,
+		Transport:  transport,
 	})
 	if err != nil {
 		log.Fatalf("[FATAL] Error opening elasticsearch connection: %v\n  ELASTICSEARCH_URL: %s", err, esURL)

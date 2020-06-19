@@ -3,7 +3,7 @@ package persist
 import (
 	"context"
 	"database/sql"
-	"fmt"
+	"strconv"
 
 	"github.com/lib/pq"
 
@@ -21,70 +21,45 @@ func (p PostgresPersister) SelectCollections(ctx context.Context) ([]model.Colle
 	defer rows.Close()
 	collections := make([]model.Collection, 0)
 	for rows.Next() {
-		var dbID int32
-		var categoryID int32
 		var collection model.Collection
-		err := rows.Scan(&dbID, &categoryID, &collection.CollectionBody, &collection.InsertTime, &collection.LastUpdateTime)
+		err := rows.Scan(&collection.ID, &collection.Category, &collection.CollectionBody, &collection.InsertTime, &collection.LastUpdateTime)
 		if err != nil {
 			return nil, translateError(err)
 		}
-		collection.ID = model.MakeCollectionID(dbID)
-		collection.Category = model.MakeCategoryID(categoryID)
 		collections = append(collections, collection)
 	}
 	return collections, nil
 }
 
-// SelectManyCollections selects many collections
-func (p PostgresPersister) SelectManyCollections(ctx context.Context, ids []string) ([]model.Collection, error) {
+// SelectCollectionsByID selects many collections
+func (p PostgresPersister) SelectCollectionsByID(ctx context.Context, ids []uint32) ([]model.Collection, error) {
 	collections := make([]model.Collection, 0)
 	if len(ids) == 0 {
 		return collections, nil
 	}
-	var dbIDs []int32
-	for _, id := range ids {
-		var dbID int32
-		n, err := fmt.Sscanf(id+"\n", p.pathPrefix+model.CollectionIDFormat+"\n", &dbID)
-		if err != nil || n != 1 {
-			// Bad ID
-			return nil, model.NewError(model.ErrBadReference, id, "collection")
-		}
-		dbIDs = append(dbIDs, dbID)
-	}
 
-	rows, err := p.db.QueryContext(ctx, "SELECT id, category_id, body, insert_time, last_update_time FROM collection WHERE id = ANY($1)", pq.Array(dbIDs))
+	rows, err := p.db.QueryContext(ctx, "SELECT id, category_id, body, insert_time, last_update_time FROM collection WHERE id = ANY($1)", pq.Array(ids))
 	if err != nil {
 		return nil, translateError(err)
 	}
 	defer rows.Close()
 	for rows.Next() {
-		var dbID int32
-		var categoryID int32
 		var collection model.Collection
-		err := rows.Scan(&dbID, &categoryID, &collection.CollectionBody, &collection.InsertTime, &collection.LastUpdateTime)
+		err := rows.Scan(&collection.ID, &collection.Category, &collection.CollectionBody, &collection.InsertTime, &collection.LastUpdateTime)
 		if err != nil {
 			return nil, translateError(err)
 		}
-		collection.ID = model.MakeCollectionID(dbID)
-		collection.Category = model.MakeCategoryID(categoryID)
 		collections = append(collections, collection)
 	}
 	return collections, nil
 }
 
 // SelectOneCollection selects a single collection
-func (p PostgresPersister) SelectOneCollection(ctx context.Context, id string) (model.Collection, error) {
+func (p PostgresPersister) SelectOneCollection(ctx context.Context, id uint32) (model.Collection, error) {
 	var collection model.Collection
-	var dbID int32
-	var catID int32
-	n, err := fmt.Sscanf(id+"\n", p.pathPrefix+model.CollectionIDFormat+"\n", &dbID)
-	if err != nil || n != 1 {
-		// Bad ID
-		return collection, model.NewError(model.ErrNotFound, id)
-	}
-	err = p.db.QueryRowContext(ctx, "SELECT id, category_id, body, insert_time, last_update_time FROM collection WHERE id=$1", dbID).Scan(
-		&dbID,
-		&catID,
+	err := p.db.QueryRowContext(ctx, "SELECT id, category_id, body, insert_time, last_update_time FROM collection WHERE id=$1", id).Scan(
+		&collection.ID,
+		&collection.Category,
 		&collection.CollectionBody,
 		&collection.InsertTime,
 		&collection.LastUpdateTime,
@@ -92,61 +67,38 @@ func (p PostgresPersister) SelectOneCollection(ctx context.Context, id string) (
 	if err != nil {
 		return collection, translateError(err)
 	}
-	collection.ID = model.MakeCollectionID(dbID)
-	collection.Category = model.MakeCategoryID(catID)
 	return collection, nil
 }
 
 // InsertCollection inserts a CollectionBody into the database and returns the inserted Collection
 func (p PostgresPersister) InsertCollection(ctx context.Context, in model.CollectionIn) (model.Collection, error) {
-	var dbID int32
 	var collection model.Collection
-	var catID int32
-	n, err := fmt.Sscanf(in.Category, p.pathPrefix+model.CategoryIDFormat, &catID)
-	if err != nil || n != 1 {
-		// Bad ID
-		return collection, model.NewError(model.ErrBadReference, in.Category, "category")
-	}
-	err = p.db.QueryRowContext(ctx,
+	err := p.db.QueryRowContext(ctx,
 		`INSERT INTO collection (category_id, body) 
 		 VALUES ($1, $2) 
 		 RETURNING id, category_id, body, insert_time, last_update_time`,
-		catID, in.CollectionBody).
+		in.Category, in.CollectionBody).
 		Scan(
-			&dbID,
-			&catID,
+			&collection.ID,
+			&collection.Category,
 			&collection.CollectionBody,
 			&collection.InsertTime,
 			&collection.LastUpdateTime,
 		)
-	collection.ID = model.MakeCollectionID(dbID)
-	collection.Category = model.MakeCategoryID(catID)
 	return collection, translateError(err)
 }
 
 // UpdateCollection updates a Collection in the database and returns the updated Collection
-func (p PostgresPersister) UpdateCollection(ctx context.Context, id string, in model.Collection) (model.Collection, error) {
+func (p PostgresPersister) UpdateCollection(ctx context.Context, id uint32, in model.Collection) (model.Collection, error) {
 	var collection model.Collection
-	var dbID int32
-	n, err := fmt.Sscanf(id+"\n", p.pathPrefix+model.CollectionIDFormat+"\n", &dbID)
-	if err != nil || n != 1 {
-		// Bad ID
-		return collection, model.NewError(model.ErrNotFound, id)
-	}
-	var catID int32
-	n, err = fmt.Sscanf(in.Category, p.pathPrefix+model.CategoryIDFormat, &catID)
-	if err != nil || n != 1 {
-		// Bad ID
-		return collection, model.NewError(model.ErrBadReference, in.Category, "category")
-	}
-	err = p.db.QueryRowContext(ctx,
+	err := p.db.QueryRowContext(ctx,
 		`UPDATE collection SET body = $1, category_id = $2, last_update_time = CURRENT_TIMESTAMP 
 		 WHERE id = $3 AND last_update_time = $4
 		 RETURNING id, category_id, body, insert_time, last_update_time`,
-		in.CollectionBody, catID, dbID, in.LastUpdateTime).
+		in.CollectionBody, in.Category, id, in.LastUpdateTime).
 		Scan(
-			&dbID,
-			&catID,
+			&collection.ID,
+			&collection.Category,
 			&collection.CollectionBody,
 			&collection.InsertTime,
 			&collection.LastUpdateTime,
@@ -158,21 +110,13 @@ func (p PostgresPersister) UpdateCollection(ctx context.Context, id string, in m
 			// Row exists, so it must be a non-matching update time
 			return collection, model.NewError(model.ErrConcurrentUpdate, c.LastUpdateTime.String(), in.LastUpdateTime.String())
 		}
-		return collection, model.NewError(model.ErrNotFound, id)
+		return collection, model.NewError(model.ErrNotFound, strconv.Itoa(int(id)))
 	}
-	collection.ID = model.MakeCollectionID(dbID)
-	collection.Category = model.MakeCategoryID(catID)
 	return collection, translateError(err)
 }
 
 // DeleteCollection deletes a Collection
-func (p PostgresPersister) DeleteCollection(ctx context.Context, id string) error {
-	var dbID int32
-	n, err := fmt.Sscanf(id+"\n", p.pathPrefix+model.CollectionIDFormat+"\n", &dbID)
-	if err != nil || n != 1 {
-		// Bad ID
-		return model.NewError(model.ErrNotFound, id)
-	}
-	_, err = p.db.ExecContext(ctx, "DELETE FROM collection WHERE id = $1", dbID)
+func (p PostgresPersister) DeleteCollection(ctx context.Context, id uint32) error {
+	_, err := p.db.ExecContext(ctx, "DELETE FROM collection WHERE id = $1", id)
 	return translateError(err)
 }

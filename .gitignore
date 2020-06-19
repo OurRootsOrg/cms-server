@@ -1,13 +1,16 @@
 # Binaries for programs and plugins
 server/server
-server/main.lambda
-deploy/awslambda/main.lambda.zip
+publisher/publisher
+recordswriter/recordswriter
+*.lambda
+deploy/awslambda/*.lambda.zip
 *.exe
 *.exe~
 *.dll
 *.so
 *.dylib
-output-ourroots.cf.yaml
+uglyui/dist/
+output-*.cf.yaml
 uglyui/dist/
 
 # Test binary, built with `go test -c`
@@ -19,7 +22,6 @@ uglyui/dist/
 # Dependency directories (remove the comment below to include it)
 # vendor/
 uglyui/node_modules/
-02-calling-an-api/node_modules/
 
 # IDEs
 .idea/
