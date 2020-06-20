@@ -1,6 +1,7 @@
 # Prerequisites
 To deploy to AWS, you must have:
 
+* A successful build of the project, as described in the top-level [README](../../README.md).
 * An AWS account.
 * Account credentials with the proper permissions. In general, you [should not use the AWS root credentials](https://docs.aws.amazon.com/general/latest/gr/root-vs-iam.html) for tasks like this. An IAM user with either the `Administrator` policy or the `PowerUserAccess` policy plus the ability to manage IAM roles should work.
 * A working [AWS CLI installation](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-install.html).
