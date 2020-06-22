@@ -4,7 +4,7 @@ import (
 	"context"
 	"log"
 	"os"
-	"strings"
+	"strconv"
 	"testing"
 	"time"
 
@@ -24,13 +24,13 @@ func TestPublisher(t *testing.T) {
 	// create test api
 	db, err := postgres.Open(ctx, os.Getenv("DATABASE_URL"))
 	assert.NoError(t, err)
-	p := persist.NewPostgresPersister("", db)
-	testApi, err := api.NewAPI()
+	p := persist.NewPostgresPersister(db)
+	testAPI, err := api.NewAPI()
 	assert.NoError(t, err)
-	defer testApi.Close()
-	testApi = testApi.
-		PubSubConfig("", "rabbit", "guest:guest@localhost:35672").
-		ElasticsearchConfig("http://localhost:19200").
+	defer testAPI.Close()
+	testAPI = testAPI.
+		QueueConfig("publisher", "amqp://guest:guest@localhost:35672/").
+		ElasticsearchConfig("http://localhost:19200", nil).
 		CategoryPersister(p).
 		CollectionPersister(p).
 		PostPersister(p).
@@ -58,14 +58,14 @@ func TestPublisher(t *testing.T) {
 
 	// Update Post
 	testPost.RecordsStatus = api.PostPublished
-	testPost, errors := testApi.UpdatePost(ctx, testPost.ID, *testPost)
+	testPost, errors := testAPI.UpdatePost(ctx, testPost.ID, *testPost)
 	assert.Nil(t, errors, "Error setting post to published")
 
 	var post *model.Post
 	// wait up to 10 seconds
 	for i := 0; i < 10; i++ {
 		// read post and look for Ready
-		post, errors = testApi.GetPost(ctx, testPost.ID)
+		post, errors = testAPI.GetPost(ctx, testPost.ID)
 		assert.Nil(t, errors)
 		if post.RecordsStatus == api.PostPublished {
 			break
@@ -77,15 +77,15 @@ func TestPublisher(t *testing.T) {
 
 	// search records by id
 	for _, testRecord := range testRecords {
-		searchID := model.MakeSearchID(testRecord.ID[strings.LastIndex(testRecord.ID, "/")+1:])
-		res, err := testApi.SearchByID(ctx, searchID)
+		searchID := strconv.Itoa(int(testRecord.ID))
+		res, err := testAPI.SearchByID(ctx, searchID)
 		assert.Nil(t, err)
 		assert.Equal(t, searchID, res.ID, "Record not found")
 		assert.Equal(t, testCollection.ID, res.CollectionID, "Collection not found")
 	}
 
 	// delete post
-	errors = testApi.DeletePost(ctx, testPost.ID)
+	errors = testAPI.DeletePost(ctx, testPost.ID)
 	assert.Nil(t, errors)
 }
 
@@ -109,7 +109,7 @@ func deleteTestCategory(p model.CategoryPersister, category *model.Category) err
 	return p.DeleteCategory(context.TODO(), category.ID)
 }
 
-func createTestCollection(p model.CollectionPersister, categoryID string) (*model.Collection, error) {
+func createTestCollection(p model.CollectionPersister, categoryID uint32) (*model.Collection, error) {
 	in := model.NewCollectionIn("Test", categoryID)
 	created, err := p.InsertCollection(context.TODO(), in)
 	if err != nil {
@@ -122,7 +122,7 @@ func deleteTestCollection(p model.CollectionPersister, collection *model.Collect
 	return p.DeleteCollection(context.TODO(), collection.ID)
 }
 
-func createTestPost(p model.PostPersister, collectionID string) (*model.Post, error) {
+func createTestPost(p model.PostPersister, collectionID uint32) (*model.Post, error) {
 	in := model.NewPostIn("Test", collectionID, "test")
 	created, err := p.InsertPost(context.TODO(), in)
 	if err != nil {
@@ -146,7 +146,7 @@ var recordData = []map[string]string{
 	},
 }
 
-func createTestRecords(p model.RecordPersister, postID string) ([]model.Record, error) {
+func createTestRecords(p model.RecordPersister, postID uint32) ([]model.Record, error) {
 	var records []model.Record
 	for _, data := range recordData {
 		in := model.NewRecordIn(data, postID)

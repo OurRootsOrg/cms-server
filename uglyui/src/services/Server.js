@@ -2,13 +2,12 @@ import axios from "axios";
 import { getAuth } from "../auth";
 
 const apiClient = axios.create({
-  baseURL: `http://localhost:8000`,
+  baseURL: process.env.VUE_APP_API_BASE_URL,
   withCredentials: false, // This is the default
   headers: {
     Accept: "application/json",
     "Content-Type": "application/json"
-  },
-  timeout: 10000
+  }
 });
 
 export default {
@@ -82,8 +81,7 @@ export default {
     return axios.put(url, data, {
       headers: {
         "Content-Type": contentType
-      },
-      timeout: 10000
+      }
     });
   },
   async postsGetAll() {
@@ -98,7 +96,7 @@ export default {
   async postsGetOne(id) {
     let auth = await getAuth();
     let token = await auth.getTokenSilently();
-    return apiClient.get(id, {
+    return apiClient.get(`/posts/${id}`, {
       headers: {
         Authorization: `Bearer ${token}`
       }
@@ -116,7 +114,7 @@ export default {
   async postsUpdate(post) {
     let auth = await getAuth();
     let token = await auth.getTokenSilently();
-    return apiClient.put(post.id, post, {
+    return apiClient.put(`/posts/${post.id}`, post, {
       headers: {
         Authorization: `Bearer ${token}`
       }

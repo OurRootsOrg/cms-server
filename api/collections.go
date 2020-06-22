@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"net/http"
+	"strconv"
 
 	"github.com/ourrootsorg/cms-server/model"
 	"github.com/ourrootsorg/cms-server/persist"
@@ -26,8 +27,8 @@ func (api API) GetCollections(ctx context.Context /* filter/search criteria */) 
 }
 
 // GetCollectionsByID holds the business logic around getting many Collections
-func (api API) GetCollectionsByID(ctx context.Context, ids []string) ([]model.Collection, *model.Errors) {
-	colls, err := api.collectionPersister.SelectManyCollections(ctx, ids)
+func (api API) GetCollectionsByID(ctx context.Context, ids []uint32) ([]model.Collection, *model.Errors) {
+	colls, err := api.collectionPersister.SelectCollectionsByID(ctx, ids)
 	if err != nil {
 		return nil, model.NewErrors(http.StatusInternalServerError, err)
 	}
@@ -35,10 +36,10 @@ func (api API) GetCollectionsByID(ctx context.Context, ids []string) ([]model.Co
 }
 
 // GetCollection holds the business logic around getting a Collection
-func (api API) GetCollection(ctx context.Context, id string) (*model.Collection, *model.Errors) {
+func (api API) GetCollection(ctx context.Context, id uint32) (*model.Collection, *model.Errors) {
 	collection, err := api.collectionPersister.SelectOneCollection(ctx, id)
 	if err == persist.ErrNoRows {
-		return nil, model.NewErrors(http.StatusNotFound, model.NewError(model.ErrNotFound, id))
+		return nil, model.NewErrors(http.StatusNotFound, model.NewError(model.ErrNotFound, strconv.Itoa(int(id))))
 	} else if err != nil {
 		return nil, model.NewErrors(http.StatusInternalServerError, err)
 	}
@@ -55,7 +56,7 @@ func (api API) AddCollection(ctx context.Context, in model.CollectionIn) (*model
 	collection, err := api.collectionPersister.InsertCollection(ctx, in)
 	if err == persist.ErrForeignKeyViolation {
 		log.Printf("[ERROR] Invalid category reference: %v", err)
-		return nil, model.NewErrors(http.StatusBadRequest, model.NewError(model.ErrBadReference, in.Category, "category"))
+		return nil, model.NewErrors(http.StatusBadRequest, model.NewError(model.ErrBadReference, strconv.Itoa(int(in.Category)), "category"))
 	} else if err != nil {
 		log.Printf("[ERROR] Internal server error: %v", err)
 		return nil, model.NewErrors(http.StatusInternalServerError, err)
@@ -64,7 +65,7 @@ func (api API) AddCollection(ctx context.Context, in model.CollectionIn) (*model
 }
 
 // UpdateCollection holds the business logic around updating a Collection
-func (api API) UpdateCollection(ctx context.Context, id string, in model.Collection) (*model.Collection, *model.Errors) {
+func (api API) UpdateCollection(ctx context.Context, id uint32, in model.Collection) (*model.Collection, *model.Errors) {
 	err := api.validate.Struct(in)
 	if err != nil {
 		return nil, model.NewErrors(http.StatusBadRequest, err)
@@ -80,7 +81,7 @@ func (api API) UpdateCollection(ctx context.Context, id string, in model.Collect
 	}
 	if err == persist.ErrForeignKeyViolation {
 		log.Printf("[ERROR] Invalid category reference: %v", err)
-		return nil, model.NewErrors(http.StatusBadRequest, model.NewError(model.ErrBadReference, in.Category, "category"))
+		return nil, model.NewErrors(http.StatusBadRequest, model.NewError(model.ErrBadReference, strconv.Itoa(int(in.Category)), "category"))
 	} else if err != nil {
 		return nil, model.NewErrors(http.StatusInternalServerError, err)
 	}
@@ -88,7 +89,7 @@ func (api API) UpdateCollection(ctx context.Context, id string, in model.Collect
 }
 
 // DeleteCollection holds the business logic around deleting a Collection
-func (api API) DeleteCollection(ctx context.Context, id string) *model.Errors {
+func (api API) DeleteCollection(ctx context.Context, id uint32) *model.Errors {
 	err := api.collectionPersister.DeleteCollection(ctx, id)
 	if err != nil {
 		return model.NewErrors(http.StatusInternalServerError, err)

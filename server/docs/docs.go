@@ -947,6 +947,123 @@ var doc = `{
                     }
                 }
             }
+        },
+        "/records": {
+            "get": {
+                "security": [
+                    {
+                        "OAuth2Implicit": [
+                            "cms",
+                            "openid",
+                            "profile",
+                            "email"
+                        ]
+                    },
+                    {
+                        "OAuth2AuthCode": [
+                            "cms",
+                            "openid",
+                            "profile",
+                            "email"
+                        ]
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "records"
+                ],
+                "summary": "returns all records",
+                "operationId": "getRecords",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.Record"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "$ref": "#/definitions/model.Errors"
+                        }
+                    }
+                }
+            }
+        },
+        "/search": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "search"
+                ],
+                "summary": "returns search results",
+                "operationId": "search",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.SearchResult"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "$ref": "#/definitions/model.Errors"
+                        }
+                    }
+                }
+            }
+        },
+        "/search/{id}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "search"
+                ],
+                "summary": "returns a single search result",
+                "operationId": "searchByID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Search Result ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.SearchHit"
+                        }
+                    },
+                    "404": {
+                        "description": "Not found",
+                        "schema": {
+                            "$ref": "#/definitions/model.Errors"
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "$ref": "#/definitions/model.Errors"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -974,8 +1091,8 @@ var doc = `{
                     "$ref": "#/definitions/model.FieldDefSet"
                 },
                 "id": {
-                    "type": "string",
-                    "example": "/categories/999"
+                    "type": "integer",
+                    "example": 999
                 },
                 "insert_time": {
                     "type": "string"
@@ -1022,15 +1139,15 @@ var doc = `{
             ],
             "properties": {
                 "category": {
-                    "type": "string",
-                    "example": "/categories/999"
+                    "type": "integer",
+                    "example": 999
                 },
                 "citation_template": {
                     "type": "string"
                 },
                 "id": {
-                    "type": "string",
-                    "example": "/collections/999"
+                    "type": "integer",
+                    "example": 999
                 },
                 "insert_time": {
                     "type": "string"
@@ -1054,8 +1171,8 @@ var doc = `{
             ],
             "properties": {
                 "category": {
-                    "type": "string",
-                    "example": "/categories/999"
+                    "type": "integer",
+                    "example": 999
                 },
                 "citation_template": {
                     "type": "string"
@@ -1108,12 +1225,12 @@ var doc = `{
             ],
             "properties": {
                 "collection": {
-                    "type": "string",
-                    "example": "/collections/999"
+                    "type": "integer",
+                    "example": 999
                 },
                 "id": {
-                    "type": "string",
-                    "example": "/posts/999"
+                    "type": "integer",
+                    "example": 999
                 },
                 "insert_time": {
                     "type": "string"
@@ -1141,8 +1258,8 @@ var doc = `{
             ],
             "properties": {
                 "collection": {
-                    "type": "string",
-                    "example": "/collections/999"
+                    "type": "integer",
+                    "example": 999
                 },
                 "name": {
                     "type": "string"
@@ -1154,13 +1271,139 @@ var doc = `{
                     "type": "string"
                 }
             }
+        },
+        "model.Record": {
+            "type": "object",
+            "required": [
+                "data",
+                "id",
+                "post"
+            ],
+            "properties": {
+                "data": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 999
+                },
+                "insert_time": {
+                    "type": "string"
+                },
+                "ix_hash": {
+                    "type": "string"
+                },
+                "last_update_time": {
+                    "type": "string"
+                },
+                "post": {
+                    "type": "integer",
+                    "example": 999
+                }
+            }
+        },
+        "model.SearchEvent": {
+            "type": "object",
+            "properties": {
+                "date": {
+                    "type": "string"
+                },
+                "place": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.SearchHit": {
+            "type": "object",
+            "properties": {
+                "collection": {
+                    "type": "integer"
+                },
+                "collectionName": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "person": {
+                    "type": "object",
+                    "$ref": "#/definitions/model.SearchPerson"
+                },
+                "record": {
+                    "description": "only returned on search by id",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "score": {
+                    "type": "number"
+                }
+            }
+        },
+        "model.SearchPerson": {
+            "type": "object",
+            "properties": {
+                "events": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.SearchEvent"
+                    }
+                },
+                "name": {
+                    "type": "string"
+                },
+                "relationships": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.SearchRelationship"
+                    }
+                },
+                "role": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.SearchRelationship": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.SearchResult": {
+            "type": "object",
+            "properties": {
+                "hits": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.SearchHit"
+                    }
+                },
+                "maxScore": {
+                    "type": "number"
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
         }
     },
     "securityDefinitions": {
         "OAuth2Implicit": {
             "type": "oauth2",
             "flow": "implicit",
-            "authorizationUrl": "https://ourroots.auth0.com/authorize?audience=https%3A%2F%2Fapi.ourroots.org%3A3000%2Fpreprod",
+            "authorizationUrl": "https://ourroots.auth0.com/authorize?audience=https%3A%2F%2Fapi.ourroots.org%2Fpreprod",
             "scopes": {
                 "cms": " Grants read and write access to the CMS",
                 "email": " Grants access to OIDC email attributes",

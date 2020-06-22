@@ -43,7 +43,7 @@ func TestGetAllCategories(t *testing.T) {
 	cr = api.CategoryResult{
 		Categories: []model.Category{
 			{
-				ID: "/categories/1",
+				ID: 1,
 				CategoryBody: model.CategoryBody{
 					Name: "Test name",
 				},
@@ -95,7 +95,7 @@ func TestGetCategory(t *testing.T) {
 	r := app.NewRouter()
 
 	category := &model.Category{
-		ID: "/categories/1",
+		ID: 1,
 		CategoryBody: model.CategoryBody{
 			Name: "Name",
 		},
@@ -144,7 +144,7 @@ func TestPostCategory(t *testing.T) {
 	in, buf := makeCategoryIn(t)
 	now := time.Now().Truncate(0) // Truncate(0) truncates monotonic time
 	am.Result = &model.Category{
-		ID:             "/categories/1",
+		ID:             1,
 		CategoryBody:   in.CategoryBody,
 		InsertTime:     now,
 		LastUpdateTime: now,
@@ -180,7 +180,7 @@ func TestPutCategory(t *testing.T) {
 	in, buf := makeCategoryIn(t)
 	now := time.Now().Truncate(0) // Truncate(0) truncates monotonic time
 	cat := model.Category{
-		ID:             "/categories/1",
+		ID:             1,
 		CategoryBody:   in.CategoryBody,
 		InsertTime:     now,
 		LastUpdateTime: now,

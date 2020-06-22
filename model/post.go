@@ -5,20 +5,16 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"time"
 )
-
-// PostIDFormat is the format for Post IDs
-const PostIDFormat = "/posts/%d"
 
 // PostPersister defines methods needed to persist categories
 type PostPersister interface {
 	SelectPosts(ctx context.Context) ([]Post, error)
-	SelectOnePost(ctx context.Context, id string) (Post, error)
+	SelectOnePost(ctx context.Context, id uint32) (Post, error)
 	InsertPost(ctx context.Context, in PostIn) (Post, error)
-	UpdatePost(ctx context.Context, id string, in Post) (Post, error)
-	DeletePost(ctx context.Context, id string) error
+	UpdatePost(ctx context.Context, id uint32, in Post) (Post, error)
+	DeletePost(ctx context.Context, id uint32) error
 }
 
 // PostBody is the JSON body of a Post
@@ -45,19 +41,19 @@ func (cb *PostBody) Scan(value interface{}) error {
 // PostIn is the payload to create or update a Post
 type PostIn struct {
 	PostBody
-	Collection string `json:"collection,omitempty" example:"/collections/999" validate:"required"`
+	Collection uint32 `json:"collection,omitempty" example:"999" validate:"required"`
 }
 
 // Post represents a set of related Records
 type Post struct {
-	ID string `json:"id,omitempty" example:"/posts/999" validate:"required"`
+	ID uint32 `json:"id,omitempty" example:"999" validate:"required"`
 	PostIn
 	InsertTime     time.Time `json:"insert_time,omitempty"`
 	LastUpdateTime time.Time `json:"last_update_time,omitempty"`
 }
 
 // NewPostIn constructs a PostIn
-func NewPostIn(name, collectionID, recordsKey string) PostIn {
+func NewPostIn(name string, collectionID uint32, recordsKey string) PostIn {
 	pi := PostIn{
 		PostBody: PostBody{
 			Name:       name,
@@ -69,10 +65,10 @@ func NewPostIn(name, collectionID, recordsKey string) PostIn {
 }
 
 // NewPost constructs a Post from a PostIn
-func NewPost(id int32, ci PostIn) Post {
+func NewPost(id uint32, ci PostIn) Post {
 	now := time.Now()
 	c := Post{
-		ID: MakePostID(id),
+		ID: id,
 		PostIn: PostIn{
 			PostBody:   ci.PostBody,
 			Collection: ci.Collection,
@@ -81,9 +77,4 @@ func NewPost(id int32, ci PostIn) Post {
 		LastUpdateTime: now,
 	}
 	return c
-}
-
-// MakePostID builds a Post ID string from an integer ID
-func MakePostID(id int32) string {
-	return pathPrefix + fmt.Sprintf(PostIDFormat, id)
 }

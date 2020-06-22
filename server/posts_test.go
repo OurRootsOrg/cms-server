@@ -44,7 +44,7 @@ func TestGetAllPosts(t *testing.T) {
 	cr = api.PostResult{
 		Posts: []model.Post{
 			{
-				ID:             "/posts/1",
+				ID:             1,
 				PostIn:         ci,
 				InsertTime:     now,
 				LastUpdateTime: now,
@@ -95,7 +95,7 @@ func TestGetPost(t *testing.T) {
 
 	ci, _ := makePostIn(t)
 	post := &model.Post{
-		ID:     "/posts/1",
+		ID:     1,
 		PostIn: ci,
 	}
 	am.Result = post
@@ -142,7 +142,7 @@ func TestPostPost(t *testing.T) {
 	in, buf := makePostIn(t)
 	now := time.Now().Truncate(0) // Truncate(0) truncates monotonic time
 	am.Result = &model.Post{
-		ID:             "/posts/1",
+		ID:             1,
 		PostIn:         in,
 		InsertTime:     now,
 		LastUpdateTime: now,
@@ -180,7 +180,7 @@ func TestPutPost(t *testing.T) {
 	in, buf := makePostIn(t)
 	now := time.Now().Truncate(0) // Truncate(0) truncates monotonic time
 	post := model.Post{
-		ID:             "/posts/1",
+		ID:             1,
 		PostIn:         in,
 		InsertTime:     now,
 		LastUpdateTime: now,
@@ -232,7 +232,7 @@ func makePostIn(t *testing.T) (model.PostIn, *bytes.Buffer) {
 			RecordsKey:    "key",
 			RecordsStatus: api.PostDraft,
 		},
-		Collection: "/collections/1",
+		Collection: 1,
 	}
 	buf := new(bytes.Buffer)
 	enc := json.NewEncoder(buf)

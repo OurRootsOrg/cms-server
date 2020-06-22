@@ -3,9 +3,9 @@ package api
 import (
 	"context"
 	"errors"
-	"fmt"
 	"log"
 	"math"
+	"strings"
 	"time"
 
 	"github.com/streadway/amqp"
@@ -21,26 +21,31 @@ import (
 func (api *API) OpenTopic(ctx context.Context, topicName string) (*pubsub.Topic, error) {
 	cnt := 0
 	err := errors.New("unknown error")
-	urlStr := getPubSubURLStr(api.pubSubConfig.protocol, api.pubSubConfig.region, api.pubSubConfig.host, topicName)
+	urlStr := api.pubSubConfig.QueueURL(topicName)
 	conn := api.rabbitmqTopicConn
 	var topic *pubsub.Topic
-	for err != nil && cnt <= 4 {
+	for err != nil && cnt <= 5 {
 		if cnt > 0 {
 			time.Sleep(time.Duration(math.Pow(2.0, float64(cnt))) * time.Second)
 		}
 		cnt++
 
-		if api.pubSubConfig.protocol == "awssqs" {
+		switch {
+		case strings.HasPrefix(urlStr, "https://sqs."): // AWS SQS https URL
+			urlStr = "awssqs" + urlStr[5:]
 			topic, err = pubsub.OpenTopic(ctx, urlStr)
-		} else { // rabbit
+		case strings.HasPrefix(urlStr, "amqp:"): // Rabbit
 			if conn == nil {
 				conn, err = amqp.Dial(urlStr)
 				if err != nil {
+					log.Printf("[INFO] Rabbit dialed try %d error %v\n", cnt, err)
 					conn = nil
 					continue
 				}
 			}
 			topic = rabbitpubsub.OpenTopic(conn, topicName, nil)
+		default:
+			topic, err = pubsub.OpenTopic(ctx, urlStr)
 		}
 	}
 	if err != nil {
@@ -58,21 +63,22 @@ func (api *API) OpenTopic(ctx context.Context, topicName string) (*pubsub.Topic,
 func (api *API) OpenSubscription(ctx context.Context, queue string) (*pubsub.Subscription, error) {
 	cnt := 0
 	err := errors.New("unknown error")
-	urlStr := getPubSubURLStr(api.pubSubConfig.protocol, api.pubSubConfig.region, api.pubSubConfig.host, queue)
+	urlStr := api.pubSubConfig.QueueURL(queue)
 	conn := api.rabbitmqSubscriptionConn
 	var subscription *pubsub.Subscription
-	for err != nil && cnt <= 4 {
+	for err != nil && cnt <= 5 {
 		if cnt > 0 {
 			time.Sleep(time.Duration(math.Pow(2.0, float64(cnt))) * time.Second)
 		}
 		cnt++
 
-		if api.pubSubConfig.protocol == "awssqs" {
+		if strings.HasPrefix(urlStr, "awssqs:") {
 			subscription, err = pubsub.OpenSubscription(ctx, urlStr)
 		} else { // rabbit
 			if conn == nil {
 				conn, err = amqp.Dial(urlStr)
 				if err != nil {
+					log.Printf("[INFO] Rabbit dialed try %d error %v\n", cnt, err)
 					conn = nil
 					continue
 				}
@@ -88,11 +94,4 @@ func (api *API) OpenSubscription(ctx context.Context, queue string) (*pubsub.Sub
 
 	api.rabbitmqSubscriptionConn = conn
 	return subscription, err
-}
-
-func getPubSubURLStr(protocol, region, host, target string) string {
-	if protocol == "awssqs" {
-		return fmt.Sprintf("awssqs://%s/%s?region=%s", host, target, region)
-	}
-	return fmt.Sprintf("amqp://%s/", host)
 }

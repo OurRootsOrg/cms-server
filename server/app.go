@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 
 	"github.com/coreos/go-oidc"
@@ -200,4 +201,14 @@ func ErrorsResponse(w http.ResponseWriter, errors *model.Errors) {
 	if err != nil {
 		log.Printf("[ERROR] Failure encoding error response: '%v'", err)
 	}
+}
+
+// get a "id" variable from the request and validate > 0
+func getIDFromRequest(req *http.Request) (uint32, *model.Errors) {
+	vars := mux.Vars(req)
+	catID, err := strconv.Atoi(vars["id"])
+	if err != nil || catID <= 0 {
+		return 0, model.NewErrors(http.StatusBadRequest, err, fmt.Sprintf("Bad id '%s'", vars["id"]))
+	}
+	return uint32(catID), nil
 }

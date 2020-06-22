@@ -26,7 +26,7 @@ func TestCollections(t *testing.T) {
 			os.Getenv("DATABASE_URL"),
 		)
 	}
-	p := persist.NewPostgresPersister("", db)
+	p := persist.NewPostgresPersister(db)
 	ap, err := api.NewAPI()
 	assert.NoError(t, err)
 	defer ap.Close()
@@ -57,7 +57,7 @@ func TestCollections(t *testing.T) {
 	assert.Equal(t, in.Category, created.Category)
 
 	// Add with bad category reference
-	in.Category = in.Category + "88"
+	in.Category = in.Category + 88
 	_, errors = testApi.AddCollection(context.TODO(), in)
 	assert.Len(t, errors.Errs(), 1)
 	assert.Equal(t, model.ErrBadReference, errors.Errs()[0].Code, "errors.Errs()[0]: %#v", errors.Errs()[0])
@@ -70,7 +70,7 @@ func TestCollections(t *testing.T) {
 	assert.Equal(t, *created, ret.Collections[0])
 
 	// GET many collections should now return the created Collection
-	colls, errors := testApi.GetCollectionsByID(context.TODO(), []string{created.ID})
+	colls, errors := testApi.GetCollectionsByID(context.TODO(), []uint32{created.ID})
 	assert.Nil(t, errors)
 	assert.Equal(t, 1, len(colls))
 	assert.Equal(t, *created, colls[0])
@@ -81,14 +81,14 @@ func TestCollections(t *testing.T) {
 	assert.Equal(t, created, ret2)
 
 	// Bad request - no category
-	in.Category = ""
+	in.Category = 0
 	_, errors = testApi.AddCollection(context.TODO(), in)
 	if assert.Len(t, errors.Errs(), 1, "errors.Errs(): %#v", errors.Errs()) {
 		assert.Equal(t, errors.Errs()[0].Code, model.ErrRequired)
 	}
 
 	// Collection not found
-	_, errors = testApi.GetCollection(context.TODO(), created.ID+"99")
+	_, errors = testApi.GetCollection(context.TODO(), created.ID+99)
 	assert.NotNil(t, errors)
 	assert.Len(t, errors.Errs(), 1)
 	assert.Equal(t, model.ErrNotFound, errors.Errs()[0].Code, "errors.Errs()[0]: %#v", errors.Errs()[0])
@@ -102,12 +102,12 @@ func TestCollections(t *testing.T) {
 	assert.Equal(t, ret2.Name, updated.Name, "Expected Name to match")
 
 	// Update non-existant
-	_, errors = testApi.UpdateCollection(context.TODO(), updated.ID+"99", *updated)
+	_, errors = testApi.UpdateCollection(context.TODO(), updated.ID+99, *updated)
 	assert.Len(t, errors.Errs(), 1)
 	assert.Equal(t, model.ErrNotFound, errors.Errs()[0].Code, "errors.Errs()[0]: %#v", errors.Errs()[0])
 
 	// Update with bad category
-	updated.Category = updated.Category + "99"
+	updated.Category = updated.Category + 99
 	_, errors = testApi.UpdateCollection(context.TODO(), updated.ID, *updated)
 	assert.Len(t, errors.Errs(), 1)
 	assert.Equal(t, model.ErrBadReference, errors.Errs()[0].Code, "errors.Errs()[0]: %#v", errors.Errs()[0])

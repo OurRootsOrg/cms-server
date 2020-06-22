@@ -12,6 +12,8 @@ import (
 	"reflect"
 	"time"
 
+	"github.com/aws/aws-lambda-go/events"
+	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/ourrootsorg/cms-server/model"
 
 	"github.com/ourrootsorg/cms-server/persist"
@@ -29,24 +31,31 @@ const (
 
 const numWorkers = 10
 
-func processMessage(ctx context.Context, ap *api.API, msg api.RecordsWriterMsg) *model.Errors {
-	log.Printf("[DEBUG] processing %s\n", msg.PostID)
+func processMessage(ctx context.Context, ap *api.API, rawMsg []byte) error {
+	var msg api.RecordsWriterMsg
+	err := json.Unmarshal(rawMsg, &msg)
+	if err != nil {
+		log.Printf("[ERROR] Discarding unparsable message '%s': %v", string(rawMsg), err)
+		return nil // Don't return an error, because parsing will never succeed
+	}
+
+	log.Printf("[DEBUG] processing %d", msg.PostID)
 
 	// read post
 	post, errs := ap.GetPost(ctx, msg.PostID)
 	if errs != nil {
-		log.Printf("[ERROR] GetPost %v\n", errs)
+		log.Printf("[ERROR] Error calling GetPost on %d: %v", msg.PostID, errs)
 		return errs
 	}
 	if post.RecordsStatus != api.PostLoading {
-		log.Printf("[ERROR] post not pending %s -> %s\n", post.ID, post.RecordsStatus)
+		log.Printf("[ERROR] post not pending %d -> %s\n", post.ID, post.RecordsStatus)
 		return nil
 	}
 
 	// delete any previous records for post
 	errs = ap.DeleteRecordsForPost(ctx, post.ID)
 	if errs != nil {
-		log.Printf("[ERROR] DeleteRecordsForPost %v\n", errs)
+		log.Printf("[ERROR] DeleteRecordsForPost on %d: %v\n", post.ID, errs)
 		return errs
 	}
 
@@ -54,7 +63,7 @@ func processMessage(ctx context.Context, ap *api.API, msg api.RecordsWriterMsg) 
 	bucket, err := ap.OpenBucket(ctx)
 	if err != nil {
 		log.Printf("[ERROR] OpenBucket %v\n", err)
-		return model.NewErrors(0, err)
+		return err
 	}
 	defer bucket.Close()
 
@@ -62,13 +71,13 @@ func processMessage(ctx context.Context, ap *api.API, msg api.RecordsWriterMsg) 
 	bs, err := bucket.ReadAll(ctx, post.RecordsKey)
 	if err != nil {
 		log.Printf("[ERROR] ReadAll %v\n", err)
-		return model.NewErrors(0, err)
+		return err
 	}
 	var datas []map[string]string
 	err = json.Unmarshal(bs, &datas)
 	if err != nil {
 		log.Printf("[ERROR] Unmarshal datas %v\n", err)
-		return model.NewErrors(0, err)
+		return err
 	}
 
 	// set up workers
@@ -118,6 +127,24 @@ func processMessage(ctx context.Context, ap *api.API, msg api.RecordsWriterMsg) 
 	return errs
 }
 
+type lambdaHandler struct {
+	ap *api.API
+}
+
+func (h lambdaHandler) handler(ctx context.Context, sqsEvent events.SQSEvent) error {
+	var err error
+	for _, message := range sqsEvent.Records {
+		// process message
+		err = processMessage(ctx, h.ap, []byte(message.Body))
+		if err != nil {
+			log.Printf("[ERROR] Error processing message %v", err)
+			continue
+		}
+	}
+	// We'll return the last error we received, if any. That will fail the batch, which will be retried.
+	return err
+}
+
 func main() {
 	ctx := context.Background()
 
@@ -142,7 +169,7 @@ func main() {
 	defer ap.Close()
 	ap = ap.
 		BlobStoreConfig(env.Region, env.BlobStoreEndpoint, env.BlobStoreAccessKey, env.BlobStoreSecretKey, env.BlobStoreBucket, env.BlobStoreDisableSSL).
-		PubSubConfig(env.Region, env.PubSubProtocol, env.PubSubHost)
+		QueueConfig("recordswriter", env.PubSubRecordsWriterURL)
 
 	db, err := postgres.Open(ctx, env.DatabaseURL)
 	if err != nil {
@@ -170,55 +197,55 @@ func main() {
 	}
 	log.Printf("Connected to %s\n", env.DatabaseURL)
 
-	p := persist.NewPostgresPersister(env.BaseURL.Path, db)
+	p := persist.NewPostgresPersister(db)
 	ap.
 		PostPersister(p).
 		RecordPersister(p)
 	log.Print("[INFO] Using PostgresPersister")
 
-	// subscribe to recordswriter queue
-	sub, err := ap.OpenSubscription(ctx, "recordswriter")
-	if err != nil {
-		log.Fatalf("[FATAL] Can't open subscription %v\n", err)
-	}
-	defer sub.Shutdown(ctx)
+	if env.IsLambda {
+		h := lambdaHandler{ap: ap}
+		lambda.Start(h.handler)
+	} else {
+		// subscribe to recordswriter queue
+		sub, err := ap.OpenSubscription(ctx, "recordswriter")
+		if err != nil {
+			log.Fatalf("[FATAL] Can't open subscription %v\n", err)
+		}
+		defer sub.Shutdown(ctx)
 
-	for {
-		msg, err := sub.Receive(ctx)
-		if err != nil {
-			log.Printf("[ERROR] Receiving message %v\n", err)
-			continue
+		for {
+			msg, err := sub.Receive(ctx)
+			if err != nil {
+				log.Printf("[ERROR] Receiving message %v\n", err)
+				continue
+			}
+			// process message
+			err = processMessage(ctx, ap, msg.Body)
+			if err != nil {
+				log.Printf("[ERROR] Processing message %v\n", err)
+				continue
+			}
+			msg.Ack()
 		}
-		var rwMsg api.RecordsWriterMsg
-		err = json.Unmarshal(msg.Body, &rwMsg)
-		if err != nil {
-			log.Printf("[ERROR] Unmarshalling message %v\n", err)
-			continue
-		}
-		// process message
-		errs := processMessage(ctx, ap, rwMsg)
-		if errs != nil {
-			log.Printf("[ERROR] Processing message %v\n", errs)
-			continue
-		}
-		msg.Ack()
 	}
 }
 
 // Env holds values parse from environment variables
 type Env struct {
-	MinLogLevel         string `env:"MIN_LOG_LEVEL" validate:"omitempty,eq=DEBUG|eq=INFO|eq=ERROR"`
-	BaseURLString       string `env:"BASE_URL" validate:"omitempty,url"`
-	DatabaseURL         string `env:"DATABASE_URL" validate:"required,url"`
-	BaseURL             *url.URL
-	Region              string `env:"AWS_REGION"`
-	BlobStoreEndpoint   string `env:"BLOB_STORE_ENDPOINT"`
-	BlobStoreAccessKey  string `env:"BLOB_STORE_ACCESS_KEY"`
-	BlobStoreSecretKey  string `env:"BLOB_STORE_SECRET_KEY"`
-	BlobStoreBucket     string `env:"BLOB_STORE_BUCKET"`
-	BlobStoreDisableSSL bool   `env:"BLOB_STORE_DISABLE_SSL"`
-	PubSubProtocol      string `env:"PUB_SUB_PROTOCOL" validate:"omitempty,eq=rabbit|eq=awssqs"`
-	PubSubHost          string `env:"PUB_SUB_HOST"`
+	LambdaTaskRoot         string `env:"LAMBDA_TASK_ROOT"`
+	IsLambda               bool
+	MinLogLevel            string `env:"MIN_LOG_LEVEL" validate:"omitempty,eq=DEBUG|eq=INFO|eq=ERROR"`
+	BaseURLString          string `env:"BASE_URL" validate:"omitempty,url"`
+	DatabaseURL            string `env:"DATABASE_URL" validate:"required,url"`
+	BaseURL                *url.URL
+	Region                 string `env:"AWS_REGION"`
+	BlobStoreEndpoint      string `env:"BLOB_STORE_ENDPOINT"`
+	BlobStoreAccessKey     string `env:"BLOB_STORE_ACCESS_KEY"`
+	BlobStoreSecretKey     string `env:"BLOB_STORE_SECRET_KEY"`
+	BlobStoreBucket        string `env:"BLOB_STORE_BUCKET"`
+	BlobStoreDisableSSL    bool   `env:"BLOB_STORE_DISABLE_SSL"`
+	PubSubRecordsWriterURL string `env:"PUB_SUB_RECORDSWRITER_URL" validate:"required,url"`
 }
 
 // ParseEnv parses and validates environment variables and stores them in the Env structure
@@ -242,12 +269,13 @@ func ParseEnv() (*Env, error) {
 				errs += fmt.Sprintf("  Invalid BASE_URL: '%v' is not a valid URL\n", fe.Value())
 			case "DATABASE_URL":
 				errs += fmt.Sprintf("  Invalid DATABASE_URL: '%v' is not a valid PostgreSQL URL\n", fe.Value())
-			case "PUB_SUB_PROTOCOL":
-				errs += fmt.Sprintf("  Invalid PUB_SUB_PROTOCOL: '%v', valid values are 'rabbit', 'awssqs'\n", fe.Value())
+			case "PUB_SUB_RECORDSWRITER_URL":
+				errs += fmt.Sprintf("  Invalid PUB_SUB_RECORDSWRITER_URL: '%v'is not a valid URL\n", fe.Value())
 			}
 		}
 		return nil, errors.New(errs)
 	}
+	config.IsLambda = config.LambdaTaskRoot != ""
 	if config.MinLogLevel == "" {
 		config.MinLogLevel = "DEBUG"
 	}

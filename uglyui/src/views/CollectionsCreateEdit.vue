@@ -72,7 +72,7 @@ export default {
   beforeRouteEnter: function(routeTo, routeFrom, next) {
     let routes = [store.dispatch("categoriesGetAll")];
     if (routeTo.params && routeTo.params.cid) {
-      routes.push(store.dispatch("collectionsGetOne", "/collections/" + routeTo.params.cid));
+      routes.push(store.dispatch("collectionsGetOne", routeTo.params.cid));
     }
     Promise.all(routes).then(() => {
       next();
@@ -170,14 +170,12 @@ export default {
       if (this.collection.fields.length === 0) {
         return;
       }
-      let coll = Object.assign({}, this.collection, {
-        category: this.collection.category
-      });
+      this.collection.category = +this.collection.category; // convert to a number
       this.$v.$touch();
       if (!this.$v.$invalid) {
         NProgress.start();
         this.$store
-          .dispatch(coll.id ? "collectionsUpdate" : "collectionsCreate", coll)
+          .dispatch(this.collection.id ? "collectionsUpdate" : "collectionsCreate", this.collection)
           .then(() => {
             this.$router.push({
               name: "collections-list"

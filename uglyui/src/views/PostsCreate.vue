@@ -86,6 +86,7 @@ export default {
   methods: {
     importData() {
       let post = this.post;
+      post.collection = +post.collection; // convert to a number
       let collection = this.collections.collectionsList.find(coll => coll.id === post.collection);
       let store = this.$store;
       this.$v.$touch();

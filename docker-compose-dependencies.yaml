@@ -58,9 +58,9 @@ services:
       - BASE_URL=http://localhost:8000
       - DATABASE_URL=postgres://ourroots:password@postgres_test:5432/cms?sslmode=disable
       - AWS_REGION=us-east-1
-      # this configures rabbitmq; to use SQS, set the protocol to awssqs and the host to sqs.us-east-1.amazonaws.com/<accountid>
-      - PUB_SUB_PROTOCOL=rabbit
-      - PUB_SUB_HOST=guest:guest@rabbitmq_test:5672
+      # this configures rabbitmq
+      - PUB_SUB_RECORDSWRITER_URL=amqp://guest:guest@rabbitmq_test:5672/
+      - PUB_SUB_PUBLISHER_URL=amqp://guest:guest@rabbitmq_test:5672/
       - ELASTICSEARCH_URL=http://elasticsearch_test:9200
     networks:
       - mynetwork_test
@@ -84,9 +84,8 @@ services:
       - BLOB_STORE_ACCESS_KEY=minioaccess
       - BLOB_STORE_SECRET_KEY=miniosecret
       - BLOB_STORE_DISABLE_SSL=true
-      # this configures rabbitmq; to use SQS, set the protocol to awssqs and the host to sqs.us-east-1.amazonaws.com/<accountid>
-      - PUB_SUB_PROTOCOL=rabbit
-      - PUB_SUB_HOST=guest:guest@rabbitmq_test:5672
+      - PUB_SUB_RECORDSWRITER_URL=amqp://guest:guest@rabbitmq_test:5672/
+      - PUB_SUB_PUBLISHER_URL=amqp://guest:guest@rabbitmq_test:5672/
     networks:
       - mynetwork_test
 

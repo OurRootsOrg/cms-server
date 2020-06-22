@@ -9,15 +9,13 @@ import (
 
 // PostgresPersister persists the model objects to Postgresql
 type PostgresPersister struct {
-	pathPrefix string
-	db         *sql.DB
+	db *sql.DB
 }
 
 // NewPostgresPersister constructs a new PostgresPersister
-func NewPostgresPersister(pathPrefix string, db *sql.DB) PostgresPersister {
+func NewPostgresPersister(db *sql.DB) PostgresPersister {
 	return PostgresPersister{
-		pathPrefix: pathPrefix,
-		db:         db,
+		db: db,
 	}
 }
 

@@ -14,8 +14,8 @@ definitions:
         description: example:"{\"int_field\":\"Int\", \"string_field\":\"String\"}"
         type: object
       id:
-        example: /categories/999
-        type: string
+        example: 999
+        type: integer
       insert_time:
         type: string
       last_update_time:
@@ -46,13 +46,13 @@ definitions:
   model.Collection:
     properties:
       category:
-        example: /categories/999
-        type: string
+        example: 999
+        type: integer
       citation_template:
         type: string
       id:
-        example: /collections/999
-        type: string
+        example: 999
+        type: integer
       insert_time:
         type: string
       last_update_time:
@@ -69,8 +69,8 @@ definitions:
   model.CollectionIn:
     properties:
       category:
-        example: /categories/999
-        type: string
+        example: 999
+        type: integer
       citation_template:
         type: string
       location:
@@ -105,11 +105,11 @@ definitions:
   model.Post:
     properties:
       collection:
-        example: /collections/999
-        type: string
+        example: 999
+        type: integer
       id:
-        example: /posts/999
-        type: string
+        example: 999
+        type: integer
       insert_time:
         type: string
       last_update_time:
@@ -129,8 +129,8 @@ definitions:
   model.PostIn:
     properties:
       collection:
-        example: /collections/999
-        type: string
+        example: 999
+        type: integer
       name:
         type: string
       recordsKey:
@@ -141,6 +141,90 @@ definitions:
     - collection
     - name
     - recordsKey
+    type: object
+  model.Record:
+    properties:
+      data:
+        additionalProperties:
+          type: string
+        type: object
+      id:
+        example: 999
+        type: integer
+      insert_time:
+        type: string
+      ix_hash:
+        type: string
+      last_update_time:
+        type: string
+      post:
+        example: 999
+        type: integer
+    required:
+    - data
+    - id
+    - post
+    type: object
+  model.SearchEvent:
+    properties:
+      date:
+        type: string
+      place:
+        type: string
+      type:
+        type: string
+    type: object
+  model.SearchHit:
+    properties:
+      collection:
+        type: integer
+      collectionName:
+        type: string
+      id:
+        type: string
+      person:
+        $ref: '#/definitions/model.SearchPerson'
+        type: object
+      record:
+        additionalProperties:
+          type: string
+        description: only returned on search by id
+        type: object
+      score:
+        type: number
+    type: object
+  model.SearchPerson:
+    properties:
+      events:
+        items:
+          $ref: '#/definitions/model.SearchEvent'
+        type: array
+      name:
+        type: string
+      relationships:
+        items:
+          $ref: '#/definitions/model.SearchRelationship'
+        type: array
+      role:
+        type: string
+    type: object
+  model.SearchRelationship:
+    properties:
+      name:
+        type: string
+      type:
+        type: string
+    type: object
+  model.SearchResult:
+    properties:
+      hits:
+        items:
+          $ref: '#/definitions/model.SearchHit'
+        type: array
+      maxScore:
+        type: number
+      total:
+        type: integer
     type: object
 host: api.ourroots.org
 info:
@@ -746,12 +830,88 @@ paths:
       summary: updates a Post
       tags:
       - posts
+  /records:
+    get:
+      operationId: getRecords
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.Record'
+            type: array
+        "500":
+          description: Server error
+          schema:
+            $ref: '#/definitions/model.Errors'
+      security:
+      - OAuth2Implicit:
+        - cms
+        - openid
+        - profile
+        - email
+      - OAuth2AuthCode:
+        - cms
+        - openid
+        - profile
+        - email
+      summary: returns all records
+      tags:
+      - records
+  /search:
+    get:
+      operationId: search
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.SearchResult'
+            type: array
+        "500":
+          description: Server error
+          schema:
+            $ref: '#/definitions/model.Errors'
+      summary: returns search results
+      tags:
+      - search
+  /search/{id}:
+    get:
+      operationId: searchByID
+      parameters:
+      - description: Search Result ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.SearchHit'
+        "404":
+          description: Not found
+          schema:
+            $ref: '#/definitions/model.Errors'
+        "500":
+          description: Server error
+          schema:
+            $ref: '#/definitions/model.Errors'
+      summary: returns a single search result
+      tags:
+      - search
 schemes:
 - http
 - https
 securityDefinitions:
   OAuth2Implicit:
-    authorizationUrl: https://ourroots.auth0.com/authorize?audience=https%3A%2F%2Fapi.ourroots.org%3A3000%2Fpreprod
+    authorizationUrl: https://ourroots.auth0.com/authorize?audience=https%3A%2F%2Fapi.ourroots.org%2Fpreprod
     flow: implicit
     scopes:
       cms: ' Grants read and write access to the CMS'

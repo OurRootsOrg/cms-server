@@ -1,21 +1,20 @@
 #!/bin/bash
 set -e
-STACK_NAME="${STACK_NAME:?}"
+ENVIRONMENT_NAME="${ENVIRONMENT_NAME:?}"
 DOMAIN_NAME="${DOMAIN_NAME:?}"
 CERTIFICATE_ARN="${CERTIFICATE_ARN:?}"
 script="$0"
 scriptdir="$(dirname $script)"
 # set -x
-s3_bucket_name="${STACK_NAME}-deploy"
-if aws s3 ls "s3://${s3_bucket_name}" 2>&1 | grep -q 'NoSuchBucket'
-then
-  echo Creating deploy bucket...
-  aws s3 mb "s3://${s3_bucket_name}"
-fi
+s3_bucket_name="${ENVIRONMENT_NAME}-deploy"
 echo Processing CloudFormation...
-aws cloudformation package --template-file ourroots.cf.yaml --output-template-file output-ourroots.cf.yaml --s3-bucket $s3_bucket_name
-aws cloudformation deploy --template-file output-ourroots.cf.yaml --stack-name $STACK_NAME --parameter-overrides "DomainName=${DOMAIN_NAME}" "CertificateArn=${CERTIFICATE_ARN}" --capabilities CAPABILITY_IAM
+aws cloudformation package --template-file cms.cf.yaml --output-template-file output-cms.cf.yaml --s3-bucket $s3_bucket_name
+aws cloudformation deploy --template-file output-cms.cf.yaml --stack-name "${ENVIRONMENT_NAME}-deploy" --parameter-overrides "EnvironmentName=${ENVIRONMENT_NAME}" "DomainName=${DOMAIN_NAME}" "CertificateArn=${CERTIFICATE_ARN}" "CMSSiteBucketURL=${ENVIRONMENT_NAME}-CMSSiteBucketURL" "CMSPostgresAddress=${ENVIRONMENT_NAME}-CMSPostgresAddress" "CMSPostgresPort=${ENVIRONMENT_NAME}-CMSPostgresPort" "AuroraMasterSecretARN=${ENVIRONMENT_NAME}-AuroraMasterSecretARN" "AuroraAppSecretARN=${ENVIRONMENT_NAME}-AuroraAppSecretARN" "CMSBlobStoreBucketName=${ENVIRONMENT_NAME}-CMSBlobStoreBucketName" "CMSRecordsWriterQueueURL=${ENVIRONMENT_NAME}-CMSRecordsWriterQueueURL" "CMSRecordsWriterQueueARN=${ENVIRONMENT_NAME}-CMSRecordsWriterQueueARN" "CMSPublisherQueueURL=${ENVIRONMENT_NAME}-CMSPublisherQueueURL" "CMSPublisherQueueARN=${ENVIRONMENT_NAME}-CMSPublisherQueueARN" "ElasticsearchDomainARN=${ENVIRONMENT_NAME}-ElasticsearchDomainARN" "LambdaFunctionSecurityGroup=${ENVIRONMENT_NAME}-LambdaFunctionSecurityGroup" "PrivateSubnet1=${ENVIRONMENT_NAME}-PrivateSubnet1" "PrivateSubnet2=${ENVIRONMENT_NAME}-PrivateSubnet2" "ElasticsearchDomainEndpoint=${ENVIRONMENT_NAME}-ElasticsearchDomainEndpoint" --capabilities CAPABILITY_IAM
+
 # echo Uploading static site content...
-# aws s3 sync "${scriptdir}/../../vectyui/build/web/" "s3://${STACK_NAME}-site/wasm/"
-# aws s3 sync "${scriptdir}/../../flutterui/build/web/" "s3://${STACK_NAME}-site/flutter/"
+pushd "${scriptdir}/../../uglyui/"
+# This should probably be done in the Makefile
+npm run build
+popd
+aws s3 sync "${scriptdir}/../../uglyui/dist/" "s3://${ENVIRONMENT_NAME}-site/" --delete
 echo Done
