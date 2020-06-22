@@ -1,5 +1,6 @@
 import axios from "axios";
 import { getAuth } from "../auth";
+import axiosRetry from "axios-retry";
 
 const apiClient = axios.create({
   baseURL: process.env.VUE_APP_API_BASE_URL,
@@ -9,6 +10,7 @@ const apiClient = axios.create({
     "Content-Type": "application/json"
   }
 });
+axiosRetry(apiClient, { retries: 3 }); // retry non-POST requests on network or 5XX errors
 
 export default {
   async categoriesCreate(category) {
