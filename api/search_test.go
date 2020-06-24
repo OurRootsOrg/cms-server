@@ -71,11 +71,13 @@ func TestSearch(t *testing.T) {
 	hit, errs := testApi.SearchByID(ctx, searchID)
 	assert.Nil(t, errs, "Error searching by id")
 	assert.Equal(t, searchID, hit.ID)
-	assert.Equal(t, "Principal", hit.Person.Role)
+	assert.Equal(t, "principal", hit.Person.Role)
 	assert.Equal(t, "Fred Flintstone", hit.Person.Name)
 	assert.Equal(t, testCollection.ID, hit.CollectionID)
 	assert.Equal(t, testCollection.Name, hit.CollectionName)
-	assert.Equal(t, "Fred", hit.Record["given"])
+	assert.Equal(t, 2, len(hit.Record))
+	assert.Equal(t, "Given", hit.Record[0].Label)
+	assert.Equal(t, "Fred", hit.Record[0].Value)
 
 	// search
 	res, errs := testApi.Search(ctx, &api.SearchRequest{Given: "Fred"})

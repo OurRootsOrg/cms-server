@@ -141,11 +141,13 @@ func createTestCollection(p model.CollectionPersister, categoryID uint32) (*mode
 	in.Mappings = []model.CollectionMapping{
 		{
 			Header:  "given",
+			DbField: "Given",
 			IxRole:  "principal",
 			IxField: "given",
 		},
 		{
 			Header:  "surname",
+			DbField: "Surname",
 			IxRole:  "principal",
 			IxField: "surname",
 		},
