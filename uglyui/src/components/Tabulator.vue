@@ -61,12 +61,10 @@ export default {
       resizableColumns: this.resizableColumns,
       virtualDom: this.virtualDom,
       rowMoved: function() {
-        self.$emit("updated", self.tabulator.getData());
+        self.$emit("rowMoved", self.tabulator.getData());
       },
       cellEdited: function(cell) {
-        if (self.cellEdited) {
-          self.cellEdited(cell);
-        }
+        self.$emit("cellEdited", cell);
       }
     });
   }

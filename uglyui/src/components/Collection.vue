@@ -1,7 +1,7 @@
 <template>
   <div>
     <div>
-      <router-link class="post-link" :to="{ name: 'collection-edit', params: { cid: extractId(collection.id) } }">{{
+      <router-link class="post-link" :to="{ name: 'collection-edit', params: { cid: collection.id } }">{{
         collection.name
       }}</router-link>
       (in {{ category.name }})
@@ -14,13 +14,6 @@ export default {
   props: {
     collection: Object,
     category: Object
-  },
-  computed: {
-    extractId() {
-      return id => {
-        return id.substring(id.lastIndexOf("/") + 1);
-      };
-    }
   }
 };
 </script>

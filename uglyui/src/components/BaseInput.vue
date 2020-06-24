@@ -2,6 +2,7 @@
   <div>
     <label v-if="label">{{ label }}</label>
     <input class="input" :value="value" @input="updateValue" v-bind="$attrs" v-on="listeners" />
+    <slot></slot>
   </div>
 </template>
 

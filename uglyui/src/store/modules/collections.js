@@ -14,6 +14,7 @@ export const mutations = {
   },
   COLLECTION_SET(state, coll) {
     if (!coll.fields) coll.fields = []; // force empty array
+    if (!coll.mappings) coll.mappings = []; // force empty array
     state.collection = coll;
   },
   COLLECTION_UPDATE(state, coll) {

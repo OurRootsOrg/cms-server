@@ -1145,6 +1145,12 @@ var doc = `{
                 "citation_template": {
                     "type": "string"
                 },
+                "fields": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.CollectionField"
+                    }
+                },
                 "id": {
                     "type": "integer",
                     "example": 999
@@ -1158,8 +1164,31 @@ var doc = `{
                 "location": {
                     "type": "string"
                 },
+                "mappings": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.CollectionMapping"
+                    }
+                },
                 "name": {
                     "type": "string"
+                }
+            }
+        },
+        "model.CollectionField": {
+            "type": "object",
+            "properties": {
+                "header": {
+                    "type": "string"
+                },
+                "regex": {
+                    "type": "string"
+                },
+                "regexError": {
+                    "type": "string"
+                },
+                "required": {
+                    "type": "boolean"
                 }
             }
         },
@@ -1177,10 +1206,39 @@ var doc = `{
                 "citation_template": {
                     "type": "string"
                 },
+                "fields": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.CollectionField"
+                    }
+                },
                 "location": {
                     "type": "string"
                 },
+                "mappings": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.CollectionMapping"
+                    }
+                },
                 "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.CollectionMapping": {
+            "type": "object",
+            "properties": {
+                "dbField": {
+                    "type": "string"
+                },
+                "header": {
+                    "type": "string"
+                },
+                "ixField": {
+                    "type": "string"
+                },
+                "ixRole": {
                     "type": "string"
                 }
             }

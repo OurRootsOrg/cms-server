@@ -43,7 +43,7 @@ export default {
   async collectionsUpdate(coll) {
     let auth = await getAuth();
     let token = await auth.getTokenSilently();
-    return apiClient.put(coll.id, coll, {
+    return apiClient.put(`/collections/${coll.id}`, coll, {
       headers: {
         Authorization: `Bearer ${token}`
       }
@@ -61,7 +61,7 @@ export default {
   async collectionsGetOne(id) {
     let auth = await getAuth();
     let token = await auth.getTokenSilently();
-    return apiClient.get(id, {
+    return apiClient.get(`/collections/${id}`, {
       headers: {
         Authorization: `Bearer ${token}`
       }
@@ -77,7 +77,8 @@ export default {
         headers: {
           Authorization: `Bearer ${token}`
         }
-      });
+      }
+    );
   },
   contentPut(url, contentType, data) {
     return axios.put(url, data, {
@@ -136,5 +137,8 @@ export default {
     return apiClient.get("/search", {
       params: query
     });
+  },
+  searchGetResult(id) {
+    return apiClient.get(`/search/${id}`);
   }
 };

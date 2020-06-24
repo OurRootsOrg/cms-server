@@ -50,6 +50,10 @@ definitions:
         type: integer
       citation_template:
         type: string
+      fields:
+        items:
+          $ref: '#/definitions/model.CollectionField'
+        type: array
       id:
         example: 999
         type: integer
@@ -59,12 +63,27 @@ definitions:
         type: string
       location:
         type: string
+      mappings:
+        items:
+          $ref: '#/definitions/model.CollectionMapping'
+        type: array
       name:
         type: string
     required:
     - category
     - id
     - name
+    type: object
+  model.CollectionField:
+    properties:
+      header:
+        type: string
+      regex:
+        type: string
+      regexError:
+        type: string
+      required:
+        type: boolean
     type: object
   model.CollectionIn:
     properties:
@@ -73,13 +92,32 @@ definitions:
         type: integer
       citation_template:
         type: string
+      fields:
+        items:
+          $ref: '#/definitions/model.CollectionField'
+        type: array
       location:
         type: string
+      mappings:
+        items:
+          $ref: '#/definitions/model.CollectionMapping'
+        type: array
       name:
         type: string
     required:
     - category
     - name
+    type: object
+  model.CollectionMapping:
+    properties:
+      dbField:
+        type: string
+      header:
+        type: string
+      ixField:
+        type: string
+      ixRole:
+        type: string
     type: object
   model.Errors:
     type: object

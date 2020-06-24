@@ -6,12 +6,12 @@ type SearchResult struct {
 	MaxScore float64     `json:"maxScore"`
 }
 type SearchHit struct {
-	ID             string            `json:"id"`
-	Score          float64           `json:"score"`
-	Person         SearchPerson      `json:"person,omitempty"`
-	Record         map[string]string `json:"record,omitempty"` // only returned on search by id
-	CollectionName string            `json:"collectionName"`
-	CollectionID   uint32            `json:"collection"`
+	ID             string       `json:"id"`
+	Score          float64      `json:"score"`
+	Person         SearchPerson `json:"person,omitempty"`
+	Record         SearchRecord `json:"record,omitempty"` // only returned on search by id
+	CollectionName string       `json:"collectionName"`
+	CollectionID   uint32       `json:"collection"`
 }
 type SearchPerson struct {
 	Name          string               `json:"name"`
@@ -27,4 +27,9 @@ type SearchEvent struct {
 type SearchRelationship struct {
 	Type string `json:"type"`
 	Name string `json:"name,omitempty"`
+}
+type SearchRecord []SearchLabelValue
+type SearchLabelValue struct {
+	Label string `json:"label"`
+	Value string `json:"value"`
 }

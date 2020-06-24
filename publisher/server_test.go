@@ -111,6 +111,26 @@ func deleteTestCategory(p model.CategoryPersister, category *model.Category) err
 
 func createTestCollection(p model.CollectionPersister, categoryID uint32) (*model.Collection, error) {
 	in := model.NewCollectionIn("Test", categoryID)
+	in.Fields = []model.CollectionField{
+		{
+			Header: "given",
+		},
+		{
+			Header: "surname",
+		},
+	}
+	in.Mappings = []model.CollectionMapping{
+		{
+			Header:  "given",
+			IxRole:  "principal",
+			IxField: "given",
+		},
+		{
+			Header:  "surname",
+			IxRole:  "principal",
+			IxField: "surname",
+		},
+	}
 	created, err := p.InsertCollection(context.TODO(), in)
 	if err != nil {
 		return nil, err

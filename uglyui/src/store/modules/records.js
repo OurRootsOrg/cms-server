@@ -15,6 +15,7 @@ export const actions = {
     return Server.recordsGetForPost(postId)
       .then(response => {
         commit("RECORDS_SET", response.data.records);
+        return response.data.records;
       })
       .catch(error => {
         const notification = {

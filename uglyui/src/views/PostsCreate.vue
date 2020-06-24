@@ -127,7 +127,7 @@ export default {
           }
           return {
             label: fld.header,
-            key: fld.name,
+            key: fld.header,
             validators: validators
           };
         })
