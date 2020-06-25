@@ -90,11 +90,7 @@ func TestPublisher(t *testing.T) {
 }
 
 func createTestCategory(p model.CategoryPersister) (*model.Category, error) {
-	stringType, err := model.NewFieldDef("stringField", model.StringType, "string_field")
-	if err != nil {
-		return nil, err
-	}
-	in, err := model.NewCategoryIn("Test", stringType)
+	in, err := model.NewCategoryIn("Test")
 	if err != nil {
 		return nil, err
 	}
