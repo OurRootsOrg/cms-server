@@ -224,12 +224,18 @@ definitions:
         $ref: '#/definitions/model.SearchPerson'
         type: object
       record:
-        additionalProperties:
-          type: string
+        $ref: '#/definitions/model.SearchRecord'
         description: only returned on search by id
         type: object
       score:
         type: number
+    type: object
+  model.SearchLabelValue:
+    properties:
+      label:
+        type: string
+      value:
+        type: string
     type: object
   model.SearchPerson:
     properties:
@@ -246,6 +252,10 @@ definitions:
       role:
         type: string
     type: object
+  model.SearchRecord:
+    items:
+      $ref: '#/definitions/model.SearchLabelValue'
+    type: array
   model.SearchRelationship:
     properties:
       name:

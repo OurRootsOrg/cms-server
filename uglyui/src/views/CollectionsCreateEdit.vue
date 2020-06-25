@@ -229,8 +229,7 @@ export default {
           editor: "select",
           editorParams: {
             values: ixRoleMap,
-            defaultValue: "na",
-            verticalNavigation: "table"
+            defaultValue: "na"
           },
           validator: ["required"]
         },
@@ -247,8 +246,7 @@ export default {
               .getCell("ixRole")
               .getValue();
             return {
-              values: !ixRole || ixRole === "na" ? ixEmptyFieldMap : ixFieldMap,
-              verticalNavigation: "table"
+              values: !ixRole || ixRole === "na" ? ixEmptyFieldMap : ixFieldMap
             };
           },
           validator: ["required"]

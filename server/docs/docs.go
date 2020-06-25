@@ -1396,12 +1396,21 @@ var doc = `{
                 "record": {
                     "description": "only returned on search by id",
                     "type": "object",
-                    "additionalProperties": {
-                        "type": "string"
-                    }
+                    "$ref": "#/definitions/model.SearchRecord"
                 },
                 "score": {
                     "type": "number"
+                }
+            }
+        },
+        "model.SearchLabelValue": {
+            "type": "object",
+            "properties": {
+                "label": {
+                    "type": "string"
+                },
+                "value": {
+                    "type": "string"
                 }
             }
         },
@@ -1426,6 +1435,12 @@ var doc = `{
                 "role": {
                     "type": "string"
                 }
+            }
+        },
+        "model.SearchRecord": {
+            "type": "array",
+            "items": {
+                "$ref": "#/definitions/model.SearchLabelValue"
             }
         },
         "model.SearchRelationship": {
