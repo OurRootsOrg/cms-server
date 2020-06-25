@@ -67,6 +67,7 @@ func (api API) AddCollection(ctx context.Context, in model.CollectionIn) (*model
 // UpdateCollection holds the business logic around updating a Collection
 func (api API) UpdateCollection(ctx context.Context, id uint32, in model.Collection) (*model.Collection, *model.Errors) {
 	err := api.validate.Struct(in)
+	log.Printf("[INFO] Collection=%v err=%v\n", in, err)
 	if err != nil {
 		return nil, model.NewErrors(http.StatusBadRequest, err)
 	}

@@ -36,7 +36,12 @@ const routes = [
   {
     path: "/collections/create",
     name: "collections-create",
-    component: () => import(/* webpackChunkName: "about" */ "../views/CollectionsCreate.vue")
+    component: () => import(/* webpackChunkName: "about" */ "../views/CollectionsCreateEdit.vue")
+  },
+  {
+    path: "/collections/:cid",
+    name: "collection-edit",
+    component: () => import(/* webpackChunkName: "about" */ "../views/CollectionsCreateEdit.vue")
   },
   {
     path: "/posts",
@@ -62,6 +67,11 @@ const routes = [
     path: "/search",
     name: "search",
     component: () => import(/* webpackChunkName: "about" */ "../views/Search.vue")
+  },
+  {
+    path: "/search/:rid",
+    name: "search-detail",
+    component: () => import(/* webpackChunkName: "about" */ "../views/SearchDetail.vue")
   },
   {
     path: "/settings",

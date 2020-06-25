@@ -61,7 +61,6 @@ func TestSelectOneCategory(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, uint32(1), c.ID)
 	assert.Equal(t, cb.Name, c.Name)
-	assert.Equal(t, cb.FieldDefs, c.FieldDefs)
 	assert.Equal(t, now, c.InsertTime)
 	assert.Equal(t, now, c.LastUpdateTime)
 }
@@ -84,7 +83,6 @@ func TestInsertCategory(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, uint32(1), c.ID)
 	assert.Equal(t, cb.Name, c.Name)
-	assert.Equal(t, cb.FieldDefs, c.FieldDefs)
 	assert.Equal(t, now, c.InsertTime)
 	assert.Equal(t, now, c.LastUpdateTime)
 }
@@ -107,7 +105,6 @@ func TestUpdateCategory(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, uint32(1), c.ID)
 	assert.Equal(t, in.Name, c.Name)
-	assert.Equal(t, in.FieldDefs, c.FieldDefs)
 	assert.Equal(t, in.InsertTime, c.InsertTime)
 	assert.Equal(t, now, c.LastUpdateTime)
 }
@@ -239,17 +236,7 @@ func TestDeleteCollection(t *testing.T) {
 }
 
 func makeCategoryIn(t *testing.T) model.CategoryIn {
-	intType, err := model.NewFieldDef("intField", model.IntType, "int_field")
-	assert.NoError(t, err)
-	stringType, err := model.NewFieldDef("stringField", model.StringType, "string_field")
-	assert.NoError(t, err)
-	imageType, err := model.NewFieldDef("imageField", model.ImageType, "image_field")
-	assert.NoError(t, err)
-	locationType, err := model.NewFieldDef("locationField", model.LocationType, "location_field")
-	assert.NoError(t, err)
-	timeType, err := model.NewFieldDef("timeField", model.TimeType, "time_field")
-	assert.NoError(t, err)
-	in, err := model.NewCategoryIn("Test Category", intType, stringType, imageType, locationType, timeType)
+	in, err := model.NewCategoryIn("Test Category")
 	assert.NoError(t, err)
 	return in
 }

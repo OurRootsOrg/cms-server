@@ -167,7 +167,6 @@ func TestPostCategory(t *testing.T) {
 		t.Errorf("Error parsing JSON: %v", err)
 	}
 	assert.Equal(t, in.Name, created.Name, "Expected Name to match")
-	assert.Equal(t, in.FieldDefs, created.FieldDefs, "Expected FieldDefs to match")
 	assert.NotEmpty(t, created.ID)
 }
 
@@ -204,7 +203,6 @@ func TestPutCategory(t *testing.T) {
 		t.Errorf("Error parsing JSON: %v", err)
 	}
 	assert.Equal(t, in.Name, created.Name, "Expected Name to match")
-	assert.Equal(t, in.FieldDefs, created.FieldDefs, "Expected FieldDefs to match")
 	assert.NotEmpty(t, created.ID)
 }
 
@@ -224,9 +222,7 @@ func TestDeleteCategory(t *testing.T) {
 }
 
 func makeCategoryIn(t *testing.T) (model.CategoryIn, *bytes.Buffer) {
-	stringType, err := model.NewFieldDef("stringField", model.StringType, "string_field")
-	assert.NoError(t, err)
-	in, err := model.NewCategoryIn("First", stringType)
+	in, err := model.NewCategoryIn("First")
 	assert.NoError(t, err)
 	buf := new(bytes.Buffer)
 	enc := json.NewEncoder(buf)

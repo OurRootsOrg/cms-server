@@ -12,7 +12,7 @@
       buttonClass="-fill-gradient"
       >Publish</BaseButton
     >
-    <Tabulator :data="records.recordsList.map(r => r.data)" :columns="columns" />
+    <Tabulator :data="records.recordsList.map(r => r.data)" :columns="getColumns()" />
   </div>
 </template>
 
@@ -24,24 +24,25 @@ import store from "@/store";
 
 export default {
   components: { Tabulator },
-  data() {
-    return {
-      columns: [
-        { title: "Given", field: "given" },
-        { title: "Surname", field: "surname" }
-      ]
-    };
-  },
   beforeRouteEnter(routeTo, routeFrom, next) {
     Promise.all([
       store.dispatch("postsGetOne", routeTo.params.pid),
       store.dispatch("recordsGetForPost", routeTo.params.pid)
-    ]).then(() => {
-      next();
+    ]).then(results => {
+      console.log("beforeRouteEnter", results[0].collection);
+      store.dispatch("collectionsGetOne", results[0].collection).then(() => {
+        next();
+      });
     });
   },
-  computed: mapState(["posts", "records"]),
+  computed: mapState(["collections", "posts", "records"]),
   methods: {
+    getColumns() {
+      console.log("getColumns", this.collections.collection);
+      return this.collections.collection.fields.map(f => {
+        return { title: f.header, field: f.header };
+      });
+    },
     publish() {
       this.posts.post.recordsStatus = "Published";
       NProgress.start();
@@ -60,4 +61,8 @@ export default {
 };
 </script>
 
-<style scoped></style>
+<style scoped>
+.submit-button {
+  margin-bottom: 24px;
+}
+</style>

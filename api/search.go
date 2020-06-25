@@ -25,6 +25,28 @@ import (
 	"github.com/ourrootsorg/cms-server/model"
 )
 
+// given and surname fuzziness constants are flags that can be OR'd together
+// names can also contain wildcards (*, ?) but in that case fuzziness is ignored
+const (
+	FuzzyNameAlternate        = 1 << iota // 1 - alternate spellings - not yet implemented
+	FuzzyNameSoundsLikeNarrow = 1 << iota // 2 - sounds-like (narrow) - high-precision, low-recall
+	FuzzyNameSoundsLikeBroad  = 1 << iota // 4 - sounds-like (broad) - low-precision, high-recall
+	FuzzyNameLevenshtein      = 1 << iota // 8 - fuzzy (levenshtein)
+	FuzzyNameInitials         = 1 << iota // 16 - initials (applies only to given)
+)
+
+// place fuzziness constants can also be OR'd together
+const (
+	FuzzyPlaceHigherJurisdictions = 1 << iota // 1 - searches for City, County, State, Country also match County, State, Country or State, Country - not yet implemented
+	FuzzyPlaceNearby              = 1 << iota // 2 - not yet implemented
+)
+
+// date and place searches are not yet implemented
+
+// date fuzziness is simply a +/- number of years to generate a year range
+// e.g., a birthDate of 1880 and a birthDateFuzziness of 5 would result in a year range 1875..1885
+
+// SearchRequest contains the possible search request parameters
 type SearchRequest struct {
 	// name
 	Given            string `schema:"given"`
@@ -65,9 +87,9 @@ type SearchRequest struct {
 	DeathDateFuzziness      int    `schema:"deathDateFuzziness"`
 	DeathPlace              string `schema:"deathPlace"`
 	DeathPlaceFuzziness     int    `schema:"deathPlaceFuzziness"`
-	AnyDate                 string `schema:"anyDate"`
+	AnyDate                 string `schema:"anyDate"` // match on any date
 	AnyDateFuzziness        int    `schema:"anyDateFuzziness"`
-	AnyPlace                string `schema:"anyPlace"`
+	AnyPlace                string `schema:"anyPlace"` // match on any place
 	AnyPlaceFuzziness       int    `schema:"anyPlaceFuzziness"`
 	// other
 	Keywords string `schema:"keywords"`
@@ -129,6 +151,7 @@ type SearchRequest struct {
 	Collection      string `schema:"collection"`
 }
 
+// int
 type Search struct {
 	Query  Query          `json:"query,omitempty"`
 	Aggs   map[string]Agg `json:"aggs,omitempty"`
@@ -229,7 +252,116 @@ type ESSearchSource struct {
 	CollectionID uint32 `json:"collectionId"`
 }
 
+type HitData struct {
+	ID           string
+	RecordID     uint32
+	Role         string
+	CollectionID uint32
+}
+
 const numWorkers = 5
+
+type GivenSurname struct {
+	given   string
+	surname string
+}
+
+type nameExtractor func(GivenSurname) string
+
+var IndexRoles = map[string]string{
+	"principal":   "",
+	"father":      "f",
+	"mother":      "m",
+	"spouse":      "s",
+	"bride":       "b",
+	"groom":       "g",
+	"brideFather": "bf",
+	"brideMother": "bm",
+	"groomFather": "gf",
+	"groomMother": "gm",
+	"other":       "o",
+}
+
+var IndexRolesReversed = reverseMap(IndexRoles)
+
+func reverseMap(m map[string]string) map[string]string {
+	result := map[string]string{}
+	for k, v := range m {
+		result[v] = k
+	}
+	return result
+}
+
+var Relatives = []string{"father", "mother", "spouse", "other"}
+
+var RelativeRoles = map[string]map[string][]string{
+	"principal": {
+		"father": {"father"},
+		"mother": {"mother"},
+		"spouse": {"spouse"},
+		"other":  {"bride", "groom", "brideFather", "brideMother", "groomFather", "groomMother", "other"},
+	},
+	"father": {
+		"father": {},
+		"mother": {},
+		"spouse": {"mother"},
+		"other":  {"principal", "spouse", "bride", "groom", "brideFather", "brideMother", "groomFather", "groomMother", "other"},
+	},
+	"mother": {
+		"father": {},
+		"mother": {},
+		"spouse": {"father"},
+		"other":  {"principal", "spouse", "bride", "groom", "brideFather", "brideMother", "groomFather", "groomMother", "other"},
+	},
+	"spouse": {
+		"father": {},
+		"mother": {},
+		"spouse": {"principal"},
+		"other":  {"father", "mother", "bride", "groom", "brideFather", "brideMother", "groomFather", "groomMother", "other"},
+	},
+	"bride": {
+		"father": {"brideFather"},
+		"mother": {"brideMother"},
+		"spouse": {"groom"},
+		"other":  {"principal", "father", "mother", "spouse", "groomFather", "groomMother", "other"},
+	},
+	"groom": {
+		"father": {"groomFather"},
+		"mother": {"groomMother"},
+		"spouse": {"bride"},
+		"other":  {"principal", "father", "mother", "spouse", "brideFather", "brideMother", "other"},
+	},
+	"brideFather": {
+		"father": {},
+		"mother": {},
+		"spouse": {"brideMother"},
+		"other":  {"principal", "father", "mother", "spouse", "bride", "groom", "groomFather", "groomMother", "other"},
+	},
+	"brideMother": {
+		"father": {},
+		"mother": {},
+		"spouse": {"brideFather"},
+		"other":  {"principal", "father", "mother", "spouse", "bride", "groom", "groomFather", "groomMother", "other"},
+	},
+	"groomFather": {
+		"father": {},
+		"mother": {},
+		"spouse": {"groomMother"},
+		"other":  {"principal", "father", "mother", "spouse", "bride", "groom", "brideFather", "brideMother", "other"},
+	},
+	"groomMother": {
+		"father": {},
+		"mother": {},
+		"spouse": {"groomFather"},
+		"other":  {"principal", "father", "mother", "spouse", "bride", "groom", "brideFather", "brideMother", "other"},
+	},
+	"other": {
+		"father": {},
+		"mother": {},
+		"spouse": {},
+		"other":  {"principal", "father", "mother", "spouse", "bride", "groom", "brideFather", "brideMother", "groomFather", "groomMother"},
+	},
+}
 
 // IndexPost
 func (api API) IndexPost(ctx context.Context, post *model.Post) error {
@@ -274,53 +406,7 @@ func (api API) IndexPost(ctx context.Context, post *model.Post) error {
 	}()
 
 	for _, record := range records.Records {
-		m := map[string]interface{}{}
-		for k, v := range record.Data {
-			m[k] = v
-		}
-		if err != nil {
-			log.Printf("[ERROR] Error parsing collection id %d\n", collection.ID)
-			return err
-		}
-		m["post"] = post.ID
-		m["collection"] = collection.Name
-		m["collectionId"] = collection.ID
-		m["category"] = category.Name
-		m["lastModified"] = lastModified
-		data, err := json.Marshal(m)
-		if err != nil {
-			log.Printf("[ERROR] Cannot encode record %d: %v", record.ID, err)
-			return err
-		}
-
-		// Add an item to the BulkIndexer
-		err = bi.Add(
-			context.Background(),
-			esutil.BulkIndexerItem{
-				// Action field configures the operation to perform (index, create, delete, update)
-				Action: "index",
-
-				// TODO deal with multiple roles in a record
-				DocumentID: strconv.Itoa(int(record.ID)),
-
-				// Body is an `io.Reader` with the payload
-				Body: bytes.NewReader(data),
-
-				// OnSuccess is called for each successful operation
-				OnSuccess: func(ctx context.Context, item esutil.BulkIndexerItem, res esutil.BulkIndexerResponseItem) {
-					atomic.AddUint64(&countSuccessful, 1)
-				},
-
-				// OnFailure is called for each failed operation
-				OnFailure: func(ctx context.Context, item esutil.BulkIndexerItem, res esutil.BulkIndexerResponseItem, err error) {
-					if err != nil {
-						log.Printf("[ERROR]: %s", err)
-					} else {
-						log.Printf("[ERROR]: %s: %s", res.Error.Type, res.Error.Reason)
-					}
-				},
-			},
-		)
+		err = indexRecord(&record, post, collection, category, lastModified, &countSuccessful, bi)
 		if err != nil {
 			log.Printf("[ERROR] Unexpected error %d: %v", record.ID, err)
 			return err
@@ -341,6 +427,84 @@ func (api API) IndexPost(ctx context.Context, post *model.Post) error {
 	}
 
 	log.Printf("[INFO] Indexed %d records\n", biStats.NumFlushed)
+	return nil
+}
+
+func indexRecord(record *model.Record, post *model.Post, collection *model.Collection, category *model.Category,
+	lastModified string, countSuccessful *uint64, bi esutil.BulkIndexer) error {
+
+	for role, suffix := range IndexRoles {
+		if suffix != "" {
+			suffix = "_" + suffix
+		}
+		// get data for role
+		data := getDataForRole(collection.Mappings, record, role)
+		//log.Printf("!!! role=%s record=%v data=%v\n", role, record, data)
+		_, givenFound := data["given"]
+		_, surnameFound := data["surname"]
+		if !givenFound && !surnameFound {
+			continue
+		}
+
+		// get relatives' names
+		for _, relative := range Relatives {
+			names := getNames(collection.Mappings, record, RelativeRoles[role][relative])
+			givens := getNameParts(names, func(name GivenSurname) string { return name.given })
+			surnames := getNameParts(names, func(name GivenSurname) string { return name.surname })
+			if len(givens) > 0 {
+				data[relative+"Given"] = strings.Join(givens, " ")
+			}
+			if len(surnames) > 0 {
+				data[relative+"Surname"] = strings.Join(surnames, " ")
+			}
+		}
+
+		// get other data
+		data["post"] = post.ID
+		data["collection"] = collection.Name
+		data["collectionId"] = collection.ID
+		data["category"] = category.Name
+		data["lastModified"] = lastModified
+
+		// add to BulkIndexer
+		bs, err := json.Marshal(data)
+		if err != nil {
+			log.Printf("[ERROR] encoding record %d: %v", record.ID, err)
+			return err
+		}
+
+		// Add an item to the BulkIndexer
+		err = bi.Add(
+			context.Background(),
+			esutil.BulkIndexerItem{
+				// Action field configures the operation to perform (index, create, delete, update)
+				Action: "index",
+
+				DocumentID: strconv.Itoa(int(record.ID)) + suffix,
+
+				// Body is an `io.Reader` with the payload
+				Body: bytes.NewReader(bs),
+
+				// OnSuccess is called for each successful operation
+				OnSuccess: func(ctx context.Context, item esutil.BulkIndexerItem, res esutil.BulkIndexerResponseItem) {
+					atomic.AddUint64(countSuccessful, 1)
+				},
+
+				// OnFailure is called for each failed operation
+				OnFailure: func(ctx context.Context, item esutil.BulkIndexerItem, res esutil.BulkIndexerResponseItem, err error) {
+					if err != nil {
+						log.Printf("[ERROR]: %s", err)
+					} else {
+						log.Printf("[ERROR]: %s: %s", res.Error.Type, res.Error.Reason)
+					}
+				},
+			},
+		)
+		if err != nil {
+			log.Printf("[ERROR] indexing record %d: %v\n", record.ID, err)
+		}
+	}
+
 	return nil
 }
 
@@ -396,8 +560,8 @@ func (api API) SearchByID(ctx context.Context, id string) (*model.SearchHit, *mo
 
 	return &model.SearchHit{
 		ID:             hitData.ID,
-		Person:         constructSearchPerson(hitData.Role, record),
-		Record:         constructSearchRecord(record),
+		Person:         constructSearchPerson(collection.Mappings, hitData.Role, record),
+		Record:         constructSearchRecord(collection.Mappings, record),
 		CollectionName: collection.Name,
 		CollectionID:   collection.ID,
 	}, nil
@@ -507,7 +671,7 @@ func (api API) Search(ctx context.Context, req *SearchRequest) (*model.SearchRes
 			return nil, model.NewErrors(http.StatusInternalServerError, errors.New(msg))
 		}
 
-		// gte collection
+		// get collection
 		var collection model.Collection
 		found = false
 		for _, item := range collections {
@@ -525,7 +689,7 @@ func (api API) Search(ctx context.Context, req *SearchRequest) (*model.SearchRes
 		// construct search hit
 		hits = append(hits, model.SearchHit{
 			ID:     hitData.ID,
-			Person: constructSearchPerson(hitData.Role, &record),
+			Person: constructSearchPerson(collection.Mappings, hitData.Role, &record),
 			//Record:         constructSearchRecord(&record), // only return record in search by id
 			CollectionName: collection.Name,
 			CollectionID:   collection.ID,
@@ -683,6 +847,7 @@ func constructNameQueries(label, value string, fuzziness int, isGiven bool) []Qu
 			v, err := asciifold(strings.ToLower(v))
 			if err != nil {
 				log.Printf("[INFO] unable to fold %s\n", v)
+				v = strings.ToLower(v)
 			}
 
 			// TODO disallow wildcards within the first 3 characters?
@@ -715,8 +880,12 @@ func constructNameQueries(label, value string, fuzziness int, isGiven bool) []Qu
 		}
 
 		subqueries := []Query{exactQuery}
+
+		if fuzziness&FuzzyNameAlternate > 0 {
+			// TODO alternate spellings
+		}
 		// TODO choose the best coders for broad and narrow
-		if fuzziness > 0 {
+		if fuzziness&FuzzyNameSoundsLikeNarrow > 0 {
 			subqueries = append(subqueries, Query{
 				Match: map[string]MatchQuery{
 					label + ".narrow": {
@@ -726,7 +895,7 @@ func constructNameQueries(label, value string, fuzziness int, isGiven bool) []Qu
 				},
 			})
 		}
-		if fuzziness > 1 {
+		if fuzziness&FuzzyNameSoundsLikeBroad > 0 {
 			subqueries = append(subqueries, Query{
 				Match: map[string]MatchQuery{
 					label + ".broad": {
@@ -736,24 +905,29 @@ func constructNameQueries(label, value string, fuzziness int, isGiven bool) []Qu
 				},
 			})
 		}
-		if fuzziness > 1 && isGiven {
+		if fuzziness&FuzzyNameLevenshtein > 0 {
+			std, err := asciifold(strings.ToLower(v))
+			if err != nil {
+				log.Printf("[INFO] unable to fold %s\n", v)
+				std = strings.ToLower(v)
+			}
+			subqueries = append(subqueries, Query{
+				Fuzzy: map[string]FuzzyQuery{
+					label: {
+						Value:     std,
+						Fuzziness: "AUTO",
+						Rewrite:   "constant_score_boolean",
+						Boost:     fuzzyNameBoost,
+					},
+				},
+			})
+		}
+		if fuzziness&FuzzyNameInitials > 0 && isGiven {
 			subqueries = append(subqueries, Query{
 				Match: map[string]MatchQuery{
 					label: {
 						Query: v[0:1],
 						Boost: initialNameBoost,
-					},
-				},
-			})
-		}
-		if fuzziness > 2 {
-			subqueries = append(subqueries, Query{
-				Fuzzy: map[string]FuzzyQuery{
-					label: {
-						Value:     v,
-						Fuzziness: "AUTO",
-						Rewrite:   "constant_score_boolean",
-						Boost:     fuzzyNameBoost,
 					},
 				},
 			})
@@ -885,8 +1059,12 @@ func constructPlaceQueries(label, value string, fuzziness int) []Query {
 		},
 	}
 
-	if fuzziness > 0 {
+	if fuzziness&FuzzyPlaceHigherJurisdictions > 0 {
 		for i := 1; i < len(levels); i++ {
+			// don't match on just "United States"
+			if i == 1 && levels[0] == "United States" {
+				continue
+			}
 			queries = append(queries, Query{
 				Term: map[string]TermQuery{
 					fmt.Sprintf("%s%d", label, i+1): {
@@ -896,8 +1074,11 @@ func constructPlaceQueries(label, value string, fuzziness int) []Query {
 				},
 			})
 		}
+	}
 
-		// TODO include nearby places (lat and lon)
+	// TODO include nearby places (lat and lon)
+	if fuzziness&FuzzyPlaceNearby > 0 {
+
 	}
 
 	return queries
@@ -1085,25 +1266,11 @@ func asciifold(s string) (string, error) {
 	return result, err
 }
 
-type HitData struct {
-	ID           string
-	RecordID     uint32
-	Role         string
-	CollectionID uint32
-}
-
-var idRoleMap = map[string]string{
-	"f": "Father",
-	"m": "Mother",
-	"s": "Spouse",
-	"o": "Other",
-}
-
 func getHitData(r ESSearchHit) (*HitData, error) {
 	idParts := strings.Split(r.ID, "_")
-	role := "Principal"
+	role := "principal"
 	if len(idParts) > 1 {
-		role = idRoleMap[idParts[1]]
+		role = IndexRolesReversed[idParts[1]]
 	}
 	rid, err := strconv.Atoi(idParts[0])
 	if err != nil {
@@ -1123,14 +1290,85 @@ func getHitData(r ESSearchHit) (*HitData, error) {
 	}, nil
 }
 
-func constructSearchPerson(role string, record *model.Record) model.SearchPerson {
-	// TODO lots more to do here with roles
+func constructSearchPerson(mappings []model.CollectionMapping, role string, record *model.Record) model.SearchPerson {
+	data := getDataForRole(mappings, record, role)
+	// TODO populate events
+	events := []model.SearchEvent{}
+	relationships := []model.SearchRelationship{}
+	for _, relative := range Relatives {
+		names := getNames(mappings, record, RelativeRoles[role][relative])
+		if len(names) > 0 {
+			relationships = append(relationships, model.SearchRelationship{
+				Type: relative,
+				Name: strings.Join(getNameParts(names, func(name GivenSurname) string { return fmt.Sprintf("%s %s", name.given, name.surname) }), ", "),
+			})
+		}
+	}
 	return model.SearchPerson{
-		Name: fmt.Sprintf("%s %s", record.Data["given"], record.Data["surname"]),
-		Role: role,
+		Name:          fmt.Sprintf("%s %s", data["given"], data["surname"]),
+		Role:          role,
+		Events:        events,
+		Relationships: relationships,
 	}
 }
 
-func constructSearchRecord(record *model.Record) map[string]string {
-	return record.Data
+func constructSearchRecord(mappings []model.CollectionMapping, record *model.Record) model.SearchRecord {
+	lvs := []model.SearchLabelValue{}
+	for _, mapping := range mappings {
+		if mapping.DbField == "" || record.Data[mapping.Header] == "" {
+			continue
+		}
+		lvs = append(lvs, model.SearchLabelValue{
+			Label: mapping.DbField,
+			Value: record.Data[mapping.Header],
+		})
+	}
+	return lvs
+}
+
+func getDataForRole(mappings []model.CollectionMapping, record *model.Record, role string) map[string]interface{} {
+	data := map[string]interface{}{}
+
+	for _, mapping := range mappings {
+		if mapping.IxRole == role && record.Data[mapping.Header] != "" {
+			data[mapping.IxField] = record.Data[mapping.Header]
+		}
+	}
+	return data
+}
+
+func getNames(mappings []model.CollectionMapping, record *model.Record, roles []string) []GivenSurname {
+	names := []GivenSurname{}
+
+	for _, role := range roles {
+		var givens []string
+		var surnames []string
+		for _, mapping := range mappings {
+			if mapping.IxRole == role {
+				if mapping.IxField == "given" && record.Data[mapping.Header] != "" {
+					givens = append(givens, record.Data[mapping.Header])
+				} else if mapping.IxField == "surname" {
+					surnames = append(surnames, record.Data[mapping.Header])
+				}
+			}
+		}
+		if len(givens) > 0 || len(surnames) > 0 {
+			names = append(names, GivenSurname{
+				given:   strings.Join(givens, " "),
+				surname: strings.Join(surnames, " "),
+			})
+		}
+	}
+	return names
+}
+
+func getNameParts(names []GivenSurname, extractor nameExtractor) []string {
+	var parts []string
+	for _, name := range names {
+		part := extractor(name)
+		if part != "" {
+			parts = append(parts, part)
+		}
+	}
+	return parts
 }

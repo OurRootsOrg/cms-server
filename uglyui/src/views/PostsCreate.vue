@@ -33,7 +33,7 @@
         </p>
       </template>
 
-      <input type="button" id="launch" value="Import data" @click.prevent="launch" />
+      <input type="button" id="importData" value="Import data" @click.prevent="importData" />
       <p v-if="$v.$anyError" class="errorMessage">
         Please fill out the required field(s).
       </p>
@@ -50,24 +50,6 @@ import config from "../flatfileConfig.js";
 import Server from "@/services/Server.js";
 
 FlatfileImporter.setVersion(2);
-
-const importer = new FlatfileImporter(config.license, config.config);
-
-// importer.registerRecordHook(record => {
-//   let out = {};
-//   if (record.name.includes(" ")) {
-//     out.name = {
-//       value: record.name.replace(" ", "_"),
-//       info: [
-//         {
-//           message: "No spaces allowed. Replaced all spaces with underscores",
-//           level: "warning"
-//         }
-//       ]
-//     };
-//   }
-//   return out;
-// });
 
 async function uploadData(store, post, contentType, data) {
   let postRequestResult = await Server.contentPostRequest(contentType);
@@ -97,12 +79,15 @@ export default {
     }
   },
   methods: {
-    launch() {
+    importData() {
       let post = this.post;
       post.collection = +post.collection; // convert to a number
+      let collection = this.collections.collectionsList.find(coll => coll.id === post.collection);
       let store = this.$store;
       this.$v.$touch();
       if (!this.$v.$invalid) {
+        const importer = new FlatfileImporter(config.license, this.getFlatFileOptions(collection));
+        // TODO set to real user
         importer.setCustomer({ userId: 1, email: "dallan@gmail.com" });
         importer
           .requestDataFromUser()
@@ -120,6 +105,33 @@ export default {
             console.info(error);
           });
       }
+    },
+    getFlatFileOptions(coll) {
+      return {
+        type: "Record",
+        allowInvalidSubmit: true,
+        managed: true,
+        allowCustom: false,
+        disableManualInput: true,
+        fields: coll.fields.map(fld => {
+          let validators = [];
+          if (fld.required) {
+            validators.push({ validate: "required", error: "required field" });
+          }
+          if (fld.regex) {
+            validators.push({
+              validate: "regex_matches",
+              regex: fld.regex,
+              error: fld.regexError || "doesn't match validation rule"
+            });
+          }
+          return {
+            label: fld.header,
+            key: fld.header,
+            validators: validators
+          };
+        })
+      };
     }
   }
 };
@@ -140,7 +152,7 @@ export default {
 .download a:hover {
   color: #1d62b4;
 }
-#launch {
+#importData {
   position: relative;
   left: 50%;
   transform: translateX(-50%);
@@ -158,11 +170,11 @@ export default {
   outline: 0;
   background-color: #4a90e2;
 }
-#launch:focus,
-#launch:hover {
+#importData:focus,
+#importData:hover {
   background-color: #2171ce;
 }
-#launch:active {
+#importData:active {
   background-color: #1d62b4;
 }
 #raw_output {

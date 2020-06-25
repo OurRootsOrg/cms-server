@@ -90,11 +90,7 @@ func TestPublisher(t *testing.T) {
 }
 
 func createTestCategory(p model.CategoryPersister) (*model.Category, error) {
-	stringType, err := model.NewFieldDef("stringField", model.StringType, "string_field")
-	if err != nil {
-		return nil, err
-	}
-	in, err := model.NewCategoryIn("Test", stringType)
+	in, err := model.NewCategoryIn("Test")
 	if err != nil {
 		return nil, err
 	}
@@ -111,6 +107,26 @@ func deleteTestCategory(p model.CategoryPersister, category *model.Category) err
 
 func createTestCollection(p model.CollectionPersister, categoryID uint32) (*model.Collection, error) {
 	in := model.NewCollectionIn("Test", categoryID)
+	in.Fields = []model.CollectionField{
+		{
+			Header: "given",
+		},
+		{
+			Header: "surname",
+		},
+	}
+	in.Mappings = []model.CollectionMapping{
+		{
+			Header:  "given",
+			IxRole:  "principal",
+			IxField: "given",
+		},
+		{
+			Header:  "surname",
+			IxRole:  "principal",
+			IxField: "surname",
+		},
+	}
 	created, err := p.InsertCollection(context.TODO(), in)
 	if err != nil {
 		return nil, err

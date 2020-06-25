@@ -5,8 +5,6 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"errors"
-	"fmt"
-	"html/template"
 	"time"
 )
 
@@ -33,15 +31,12 @@ type CategoryIn struct {
 
 // CategoryBody is the JSON part of the Category object
 type CategoryBody struct {
-	Name                      string             `json:"name,omitempty" validate:"required"`
-	FieldDefs                 FieldDefSet        `json:"field_defs,omitempty"` // example:"{\"int_field\":\"Int\", \"string_field\":\"String\"}"
-	SearchResultsPageTemplate *template.Template `json:"search_results_page_template,omitempty"`
-	DetailsPageTemplate       *template.Template `json:"details_page_template,omitempty"`
+	Name string `json:"name,omitempty" validate:"required"`
 }
 
 // NewCategoryIn constructs a CategoryIn
-func NewCategoryIn(name string, fieldDefs ...FieldDef) (CategoryIn, error) {
-	cb, err := newCategoryBody(name, fieldDefs...)
+func NewCategoryIn(name string) (CategoryIn, error) {
+	cb, err := newCategoryBody(name)
 	if err != nil {
 		return CategoryIn{}, err
 	}
@@ -49,13 +44,8 @@ func NewCategoryIn(name string, fieldDefs ...FieldDef) (CategoryIn, error) {
 }
 
 // newCategoryBody constructs a CategoryBody
-func newCategoryBody(name string, fieldDefs ...FieldDef) (CategoryBody, error) {
+func newCategoryBody(name string) (CategoryBody, error) {
 	cb := CategoryBody{Name: name}
-	for _, fd := range fieldDefs {
-		if !cb.FieldDefs.Add(fd) {
-			return CategoryBody{}, fmt.Errorf("Attempt to add duplicate FieldDef: %#v", fd)
-		}
-	}
 	return cb, nil
 }
 
@@ -73,7 +63,7 @@ func (cb *CategoryBody) Scan(value interface{}) error {
 	return json.Unmarshal(b, &cb)
 }
 
-// Category represents a set of collections that all contain the same fields
+// Category represents a set of collections
 type Category struct {
 	ID uint32 `json:"id,omitempty" example:"999" validate:"required,omitempty"`
 	CategoryBody

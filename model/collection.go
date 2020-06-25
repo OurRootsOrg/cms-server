@@ -21,9 +21,25 @@ type CollectionPersister interface {
 
 // CollectionBody is the JSON body of a Collection
 type CollectionBody struct {
-	Name             string             `json:"name,omitempty" validate:"required,omitempty"`
-	Location         string             `json:"location,omitempty"`
-	CitationTemplate *template.Template `json:"citation_template,omitempty"`
+	Name             string              `json:"name,omitempty" validate:"required,omitempty"`
+	Location         string              `json:"location,omitempty"`
+	Fields           []CollectionField   `json:"fields"`
+	Mappings         []CollectionMapping `json:"mappings"`
+	CitationTemplate *template.Template  `json:"citation_template,omitempty"`
+}
+
+type CollectionField struct {
+	Header     string `json:"header"`
+	Required   bool   `json:"required,omitempty"`
+	Regex      string `json:"regex,omitempty"`
+	RegexError string `json:"regexError,omitempty"`
+}
+
+type CollectionMapping struct {
+	Header  string `json:"header"`
+	DbField string `json:"dbField"`
+	IxRole  string `json:"ixRole"`
+	IxField string `json:"ixField"`
 }
 
 // Value makes CollectionBody implement the driver.Valuer interface.

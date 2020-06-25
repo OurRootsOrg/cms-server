@@ -107,6 +107,219 @@
           }
         }
       },
+
+      "fatherGiven": {
+        "type": "text",
+        "analyzer": "simple_folding",
+        "doc_values": false,
+        "index_options": "docs",
+        "norms": false,
+        "similarity": "boolean",
+        "fields": {
+          "narrow": {
+            "type": "text",
+            "analyzer": "nysiis",
+            "doc_values": false,
+            "index_options": "docs",
+            "norms": false,
+            "similarity": "boolean"
+          },
+          "broad": {
+            "type": "text",
+            "analyzer": "refined_soundex",
+            "doc_values": false,
+            "index_options": "docs",
+            "norms": false,
+            "similarity": "boolean"
+          }
+        }
+      },
+      "fatherSurname": {
+        "type": "text",
+        "analyzer": "simple_folding",
+        "doc_values": false,
+        "index_options": "docs",
+        "norms": false,
+        "similarity": "boolean",
+        "fields": {
+          "narrow": {
+            "type": "text",
+            "analyzer": "nysiis",
+            "doc_values": false,
+            "index_options": "docs",
+            "norms": false,
+            "similarity": "boolean"
+          },
+          "broad": {
+            "type": "text",
+            "analyzer": "refined_soundex",
+            "doc_values": false,
+            "index_options": "docs",
+            "norms": false,
+            "similarity": "boolean"
+          }
+        }
+      },
+
+      "motherGiven": {
+        "type": "text",
+        "analyzer": "simple_folding",
+        "doc_values": false,
+        "index_options": "docs",
+        "norms": false,
+        "similarity": "boolean",
+        "fields": {
+          "narrow": {
+            "type": "text",
+            "analyzer": "nysiis",
+            "doc_values": false,
+            "index_options": "docs",
+            "norms": false,
+            "similarity": "boolean"
+          },
+          "broad": {
+            "type": "text",
+            "analyzer": "refined_soundex",
+            "doc_values": false,
+            "index_options": "docs",
+            "norms": false,
+            "similarity": "boolean"
+          }
+        }
+      },
+      "motherSurname": {
+        "type": "text",
+        "analyzer": "simple_folding",
+        "doc_values": false,
+        "index_options": "docs",
+        "norms": false,
+        "similarity": "boolean",
+        "fields": {
+          "narrow": {
+            "type": "text",
+            "analyzer": "nysiis",
+            "doc_values": false,
+            "index_options": "docs",
+            "norms": false,
+            "similarity": "boolean"
+          },
+          "broad": {
+            "type": "text",
+            "analyzer": "refined_soundex",
+            "doc_values": false,
+            "index_options": "docs",
+            "norms": false,
+            "similarity": "boolean"
+          }
+        }
+      },
+
+      "spouseGiven": {
+        "type": "text",
+        "analyzer": "simple_folding",
+        "doc_values": false,
+        "index_options": "docs",
+        "norms": false,
+        "similarity": "boolean",
+        "fields": {
+          "narrow": {
+            "type": "text",
+            "analyzer": "nysiis",
+            "doc_values": false,
+            "index_options": "docs",
+            "norms": false,
+            "similarity": "boolean"
+          },
+          "broad": {
+            "type": "text",
+            "analyzer": "refined_soundex",
+            "doc_values": false,
+            "index_options": "docs",
+            "norms": false,
+            "similarity": "boolean"
+          }
+        }
+      },
+      "spouseSurname": {
+        "type": "text",
+        "analyzer": "simple_folding",
+        "doc_values": false,
+        "index_options": "docs",
+        "norms": false,
+        "similarity": "boolean",
+        "fields": {
+          "narrow": {
+            "type": "text",
+            "analyzer": "nysiis",
+            "doc_values": false,
+            "index_options": "docs",
+            "norms": false,
+            "similarity": "boolean"
+          },
+          "broad": {
+            "type": "text",
+            "analyzer": "refined_soundex",
+            "doc_values": false,
+            "index_options": "docs",
+            "norms": false,
+            "similarity": "boolean"
+          }
+        }
+      },
+
+      "otherGiven": {
+        "type": "text",
+        "analyzer": "simple_folding",
+        "doc_values": false,
+        "index_options": "docs",
+        "norms": false,
+        "similarity": "boolean",
+        "fields": {
+          "narrow": {
+            "type": "text",
+            "analyzer": "nysiis",
+            "doc_values": false,
+            "index_options": "docs",
+            "norms": false,
+            "similarity": "boolean"
+          },
+          "broad": {
+            "type": "text",
+            "analyzer": "refined_soundex",
+            "doc_values": false,
+            "index_options": "docs",
+            "norms": false,
+            "similarity": "boolean"
+          }
+        }
+      },
+      "otherSurname": {
+        "type": "text",
+        "analyzer": "simple_folding",
+        "doc_values": false,
+        "index_options": "docs",
+        "norms": false,
+        "similarity": "boolean",
+        "fields": {
+          "narrow": {
+            "type": "text",
+            "analyzer": "nysiis",
+            "doc_values": false,
+            "index_options": "docs",
+            "norms": false,
+            "similarity": "boolean"
+          },
+          "broad": {
+            "type": "text",
+            "analyzer": "refined_soundex",
+            "doc_values": false,
+            "index_options": "docs",
+            "norms": false,
+            "similarity": "boolean"
+          }
+        }
+      },
+
       "birthDate": {
         "type": "object",
         "enabled": false
@@ -162,6 +375,231 @@
         "norms": false,
         "similarity": "boolean"
       },
+
+      "marriageDate": {
+        "type": "object",
+        "enabled": false
+      },
+      "marriageDateStd": {
+        "type": "integer",
+        "doc_values": false,
+        "similarity": "boolean"
+      },
+      "marriageYear": {
+        "type": "short",
+        "doc_values": false,
+        "similarity": "boolean"
+      },
+      "marriageDecade": {
+        "type": "short",
+        "doc_values": true,
+        "similarity": "boolean"
+      },
+      "marriagePlace": {
+        "type": "text",
+        "analyzer": "simple_folding",
+        "doc_values": false,
+        "index_options": "docs",
+        "norms": false,
+        "similarity": "boolean"
+      },
+      "marriagePlace1": {
+        "type": "keyword",
+        "doc_values": true,
+        "index_options": "docs",
+        "norms": false,
+        "similarity": "boolean"
+      },
+      "marriagePlace2": {
+        "type": "keyword",
+        "doc_values": true,
+        "index_options": "docs",
+        "norms": false,
+        "similarity": "boolean"
+      },
+      "marriagePlace3": {
+        "type": "keyword",
+        "doc_values": true,
+        "index_options": "docs",
+        "norms": false,
+        "similarity": "boolean"
+      },
+      "marriagePlace4": {
+        "type": "keyword",
+        "doc_values": true,
+        "index_options": "docs",
+        "norms": false,
+        "similarity": "boolean"
+      },
+
+      "residenceDate": {
+        "type": "object",
+        "enabled": false
+      },
+      "residenceDateStd": {
+        "type": "integer",
+        "doc_values": false,
+        "similarity": "boolean"
+      },
+      "residenceYear": {
+        "type": "short",
+        "doc_values": false,
+        "similarity": "boolean"
+      },
+      "residenceDecade": {
+        "type": "short",
+        "doc_values": true,
+        "similarity": "boolean"
+      },
+      "residencePlace": {
+        "type": "text",
+        "analyzer": "simple_folding",
+        "doc_values": false,
+        "index_options": "docs",
+        "norms": false,
+        "similarity": "boolean"
+      },
+      "residencePlace1": {
+        "type": "keyword",
+        "doc_values": true,
+        "index_options": "docs",
+        "norms": false,
+        "similarity": "boolean"
+      },
+      "residencePlace2": {
+        "type": "keyword",
+        "doc_values": true,
+        "index_options": "docs",
+        "norms": false,
+        "similarity": "boolean"
+      },
+      "residencePlace3": {
+        "type": "keyword",
+        "doc_values": true,
+        "index_options": "docs",
+        "norms": false,
+        "similarity": "boolean"
+      },
+      "residencePlace4": {
+        "type": "keyword",
+        "doc_values": true,
+        "index_options": "docs",
+        "norms": false,
+        "similarity": "boolean"
+      },
+
+      "deathDate": {
+        "type": "object",
+        "enabled": false
+      },
+      "deathDateStd": {
+        "type": "integer",
+        "doc_values": false,
+        "similarity": "boolean"
+      },
+      "deathYear": {
+        "type": "short",
+        "doc_values": false,
+        "similarity": "boolean"
+      },
+      "deathDecade": {
+        "type": "short",
+        "doc_values": true,
+        "similarity": "boolean"
+      },
+      "deathPlace": {
+        "type": "text",
+        "analyzer": "simple_folding",
+        "doc_values": false,
+        "index_options": "docs",
+        "norms": false,
+        "similarity": "boolean"
+      },
+      "deathPlace1": {
+        "type": "keyword",
+        "doc_values": true,
+        "index_options": "docs",
+        "norms": false,
+        "similarity": "boolean"
+      },
+      "deathPlace2": {
+        "type": "keyword",
+        "doc_values": true,
+        "index_options": "docs",
+        "norms": false,
+        "similarity": "boolean"
+      },
+      "deathPlace3": {
+        "type": "keyword",
+        "doc_values": true,
+        "index_options": "docs",
+        "norms": false,
+        "similarity": "boolean"
+      },
+      "deathPlace4": {
+        "type": "keyword",
+        "doc_values": true,
+        "index_options": "docs",
+        "norms": false,
+        "similarity": "boolean"
+      },
+
+      "otherDate": {
+        "type": "object",
+        "enabled": false
+      },
+      "otherDateStd": {
+        "type": "integer",
+        "doc_values": false,
+        "similarity": "boolean"
+      },
+      "otherYear": {
+        "type": "short",
+        "doc_values": false,
+        "similarity": "boolean"
+      },
+      "otherDecade": {
+        "type": "short",
+        "doc_values": true,
+        "similarity": "boolean"
+      },
+      "otherPlace": {
+        "type": "text",
+        "analyzer": "simple_folding",
+        "doc_values": false,
+        "index_options": "docs",
+        "norms": false,
+        "similarity": "boolean"
+      },
+      "otherPlace1": {
+        "type": "keyword",
+        "doc_values": true,
+        "index_options": "docs",
+        "norms": false,
+        "similarity": "boolean"
+      },
+      "otherPlace2": {
+        "type": "keyword",
+        "doc_values": true,
+        "index_options": "docs",
+        "norms": false,
+        "similarity": "boolean"
+      },
+      "otherPlace3": {
+        "type": "keyword",
+        "doc_values": true,
+        "index_options": "docs",
+        "norms": false,
+        "similarity": "boolean"
+      },
+      "otherPlace4": {
+        "type": "keyword",
+        "doc_values": true,
+        "index_options": "docs",
+        "norms": false,
+        "similarity": "boolean"
+      },
+
       "category": {
         "type": "keyword",
         "doc_values": true,

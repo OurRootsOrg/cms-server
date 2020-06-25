@@ -1,7 +1,10 @@
 <template>
   <div>
     <div>
-      <strong>{{ collection.name }}</strong> (in {{ category.name }})
+      <router-link class="post-link" :to="{ name: 'collection-edit', params: { cid: collection.id } }">{{
+        collection.name
+      }}</router-link>
+      (in {{ category.name }})
     </div>
   </div>
 </template>

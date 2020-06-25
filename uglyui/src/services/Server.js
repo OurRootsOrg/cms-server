@@ -1,5 +1,5 @@
 import axios from "axios";
-import { getInstance } from "../auth";
+import { getAuth } from "../auth";
 import axiosRetry from "axios-retry";
 
 const apiClient = axios.create({
@@ -13,64 +13,72 @@ const apiClient = axios.create({
 axiosRetry(apiClient, { retries: 3 }); // retry non-POST requests on network or 5XX errors
 
 export default {
-  categoriesCreate(category) {
-    return getInstance()
-      .getTokenSilently()
-      .then(token => {
-        return apiClient.post("/categories", category, {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        });
-      });
+  async categoriesCreate(category) {
+    let auth = await getAuth();
+    let token = await auth.getTokenSilently();
+    return apiClient.post("/categories", category, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
   },
-  categoriesGetAll() {
-    return getInstance()
-      .getTokenSilently()
-      .then(token => {
-        return apiClient.get("/categories", {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        });
-      });
+  async categoriesGetAll() {
+    let auth = await getAuth();
+    let token = await auth.getTokenSilently();
+    return apiClient.get("/categories", {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
   },
-  collectionsCreate(collection) {
-    return getInstance()
-      .getTokenSilently()
-      .then(token => {
-        return apiClient.post("/collections", collection, {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        });
-      });
+  async collectionsCreate(collection) {
+    let auth = await getAuth();
+    let token = await auth.getTokenSilently();
+    return apiClient.post("/collections", collection, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
   },
-  collectionsGetAll() {
-    return getInstance()
-      .getTokenSilently()
-      .then(token => {
-        return apiClient.get("/collections", {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        });
-      });
+  async collectionsUpdate(coll) {
+    let auth = await getAuth();
+    let token = await auth.getTokenSilently();
+    return apiClient.put(`/collections/${coll.id}`, coll, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
   },
-  contentPostRequest(contentType) {
-    return getInstance()
-      .getTokenSilently()
-      .then(token => {
-        return apiClient.post(
-          "/content",
-          { contentType },
-          {
-            headers: {
-              Authorization: `Bearer ${token}`
-            }
-          }
-        );
-      });
+  async collectionsGetAll() {
+    let auth = await getAuth();
+    let token = await auth.getTokenSilently();
+    return apiClient.get("/collections", {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+  },
+  async collectionsGetOne(id) {
+    let auth = await getAuth();
+    let token = await auth.getTokenSilently();
+    return apiClient.get(`/collections/${id}`, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+  },
+  async contentPostRequest(contentType) {
+    let auth = await getAuth();
+    let token = await auth.getTokenSilently();
+    return apiClient.post(
+      "/content",
+      { contentType },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      }
+    );
   },
   contentPut(url, contentType, data) {
     return axios.put(url, data, {
@@ -79,65 +87,58 @@ export default {
       }
     });
   },
-  postsGetAll() {
-    return getInstance()
-      .getTokenSilently()
-      .then(token => {
-        return apiClient.get("/posts", {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        });
-      });
+  async postsGetAll() {
+    let auth = await getAuth();
+    let token = await auth.getTokenSilently();
+    return apiClient.get("/posts", {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
   },
-  postsGetOne(id) {
-    return getInstance()
-      .getTokenSilently()
-      .then(token => {
-        return apiClient.get(`/posts/${id}`, {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        });
-      });
+  async postsGetOne(id) {
+    let auth = await getAuth();
+    let token = await auth.getTokenSilently();
+    return apiClient.get(`/posts/${id}`, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
   },
-  postsCreate(post) {
-    return getInstance()
-      .getTokenSilently()
-      .then(token => {
-        return apiClient.post("/posts", post, {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        });
-      });
+  async postsCreate(post) {
+    let auth = await getAuth();
+    let token = await auth.getTokenSilently();
+    return apiClient.post("/posts", post, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
   },
-  postsUpdate(post) {
-    return getInstance()
-      .getTokenSilently()
-      .then(token => {
-        return apiClient.put(`/posts/${post.id}`, post, {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        });
-      });
+  async postsUpdate(post) {
+    let auth = await getAuth();
+    let token = await auth.getTokenSilently();
+    return apiClient.put(`/posts/${post.id}`, post, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
   },
-  recordsGetForPost(postId) {
-    return getInstance()
-      .getTokenSilently()
-      .then(token => {
-        return apiClient.get("/records", {
-          params: { post: postId },
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        });
-      });
+  async recordsGetForPost(postId) {
+    let auth = await getAuth();
+    let token = await auth.getTokenSilently();
+    return apiClient.get("/records", {
+      params: { post: postId },
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
   },
   search(query) {
     return apiClient.get("/search", {
       params: query
     });
+  },
+  searchGetResult(id) {
+    return apiClient.get(`/search/${id}`);
   }
 };
