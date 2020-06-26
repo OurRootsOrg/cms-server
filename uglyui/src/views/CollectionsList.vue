@@ -5,7 +5,7 @@
       v-for="collection in collections.collectionsList"
       :key="collection.id"
       :collection="collection"
-      :category="categoryForCollection(collection)"
+      :categories="categoriesForCollection(collection)"
     />
   </div>
 </template>
@@ -25,9 +25,9 @@ export default {
     });
   },
   computed: {
-    categoryForCollection() {
+    categoriesForCollection() {
       return collection => {
-        return this.categories.categoriesList.find(cat => cat.id === collection.category);
+        return this.categories.categoriesList.filter(cat => collection.categories.includes(cat.id));
       };
     },
     ...mapState(["categories", "collections"])

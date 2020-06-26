@@ -19,17 +19,28 @@
         </p>
       </template>
 
-      <h3>Select a category</h3>
-      <BaseSelect
-        label="Category"
+      <h3>Select one or more categories</h3>
+      <label>Categories</label>
+      <multiselect
+        v-model="collection.categories"
         :options="categories.categoriesList"
-        v-model="collection.category"
-        :class="{ error: $v.collection.category.$error }"
-        @blur="$v.collection.category.$touch()"
-      />
-      <template v-if="$v.collection.category.$error">
-        <p v-if="!$v.collection.category.required" class="errorMessage">
-          Category is required.
+        :multiple="true"
+        :searchable="true"
+        :close-on-select="false"
+        :clear-on-select="true"
+        :preserve-search="false"
+        :show-labels="true"
+        :allow-empty="true"
+        track-by="id"
+        label="name"
+        placeholder="Search or add a category"
+        tag-placeholder="Add this category"
+        :class="{ error: $v.collection.categories.$error }"
+        @close="$v.collection.categories.$touch()"
+      ></multiselect>
+      <template v-if="$v.collection.categories.$error">
+        <p v-if="!$v.collection.categories.required" class="errorMessage">
+          At least one category is required.
         </p>
       </template>
 
@@ -83,6 +94,7 @@ import { mapState } from "vuex";
 import Tabulator from "../components/Tabulator";
 import NProgress from "nprogress";
 import { required } from "vuelidate/lib/validators";
+import Multiselect from "vue-multiselect";
 
 const ixRoleMap = {
   na: "Don't index",
@@ -120,7 +132,7 @@ const ixEmptyFieldMap = {
 };
 
 export default {
-  components: { Tabulator },
+  components: { Tabulator, Multiselect },
   beforeRouteEnter: function(routeTo, routeFrom, next) {
     let routes = [store.dispatch("categoriesGetAll")];
     if (routeTo.params && routeTo.params.cid) {
@@ -133,11 +145,14 @@ export default {
   created() {
     if (this.$route.params && this.$route.params.cid) {
       Object.assign(this.collection, this.collections.collection);
+      this.collection.categories = this.collection.categories.map(cid =>
+        this.$store.state.categories.categoriesList.find(cat => cat.id === cid)
+      );
     }
   },
   data() {
     return {
-      collection: { fields: [], mappings: [] },
+      collection: { categories: [], fields: [], mappings: [] },
       fieldColumns: [
         {
           rowHandle: true,
@@ -268,7 +283,7 @@ export default {
   validations: {
     collection: {
       name: { required },
-      category: { required }
+      categories: { required }
     }
   },
   methods: {
@@ -324,16 +339,16 @@ export default {
       }
     },
     createEditCollection() {
-      let collection = this.collection;
-      collection.fields = collection.fields.filter(f => f.header);
-      if (collection.fields.length === 0) {
+      this.collection.fields = this.collection.fields.filter(f => f.header);
+      if (this.collection.fields.length === 0) {
         return;
       }
-      collection.mappings = collection.mappings.filter(f => f.header);
-      if (collection.mappings.length === 0) {
+      this.collection.mappings = this.collection.mappings.filter(f => f.header);
+      if (this.collection.mappings.length === 0) {
         return;
       }
-      collection.category = +collection.category; // convert to a number
+      let collection = Object.assign({}, this.collection);
+      collection.categories = collection.categories.map(cat => cat.id);
       this.$v.$touch();
       if (!this.$v.$invalid) {
         NProgress.start();
@@ -353,6 +368,7 @@ export default {
 };
 </script>
 
+<style src="vue-multiselect/dist/vue-multiselect.min.css"></style>
 <style scoped>
 .submit-button {
   margin-top: 32px;

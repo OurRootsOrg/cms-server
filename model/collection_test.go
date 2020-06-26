@@ -24,7 +24,7 @@ func TestCollection(t *testing.T) {
 	js, err = json.Marshal(c)
 	assert.NoError(t, err)
 	// log.Printf("Collection JSON: %s", string(js))
-	c.Category = 999
+	c.Categories = []uint32{999}
 	js, err = json.Marshal(c)
 	assert.NoError(t, err)
 	// log.Printf("Collection JSON: %s", string(js))

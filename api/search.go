@@ -376,7 +376,7 @@ func (api API) IndexPost(ctx context.Context, post *model.Post) error {
 		return errs
 	}
 	// read collection for post
-	category, errs := api.GetCategory(ctx, collection.Category)
+	categories, errs := api.GetCategoriesByID(ctx, collection.Categories)
 	if errs != nil {
 		log.Printf("[ERROR] GetCategory %v\n", errs)
 		return errs
@@ -406,7 +406,7 @@ func (api API) IndexPost(ctx context.Context, post *model.Post) error {
 	}()
 
 	for _, record := range records.Records {
-		err = indexRecord(&record, post, collection, category, lastModified, &countSuccessful, bi)
+		err = indexRecord(&record, post, collection, categories, lastModified, &countSuccessful, bi)
 		if err != nil {
 			log.Printf("[ERROR] Unexpected error %d: %v", record.ID, err)
 			return err
@@ -430,7 +430,7 @@ func (api API) IndexPost(ctx context.Context, post *model.Post) error {
 	return nil
 }
 
-func indexRecord(record *model.Record, post *model.Post, collection *model.Collection, category *model.Category,
+func indexRecord(record *model.Record, post *model.Post, collection *model.Collection, categories []model.Category,
 	lastModified string, countSuccessful *uint64, bi esutil.BulkIndexer) error {
 
 	for role, suffix := range IndexRoles {
@@ -460,10 +460,14 @@ func indexRecord(record *model.Record, post *model.Post, collection *model.Colle
 		}
 
 		// get other data
+		var catNames []string
+		for _, cat := range categories {
+			catNames = append(catNames, cat.Name)
+		}
 		data["post"] = post.ID
 		data["collection"] = collection.Name
 		data["collectionId"] = collection.ID
-		data["category"] = category.Name
+		data["category"] = catNames
 		data["lastModified"] = lastModified
 
 		// add to BulkIndexer
@@ -1329,6 +1333,7 @@ func constructSearchRecord(mappings []model.CollectionMapping, record *model.Rec
 func getDataForRole(mappings []model.CollectionMapping, record *model.Record, role string) map[string]interface{} {
 	data := map[string]interface{}{}
 
+	// TODO get marriage data for spouse too
 	for _, mapping := range mappings {
 		if mapping.IxRole == role && record.Data[mapping.Header] != "" {
 			data[mapping.IxField] = record.Data[mapping.Header]

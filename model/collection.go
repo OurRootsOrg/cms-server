@@ -59,7 +59,7 @@ func (cb *CollectionBody) Scan(value interface{}) error {
 // CollectionIn is the payload to create or update a Collection
 type CollectionIn struct {
 	CollectionBody
-	Category uint32 `json:"category,omitempty" example:"999" validate:"required"`
+	Categories []uint32 `json:"categories" validate:"required"`
 }
 
 // Collection represents a set of related Records
@@ -71,12 +71,12 @@ type Collection struct {
 }
 
 // NewCollectionIn constructs a CollectionIn
-func NewCollectionIn(name string, categoryID uint32) CollectionIn {
+func NewCollectionIn(name string, categoryIDs []uint32) CollectionIn {
 	ci := CollectionIn{
 		CollectionBody: CollectionBody{
 			Name: name,
 		},
-		Category: categoryID,
+		Categories: categoryIDs,
 	}
 	return ci
 }
@@ -88,7 +88,7 @@ func NewCollection(id uint32, ci CollectionIn) Collection {
 		ID: id,
 		CollectionIn: CollectionIn{
 			CollectionBody: ci.CollectionBody,
-			Category:       ci.Category,
+			Categories:     ci.Categories,
 		},
 		InsertTime:     now,
 		LastUpdateTime: now,

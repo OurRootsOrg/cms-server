@@ -106,7 +106,7 @@ func deleteTestCategory(p model.CategoryPersister, category *model.Category) err
 }
 
 func createTestCollection(p model.CollectionPersister, categoryID uint32) (*model.Collection, error) {
-	in := model.NewCollectionIn("Test", categoryID)
+	in := model.NewCollectionIn("Test", []uint32{categoryID})
 	in.Fields = []model.CollectionField{
 		{
 			Header: "given",

@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -56,7 +57,7 @@ func (api API) AddCollection(ctx context.Context, in model.CollectionIn) (*model
 	collection, err := api.collectionPersister.InsertCollection(ctx, in)
 	if err == persist.ErrForeignKeyViolation {
 		log.Printf("[ERROR] Invalid category reference: %v", err)
-		return nil, model.NewErrors(http.StatusBadRequest, model.NewError(model.ErrBadReference, strconv.Itoa(int(in.Category)), "category"))
+		return nil, model.NewErrors(http.StatusBadRequest, model.NewError(model.ErrBadReference, fmt.Sprintf("%v", in.Categories), "categories"))
 	} else if err != nil {
 		log.Printf("[ERROR] Internal server error: %v", err)
 		return nil, model.NewErrors(http.StatusInternalServerError, err)
@@ -82,7 +83,7 @@ func (api API) UpdateCollection(ctx context.Context, id uint32, in model.Collect
 	}
 	if err == persist.ErrForeignKeyViolation {
 		log.Printf("[ERROR] Invalid category reference: %v", err)
-		return nil, model.NewErrors(http.StatusBadRequest, model.NewError(model.ErrBadReference, strconv.Itoa(int(in.Category)), "category"))
+		return nil, model.NewErrors(http.StatusBadRequest, model.NewError(model.ErrBadReference, fmt.Sprintf("%v", in.Categories), "categories"))
 	} else if err != nil {
 		return nil, model.NewErrors(http.StatusInternalServerError, err)
 	}

@@ -17,6 +17,9 @@ type ApiMock struct {
 func (a *ApiMock) GetCategories(ctx context.Context) (*CategoryResult, *model.Errors) {
 	return a.Result.(*CategoryResult), a.Errors
 }
+func (a *ApiMock) GetCategoriesByID(ctx context.Context, ids []uint32) ([]model.Category, *model.Errors) {
+	return a.Result.([]model.Category), a.Errors
+}
 func (a *ApiMock) GetCategory(ctx context.Context, id uint32) (*model.Category, *model.Errors) {
 	return a.Result.(*model.Category), a.Errors
 }
@@ -31,6 +34,9 @@ func (a *ApiMock) DeleteCategory(ctx context.Context, id uint32) *model.Errors {
 }
 func (a *ApiMock) GetCollections(ctx context.Context /* filter/search criteria */) (*CollectionResult, *model.Errors) {
 	return a.Result.(*CollectionResult), a.Errors
+}
+func (a *ApiMock) GetCollectionsByID(ctx context.Context, ids []uint32) ([]model.Collection, *model.Errors) {
+	return a.Result.([]model.Collection), a.Errors
 }
 func (a *ApiMock) GetCollection(ctx context.Context, id uint32) (*model.Collection, *model.Errors) {
 	return a.Result.(*model.Collection), a.Errors

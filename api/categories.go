@@ -45,6 +45,15 @@ func (api API) GetCategories(ctx context.Context /* filter/search criteria */) (
 	return &CategoryResult{Categories: cols}, nil
 }
 
+// GetCategoriesByID holds the business logic around getting many Categories
+func (api API) GetCategoriesByID(ctx context.Context, ids []uint32) ([]model.Category, *model.Errors) {
+	cats, err := api.categoryPersister.SelectCategoriesByID(ctx, ids)
+	if err != nil {
+		return nil, model.NewErrors(http.StatusInternalServerError, err)
+	}
+	return cats, nil
+}
+
 // GetCategory holds the business logic around getting a Category
 func (api API) GetCategory(ctx context.Context, id uint32) (*model.Category, *model.Errors) {
 	category, err := api.categoryPersister.SelectOneCategory(ctx, id)

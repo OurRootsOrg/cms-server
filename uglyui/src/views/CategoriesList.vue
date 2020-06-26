@@ -27,7 +27,7 @@ export default {
   computed: {
     collectionsForCategory() {
       return category => {
-        return this.collections.collectionsList.filter(coll => coll.category === category.id);
+        return this.collections.collectionsList.filter(coll => coll.categories.includes(category.id));
       };
     },
     ...mapState(["categories", "collections"])

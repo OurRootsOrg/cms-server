@@ -4,7 +4,8 @@
       <router-link class="post-link" :to="{ name: 'collection-edit', params: { cid: collection.id } }">{{
         collection.name
       }}</router-link>
-      (in {{ category.name }})
+      <!--      (in <span v-for="(category, $ix) in categories" :key="$ix">{{ category.name }}</span-->
+      (in {{ categories.map(cat => cat.name).join(", ") }})
     </div>
   </div>
 </template>
@@ -13,7 +14,7 @@
 export default {
   props: {
     collection: Object,
-    category: Object
+    categories: Array
   }
 };
 </script>
