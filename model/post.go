@@ -17,10 +17,34 @@ type PostPersister interface {
 	DeletePost(ctx context.Context, id uint32) error
 }
 
+const (
+	PostEmpty             = "Empty"
+	PostLoading           = "Loading"
+	PostDraft             = "Draft"
+	PostPublishing        = "Publishing"
+	PostPublished         = "Published"
+	PostPublishComplete   = "PublishComplete"
+	PostUnpublishing      = "Unpublishing"
+	PostUnpublishComplete = "UnpublishComplete"
+)
+const (
+	PublisherActionIndex   = "index"
+	PublisherActionUnindex = "unindex"
+)
+
+type RecordsWriterMsg struct {
+	PostID uint32 `json:"postId"`
+}
+
+type PublisherMsg struct {
+	Action string `json:"action"`
+	PostID uint32 `json:"postId"`
+}
+
 // PostBody is the JSON body of a Post
 type PostBody struct {
 	Name          string `json:"name,omitempty" validate:"required,omitempty"`
-	RecordsKey    string `json:"recordsKey" validate:"required"`
+	RecordsKey    string `json:"recordsKey"`
 	RecordsStatus string `json:"recordsStatus"`
 }
 

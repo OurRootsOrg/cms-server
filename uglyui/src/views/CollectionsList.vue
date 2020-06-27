@@ -6,7 +6,9 @@
       :key="collection.id"
       :collection="collection"
       :categories="categoriesForCollection(collection)"
-    />
+      :posts="postsForCollection(collection.id)"
+    >
+    </Collection>
   </div>
 </template>
 
@@ -20,7 +22,11 @@ export default {
     Collection
   },
   beforeRouteEnter(routeTo, routeFrom, next) {
-    Promise.all([store.dispatch("categoriesGetAll"), store.dispatch("collectionsGetAll")]).then(() => {
+    Promise.all([
+      store.dispatch("categoriesGetAll"),
+      store.dispatch("collectionsGetAll"),
+      store.dispatch("postsGetAll")
+    ]).then(() => {
       next();
     });
   },
@@ -30,9 +36,19 @@ export default {
         return this.categories.categoriesList.filter(cat => collection.categories.includes(cat.id));
       };
     },
-    ...mapState(["categories", "collections"])
+    postsForCollection() {
+      return id => {
+        return this.posts.postsList.filter(post => post.collection === id);
+      };
+    },
+    ...mapState(["categories", "collections", "posts"])
   }
 };
 </script>
 
-<style scoped></style>
+<style scoped>
+.disabled {
+  cursor: not-allowed;
+  color: gray;
+}
+</style>

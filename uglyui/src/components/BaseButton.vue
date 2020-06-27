@@ -49,6 +49,7 @@ export default {
   -webkit-transform: scale(1);
   transform: scale(1);
   box-shadow: none;
+  background: rgba(0, 0, 0, 0.5);
 }
 .button + .button {
   margin-left: 1em;
@@ -80,5 +81,9 @@ export default {
 }
 .button.-icon-center {
   padding: 0 20px;
+}
+.danger {
+  background: red;
+  color: #ffffff;
 }
 </style>

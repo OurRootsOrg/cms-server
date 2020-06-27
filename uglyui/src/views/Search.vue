@@ -243,6 +243,9 @@
 
       <BaseButton type="submit" class="submit-button" buttonClass="-fill-gradient -size-small">Go</BaseButton>
     </form>
+    <p v-if="search.searchTotal === 0">
+      No results found
+    </p>
     <div v-if="search.searchTotal > 0">
       <p>Showing 1 - {{ search.searchList.length }} of {{ search.searchTotal }}</p>
       <SearchResult v-for="(result, $ix) in search.searchList" :key="$ix" :result="result" />

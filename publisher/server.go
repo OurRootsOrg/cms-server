@@ -29,23 +29,14 @@ import (
 
 const defaultURL = "http://localhost:3000"
 
-func processMessage(ctx context.Context, ap *api.API, rawMsg []byte) *model.Errors {
-	var msg api.PublisherMsg
-	err := json.Unmarshal(rawMsg, &msg)
-	if err != nil {
-		log.Printf("[ERROR] Discarding unparsable message '%s': %v", string(rawMsg), err)
-		return nil // Don't return an error, because parsing will never succeed
-	}
-
-	log.Printf("[DEBUG] processing %d\n", msg.PostID)
-
+func indexPost(ctx context.Context, ap *api.API, msg model.PublisherMsg) *model.Errors {
 	// read post
 	post, errs := ap.GetPost(ctx, msg.PostID)
 	if errs != nil {
 		log.Printf("[ERROR] Error calling GetPost on %d: %v", msg.PostID, errs)
 		return errs
 	}
-	if post.RecordsStatus != api.PostPublishing {
+	if post.RecordsStatus != model.PostPublishing {
 		log.Printf("[ERROR] post not publishing %d -> %s", post.ID, post.RecordsStatus)
 		return nil
 	}
@@ -57,13 +48,60 @@ func processMessage(ctx context.Context, ap *api.API, rawMsg []byte) *model.Erro
 	}
 
 	// update post.recordsStatus = Published
-	post.RecordsStatus = api.PostPublishComplete
+	post.RecordsStatus = model.PostPublishComplete
 	_, errs = ap.UpdatePost(ctx, post.ID, *post)
 	if errs != nil {
 		log.Printf("[ERROR] Error calling UpdatePost on %d: %v", post.ID, errs)
 	}
 
 	return errs
+}
+
+func unindexPost(ctx context.Context, ap *api.API, msg model.PublisherMsg) *model.Errors {
+	// read post
+	post, errs := ap.GetPost(ctx, msg.PostID)
+	if errs != nil {
+		log.Printf("[ERROR] Error calling GetPost on %d: %v", msg.PostID, errs)
+		return errs
+	}
+	if post.RecordsStatus != model.PostUnpublishing {
+		log.Printf("[ERROR] post not unpublishing %d -> %s", post.ID, post.RecordsStatus)
+		return nil
+	}
+
+	if err := ap.SearchDeleteByPost(ctx, msg.PostID); err != nil {
+		log.Printf("[ERROR] Error calling SearchDeleteByPost on %d: %v", msg.PostID, err)
+		return model.NewErrors(http.StatusInternalServerError, err)
+	}
+
+	// update post.recordsStatus = Draft
+	post.RecordsStatus = model.PostUnpublishComplete
+	_, errs = ap.UpdatePost(ctx, post.ID, *post)
+	if errs != nil {
+		log.Printf("[ERROR] Error calling UpdatePost on %d: %v", post.ID, errs)
+	}
+
+	return errs
+}
+
+func processMessage(ctx context.Context, ap *api.API, rawMsg []byte) *model.Errors {
+	var msg model.PublisherMsg
+	err := json.Unmarshal(rawMsg, &msg)
+	if err != nil {
+		log.Printf("[ERROR] Discarding unparsable message '%s': %v", string(rawMsg), err)
+		return nil // Don't return an error, because parsing will never succeed
+	}
+
+	log.Printf("[DEBUG] processing %s id=%d\n", msg.Action, msg.PostID)
+
+	switch msg.Action {
+	case model.PublisherActionIndex:
+		return indexPost(ctx, ap, msg)
+	case model.PublisherActionUnindex:
+		return unindexPost(ctx, ap, msg)
+	default:
+		return model.NewErrors(http.StatusInternalServerError, fmt.Errorf("Unknown action %s", msg.Action))
+	}
 }
 
 type lambdaHandler struct {

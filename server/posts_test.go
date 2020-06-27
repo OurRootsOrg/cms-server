@@ -230,7 +230,7 @@ func makePostIn(t *testing.T) (model.PostIn, *bytes.Buffer) {
 		PostBody: model.PostBody{
 			Name:          "First",
 			RecordsKey:    "key",
-			RecordsStatus: api.PostDraft,
+			RecordsStatus: model.PostDraft,
 		},
 		Collection: 1,
 	}

@@ -31,6 +31,15 @@ export default {
       }
     });
   },
+  async categoriesDelete(id) {
+    let auth = await getAuth();
+    let token = await auth.getTokenSilently();
+    return apiClient.delete(`/categories/${id}`, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+  },
   async collectionsCreate(collection) {
     let auth = await getAuth();
     let token = await auth.getTokenSilently();
@@ -44,6 +53,15 @@ export default {
     let auth = await getAuth();
     let token = await auth.getTokenSilently();
     return apiClient.put(`/collections/${coll.id}`, coll, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+  },
+  async collectionsDelete(id) {
+    let auth = await getAuth();
+    let token = await auth.getTokenSilently();
+    return apiClient.delete(`/collections/${id}`, {
       headers: {
         Authorization: `Bearer ${token}`
       }
@@ -118,6 +136,15 @@ export default {
     let auth = await getAuth();
     let token = await auth.getTokenSilently();
     return apiClient.put(`/posts/${post.id}`, post, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+  },
+  async postsDelete(id) {
+    let auth = await getAuth();
+    let token = await auth.getTokenSilently();
+    return apiClient.delete(`/posts/${id}`, {
       headers: {
         Authorization: `Bearer ${token}`
       }

@@ -46,18 +46,18 @@ func TestPublisher(t *testing.T) {
 	testPost, err := createTestPost(p, testCollection.ID)
 	assert.Nil(t, err, "Error creating test post")
 	defer deleteTestPost(p, testPost)
-	// force post to draft status
-	testPost.RecordsStatus = api.PostDraft
-	*testPost, err = p.UpdatePost(ctx, testPost.ID, *testPost)
-	assert.Nil(t, err, "Error updating test post")
-	assert.Equal(t, api.PostDraft, testPost.RecordsStatus, "Unexpected post recordsStatus")
 	// create records
 	testRecords, err := createTestRecords(p, testPost.ID)
 	assert.Nil(t, err, "Error creating test records")
 	defer deleteTestRecords(p, testRecords)
+	// force post to draft status
+	testPost.RecordsStatus = model.PostDraft
+	*testPost, err = p.UpdatePost(ctx, testPost.ID, *testPost)
+	assert.Nil(t, err, "Error updating test post")
+	assert.Equal(t, model.PostDraft, testPost.RecordsStatus, "Unexpected post recordsStatus")
 
-	// Update Post
-	testPost.RecordsStatus = api.PostPublished
+	// Publish post
+	testPost.RecordsStatus = model.PostPublished
 	testPost, errors := testAPI.UpdatePost(ctx, testPost.ID, *testPost)
 	assert.Nil(t, errors, "Error setting post to published")
 
@@ -67,13 +67,13 @@ func TestPublisher(t *testing.T) {
 		// read post and look for Ready
 		post, errors = testAPI.GetPost(ctx, testPost.ID)
 		assert.Nil(t, errors)
-		if post.RecordsStatus == api.PostPublished {
+		if post.RecordsStatus == model.PostPublished {
 			break
 		}
 		log.Printf("Waiting for publisher %d\n", i)
 		time.Sleep(1 * time.Second)
 	}
-	assert.Equal(t, api.PostPublished, post.RecordsStatus, "Expected post to be Published, got %s", post.RecordsStatus)
+	assert.Equal(t, model.PostPublished, post.RecordsStatus, "Expected post to be Published, got %s", post.RecordsStatus)
 
 	// search records by id
 	for _, testRecord := range testRecords {
@@ -82,6 +82,35 @@ func TestPublisher(t *testing.T) {
 		assert.Nil(t, err)
 		assert.Equal(t, searchID, res.ID, "Record not found")
 		assert.Equal(t, testCollection.ID, res.CollectionID, "Collection not found")
+	}
+
+	// Unpublish post
+	testPost, err = testAPI.GetPost(ctx, testPost.ID)
+	testPost.RecordsStatus = model.PostDraft
+	testPost, errors = testAPI.UpdatePost(ctx, testPost.ID, *testPost)
+	assert.Nil(t, errors, "Error setting post back to draft")
+
+	post = nil
+	// wait up to 10 seconds
+	for i := 0; i < 10; i++ {
+		// read post and look for Draft
+		post, errors = testAPI.GetPost(ctx, testPost.ID)
+		assert.Nil(t, errors)
+		if post.RecordsStatus == model.PostDraft {
+			break
+		}
+		log.Printf("Waiting for publisher %d\n", i)
+		time.Sleep(1 * time.Second)
+	}
+	assert.Equal(t, model.PostDraft, post.RecordsStatus, "Expected post to be Draft, got %s", post.RecordsStatus)
+
+	// verify records no longer searchable
+	for _, testRecord := range testRecords {
+		searchID := strconv.Itoa(int(testRecord.ID))
+		_, errors := testAPI.SearchByID(ctx, searchID)
+		assert.NotNil(t, errors)
+		assert.Len(t, errors.Errs(), 1)
+		assert.Equal(t, model.ErrNotFound, errors.Errs()[0].Code, "errors.Errs()[0]: %#v", errors.Errs()[0])
 	}
 
 	// delete post
@@ -139,7 +168,7 @@ func deleteTestCollection(p model.CollectionPersister, collection *model.Collect
 }
 
 func createTestPost(p model.PostPersister, collectionID uint32) (*model.Post, error) {
-	in := model.NewPostIn("Test", collectionID, "test")
+	in := model.NewPostIn("Test", collectionID, "")
 	created, err := p.InsertPost(context.TODO(), in)
 	if err != nil {
 		return nil, err

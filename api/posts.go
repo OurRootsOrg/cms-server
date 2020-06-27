@@ -15,20 +15,6 @@ import (
 	"github.com/ourrootsorg/cms-server/persist"
 )
 
-const PostLoading = "Loading"
-const PostDraft = "Draft"
-const PostPublishing = "Publishing"
-const PostPublished = "Published"
-const PostPublishComplete = "PublishComplete"
-
-type RecordsWriterMsg struct {
-	PostID uint32 `json:"postId"`
-}
-
-type PublisherMsg struct {
-	PostID uint32 `json:"postId"`
-}
-
 // PostResult is a paged Post result
 type PostResult struct {
 	Posts    []model.Post `json:"posts"`
@@ -71,7 +57,10 @@ func (api API) AddPost(ctx context.Context, in model.PostIn) (*model.Post, *mode
 	}
 	defer topic.Shutdown(ctx)
 	// set records status
-	in.RecordsStatus = PostLoading
+	in.RecordsStatus = model.PostEmpty
+	if in.RecordsKey != "" {
+		in.RecordsStatus = model.PostLoading
+	}
 	// insert
 	post, err := api.postPersister.InsertPost(ctx, in)
 	if err == persist.ErrForeignKeyViolation {
@@ -81,20 +70,26 @@ func (api API) AddPost(ctx context.Context, in model.PostIn) (*model.Post, *mode
 		log.Printf("[ERROR] Internal server error: %v", err)
 		return nil, model.NewErrors(http.StatusInternalServerError, err)
 	}
-	// send a message to write the records
-	msg := RecordsWriterMsg{
-		PostID: post.ID,
+
+	if in.RecordsKey != "" {
+		// send a message to write the records
+		msg := model.RecordsWriterMsg{
+			PostID: post.ID,
+		}
+		body, err := json.Marshal(msg)
+		if err != nil { // this had best never happen
+			log.Printf("[ERROR] Can't marshal message %v", err)
+			return nil, model.NewErrors(http.StatusInternalServerError, err)
+		}
+		err = topic.Send(ctx, &pubsub.Message{Body: body})
+		if err != nil { // this had best never happen
+			log.Printf("[ERROR] Can't send message %v", err)
+			// undo the insert
+			_ = api.postPersister.DeletePost(ctx, post.ID)
+			return nil, model.NewErrors(http.StatusInternalServerError, err)
+		}
 	}
-	body, err := json.Marshal(msg)
-	if err != nil { // this had best never happen
-		log.Printf("[ERROR] Can't marshal message %v", err)
-		return nil, model.NewErrors(http.StatusInternalServerError, err)
-	}
-	err = topic.Send(ctx, &pubsub.Message{Body: body})
-	if err != nil { // this had best never happen
-		log.Printf("[ERROR] Can't send message %v", err)
-		return nil, model.NewErrors(http.StatusInternalServerError, err)
-	}
+
 	return &post, nil
 }
 
@@ -113,10 +108,31 @@ func (api API) UpdatePost(ctx context.Context, id uint32, in model.Post) (*model
 
 	// validate new records status
 	var topic *pubsub.Topic
+	var msg []byte
 	err = errors.New(fmt.Sprintf("cannot change records status from %s to %s", currPost.RecordsStatus, in.RecordsStatus))
-	if currPost.RecordsStatus == in.RecordsStatus {
+	switch {
+	case currPost.RecordsStatus == model.PostEmpty && currPost.RecordsKey == "" && in.RecordsKey != "":
+		// prepare to send a message
+		topic, err := api.OpenTopic(ctx, "recordswriter")
+		if err != nil {
+			log.Printf("[ERROR] Can't open recordswriter topic %v", err)
+			return nil, model.NewErrors(http.StatusInternalServerError, err)
+		}
+		defer topic.Shutdown(ctx)
+
+		in.RecordsStatus = model.PostLoading
+		msg, err = json.Marshal(model.RecordsWriterMsg{
+			PostID: id,
+		})
+		if err != nil {
+			log.Printf("[ERROR] Can't marshal message %v", err)
+			return nil, model.NewErrors(http.StatusInternalServerError, err)
+		}
 		err = nil
-	} else if currPost.RecordsStatus == PostDraft && in.RecordsStatus == PostPublished {
+	case currPost.RecordsStatus == in.RecordsStatus:
+		err = nil
+	case (currPost.RecordsStatus == model.PostDraft && in.RecordsStatus == model.PostPublished) ||
+		(currPost.RecordsStatus == model.PostPublished && in.RecordsStatus == model.PostDraft):
 		// prepare to send a message
 		topic, err = api.OpenTopic(ctx, "publisher")
 		if err != nil {
@@ -124,10 +140,29 @@ func (api API) UpdatePost(ctx context.Context, id uint32, in model.Post) (*model
 			return nil, model.NewErrors(http.StatusInternalServerError, err)
 		}
 		defer topic.Shutdown(ctx)
-		in.RecordsStatus = PostPublishing
+
+		var action string
+		if in.RecordsStatus == model.PostPublished {
+			in.RecordsStatus = model.PostPublishing
+			action = model.PublisherActionIndex
+		} else {
+			in.RecordsStatus = model.PostUnpublishing
+			action = model.PublisherActionUnindex
+		}
+		msg, err = json.Marshal(model.PublisherMsg{
+			Action: action,
+			PostID: id,
+		})
+		if err != nil {
+			log.Printf("[ERROR] Can't marshal message %v", err)
+			return nil, model.NewErrors(http.StatusInternalServerError, err)
+		}
 		err = nil
-	} else if currPost.RecordsStatus == PostPublishing && in.RecordsStatus == PostPublishComplete {
-		in.RecordsStatus = PostPublished
+	case currPost.RecordsStatus == model.PostPublishing && in.RecordsStatus == model.PostPublishComplete:
+		in.RecordsStatus = model.PostPublished
+		err = nil
+	case currPost.RecordsStatus == model.PostUnpublishing && in.RecordsStatus == model.PostUnpublishComplete:
+		in.RecordsStatus = model.PostDraft
 		err = nil
 	}
 
@@ -147,19 +182,13 @@ func (api API) UpdatePost(ctx context.Context, id uint32, in model.Post) (*model
 		return nil, model.NewErrors(http.StatusInternalServerError, err)
 	}
 
-	if currPost.RecordsStatus == PostDraft && in.RecordsStatus == PostPublishing {
-		// send a message to publish the post
-		msg := PublisherMsg{
-			PostID: post.ID,
-		}
-		body, err := json.Marshal(msg)
-		if err != nil { // this had best never happen
-			log.Printf("[ERROR] Can't marshal message %v", err)
-			return nil, model.NewErrors(http.StatusInternalServerError, err)
-		}
-		err = topic.Send(ctx, &pubsub.Message{Body: body})
+	if topic != nil && msg != nil {
+		// send the message
+		err = topic.Send(ctx, &pubsub.Message{Body: msg})
 		if err != nil { // this had best never happen
 			log.Printf("[ERROR] Can't send message %v", err)
+			// undo the update
+			_, _ = api.postPersister.UpdatePost(ctx, id, *currPost)
 			return nil, model.NewErrors(http.StatusInternalServerError, err)
 		}
 	}
@@ -169,6 +198,13 @@ func (api API) UpdatePost(ctx context.Context, id uint32, in model.Post) (*model
 
 // DeletePost holds the business logic around deleting a Post
 func (api API) DeletePost(ctx context.Context, id uint32) *model.Errors {
+	post, err := api.GetPost(ctx, id)
+	if err != nil {
+		return model.NewErrors(http.StatusNotFound, err)
+	}
+	if post.RecordsStatus != model.PostEmpty && post.RecordsStatus != model.PostDraft {
+		return model.NewErrors(http.StatusBadRequest, fmt.Errorf("post must be in Empty or Draft status; is %s", post.RecordsStatus))
+	}
 	// delete records for post first so we don't have referential integrity errors
 	if err := api.DeleteRecordsForPost(ctx, id); err != nil {
 		return model.NewErrors(http.StatusInternalServerError, err)
@@ -176,6 +212,17 @@ func (api API) DeletePost(ctx context.Context, id uint32) *model.Errors {
 	if err := api.postPersister.DeletePost(ctx, id); err != nil {
 		return model.NewErrors(http.StatusInternalServerError, err)
 	}
-
+	if post.RecordsKey != "" {
+		// delete records data
+		bucket, err := api.OpenBucket(ctx)
+		if err != nil {
+			log.Printf("[ERROR] OpenBucket %v\n", err)
+			return model.NewErrors(http.StatusInternalServerError, err)
+		}
+		defer bucket.Close()
+		if err := bucket.Delete(ctx, post.RecordsKey); err != nil {
+			log.Printf("[ERROR] error deleting records file %v\n", err)
+		}
+	}
 	return nil
 }

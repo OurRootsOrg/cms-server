@@ -529,8 +529,11 @@ func (api API) SearchByID(ctx context.Context, id string) (*model.SearchHit, *mo
 			return nil, model.NewErrors(http.StatusInternalServerError, err)
 		} else {
 			// Print the response status and error information.
-			msg := fmt.Sprintf("[%s] %s: %s", res.Status(), e.Error.Type, e.Error.Reason)
+			msg := fmt.Sprintf("[%s] %s: %s id=%s", res.Status(), e.Error.Type, e.Error.Reason, id)
 			log.Println(msg)
+			if res.StatusCode == http.StatusNotFound {
+				return nil, model.NewErrors(http.StatusNotFound, model.NewError(model.ErrNotFound, id))
+			}
 			return nil, model.NewErrors(http.StatusInternalServerError, errors.New(msg))
 		}
 	}
@@ -542,11 +545,12 @@ func (api API) SearchByID(ctx context.Context, id string) (*model.SearchHit, *mo
 		return nil, model.NewErrors(http.StatusInternalServerError, err)
 	}
 	if !hit.Found {
-		msg := fmt.Sprintf("[ERROR] record ID %s not found\n", id)
-		return nil, model.NewErrors(http.StatusNotFound, errors.New(msg))
+		log.Printf("[ERROR] record ID %s not found\n", id)
+		return nil, model.NewErrors(http.StatusNotFound, model.NewError(model.ErrNotFound, id))
 	}
 	hitData, err := getHitData(hit)
 	if err != nil {
+		log.Printf("[ERROR] getting hit data %v\n", err)
 		return nil, model.NewErrors(http.StatusInternalServerError, err)
 	}
 
@@ -569,6 +573,32 @@ func (api API) SearchByID(ctx context.Context, id string) (*model.SearchHit, *mo
 		CollectionName: collection.Name,
 		CollectionID:   collection.ID,
 	}, nil
+}
+
+func (api API) SearchDeleteByPost(ctx context.Context, id uint32) *model.Errors {
+	search := Search{
+		Query: Query{
+			Term: map[string]TermQuery{
+				"post": {
+					Value: strconv.Itoa(int(id)),
+				},
+			},
+		},
+	}
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(search); err != nil {
+		log.Printf("[ERROR] encoding delete by post query %v\n", err)
+		return model.NewErrors(http.StatusInternalServerError, err)
+	}
+	res, err := api.es.DeleteByQuery([]string{"records"}, &buf,
+		api.es.DeleteByQuery.WithContext(ctx),
+	)
+	if err != nil {
+		log.Printf("[ERROR] SearchDeleteByPost %v", err)
+		return model.NewErrors(http.StatusInternalServerError, err)
+	}
+	defer res.Body.Close()
+	return nil
 }
 
 func (api API) SearchDeleteByID(ctx context.Context, id string) *model.Errors {

@@ -79,12 +79,16 @@
         class="submit-button"
         buttonClass="-fill-gradient"
         :disabled="$v.$anyError || collection.fields.length === 0 || collection.mappings.length === 0"
-        >Submit</BaseButton
+        >Update</BaseButton
       >
       <p v-if="$v.$anyError" class="errorMessage">
         Please fill out the required field(s).
       </p>
     </form>
+    <div v-if="collection.id" class="posts">Collection has {{ posts.length }} posts</div>
+    <BaseButton class="btn" buttonClass="danger" @click="del()" :disabled="posts.length > 0"
+      >Delete Collection</BaseButton
+    >
   </div>
 </template>
 
@@ -137,6 +141,7 @@ export default {
     let routes = [store.dispatch("categoriesGetAll")];
     if (routeTo.params && routeTo.params.cid) {
       routes.push(store.dispatch("collectionsGetOne", routeTo.params.cid));
+      routes.push(store.dispatch("postsGetAll"));
     }
     Promise.all(routes).then(() => {
       next();
@@ -145,14 +150,16 @@ export default {
   created() {
     if (this.$route.params && this.$route.params.cid) {
       Object.assign(this.collection, this.collections.collection);
-      this.collection.categories = this.collection.categories.map(cid =>
-        this.$store.state.categories.categoriesList.find(cat => cat.id === cid)
+      this.collection.categories = this.collection.categories.map(catId =>
+        this.$store.state.categories.categoriesList.find(cat => cat.id === catId)
       );
+      this.posts = this.$store.state.posts.postsList.filter(p => p.collection === this.collection.id);
     }
   },
   data() {
     return {
       collection: { categories: [], fields: [], mappings: [] },
+      posts: [],
       fieldColumns: [
         {
           rowHandle: true,
@@ -363,6 +370,22 @@ export default {
             NProgress.done();
           });
       }
+    },
+    del() {
+      if (this.posts.length > 0) {
+        return;
+      }
+      NProgress.start();
+      this.$store
+        .dispatch("collectionsDelete", this.collection.id)
+        .then(() => {
+          this.$router.push({
+            name: "collections-list"
+          });
+        })
+        .catch(() => {
+          NProgress.done();
+        });
     }
   }
 };
@@ -375,5 +398,11 @@ export default {
 }
 .tabulator {
   min-width: 640px;
+}
+.posts {
+  margin-top: 32px;
+}
+.btn {
+  margin: 32px 0;
 }
 </style>

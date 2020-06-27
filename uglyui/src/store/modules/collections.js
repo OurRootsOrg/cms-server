@@ -12,6 +12,9 @@ export const mutations = {
   COLLECTIONS_SET(state, collections) {
     state.collectionsList = collections;
   },
+  COLLECTIONS_REMOVE(state, id) {
+    state.collectionsList = state.collectionsList.filter(coll => coll.id !== id);
+  },
   COLLECTION_SET(state, coll) {
     if (!coll.fields) coll.fields = []; // force empty array
     if (!coll.mappings) coll.mappings = []; // force empty array
@@ -65,6 +68,19 @@ export const actions = {
         const notification = {
           type: "error",
           message: "There was a problem updating your collection: " + error.message
+        };
+        dispatch("notificationsAdd", notification, { root: true });
+      });
+  },
+  collectionsDelete({ commit, dispatch }, id) {
+    return Server.collectionsDelete(id)
+      .then(() => {
+        commit("COLLECTIONS_REMOVE", id);
+      })
+      .catch(error => {
+        const notification = {
+          type: "error",
+          message: "There was a problem deleting the collection: " + error.message
         };
         dispatch("notificationsAdd", notification, { root: true });
       });

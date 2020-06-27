@@ -124,6 +124,10 @@ func TestCollections(t *testing.T) {
 	// DELETE
 	errors = testApi.DeleteCollection(context.TODO(), updated.ID)
 	assert.Nil(t, errors)
+	_, errors = testApi.GetCollection(context.TODO(), created.ID)
+	assert.NotNil(t, errors)
+	assert.Len(t, errors.Errs(), 1)
+	assert.Equal(t, model.ErrNotFound, errors.Errs()[0].Code, "errors.Errs()[0]: %#v", errors.Errs()[0])
 }
 
 func createTestCategory(p model.CategoryPersister) (*model.Category, error) {
