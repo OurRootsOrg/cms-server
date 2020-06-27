@@ -34,11 +34,13 @@ const UserProperty TokenKey = "user"
 
 type LocalAPI interface {
 	GetCategories(context.Context) (*CategoryResult, *model.Errors)
+	GetCategoriesByID(ctx context.Context, ids []uint32) ([]model.Category, *model.Errors)
 	GetCategory(ctx context.Context, id uint32) (*model.Category, *model.Errors)
 	AddCategory(ctx context.Context, in model.CategoryIn) (*model.Category, *model.Errors)
 	UpdateCategory(ctx context.Context, id uint32, in model.Category) (*model.Category, *model.Errors)
 	DeleteCategory(ctx context.Context, id uint32) *model.Errors
 	GetCollections(ctx context.Context /* filter/search criteria */) (*CollectionResult, *model.Errors)
+	GetCollectionsByID(ctx context.Context, ids []uint32) ([]model.Collection, *model.Errors)
 	GetCollection(ctx context.Context, id uint32) (*model.Collection, *model.Errors)
 	AddCollection(ctx context.Context, in model.CollectionIn) (*model.Collection, *model.Errors)
 	UpdateCollection(ctx context.Context, id uint32, in model.Collection) (*model.Collection, *model.Errors)

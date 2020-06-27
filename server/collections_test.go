@@ -230,7 +230,7 @@ func makeCollectionIn(t *testing.T) (model.CollectionIn, *bytes.Buffer) {
 		CollectionBody: model.CollectionBody{
 			Name: "First",
 		},
-		Category: 1,
+		Categories: []uint32{1},
 	}
 	buf := new(bytes.Buffer)
 	enc := json.NewEncoder(buf)

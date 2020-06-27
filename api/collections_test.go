@@ -48,16 +48,16 @@ func TestCollections(t *testing.T) {
 		CollectionBody: model.CollectionBody{
 			Name: "Test Collection",
 		},
-		Category: testCategory.ID,
+		Categories: []uint32{testCategory.ID},
 	}
 	created, errors := testApi.AddCollection(context.TODO(), in)
 	assert.Nil(t, errors)
 	assert.Equal(t, in.Name, created.Name, "Expected Name to match")
 	assert.NotEmpty(t, created.ID)
-	assert.Equal(t, in.Category, created.Category)
+	assert.Equal(t, in.Categories, created.Categories)
 
 	// Add with bad category reference
-	in.Category = in.Category + 88
+	in.Categories = []uint32{88}
 	_, errors = testApi.AddCollection(context.TODO(), in)
 	assert.Len(t, errors.Errs(), 1)
 	assert.Equal(t, model.ErrBadReference, errors.Errs()[0].Code, "errors.Errs()[0]: %#v", errors.Errs()[0])
@@ -81,7 +81,7 @@ func TestCollections(t *testing.T) {
 	assert.Equal(t, created, ret2)
 
 	// Bad request - no category
-	in.Category = 0
+	in.Categories = nil
 	_, errors = testApi.AddCollection(context.TODO(), in)
 	if assert.Len(t, errors.Errs(), 1, "errors.Errs(): %#v", errors.Errs()) {
 		assert.Equal(t, errors.Errs()[0].Code, model.ErrRequired)
@@ -98,7 +98,7 @@ func TestCollections(t *testing.T) {
 	updated, errors := testApi.UpdateCollection(context.TODO(), ret2.ID, *ret2)
 	assert.Nil(t, errors)
 	assert.Equal(t, ret2.ID, updated.ID)
-	assert.Equal(t, ret2.Category, updated.Category)
+	assert.Equal(t, ret2.Categories, updated.Categories)
 	assert.Equal(t, ret2.Name, updated.Name, "Expected Name to match")
 
 	// Update non-existant
@@ -107,13 +107,13 @@ func TestCollections(t *testing.T) {
 	assert.Equal(t, model.ErrNotFound, errors.Errs()[0].Code, "errors.Errs()[0]: %#v", errors.Errs()[0])
 
 	// Update with bad category
-	updated.Category = updated.Category + 99
+	updated.Categories = []uint32{99}
 	_, errors = testApi.UpdateCollection(context.TODO(), updated.ID, *updated)
 	assert.Len(t, errors.Errs(), 1)
 	assert.Equal(t, model.ErrBadReference, errors.Errs()[0].Code, "errors.Errs()[0]: %#v", errors.Errs()[0])
 
 	// Update with bad LastUpdateTime
-	updated.Category = ret2.Category
+	updated.Categories = ret2.Categories
 	updated.LastUpdateTime = time.Now().Add(-time.Minute)
 	_, errors = testApi.UpdateCollection(context.TODO(), updated.ID, *updated)
 	if assert.NotNil(t, errors) {

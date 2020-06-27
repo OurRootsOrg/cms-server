@@ -1082,14 +1082,6 @@ var doc = `{
                 "name"
             ],
             "properties": {
-                "details_page_template": {
-                    "type": "string"
-                },
-                "field_defs": {
-                    "description": "example:\"{\\\"int_field\\\":\\\"Int\\\", \\\"string_field\\\":\\\"String\\\"}\"",
-                    "type": "object",
-                    "$ref": "#/definitions/model.FieldDefSet"
-                },
                 "id": {
                     "type": "integer",
                     "example": 999
@@ -1102,9 +1094,6 @@ var doc = `{
                 },
                 "name": {
                     "type": "string"
-                },
-                "search_results_page_template": {
-                    "type": "string"
                 }
             }
         },
@@ -1114,18 +1103,7 @@ var doc = `{
                 "name"
             ],
             "properties": {
-                "details_page_template": {
-                    "type": "string"
-                },
-                "field_defs": {
-                    "description": "example:\"{\\\"int_field\\\":\\\"Int\\\", \\\"string_field\\\":\\\"String\\\"}\"",
-                    "type": "object",
-                    "$ref": "#/definitions/model.FieldDefSet"
-                },
                 "name": {
-                    "type": "string"
-                },
-                "search_results_page_template": {
                     "type": "string"
                 }
             }
@@ -1133,14 +1111,16 @@ var doc = `{
         "model.Collection": {
             "type": "object",
             "required": [
-                "category",
+                "categories",
                 "id",
                 "name"
             ],
             "properties": {
-                "category": {
-                    "type": "integer",
-                    "example": 999
+                "categories": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
                 },
                 "citation_template": {
                     "type": "string"
@@ -1195,13 +1175,15 @@ var doc = `{
         "model.CollectionIn": {
             "type": "object",
             "required": [
-                "category",
+                "categories",
                 "name"
             ],
             "properties": {
-                "category": {
-                    "type": "integer",
-                    "example": 999
+                "categories": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
                 },
                 "citation_template": {
                     "type": "string"
@@ -1245,33 +1227,6 @@ var doc = `{
         },
         "model.Errors": {
             "type": "object"
-        },
-        "model.FieldDef": {
-            "type": "object",
-            "properties": {
-                "csv_heading": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "type": {
-                    "type": "string",
-                    "enum": [
-                        "Int",
-                        "String",
-                        "Image",
-                        "Location",
-                        "Time"
-                    ]
-                }
-            }
-        },
-        "model.FieldDefSet": {
-            "type": "array",
-            "items": {
-                "$ref": "#/definitions/model.FieldDef"
-            }
         },
         "model.Post": {
             "type": "object",

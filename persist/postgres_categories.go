@@ -6,6 +6,8 @@ import (
 	"log"
 	"strconv"
 
+	"github.com/lib/pq"
+
 	"github.com/ourrootsorg/cms-server/model"
 )
 
@@ -26,6 +28,29 @@ func (p PostgresPersister) SelectCategories(ctx context.Context) ([]model.Catego
 		cats = append(cats, cat)
 	}
 	return cats, nil
+}
+
+// SelectCategoriesByID selects many categories
+func (p PostgresPersister) SelectCategoriesByID(ctx context.Context, ids []uint32) ([]model.Category, error) {
+	categories := make([]model.Category, 0)
+	if len(ids) == 0 {
+		return categories, nil
+	}
+
+	rows, err := p.db.QueryContext(ctx, "SELECT id, body, insert_time, last_update_time FROM category WHERE id = ANY($1)", pq.Array(ids))
+	if err != nil {
+		return nil, translateError(err)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var category model.Category
+		err := rows.Scan(&category.ID, &category.CategoryBody, &category.InsertTime, &category.LastUpdateTime)
+		if err != nil {
+			return nil, translateError(err)
+		}
+		categories = append(categories, category)
+	}
+	return categories, nil
 }
 
 // SelectOneCategory loads a single category from the database

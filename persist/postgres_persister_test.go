@@ -133,10 +133,12 @@ func TestSelectCollections(t *testing.T) {
 
 	now := time.Now()
 
-	mock.ExpectQuery("SELECT id, category_id, body, insert_time, last_update_time FROM collection").
+	mock.ExpectQuery(
+		"SELECT id, array_agg(cc.category_id), body, insert_time, last_update_time " +
+			"FROM collection LEFT JOIN collection_category cc ON id = cc.collection_id GROUP BY id").
 		WillReturnRows(sqlmock.NewRows([]string{"id", "category_id", "body", "insert_time", "last_update_time"}).
-			AddRow(1, 1, js, now, now).
-			AddRow(2, 1, js, now, now))
+			AddRow(1, "{1}", js, now, now).
+			AddRow(2, "{1}", js, now, now))
 
 	c, err := p.SelectCollections(context.TODO())
 	assert.NoError(t, err)
@@ -162,10 +164,12 @@ func TestSelectOneCollection(t *testing.T) {
 	assert.NoError(t, err)
 
 	now := time.Now()
-	mock.ExpectQuery("SELECT id, category_id, body, insert_time, last_update_time FROM collection WHERE id=$1").
+	mock.ExpectQuery(
+		"SELECT id, array_agg(cc.category_id), body, insert_time, last_update_time " +
+			"FROM collection LEFT JOIN collection_category cc ON id = cc.collection_id WHERE id = $1 GROUP BY id").
 		WithArgs(1).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "category_id", "body", "insert_time", "last_update_time"}).
-			AddRow(1, 1, js, now, now))
+			AddRow(1, "{1}", js, now, now))
 
 	c, err := p.SelectOneCollection(context.TODO(), 1)
 	assert.NoError(t, err)
@@ -185,12 +189,17 @@ func TestInsertCollection(t *testing.T) {
 	assert.NoError(t, err)
 
 	now := time.Now()
-	mock.ExpectQuery(`INSERT INTO collection (category_id, body)
-	VALUES ($1, $2)
-	RETURNING id, category_id, body, insert_time, last_update_time`).
-		WithArgs(in.Category, []byte(js)).
-		WillReturnRows(sqlmock.NewRows([]string{"id", "category_id", "body", "insert_time", "last_update_time"}).
-			AddRow(1, in.Category, js, now, now))
+
+	mock.ExpectBegin()
+	mock.ExpectQuery(`INSERT INTO collection (body)
+	VALUES ($1)
+	RETURNING id, body, insert_time, last_update_time`).
+		WithArgs([]byte(js)).
+		WillReturnRows(sqlmock.NewRows([]string{"id", "body", "insert_time", "last_update_time"}).
+			AddRow(1, js, now, now))
+	mock.ExpectExec("INSERT INTO collection_category (collection_id, category_id) VALUES ($1, $2)").
+		WithArgs(1, 1).WillReturnResult(sqlmock.NewResult(0, 1))
+	mock.ExpectCommit()
 
 	c, err := p.InsertCollection(context.TODO(), in)
 	assert.NoError(t, err)
@@ -210,12 +219,19 @@ func TestUpdateCollection(t *testing.T) {
 	assert.NoError(t, err)
 
 	now := time.Now()
-	mock.ExpectQuery(`UPDATE collection SET body = $1, category_id = $2, last_update_time = CURRENT_TIMESTAMP
-	WHERE id = $3 AND last_update_time = $4
-	RETURNING id, category_id, body, insert_time, last_update_time`).
-		WithArgs([]byte(js), in.Category, 1, in.LastUpdateTime).
-		WillReturnRows(sqlmock.NewRows([]string{"id", "category_id", "body", "insert_time", "last_update_time"}).
-			AddRow(1, 1, js, now, now))
+
+	mock.ExpectBegin()
+	mock.ExpectQuery(`UPDATE collection SET body = $1, last_update_time = CURRENT_TIMESTAMP
+	WHERE id = $2 AND last_update_time = $3
+	RETURNING id, body, insert_time, last_update_time`).
+		WithArgs([]byte(js), 1, in.LastUpdateTime).
+		WillReturnRows(sqlmock.NewRows([]string{"id", "body", "insert_time", "last_update_time"}).
+			AddRow(1, js, now, now))
+	mock.ExpectExec("DELETE FROM collection_category WHERE collection_id = $1").
+		WithArgs(1).WillReturnResult(sqlmock.NewResult(0, 1))
+	mock.ExpectExec("INSERT INTO collection_category (collection_id, category_id) VALUES ($1, $2)").
+		WithArgs(1, 1).WillReturnResult(sqlmock.NewResult(0, 1))
+	mock.ExpectCommit()
 
 	c, err := p.UpdateCollection(context.TODO(), 1, in)
 	assert.NoError(t, err)
@@ -229,8 +245,14 @@ func TestDeleteCollection(t *testing.T) {
 	assert.NoError(t, err)
 	defer db.Close()
 	p := persist.NewPostgresPersister(db)
+
+	mock.ExpectBegin()
+	mock.ExpectExec("DELETE FROM collection_category WHERE collection_id = $1").
+		WithArgs(1).WillReturnResult(sqlmock.NewResult(0, 1))
 	mock.ExpectExec("DELETE FROM collection WHERE id = $1").
 		WithArgs(1).WillReturnResult(sqlmock.NewResult(0, 1))
+	mock.ExpectCommit()
+
 	err = p.DeleteCollection(context.TODO(), 1)
 	assert.NoError(t, err)
 }
@@ -254,7 +276,7 @@ func makeCategory(t *testing.T) model.Category {
 func makeCollectionIn(t *testing.T) model.CollectionIn {
 	in := model.CollectionIn{
 		CollectionBody: model.CollectionBody{Name: "Test Collection"},
-		Category:       1,
+		Categories:     []uint32{1},
 	}
 	return in
 }
