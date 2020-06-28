@@ -168,7 +168,8 @@ func main() {
 		CollectionPersister(p).
 		PostPersister(p).
 		RecordPersister(p).
-		UserPersister(p)
+		UserPersister(p).
+		SettingsPersister(p)
 	log.Print("[INFO] Using PostgresPersister")
 	r := app.NewRouter()
 	docs.SwaggerInfo.Host = env.BaseURL.Hostname()

@@ -57,6 +57,8 @@ type LocalAPI interface {
 	Search(ctx context.Context, req *SearchRequest) (*model.SearchResult, *model.Errors)
 	SearchByID(ctx context.Context, id string) (*model.SearchHit, *model.Errors)
 	SearchDeleteByID(ctx context.Context, id string) *model.Errors
+	GetSettings(ctx context.Context) (*model.Settings, *model.Errors)
+	UpdateSettings(ctx context.Context, in model.Settings) (*model.Settings, *model.Errors)
 }
 
 // API is the container for the apilication
@@ -66,6 +68,7 @@ type API struct {
 	postPersister            model.PostPersister
 	recordPersister          model.RecordPersister
 	userPersister            model.UserPersister
+	settingsPersister        model.SettingsPersister
 	validate                 *validator.Validate
 	blobStoreConfig          BlobStoreConfig
 	pubSubConfig             PubSubConfig
@@ -162,6 +165,12 @@ func (api *API) PostPersister(cp model.PostPersister) *API {
 // RecordPersister sets the RecordPersister for the api
 func (api *API) RecordPersister(cp model.RecordPersister) *API {
 	api.recordPersister = cp
+	return api
+}
+
+// SettingsPersister sets the SettingsPersister for the api
+func (api *API) SettingsPersister(cp model.SettingsPersister) *API {
+	api.settingsPersister = cp
 	return api
 }
 
