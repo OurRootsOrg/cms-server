@@ -8,13 +8,6 @@ import (
 	"time"
 )
 
-// Initialize sets up app-specific values for the package
-func Initialize(p string) {
-	pathPrefix = p
-}
-
-var pathPrefix string
-
 // CategoryPersister defines methods needed to persist categories
 type CategoryPersister interface {
 	SelectCategories(ctx context.Context) ([]Category, error)
@@ -32,7 +25,7 @@ type CategoryIn struct {
 
 // CategoryBody is the JSON part of the Category object
 type CategoryBody struct {
-	Name string `json:"name,omitempty" validate:"required"`
+	Name string `json:"name,omitempty" validate:"required" dynamodbav:"data"`
 }
 
 // NewCategoryIn constructs a CategoryIn
@@ -66,10 +59,11 @@ func (cb *CategoryBody) Scan(value interface{}) error {
 
 // Category represents a set of collections
 type Category struct {
-	ID uint32 `json:"id,omitempty" example:"999" validate:"required,omitempty"`
+	ID   uint32 `json:"id,omitempty" example:"999" validate:"required,omitempty" dynamodbav:"pk"`
+	Type string `json:"-" dynamodbav:"sk"`
 	CategoryBody
-	InsertTime     time.Time `json:"insert_time,omitempty"`
-	LastUpdateTime time.Time `json:"last_update_time,omitempty"`
+	InsertTime     time.Time `json:"insert_time,omitempty" dynamodbav:"insertTime,omitempty"`
+	LastUpdateTime time.Time `json:"last_update_time,omitempty"  dynamodbav:"lastUpdateTime,omitempty"`
 }
 
 // NewCategory constructs a Category from an id and body

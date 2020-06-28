@@ -55,7 +55,7 @@ func (e Error) Error() string {
 	for i, p := range e.Params {
 		params[i] = p
 	}
-	return fmt.Sprintf("Error %s: "+e.Message, params...)
+	return fmt.Sprintf("Error %s: ", e.Code) + fmt.Sprintf(e.Message, params...)
 }
 
 // Errors is an ordered collection of errors
