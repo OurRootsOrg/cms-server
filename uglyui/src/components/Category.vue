@@ -1,7 +1,8 @@
 <template>
   <div>
     <div>
-      <strong>{{ category.name }}</strong> ({{ collCount }} collections)
+      <strong>{{ category.name }}</strong> [ {{ collCount }} collections ]
+      <slot></slot>
     </div>
   </div>
 </template>

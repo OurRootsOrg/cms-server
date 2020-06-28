@@ -12,6 +12,9 @@ export const mutations = {
   POSTS_ADD(state, post) {
     state.postsList.push(post);
   },
+  POSTS_REMOVE(state, id) {
+    state.postsList = state.postsList.filter(post => post.id !== id);
+  },
   POST_SET(state, post) {
     state.post = post;
   },
@@ -67,6 +70,19 @@ export const actions = {
         dispatch("notificationsAdd", notification, { root: true });
       });
   },
+  postsDelete({ commit, dispatch }, id) {
+    return Server.postsDelete(id)
+      .then(() => {
+        commit("POSTS_REMOVE", id);
+      })
+      .catch(error => {
+        const notification = {
+          type: "error",
+          message: "There was a problem deleting the post: " + error.message
+        };
+        dispatch("notificationsAdd", notification, { root: true });
+      });
+  },
   postsGetAll({ commit, dispatch }) {
     return Server.postsGetAll()
       .then(response => {
@@ -80,22 +96,17 @@ export const actions = {
         dispatch("notificationsAdd", notification, { root: true });
       });
   },
-  postsGetOne({ commit, getters }, id) {
-    let post = getters.getPostById(id);
-
-    if (post) {
-      commit("POST_SET", post);
-      return post;
-    } else {
-      return Server.postsGetOne(id).then(response => {
+  postsGetOne({ commit, dispatch }, id) {
+    return Server.postsGetOne(id)
+      .then(response => {
         commit("POST_SET", response.data);
-        return response.data;
+      })
+      .catch(error => {
+        const notification = {
+          type: "error",
+          message: "There was a problem fetching the post: " + error.message
+        };
+        dispatch("notificationsAdd", notification, { root: true });
       });
-    }
-  }
-};
-export const getters = {
-  getPostById: state => id => {
-    return state.postsList ? state.postsList.find(post => post.id === id) : null;
   }
 };

@@ -52,8 +52,7 @@ func TestPosts(t *testing.T) {
 	// Add a Post
 	in := model.PostIn{
 		PostBody: model.PostBody{
-			Name:       "Test Post",
-			RecordsKey: "key",
+			Name: "Test Post",
 		},
 		Collection: testCollection.ID,
 	}
@@ -126,6 +125,10 @@ func TestPosts(t *testing.T) {
 	// DELETE
 	errors = testApi.DeletePost(context.TODO(), updated.ID)
 	assert.Nil(t, errors)
+	_, errors = testApi.GetPost(context.TODO(), updated.ID)
+	assert.NotNil(t, errors)
+	assert.Len(t, errors.Errs(), 1)
+	assert.Equal(t, model.ErrNotFound, errors.Errs()[0].Code, "errors.Errs()[0]: %#v", errors.Errs()[0])
 }
 
 func createTestCollection(p model.CollectionPersister, categoryID uint32) (*model.Collection, error) {

@@ -10,6 +10,9 @@ export const mutations = {
   },
   CATEGORIES_SET(state, categories) {
     state.categoriesList = categories;
+  },
+  CATEGORIES_REMOVE(state, id) {
+    state.categoriesList = state.categoriesList.filter(cat => cat.id !== id);
   }
 };
 
@@ -42,6 +45,19 @@ export const actions = {
         const notification = {
           type: "error",
           message: "There was a problem fetching categories: " + error.message
+        };
+        dispatch("notificationsAdd", notification, { root: true });
+      });
+  },
+  categoriesDelete({ commit, dispatch }, id) {
+    return Server.categoriesDelete(id)
+      .then(() => {
+        commit("CATEGORIES_REMOVE", id);
+      })
+      .catch(error => {
+        const notification = {
+          type: "error",
+          message: "There was a problem deleting the category: " + error.message
         };
         dispatch("notificationsAdd", notification, { root: true });
       });

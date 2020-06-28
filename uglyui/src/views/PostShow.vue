@@ -1,16 +1,18 @@
 <template>
   <div class="posts-show">
-    <h1>Show Post</h1>
+    <h1>Post</h1>
     <p>
       <strong>{{ posts.post.name }}</strong>
     </p>
     <p>Status: {{ posts.post.recordsStatus }}</p>
-    <BaseButton
-      v-if="posts.post.recordsStatus === 'Draft'"
-      v-on:click="publish"
-      class="submit-button"
-      buttonClass="-fill-gradient"
-      >Publish</BaseButton
+    <BaseButton v-if="posts.post.recordsStatus === 'Draft'" @click="publish" class="btn" buttonClass="-fill-gradient"
+      >Publish Post</BaseButton
+    >
+    <BaseButton v-if="posts.post.recordsStatus === 'Published'" @click="unpublish" class="btn" buttonClass="danger"
+      >Unpublish Post</BaseButton
+    >
+    <BaseButton v-if="posts.post.recordsStatus === 'Draft'" @click="del" class="btn" buttonClass="danger"
+      >Delete Post</BaseButton
     >
     <Tabulator :data="records.recordsList.map(r => r.data)" :columns="getColumns()" />
   </div>
@@ -28,9 +30,8 @@ export default {
     Promise.all([
       store.dispatch("postsGetOne", routeTo.params.pid),
       store.dispatch("recordsGetForPost", routeTo.params.pid)
-    ]).then(results => {
-      console.log("beforeRouteEnter", results[0].collection);
-      store.dispatch("collectionsGetOne", results[0].collection).then(() => {
+    ]).then(() => {
+      store.dispatch("collectionsGetOne", store.state.posts.post.collection).then(() => {
         next();
       });
     });
@@ -38,16 +39,35 @@ export default {
   computed: mapState(["collections", "posts", "records"]),
   methods: {
     getColumns() {
-      console.log("getColumns", this.collections.collection);
       return this.collections.collection.fields.map(f => {
         return { title: f.header, field: f.header };
       });
     },
     publish() {
-      this.posts.post.recordsStatus = "Published";
+      this.update("Published");
+    },
+    unpublish() {
+      this.update("Draft");
+    },
+    update(status) {
+      let post = Object.assign({}, this.posts.post);
+      post.recordsStatus = status;
       NProgress.start();
       this.$store
-        .dispatch("postsUpdate", this.posts.post)
+        .dispatch("postsUpdate", post)
+        .then(() => {
+          this.$router.push({
+            name: "posts-list"
+          });
+        })
+        .catch(() => {
+          NProgress.done();
+        });
+    },
+    del() {
+      NProgress.start();
+      this.$store
+        .dispatch("postsDelete", this.posts.post.id)
         .then(() => {
           this.$router.push({
             name: "posts-list"
@@ -62,7 +82,7 @@ export default {
 </script>
 
 <style scoped>
-.submit-button {
+.btn {
   margin-bottom: 24px;
 }
 </style>

@@ -79,16 +79,16 @@ func TestRecordsWriter(t *testing.T) {
 	var post *model.Post
 	// wait up to 10 seconds
 	for i := 0; i < 10; i++ {
-		// read post and look for Ready
+		// read post and look for Draft
 		post, errors = testAPI.GetPost(ctx, testPost.ID)
 		assert.Nil(t, errors)
-		if post.RecordsStatus == api.PostDraft {
+		if post.RecordsStatus == model.PostDraft {
 			break
 		}
 		log.Printf("Waiting for recordswriter %d\n", i)
 		time.Sleep(1 * time.Second)
 	}
-	assert.Equal(t, api.PostDraft, post.RecordsStatus, "Expected post to be Draft, got %s", post.RecordsStatus)
+	assert.Equal(t, model.PostDraft, post.RecordsStatus, "Expected post to be Draft, got %s", post.RecordsStatus)
 
 	// read records for post
 	records, errors := testAPI.GetRecordsForPost(ctx, testPost.ID)

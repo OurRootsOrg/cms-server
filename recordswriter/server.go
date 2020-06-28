@@ -32,7 +32,7 @@ const (
 const numWorkers = 10
 
 func processMessage(ctx context.Context, ap *api.API, rawMsg []byte) error {
-	var msg api.RecordsWriterMsg
+	var msg model.RecordsWriterMsg
 	err := json.Unmarshal(rawMsg, &msg)
 	if err != nil {
 		log.Printf("[ERROR] Discarding unparsable message '%s': %v", string(rawMsg), err)
@@ -47,7 +47,7 @@ func processMessage(ctx context.Context, ap *api.API, rawMsg []byte) error {
 		log.Printf("[ERROR] Error calling GetPost on %d: %v", msg.PostID, errs)
 		return errs
 	}
-	if post.RecordsStatus != api.PostLoading {
+	if post.RecordsStatus != model.PostLoading {
 		log.Printf("[ERROR] post not pending %d -> %s\n", post.ID, post.RecordsStatus)
 		return nil
 	}
@@ -118,7 +118,7 @@ func processMessage(ctx context.Context, ap *api.API, rawMsg []byte) error {
 	}
 
 	// update post.recordsStatus = READY
-	post.RecordsStatus = api.PostDraft
+	post.RecordsStatus = model.PostDraft
 	_, errs = ap.UpdatePost(ctx, post.ID, *post)
 	if errs != nil {
 		log.Printf("[ERROR] UpdatePost %v\n", errs)

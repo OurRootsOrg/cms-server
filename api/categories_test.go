@@ -88,4 +88,8 @@ func TestCategories(t *testing.T) {
 	// DELETE
 	errors = testApi.DeleteCategory(context.TODO(), created.ID)
 	assert.Nil(t, errors)
+	_, errors = testApi.GetCategory(context.TODO(), created.ID)
+	assert.NotNil(t, errors)
+	assert.Len(t, errors.Errs(), 1)
+	assert.Equal(t, model.ErrNotFound, errors.Errs()[0].Code, "errors.Errs()[0]: %#v", errors.Errs()[0])
 }
