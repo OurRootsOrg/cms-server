@@ -1,6 +1,10 @@
 <template>
   <div class="notifications">
-    <Notification v-for="notification in notificationsList" :key="notification.id" :notification="notification" />
+    <Notification
+      v-for="notification in notifications.notificationsList"
+      :key="notification.id"
+      :notification="notification"
+    />
   </div>
 </template>
 
@@ -12,7 +16,7 @@ export default {
   components: {
     Notification
   },
-  computed: mapState(["notificationsList"])
+  computed: mapState(["notifications"])
 };
 </script>
 

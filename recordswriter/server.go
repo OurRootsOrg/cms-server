@@ -117,8 +117,8 @@ func processMessage(ctx context.Context, ap *api.API, rawMsg []byte) error {
 		return errs
 	}
 
-	// update post.recordsStatus = READY
-	post.RecordsStatus = model.PostDraft
+	// update post.recordsStatus = load complete
+	post.RecordsStatus = model.PostLoadComplete
 	_, errs = ap.UpdatePost(ctx, post.ID, *post)
 	if errs != nil {
 		log.Printf("[ERROR] UpdatePost %v\n", errs)

@@ -18,19 +18,28 @@ type PostPersister interface {
 }
 
 const (
-	PostEmpty             = "Empty"
 	PostLoading           = "Loading"
+	PostLoadComplete      = "LoadComplete"
 	PostDraft             = "Draft"
 	PostPublishing        = "Publishing"
 	PostPublished         = "Published"
-	PostPublishComplete   = "PublishComplete"
+	PostPublishComplete   = "PublishComplete" // set only by publisher
 	PostUnpublishing      = "Unpublishing"
-	PostUnpublishComplete = "UnpublishComplete"
+	PostUnpublishComplete = "UnpublishComplete" // set only by publisher
 )
 const (
 	PublisherActionIndex   = "index"
 	PublisherActionUnindex = "unindex"
 )
+
+func UserAcceptedPostRecordsStatus(status string) bool {
+	for _, s := range []string{PostLoading, PostDraft, PostPublishing, PostPublished, PostUnpublishing} {
+		if s == status {
+			return true
+		}
+	}
+	return false
+}
 
 type RecordsWriterMsg struct {
 	PostID uint32 `json:"postId"`

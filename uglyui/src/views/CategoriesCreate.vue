@@ -20,7 +20,7 @@
       </template>
 
       <BaseButton type="submit" class="submit-button" buttonClass="-fill-gradient" :disabled="$v.$anyError"
-        >Submit</BaseButton
+        >Save</BaseButton
       >
       <p v-if="$v.$anyError" class="errorMessage">
         Please fill out the required field(s).

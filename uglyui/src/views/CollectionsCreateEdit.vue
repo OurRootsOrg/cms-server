@@ -1,7 +1,7 @@
 <template>
   <div class="collections-create">
     <h1>{{ collection.id ? "Edit" : "Create" }} Collection</h1>
-    <form @submit.prevent="createEditCollection">
+    <form @submit.prevent="save">
       <h3>Give your collection a name</h3>
       <BaseInput
         label="Name"
@@ -20,7 +20,7 @@
       </template>
 
       <h3>Select one or more categories</h3>
-      <label>Categories</label>
+      <label>Categories (select one or more)</label>
       <multiselect
         v-model="collection.categories"
         :options="categories.categoriesList"
@@ -79,7 +79,7 @@
         class="submit-button"
         buttonClass="-fill-gradient"
         :disabled="$v.$anyError || collection.fields.length === 0 || collection.mappings.length === 0"
-        >Update</BaseButton
+        >Save</BaseButton
       >
       <p v-if="$v.$anyError" class="errorMessage">
         Please fill out the required field(s).
@@ -135,6 +135,14 @@ const ixEmptyFieldMap = {
   na: "Don't index"
 };
 
+function setup() {
+  Object.assign(this.collection, this.collections.collection);
+  this.collection.categories = this.collection.categories.map(catId =>
+    this.$store.state.categories.categoriesList.find(cat => cat.id === catId)
+  );
+  this.posts = this.$store.state.posts.postsList.filter(p => p.collection === this.collection.id);
+}
+
 export default {
   components: { Tabulator, Multiselect },
   beforeRouteEnter: function(routeTo, routeFrom, next) {
@@ -149,11 +157,7 @@ export default {
   },
   created() {
     if (this.$route.params && this.$route.params.cid) {
-      Object.assign(this.collection, this.collections.collection);
-      this.collection.categories = this.collection.categories.map(catId =>
-        this.$store.state.categories.categoriesList.find(cat => cat.id === catId)
-      );
-      this.posts = this.$store.state.posts.postsList.filter(p => p.collection === this.collection.id);
+      setup.bind(this)();
     }
   },
   data() {
@@ -175,7 +179,7 @@ export default {
           field: "header",
           tooltip: "spreadsheet column header (required)",
           editor: "input",
-          validator: ["required", "unique"]
+          validator: ["unique"]
         },
         {
           title: "Required?",
@@ -227,7 +231,6 @@ export default {
           tooltip: "spreadsheet column header from table above (required)",
           editor: "select",
           editorParams: () => {
-            console.log("select header", this.collection);
             return {
               values: this.collection.fields.map(f => f.header),
               verticalNavigation: "table"
@@ -302,7 +305,6 @@ export default {
     },
     fieldsDelete(ix) {
       let header = this.collection.fields[ix].header;
-      console.log("fieldsDelete", ix, header);
       this.collection.fields.splice(ix, 1);
       this.syncFieldsMappings(null, header);
     },
@@ -345,7 +347,7 @@ export default {
         this.collection.mappings = this.collection.mappings.filter(m => m.header !== oldValue);
       }
     },
-    createEditCollection() {
+    save() {
       this.collection.fields = this.collection.fields.filter(f => f.header);
       if (this.collection.fields.length === 0) {
         return;
@@ -360,11 +362,17 @@ export default {
       if (!this.$v.$invalid) {
         NProgress.start();
         this.$store
-          .dispatch(this.collection.id ? "collectionsUpdate" : "collectionsCreate", collection)
-          .then(() => {
-            this.$router.push({
-              name: "collections-list"
-            });
+          .dispatch(collection.id ? "collectionsUpdate" : "collectionsCreate", collection)
+          .then(result => {
+            if (collection.id) {
+              setup.bind(this)();
+              NProgress.done();
+            } else {
+              this.$router.push({
+                name: "collection-edit",
+                params: { cid: result.id }
+              });
+            }
           })
           .catch(() => {
             NProgress.done();
