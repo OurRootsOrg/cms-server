@@ -25,7 +25,7 @@ type CategoryIn struct {
 
 // CategoryBody is the JSON part of the Category object
 type CategoryBody struct {
-	Name string `json:"name,omitempty" validate:"required" dynamodbav:"data"`
+	Name string `json:"name,omitempty" validate:"required" dynamodbav:"altSort"`
 }
 
 // NewCategoryIn constructs a CategoryIn
@@ -62,8 +62,8 @@ type Category struct {
 	ID   uint32 `json:"id,omitempty" example:"999" validate:"required,omitempty" dynamodbav:"pk"`
 	Type string `json:"-" dynamodbav:"sk"`
 	CategoryBody
-	InsertTime     time.Time `json:"insert_time,omitempty" dynamodbav:"insertTime,omitempty"`
-	LastUpdateTime time.Time `json:"last_update_time,omitempty"  dynamodbav:"lastUpdateTime,omitempty"`
+	InsertTime     time.Time `json:"insert_time,omitempty"`
+	LastUpdateTime time.Time `json:"last_update_time,omitempty"`
 }
 
 // NewCategory constructs a Category from an id and body

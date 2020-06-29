@@ -1222,8 +1222,7 @@
             "required": [
                 "collection",
                 "id",
-                "name",
-                "recordsKey"
+                "name"
             ],
             "properties": {
                 "collection": {
@@ -1255,8 +1254,7 @@
             "type": "object",
             "required": [
                 "collection",
-                "name",
-                "recordsKey"
+                "name"
             ],
             "properties": {
                 "collection": {

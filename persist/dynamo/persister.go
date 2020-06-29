@@ -12,6 +12,17 @@ import (
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 )
 
+const (
+	// You can't use constants in struct tags (see https://github.com/golang/go/issues/4740),
+	// so if these are ever changed, they must also be replaced in all `dynamodbav` tags.
+	pkName    = "pk"
+	skName    = "sk"
+	gsiSkName = "altSort"
+	gsiName   = "gsi_" + skName + "_" + gsiSkName
+
+	idSeparator = "#"
+)
+
 // Persister persists the model objects to DynammoDB
 type Persister struct {
 	svc       *dynamodb.DynamoDB
@@ -34,8 +45,8 @@ func (p *Persister) getSequenceValue() (uint32, error) {
 	uii := &dynamodb.UpdateItemInput{
 		TableName: p.tableName,
 		Key: map[string]*dynamodb.AttributeValue{
-			"pk": {N: aws.String("1")},
-			"sk": {S: aws.String("sequence")},
+			pkName: {N: aws.String("1")},
+			skName: {S: aws.String("sequence")},
 		},
 		UpdateExpression: aws.String("ADD sequenceValue :i"),
 		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
@@ -72,38 +83,38 @@ func ensureTableExists(svc *dynamodb.DynamoDB, tableName string) error {
 		TableName: &tableName,
 		AttributeDefinitions: []*dynamodb.AttributeDefinition{
 			{
-				AttributeName: aws.String("pk"),
+				AttributeName: aws.String(pkName),
 				AttributeType: aws.String("N"),
 			},
 			{
-				AttributeName: aws.String("sk"),
+				AttributeName: aws.String(skName),
 				AttributeType: aws.String("S"),
 			},
 			{
-				AttributeName: aws.String("data"),
+				AttributeName: aws.String(gsiSkName),
 				AttributeType: aws.String("S"),
 			},
 		},
 		KeySchema: []*dynamodb.KeySchemaElement{
 			{
-				AttributeName: aws.String("pk"),
+				AttributeName: aws.String(pkName),
 				KeyType:       aws.String("HASH"),
 			},
 			{
-				AttributeName: aws.String("sk"),
+				AttributeName: aws.String(skName),
 				KeyType:       aws.String("RANGE"),
 			},
 		},
 		GlobalSecondaryIndexes: []*dynamodb.GlobalSecondaryIndex{
 			{
-				IndexName: aws.String("sk_data"),
+				IndexName: aws.String(gsiName),
 				KeySchema: []*dynamodb.KeySchemaElement{
 					{
-						AttributeName: aws.String("sk"),
+						AttributeName: aws.String(skName),
 						KeyType:       aws.String("HASH"),
 					},
 					{
-						AttributeName: aws.String("data"),
+						AttributeName: aws.String(gsiSkName),
 						KeyType:       aws.String("RANGE"),
 					},
 				},
@@ -165,6 +176,9 @@ func compareToAWSError(err error, awsErrorCode string) bool {
 }
 
 func translateError(err error) error {
+	if err == nil {
+		return err
+	}
 	if aerr, ok := err.(awserr.Error); ok {
 		switch aerr.Code() {
 		// case dynamodb.ErrCodeProvisionedThroughputExceededException:

@@ -129,7 +129,6 @@ definitions:
     - collection
     - id
     - name
-    - recordsKey
     type: object
   model.PostIn:
     properties:
@@ -145,7 +144,6 @@ definitions:
     required:
     - collection
     - name
-    - recordsKey
     type: object
   model.Record:
     properties:

@@ -1,0 +1,167 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: OurRoots CMS Server
+Transform: AWS::Serverless-2016-10-31
+Parameters:
+  EnvironmentName:
+    Description: Name of this CMS deployment
+    Type: String
+
+Resources:
+  SiteBucket:
+    # Bucket to hold static site assets
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "${EnvironmentName}-site"
+      AccessControl: PublicRead
+      WebsiteConfiguration:
+        IndexDocument: index.html
+    # DeletionPolicy: Retain
+  SiteBucketPolicy:
+    # Allow reads from the bucket
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref SiteBucket
+      PolicyDocument:
+        Id: SiteBucketPolicy
+        Version: 2012-10-17
+        Statement:
+          - Sid: ReadForGetBucketObjects
+            Effect: Allow
+            Principal: '*'
+            Action:
+              - 's3:GetObject'
+            Resource: !Join [ '', [ Fn::GetAtt: [ SiteBucket , Arn ] , '/*' ] ]
+
+  CMSBlobStoreBucket:
+    # Bucket to hold uploaded content
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "${EnvironmentName}-cms-blob-store"
+      CorsConfiguration:
+        CorsRules:
+        - AllowedHeaders: ['*']
+          AllowedMethods: [GET, PUT, HEAD, POST, DELETE]
+          AllowedOrigins: ['*']
+          # AllowedOrigins: [!Sub "https:://${DomainName}"]
+          MaxAge: 3600
+
+    # DeletionPolicy: Retain
+
+  CMSRecordsWriterDLQ:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub "${EnvironmentName}-recordswriterDLQ"
+
+  CMSRecordsWriterQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub "${EnvironmentName}-recordswriter"
+      VisibilityTimeout: 180
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt CMSRecordsWriterDLQ.Arn
+        maxReceiveCount: 3
+      # ContentBasedDeduplication: Boolean
+      # DelaySeconds: Integer
+      # FifoQueue: Boolean
+      # KmsDataKeyReusePeriodSeconds: Integer
+      # KmsMasterKeyId: String
+      # MaximumMessageSize: Integer
+      # MessageRetentionPeriod: Integer
+
+  CMSPublisherDLQ:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub "${EnvironmentName}-publisherDLQ"
+
+  CMSPublisherQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub "${EnvironmentName}-publisher"
+      VisibilityTimeout: 180
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt CMSPublisherDLQ.Arn
+        maxReceiveCount: 3
+
+  ElasticsearchDomain:
+    Type: 'AWS::Elasticsearch::Domain'
+    Properties:
+      DomainName: !Sub ${EnvironmentName}-es
+      ElasticsearchClusterConfig:
+        # DedicatedMasterEnabled: 'true'
+        # InstanceCount: '2'
+        # ZoneAwarenessEnabled: 'true'
+        InstanceType: t2.small.elasticsearch
+        # DedicatedMasterType: c4.large.elasticsearch
+        # DedicatedMasterCount: '3'
+      ElasticsearchVersion: '7.4'
+      EBSOptions:
+        EBSEnabled: true
+        VolumeSize: 10
+        VolumeType: standard # One of gp2, io1, standard
+      AccessPolicies:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !Ref AWS::AccountId
+            Action: 'es:ESHttp*'
+            Resource: !Sub 'arn:aws:es:${AWS::Region}:${AWS::AccountId}:domain/${EnvironmentName}-es/*'
+      # LogPublishingOptions:
+      #   SEARCH_SLOW_LOGS:
+      #     CloudWatchLogsLogGroupArn: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:${EnvironmentName}/ElasticSearch/search-slow-logs'
+      #     Enabled: true
+      #   INDEX_SLOW_LOGS:
+      #     CloudWatchLogsLogGroupArn: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:${EnvironmentName}/ElasticSearch/index-slow-logs'
+      #     Enabled: true
+      #   ES_APPLICATION_LOGS:
+      #     CloudWatchLogsLogGroupArn: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:${EnvironmentName}/ElasticSearch/application-logs'
+      #     Enabled: true
+  CMSSiteBucketURLParam:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub "${EnvironmentName}-CMSSiteBucketURL"
+      Description: CMS Site Bucket Website URL
+      Type: String
+      Value: !GetAtt SiteBucket.WebsiteURL
+  CMSBlobStoreBucketNameParam:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub "${EnvironmentName}-CMSBlobStoreBucketName"
+      Type: String
+      Value: !Ref CMSBlobStoreBucket
+  CMSRecordsWriterQueueURLParam:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub "${EnvironmentName}-CMSRecordsWriterQueueURL"
+      Type: String
+      Value: !Ref CMSRecordsWriterQueue
+  CMSRecordsWriterQueueARNParam:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub "${EnvironmentName}-CMSRecordsWriterQueueARN"
+      Type: String
+      Value: !GetAtt CMSRecordsWriterQueue.Arn
+  CMSPublisherQueueURLParam:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub "${EnvironmentName}-CMSPublisherQueueURL"
+      Type: String
+      Value: !Ref CMSPublisherQueue
+  CMSPublisherQueueARNParam:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub "${EnvironmentName}-CMSPublisherQueueARN"
+      Type: String
+      Value: !GetAtt CMSPublisherQueue.Arn
+  ElasticsearchDomainARNParam:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub "${EnvironmentName}-ElasticsearchDomainARN"
+      Type: String
+      Value: !GetAtt ElasticsearchDomain.DomainArn
+  ElasticsearchDomainEndpointParam:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub "${EnvironmentName}-ElasticsearchDomainEndpoint"
+      Type: String
+      Value: !GetAtt ElasticsearchDomain.DomainEndpoint

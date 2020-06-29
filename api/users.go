@@ -68,6 +68,8 @@ func (api API) RetrieveUser(ctx context.Context, provider OIDCProvider, token *o
 	if err != nil {
 		return nil, model.NewErrors(http.StatusUnauthorized, fmt.Errorf("Failed to retrieve user: %v", err))
 	}
+	// TODO: RetrieveUser doesn't update an existing user if attributes change.
+	// We should probably compare `up.UserBody` to `ui.UserBody` and do an update if they're not equal.
 	log.Printf("[DEBUG] Adding user '%#v' to cache with key '%s'", *up, cacheKey)
 	api.userCache.Add(cacheKey, *up)
 	return up, nil

@@ -181,11 +181,11 @@ func main() {
 			log.Fatalf("[FATAL] Error creating DynamoDB persister: %v", err)
 		}
 		ap.
-			CategoryPersister(p)
+			CategoryPersister(p).
 			// CollectionPersister(p).
 			// PostPersister(p).
 			// RecordPersister(p).
-			// UserPersister(p)
+			UserPersister(p)
 		log.Print("[INFO] Using PostgresPersister")
 	}
 	r := app.NewRouter()

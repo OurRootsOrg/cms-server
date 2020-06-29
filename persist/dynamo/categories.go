@@ -13,15 +13,17 @@ import (
 	"github.com/ourrootsorg/cms-server/model"
 )
 
+const categoryType = "category"
+
 // SelectCategories loads all the categories from the database
 func (p Persister) SelectCategories(ctx context.Context) ([]model.Category, error) {
 	qi := &dynamodb.QueryInput{
 		TableName:              p.tableName,
-		IndexName:              aws.String("sk_data"),
-		KeyConditionExpression: aws.String("sk = :sk"),
+		IndexName:              aws.String(gsiName),
+		KeyConditionExpression: aws.String(skName + " = :sk"),
 		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
 			":sk": {
-				S: aws.String("category"),
+				S: aws.String(categoryType),
 			},
 		},
 	}
@@ -48,11 +50,11 @@ func (p Persister) SelectCategoriesByID(ctx context.Context, ids []uint32) ([]mo
 	keys := make([]map[string]*dynamodb.AttributeValue, len(ids))
 	for i, id := range ids {
 		keys[i] = map[string]*dynamodb.AttributeValue{
-			"pk": {
+			pkName: {
 				N: aws.String(strconv.FormatInt(int64(id), 10)),
 			},
-			"sk": {
-				S: aws.String("category"),
+			skName: {
+				S: aws.String(categoryType),
 			},
 		}
 	}
@@ -79,40 +81,31 @@ func (p Persister) SelectCategoriesByID(ctx context.Context, ids []uint32) ([]mo
 // SelectOneCategory loads a single category from the database
 func (p Persister) SelectOneCategory(ctx context.Context, id uint32) (model.Category, error) {
 	var cat model.Category
-	qi := &dynamodb.QueryInput{
-		TableName:              p.tableName,
-		KeyConditionExpression: aws.String("pk = :pk and sk = :sk"),
-		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
-			":pk": {
+	gii := &dynamodb.GetItemInput{
+		TableName: p.tableName,
+		Key: map[string]*dynamodb.AttributeValue{
+			pkName: {
 				N: aws.String(strconv.FormatInt(int64(id), 10)),
 			},
-			":sk": {
-				S: aws.String("category"),
+			skName: {
+				S: aws.String(categoryType),
 			},
 		},
 	}
-
-	qo, err := p.svc.Query(qi)
+	gio, err := p.svc.GetItem(gii)
 	if err != nil {
-		log.Printf("[ERROR] Failed to get category. qi: %#v err: %v", qi, err)
+		log.Printf("[ERROR] Failed to get category. qi: %#v err: %v", gio, err)
 		return cat, translateError(err)
 	}
-	switch *qo.Count {
-	case 0:
+	if gio.Item == nil {
 		return cat, model.NewError(model.ErrNotFound, strconv.Itoa(int(id)))
-	case 1:
-		// log.Printf("[DEBUG] Returned values: %#v", qo.Items)
-		var ret []model.Category
-		err = dynamodbattribute.UnmarshalListOfMaps(qo.Items, &ret)
-		if err != nil {
-			log.Printf("[ERROR] Failed to unmarshal. qo: %#v err: %v", qo, err)
-			return cat, translateError(err)
-		}
-		return ret[0], nil
-	default:
-		return cat, model.NewError(model.ErrOther,
-			fmt.Sprintf("%d rows returned when querying for category %d, expected 0 or 1", *qo.Count, id))
 	}
+	err = dynamodbattribute.UnmarshalMap(gio.Item, &cat)
+	if err != nil {
+		log.Printf("[ERROR] Failed to unmarshal. qo: %#v err: %v", gio, err)
+		return cat, translateError(err)
+	}
+	return cat, nil
 }
 
 // InsertCategory inserts a CategoryBody into the database and returns the inserted Category
@@ -123,7 +116,7 @@ func (p Persister) InsertCategory(ctx context.Context, in model.CategoryIn) (mod
 	if err != nil {
 		return cat, translateError(err)
 	}
-	cat.Type = "category"
+	cat.Type = categoryType
 	cat.CategoryBody = in.CategoryBody
 	now := time.Now().Truncate(0)
 	cat.InsertTime = now
@@ -161,8 +154,9 @@ func (p Persister) UpdateCategory(ctx context.Context, id uint32, in model.Categ
 	var err error
 	cat = in
 	cat.ID = id
-	cat.Type = "category"
+	cat.Type = categoryType
 	cat.LastUpdateTime = time.Now().Truncate(0)
+	in.ID = id
 
 	avs, err := dynamodbattribute.MarshalMap(cat)
 	if err != nil {
@@ -173,7 +167,7 @@ func (p Persister) UpdateCategory(ctx context.Context, id uint32, in model.Categ
 	pii := &dynamodb.PutItemInput{
 		TableName:           p.tableName,
 		Item:                avs,
-		ConditionExpression: aws.String("lastUpdateTime = :lastUpdateTime"), // Only allow updates, and use optimistic concurrency
+		ConditionExpression: aws.String("last_update_time = :lastUpdateTime"), // Only allow updates, and use optimistic concurrency
 		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
 			":lastUpdateTime": {S: &lastUpdateTime},
 		},
@@ -220,8 +214,8 @@ func (p Persister) DeleteCategory(ctx context.Context, id uint32) error {
 	dii := &dynamodb.DeleteItemInput{
 		TableName: p.tableName,
 		Key: map[string]*dynamodb.AttributeValue{
-			"pk": {N: aws.String(strconv.FormatInt(int64(id), 10))},
-			"sk": {S: aws.String("category")},
+			pkName: {N: aws.String(strconv.FormatInt(int64(id), 10))},
+			skName: {S: aws.String(categoryType)},
 		},
 	}
 	_, err := p.svc.DeleteItem(dii)

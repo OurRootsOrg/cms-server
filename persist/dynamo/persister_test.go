@@ -2,6 +2,7 @@ package dynamo_test
 
 import (
 	"context"
+	"os"
 	"testing"
 	"time"
 
@@ -13,7 +14,12 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestPersister(t *testing.T) {
+func TestCategory(t *testing.T) {
+	table := os.Getenv("DYNAMODB_TEST_TABLE_NAME")
+	if table == "" {
+		t.Log("No DYNAMODB_TEST_TABLE_NAME specified, skipping tests")
+		return
+	}
 	config := aws.Config{
 		Region:      aws.String("us-east-1"),
 		Endpoint:    aws.String("http://localhost:18000"),
@@ -22,7 +28,7 @@ func TestPersister(t *testing.T) {
 	}
 	sess, err := session.NewSession(&config)
 	assert.NoError(t, err)
-	p, err := dynamo.NewPersister(sess, "cms_test")
+	p, err := dynamo.NewPersister(sess, table)
 	assert.NoError(t, err)
 	_, err = p.SelectOneCategory(context.TODO(), 1)
 	assert.Error(t, err)
@@ -97,4 +103,38 @@ func makeCategory(t *testing.T) model.Category {
 		LastUpdateTime: now,
 	}
 	return in
+}
+
+func TestUser(t *testing.T) {
+	table := os.Getenv("DYNAMODB_TEST_TABLE_NAME")
+	if table == "" {
+		t.Log("No DYNAMODB_TEST_TABLE_NAME specified, skipping tests")
+		return
+	}
+	config := aws.Config{
+		Region:      aws.String("us-east-1"),
+		Endpoint:    aws.String("http://localhost:18000"),
+		DisableSSL:  aws.Bool(true),
+		Credentials: credentials.NewStaticCredentials("ACCESS_KEY", "SECRET", ""),
+	}
+	sess, err := session.NewSession(&config)
+	assert.NoError(t, err)
+	p, err := dynamo.NewPersister(sess, table)
+	assert.NoError(t, err)
+
+	then := time.Now()
+	in, err := model.NewUserIn("Some One", "someone@example.com", false, "an-issuer", "https://issuer.example.com/somebody198")
+	assert.NoError(t, err)
+	// Retrieve non-existent user
+	user, err := p.RetrieveUser(context.TODO(), in)
+	assert.NoError(t, err)
+	assert.Equal(t, in.UserBody, user.UserBody)
+	assert.GreaterOrEqual(t, then.Unix(), user.InsertTime.Unix())
+	assert.GreaterOrEqual(t, then.Unix(), user.LastUpdateTime.Unix())
+
+	// Retrieve existing user
+	user, err = p.RetrieveUser(context.TODO(), in)
+	assert.NoError(t, err)
+	assert.Equal(t, in.UserBody, user.UserBody)
+
 }

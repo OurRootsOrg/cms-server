@@ -12,7 +12,7 @@ RABBIT_PORT=35672
 ES_PORT=19200
 
 all: clean test build package
-build: 
+build:
 	cd server && go generate && $(GOBUILD) && GOOS=linux $(GOBUILD) -o $(BINARY_NAME)
 	cd publisher && $(GOBUILD) && GOOS=linux $(GOBUILD) -o $(PUBLISHER_BINARY)
 	cd recordswriter && $(GOBUILD) && GOOS=linux $(GOBUILD) -o $(RECORDSWRITER_BINARY)
@@ -28,9 +28,14 @@ test-setup:
 	cd rabbitmq && ./wait-for-rabbitmq.sh ${RABBIT_PORT}
 test-exec:
 	DATABASE_URL="postgres://ourroots:password@localhost:$(PG_PORT)/cms?sslmode=disable" \
+		DYNAMODB_TEST_TABLE_NAME="test-cms" \
 		MIGRATION_DATABASE_URL="postgres://ourroots_schema:password@localhost:$(PG_PORT)/cms?sslmode=disable" \
     RABBIT_SERVER_URL="amqp://guest:guest@localhost:$(RABBIT_PORT)/" \
 	$(GOTEST) -v -race -p=1 ./...
+	# Re-run tests against DynamoDB
+	# DYNAMODB_TABLE_NAME=test-cms \
+  #   RABBIT_SERVER_URL="amqp://guest:guest@localhost:$(RABBIT_PORT)/" \
+	# $(GOTEST) -v -race -p=1 ./...
 test-teardown:
 	docker-compose -f docker-compose-dependencies.yaml down --volumes
 clean:

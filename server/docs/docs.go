@@ -1233,8 +1233,7 @@ var doc = `{
             "required": [
                 "collection",
                 "id",
-                "name",
-                "recordsKey"
+                "name"
             ],
             "properties": {
                 "collection": {
@@ -1266,8 +1265,7 @@ var doc = `{
             "type": "object",
             "required": [
                 "collection",
-                "name",
-                "recordsKey"
+                "name"
             ],
             "properties": {
                 "collection": {
