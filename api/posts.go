@@ -109,13 +109,13 @@ func (api API) UpdatePost(ctx context.Context, id uint32, in model.Post) (*model
 	var topic *pubsub.Topic
 	var msg []byte
 
-	// handle records key change
 	if currPost.RecordsKey != in.RecordsKey {
+		// handle records key change
 		if currPost.RecordsStatus != in.RecordsStatus || in.RecordsStatus != model.PostDraft {
 			return nil, model.NewErrors(http.StatusBadRequest, errors.New(fmt.Sprintf("cannot change recordsKey unless recordsStatus is Draft; status is %s", currPost.RecordsStatus)))
 		}
 		// prepare to send a message
-		topic, err := api.OpenTopic(ctx, "recordswriter")
+		topic, err = api.OpenTopic(ctx, "recordswriter")
 		if err != nil {
 			log.Printf("[ERROR] Can't open recordswriter topic %v", err)
 			return nil, model.NewErrors(http.StatusInternalServerError, err)
@@ -130,10 +130,8 @@ func (api API) UpdatePost(ctx context.Context, id uint32, in model.Post) (*model
 			log.Printf("[ERROR] Can't marshal message %v", err)
 			return nil, model.NewErrors(http.StatusInternalServerError, err)
 		}
-	}
-
-	// handle records status change
-	if currPost.RecordsStatus != in.RecordsStatus {
+	} else if currPost.RecordsStatus != in.RecordsStatus {
+		// handle records status change
 		switch {
 		case (currPost.RecordsStatus == model.PostDraft && in.RecordsStatus == model.PostPublished) ||
 			(currPost.RecordsStatus == model.PostPublished && in.RecordsStatus == model.PostDraft):
@@ -168,7 +166,9 @@ func (api API) UpdatePost(ctx context.Context, id uint32, in model.Post) (*model
 		case currPost.RecordsStatus == model.PostLoading && in.RecordsStatus == model.PostLoadComplete:
 			in.RecordsStatus = model.PostDraft
 		default:
-			return nil, model.NewErrors(http.StatusBadRequest, errors.New(fmt.Sprintf("cannot change records status from %s to %s", currPost.RecordsStatus, in.RecordsStatus)))
+			msg := fmt.Sprintf("[ERROR] cannot change records status from %s to %s", currPost.RecordsStatus, in.RecordsStatus)
+			log.Println(msg)
+			return nil, model.NewErrors(http.StatusBadRequest, errors.New(msg))
 		}
 	}
 

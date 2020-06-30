@@ -20,7 +20,7 @@ type SettingsBody struct {
 }
 type SettingsPostMetadata struct {
 	Name    string `json:"name"`
-	Type    string `json:"type" validate:"eq=string|eq=number|eq=date|eq=boolean|eq=rating"`
+	Type    string `json:"type" validate:"eq=string|eq=number|eq=date|eq=boolean"`
 	Tooltip string `json:"tooltip"`
 }
 

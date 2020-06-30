@@ -195,17 +195,6 @@ function getMetadataColumn(pf) {
         formatter: "tickCross",
         editor: true
       };
-    case "rating":
-      return {
-        title: pf.name,
-        minWidth: 100,
-        widthGrow: 1,
-        field: pf.name,
-        tooltip: pf.tooltip,
-        hozAlign: "center",
-        formatter: "star",
-        editor: true
-      };
   }
 }
 
@@ -264,7 +253,6 @@ export default {
           opts.push({ id: "Draft", name: "Draft" });
         }
       }
-      console.log("getRecordsStatusOptions", this.post, opts);
       return opts;
     },
     getMetadataColumns() {
@@ -306,13 +294,12 @@ export default {
         });
     },
     importData() {
-      let post = Object.assign({}, this.posts.post);
+      let post = Object.assign({}, this.post);
       post.metadata = this.metadata[0];
-      let collection = this.collections.collectionsList.find(coll => coll.id === post.collection);
       let store = this.$store;
       this.$v.$touch();
       if (!this.$v.$invalid) {
-        const importer = new FlatfileImporter(config.license, this.getFlatFileOptions(collection));
+        const importer = new FlatfileImporter(config.license, this.getFlatFileOptions(this.collections.collection));
         // TODO set to real user
         importer.setCustomer({ userId: 1, email: "dallan@gmail.com" });
         importer
@@ -387,19 +374,5 @@ export default {
 }
 #importData:active {
   background-color: #1d62b4;
-}
-#raw_output {
-  position: relative;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 50%;
-  padding: 64px;
-  margin: 32px 0;
-  border: 1px solid #c1c6d1;
-  border-radius: 4px;
-  font-family: "Courier New", monospace;
-  background-color: #3c4151;
-  color: #fff;
-  height: 200px;
 }
 </style>

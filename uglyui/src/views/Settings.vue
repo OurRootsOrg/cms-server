@@ -32,8 +32,7 @@ const postMetadataTypes = {
   string: "Text",
   number: "Numeric",
   date: "Date",
-  boolean: "Checkbox",
-  rating: "Star rating"
+  boolean: "Checkbox"
 };
 
 function setup() {
