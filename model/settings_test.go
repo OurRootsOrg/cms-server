@@ -10,7 +10,7 @@ import (
 
 func TestSettings(t *testing.T) {
 	in := model.SettingsIn{}
-	in.PostFields = []model.SettingsPostField{
+	in.PostMetadata = []model.SettingsPostMetadata{
 		{
 			Name: "One",
 			Type: "string",

@@ -97,7 +97,7 @@ func TestPutSettings(t *testing.T) {
 func makeSettingsIn(t *testing.T) (model.SettingsIn, *bytes.Buffer) {
 	in := model.SettingsIn{
 		SettingsBody: model.SettingsBody{
-			PostFields: []model.SettingsPostField{
+			PostMetadata: []model.SettingsPostMetadata{
 				{
 					Name: "One",
 					Type: "string",

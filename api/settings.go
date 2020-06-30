@@ -14,7 +14,7 @@ func (api API) GetSettings(ctx context.Context) (*model.Settings, *model.Errors)
 	// if no settings, return a default settings object
 	if err == persist.ErrNoRows {
 		settings = model.Settings{
-			SettingsIn: model.NewSettingsIn([]model.SettingsPostField{}),
+			SettingsIn: model.NewSettingsIn([]model.SettingsPostMetadata{}),
 		}
 		err = nil
 	} else if err != nil {

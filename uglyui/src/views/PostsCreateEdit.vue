@@ -18,8 +18,6 @@
         </p>
       </template>
 
-      <p v-if="post.id">Status: {{ posts.post.recordsStatus }}</p>
-
       <div v-if="post.id">
         <h3>Collection</h3>
         <p>{{ collections.collection.name }}</p>
@@ -44,22 +42,22 @@
         <h3>Post status</h3>
         <BaseSelect
           label="Status"
-          :options="recordsStatusOptions"
+          :options="getRecordsStatusOptions()"
           v-model="post.recordsStatus"
           :class="{ error: $v.post.recordsStatus.$error }"
           @blur="$v.post.recordsStatus.$touch()"
         />
       </div>
 
+      <div v-if="settings.settings.postMetadata.length > 0"></div>
+      <h3>Custom fields</h3>
+      <Tabulator :data="metadata" :columns="getMetadataColumns()" layout="fitColumns" :resizable-columns="true" />
+
       <p v-if="$v.$anyError" class="errorMessage">
         Please fill out the required field(s).
       </p>
 
       <BaseButton type="submit" class="btn" buttonClass="-fill-gradient" :disabled="$v.$anyError">Save</BaseButton>
-
-      <BaseButton v-if="post.recordsStatus === 'Draft'" @click="del" class="btn" buttonClass="danger"
-        >Delete Post</BaseButton
-      >
 
       <input
         v-if="post.id && post.recordsStatus === 'Draft'"
@@ -70,10 +68,14 @@
       />
     </form>
 
+    <BaseButton v-if="post.recordsStatus === 'Draft'" @click="del" class="btn" buttonClass="danger"
+      >Delete Post</BaseButton
+    >
+
     <Tabulator
       v-if="post.id && post.recordsKey && post.recordsStatus !== 'Loading'"
       :data="records.recordsList.map(r => r.data)"
-      :columns="getColumns()"
+      :columns="getRecordColumns()"
     />
   </div>
 </template>
@@ -82,15 +84,18 @@
 import store from "@/store";
 import { mapState } from "vuex";
 import { required } from "vuelidate/lib/validators";
+import Tabulator from "../components/Tabulator";
 import FlatfileImporter from "flatfile-csv-importer";
 import config from "../flatfileConfig.js";
 import Server from "@/services/Server.js";
 import NProgress from "nprogress";
+import moment from "moment";
 
 FlatfileImporter.setVersion(2);
 
 function setup() {
   Object.assign(this.post, this.posts.post);
+  this.metadata.splice(0, 1, this.posts.post.metadata || {});
 }
 
 async function uploadData(store, post, contentType, data) {
@@ -101,7 +106,111 @@ async function uploadData(store, post, contentType, data) {
   return postPostResult;
 }
 
+function dateEditor(cell, onRendered, success, cancel) {
+  //cell - the cell component for the editable cell
+  //onRendered - function to call when the editor has been rendered
+  //success - function to call to pass the successfuly updated value to Tabulator
+  //cancel - function to call to abort the edit and return to a normal cell
+
+  //create and style input
+  var cellValue = moment(cell.getValue(), "DD MMM YYYY").format("YYYY-MM-DD"),
+    input = document.createElement("input");
+
+  input.setAttribute("type", "date");
+
+  input.style.padding = "4px";
+  input.style.width = "100%";
+  input.style.boxSizing = "border-box";
+
+  input.value = cellValue;
+
+  onRendered(function() {
+    input.focus();
+    input.style.height = "100%";
+  });
+
+  function onChange() {
+    if (input.value !== cellValue) {
+      success(moment(input.value, "YYYY-MM-DD").format("DD MMM YYYY"));
+    } else {
+      cancel();
+    }
+  }
+
+  //submit new value on blur or change
+  input.addEventListener("blur", onChange);
+
+  //submit new value on enter
+  input.addEventListener("keydown", function(e) {
+    if (e.keyCode === 13) {
+      onChange();
+    }
+
+    if (e.keyCode === 27) {
+      cancel();
+    }
+  });
+
+  return input;
+}
+
+function getMetadataColumn(pf) {
+  switch (pf.type) {
+    case "string":
+      return {
+        title: pf.name,
+        minWidth: 200,
+        widthGrow: 2,
+        field: pf.name,
+        tooltip: pf.tooltip,
+        editor: "input"
+      };
+    case "number":
+      return {
+        title: pf.name,
+        minWidth: 75,
+        widthGrow: 1,
+        field: pf.name,
+        tooltip: pf.tooltip,
+        editor: "number"
+      };
+    case "date":
+      return {
+        title: pf.name,
+        minWidth: 140,
+        widthGrow: 1,
+        field: pf.name,
+        tooltip: pf.tooltip,
+        hozAlign: "center",
+        editor: dateEditor
+      };
+    case "boolean":
+      return {
+        title: pf.name,
+        minWidth: 75,
+        widthGrow: 1,
+        field: pf.name,
+        tooltip: pf.tooltip,
+        hozAlign: "center",
+        formatter: "tickCross",
+        editor: true
+      };
+    case "rating":
+      return {
+        title: pf.name,
+        minWidth: 100,
+        widthGrow: 1,
+        field: pf.name,
+        tooltip: pf.tooltip,
+        hozAlign: "center",
+        formatter: "star",
+        editor: true
+      };
+  }
+}
+
 export default {
+  components: { Tabulator },
   beforeRouteEnter: function(routeTo, routeFrom, next) {
     let routes = [store.dispatch("settingsGet")];
     if (routeTo.params && routeTo.params.pid) {
@@ -128,25 +237,43 @@ export default {
   data() {
     return {
       post: {},
-      recordsStatusOptions: []
+      metadata: [{}]
     };
   },
   computed: mapState(["collections", "posts", "records", "settings"]),
   validations: {
     post: {
       name: { required },
-      collection: { required }
+      collection: { required },
+      recordsStatus: { required }
     }
   },
   methods: {
-    getColumns() {
+    getRecordColumns() {
       return this.collections.collection.fields.map(f => {
         return { title: f.header, field: f.header };
       });
     },
+    getRecordsStatusOptions() {
+      let opts = [];
+      if (this.post.id) {
+        opts.push({ id: this.post.recordsStatus, name: this.post.recordsStatus });
+        if (this.post.recordsStatus === "Draft") {
+          opts.push({ id: "Published", name: "Published" });
+        } else if (this.post.recordsStatus === "Published") {
+          opts.push({ id: "Draft", name: "Draft" });
+        }
+      }
+      console.log("getRecordsStatusOptions", this.post, opts);
+      return opts;
+    },
+    getMetadataColumns() {
+      return this.settings.settings.postMetadata.map(pf => getMetadataColumn(pf));
+    },
     save() {
       let post = Object.assign({}, this.post);
       post.collection = +post.collection; // convert to a number
+      post.metadata = this.metadata[0];
       NProgress.start();
       this.$store
         .dispatch(post.id ? "postsUpdate" : "postsCreate", post)
@@ -180,6 +307,7 @@ export default {
     },
     importData() {
       let post = Object.assign({}, this.posts.post);
+      post.metadata = this.metadata[0];
       let collection = this.collections.collectionsList.find(coll => coll.id === post.collection);
       let store = this.$store;
       this.$v.$touch();
@@ -236,13 +364,10 @@ export default {
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
 .btn {
-  margin-top: 24px;
+  margin: 24px 0;
 }
 #importData {
-  position: relative;
-  left: 50%;
-  transform: translateX(-50%);
-  margin: 96px 0 64px 0;
+  margin: 24px 0;
   border: none;
   border-radius: 4px;
   color: #fff;

@@ -52,9 +52,10 @@ type PublisherMsg struct {
 
 // PostBody is the JSON body of a Post
 type PostBody struct {
-	Name          string `json:"name,omitempty" validate:"required,omitempty"`
-	RecordsKey    string `json:"recordsKey"`
-	RecordsStatus string `json:"recordsStatus"`
+	Name          string                 `json:"name,omitempty" validate:"required,omitempty"`
+	Metadata      map[string]interface{} `json:"metadata"`
+	RecordsKey    string                 `json:"recordsKey"`
+	RecordsStatus string                 `json:"recordsStatus"`
 }
 
 // Value makes PostBody implement the driver.Valuer interface.

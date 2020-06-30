@@ -16,11 +16,12 @@ type SettingsPersister interface {
 
 // SettingsBody is the JSON body of a Settings object
 type SettingsBody struct {
-	PostFields []SettingsPostField `json:"postFields"`
+	PostMetadata []SettingsPostMetadata `json:"postMetadata"`
 }
-type SettingsPostField struct {
-	Name string `json:"name"`
-	Type string `json:"type" validate:"eq=string|eq=number|eq=date|eq=boolean|eq=rating"`
+type SettingsPostMetadata struct {
+	Name    string `json:"name"`
+	Type    string `json:"type" validate:"eq=string|eq=number|eq=date|eq=boolean|eq=rating"`
+	Tooltip string `json:"tooltip"`
 }
 
 // Value makes SettingsBody implement the driver.Valuer interface.
@@ -50,10 +51,10 @@ type Settings struct {
 }
 
 // NewSettingsIn constructs a SettingsIn
-func NewSettingsIn(postFields []SettingsPostField) SettingsIn {
+func NewSettingsIn(postMetadata []SettingsPostMetadata) SettingsIn {
 	obj := SettingsIn{
 		SettingsBody: SettingsBody{
-			PostFields: postFields,
+			PostMetadata: postMetadata,
 		},
 	}
 	return obj

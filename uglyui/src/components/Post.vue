@@ -1,7 +1,7 @@
 <template>
   <div>
     <div>
-      <router-link class="post-link" :to="{ name: 'post-show', params: { pid: post.id } }">{{ post.name }}</router-link>
+      <router-link class="post-link" :to="{ name: 'post-edit', params: { pid: post.id } }">{{ post.name }}</router-link>
       (in {{ collection.name }}) Status: {{ post.recordsStatus }}
     </div>
   </div>

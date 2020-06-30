@@ -38,7 +38,7 @@ func TestSettings(t *testing.T) {
 	assert.True(t, settings.InsertTime.IsZero())
 
 	// Update settings
-	settings.PostFields = []model.SettingsPostField{
+	settings.PostMetadata = []model.SettingsPostMetadata{
 		{
 			Name: "One",
 			Type: "string",
@@ -54,12 +54,12 @@ func TestSettings(t *testing.T) {
 	assert.False(t, settings.InsertTime.IsZero())
 
 	// Update settings again
-	settings.PostFields = append(settings.PostFields, model.SettingsPostField{
+	settings.PostMetadata = append(settings.PostMetadata, model.SettingsPostMetadata{
 		Name: "Two",
 		Type: "number",
 	})
 	settings, errors = testApi.UpdateSettings(context.TODO(), *settings)
 	assert.Nil(t, errors)
-	assert.Equal(t, 2, len(settings.PostFields))
+	assert.Equal(t, 2, len(settings.PostMetadata))
 	assert.NotEqual(t, settings.InsertTime, settings.LastUpdateTime)
 }

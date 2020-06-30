@@ -4,14 +4,14 @@
     <form @submit.prevent="save">
       <h3>Define custom post fields</h3>
       <Tabulator
-        :data="settingsObj.postFields"
-        :columns="postFieldColumns"
+        :data="settingsObj.postMetadata"
+        :columns="postMetadataColumns"
         layout="fitColumns"
         :movable-rows="true"
         :resizable-columns="true"
-        @rowMoved="postFieldsMoved"
+        @rowMoved="postMetadataMoved"
       />
-      <a href="" @click.prevent="addPostField">Add a row</a>
+      <a href="" @click.prevent="addPostMetadata">Add a row</a>
       <BaseButton type="submit" class="submit-button" buttonClass="-fill-gradient" :disabled="$v.$anyError"
         >Save</BaseButton
       >
@@ -28,7 +28,7 @@ import { mapState } from "vuex";
 import Tabulator from "../components/Tabulator";
 import NProgress from "nprogress";
 
-const postFieldTypes = {
+const postMetadataTypes = {
   string: "Text",
   number: "Numeric",
   date: "Date",
@@ -53,7 +53,7 @@ export default {
   data() {
     return {
       settingsObj: {},
-      postFieldColumns: [
+      postMetadataColumns: [
         {
           rowHandle: true,
           formatter: "handle",
@@ -77,13 +77,21 @@ export default {
           field: "type",
           tooltip: "type of data the field will hold",
           formatter: "lookup",
-          formatterParams: postFieldTypes,
+          formatterParams: postMetadataTypes,
           editor: "select",
           editorParams: {
-            values: postFieldTypes,
+            values: postMetadataTypes,
             defaultValue: "string"
           },
           validator: ["required"]
+        },
+        {
+          title: "Tooltip",
+          minWidth: 200,
+          widthGrow: 2,
+          field: "tooltip",
+          tooltip: "tooltip for field (optional)",
+          editor: "input"
         },
         {
           title: "Delete",
@@ -92,7 +100,7 @@ export default {
           width: 55,
           minWidth: 55,
           cellClick: (e, cell) => {
-            this.postFieldsDelete(cell.getRow().getPosition());
+            this.postMetadataDelete(cell.getRow().getPosition());
           }
         }
       ]
@@ -101,17 +109,17 @@ export default {
   computed: mapState(["settings"]),
   validations: {},
   methods: {
-    addPostField() {
-      this.settingsObj.postFields.push({ type: "string" });
+    addPostMetadata() {
+      this.settingsObj.postMetadata.push({ type: "string" });
     },
-    postFieldsMoved(data) {
-      this.settingsObj.postFields = data;
+    postMetadataMoved(data) {
+      this.settingsObj.postMetadata = data;
     },
-    postFieldsDelete(ix) {
-      this.settingsObj.postFields.splice(ix, 1);
+    postMetadataDelete(ix) {
+      this.settingsObj.postMetadata.splice(ix, 1);
     },
     save() {
-      this.settingsObj.postFields = this.settingsObj.postFields.filter(f => f.name && f.type);
+      this.settingsObj.postMetadata = this.settingsObj.postMetadata.filter(f => f.name && f.type);
       this.$v.$touch();
       if (!this.$v.$invalid) {
         NProgress.start();
