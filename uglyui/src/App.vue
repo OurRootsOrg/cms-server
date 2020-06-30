@@ -54,7 +54,7 @@
       </div>
     </div>
     <Notifications />
-    <router-view id="view" />
+    <router-view id="view" :key="$route.fullPath"></router-view>
   </div>
 </template>
 

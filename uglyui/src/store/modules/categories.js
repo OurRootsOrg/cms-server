@@ -19,13 +19,14 @@ export const mutations = {
 export const actions = {
   categoriesCreate({ commit, dispatch }, category) {
     return Server.categoriesCreate(category)
-      .then(category => {
-        commit("CATEGORIES_ADD", category);
+      .then(response => {
+        commit("CATEGORIES_ADD", response.data);
         const notification = {
           type: "success",
-          message: "Your category has been created!"
+          message: "Your category has been created"
         };
         dispatch("notificationsAdd", notification, { root: true });
+        return response.data;
       })
       .catch(error => {
         const notification = {
@@ -40,6 +41,7 @@ export const actions = {
     return Server.categoriesGetAll()
       .then(response => {
         commit("CATEGORIES_SET", response.data.categories);
+        return response.data.categories;
       })
       .catch(error => {
         const notification = {
@@ -53,6 +55,11 @@ export const actions = {
     return Server.categoriesDelete(id)
       .then(() => {
         commit("CATEGORIES_REMOVE", id);
+        const notification = {
+          type: "success",
+          message: "Your category has been deleted"
+        };
+        dispatch("notificationsAdd", notification, { root: true });
       })
       .catch(error => {
         const notification = {

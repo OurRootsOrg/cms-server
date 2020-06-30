@@ -169,8 +169,10 @@ func main() {
 			CollectionPersister(p).
 			PostPersister(p).
 			RecordPersister(p).
-			UserPersister(p)
+			UserPersister(p).
+			SettingsPersister(p)
 		log.Print("[INFO] Using PostgresPersister")
+
 	} else {
 		sess, err := session.NewSession()
 		if err != nil {
@@ -185,8 +187,9 @@ func main() {
 			// CollectionPersister(p).
 			// PostPersister(p).
 			// RecordPersister(p).
+			// SettingsPersister(p).
 			UserPersister(p)
-		log.Print("[INFO] Using PostgresPersister")
+		log.Print("[INFO] Using DynamoDBPersister")
 	}
 	r := app.NewRouter()
 	docs.SwaggerInfo.Host = env.BaseURL.Hostname()

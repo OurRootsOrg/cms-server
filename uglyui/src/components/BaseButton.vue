@@ -45,7 +45,8 @@ export default {
 .button:focus {
   outline: 0;
 }
-.button:disabled {
+.button:disabled,
+.button:disabled.-fill-gradient {
   -webkit-transform: scale(1);
   transform: scale(1);
   box-shadow: none;

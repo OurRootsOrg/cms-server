@@ -37,13 +37,14 @@ export const mutations = {
 export const actions = {
   collectionsCreate({ commit, dispatch }, collection) {
     return Server.collectionsCreate(collection)
-      .then(collection => {
-        commit("COLLECTIONS_ADD", collection);
+      .then(response => {
+        commit("COLLECTIONS_ADD", response.data);
         const notification = {
           type: "success",
-          message: "Your collection has been created!"
+          message: "Your collection has been created"
         };
         dispatch("notificationsAdd", notification, { root: true });
+        return response.data;
       })
       .catch(error => {
         const notification = {
@@ -60,9 +61,10 @@ export const actions = {
         commit("COLLECTION_UPDATE", response.data);
         const notification = {
           type: "success",
-          message: "Your collection has been updated!"
+          message: "Your collection has been updated"
         };
         dispatch("notificationsAdd", notification, { root: true });
+        return response.data;
       })
       .catch(error => {
         const notification = {
@@ -76,6 +78,11 @@ export const actions = {
     return Server.collectionsDelete(id)
       .then(() => {
         commit("COLLECTIONS_REMOVE", id);
+        const notification = {
+          type: "success",
+          message: "Your collection has been deleted"
+        };
+        dispatch("notificationsAdd", notification, { root: true });
       })
       .catch(error => {
         const notification = {
@@ -89,6 +96,7 @@ export const actions = {
     return Server.collectionsGetAll()
       .then(response => {
         commit("COLLECTIONS_SET", response.data.collections);
+        return response.data.collections;
       })
       .catch(error => {
         const notification = {
@@ -98,22 +106,10 @@ export const actions = {
         dispatch("notificationsAdd", notification, { root: true });
       });
   },
-  collectionsGetOne({ commit, getters }, id) {
-    let coll = getters.getCollectionById(id);
-
-    if (coll) {
-      commit("COLLECTION_SET", coll);
-      return coll;
-    } else {
-      return Server.collectionsGetOne(id).then(response => {
-        commit("COLLECTION_SET", response.data);
-        return response.data;
-      });
-    }
-  }
-};
-export const getters = {
-  getCollectionById: state => id => {
-    return state.collectionsList ? state.collectionsList.find(coll => coll.id === id) : null;
+  collectionsGetOne({ commit }, id) {
+    return Server.collectionsGetOne(id).then(response => {
+      commit("COLLECTION_SET", response.data);
+      return response.data;
+    });
   }
 };

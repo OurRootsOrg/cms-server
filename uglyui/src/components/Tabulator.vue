@@ -16,6 +16,12 @@ export default {
       type: Array,
       required: true
     },
+    headerSort: {
+      type: Boolean
+    },
+    selectable: {
+      type: Boolean
+    },
     layout: {
       type: String
     },
@@ -30,9 +36,6 @@ export default {
     },
     virtualDom: {
       type: Boolean
-    },
-    cellEdited: {
-      type: Function
     }
   },
   data() {
@@ -53,8 +56,8 @@ export default {
     this.tabulator = new Tabulator(this.$refs.table, {
       data: this.data,
       columns: this.columns,
-      headerSort: false,
-      selectable: false,
+      headerSort: this.headerSort,
+      selectable: this.selectable,
       layout: this.layout || "fitData",
       movableRows: this.movableRows,
       movableColumns: this.movableColumns,
@@ -65,6 +68,12 @@ export default {
       },
       cellEdited: function(cell) {
         self.$emit("cellEdited", cell);
+      },
+      rowClick: function(e, row) {
+        self.$emit("rowClicked", row.getData());
+      },
+      rowTap: function(e, row) {
+        self.$emit("rowClicked", row.getData());
       }
     });
   }

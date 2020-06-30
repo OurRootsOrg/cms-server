@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"math"
+	"net/http"
 	"net/url"
 	"os"
 	"reflect"
@@ -31,7 +32,7 @@ const (
 
 const numWorkers = 10
 
-func processMessage(ctx context.Context, ap *api.API, rawMsg []byte) error {
+func processMessage(ctx context.Context, ap *api.API, rawMsg []byte) *model.Errors {
 	var msg model.RecordsWriterMsg
 	err := json.Unmarshal(rawMsg, &msg)
 	if err != nil {
@@ -48,7 +49,7 @@ func processMessage(ctx context.Context, ap *api.API, rawMsg []byte) error {
 		return errs
 	}
 	if post.RecordsStatus != model.PostLoading {
-		log.Printf("[ERROR] post not pending %d -> %s\n", post.ID, post.RecordsStatus)
+		log.Printf("[ERROR] post %d not Loading, is %s\n", post.ID, post.RecordsStatus)
 		return nil
 	}
 
@@ -63,7 +64,7 @@ func processMessage(ctx context.Context, ap *api.API, rawMsg []byte) error {
 	bucket, err := ap.OpenBucket(ctx)
 	if err != nil {
 		log.Printf("[ERROR] OpenBucket %v\n", err)
-		return err
+		return model.NewErrors(http.StatusInternalServerError, err)
 	}
 	defer bucket.Close()
 
@@ -71,13 +72,13 @@ func processMessage(ctx context.Context, ap *api.API, rawMsg []byte) error {
 	bs, err := bucket.ReadAll(ctx, post.RecordsKey)
 	if err != nil {
 		log.Printf("[ERROR] ReadAll %v\n", err)
-		return err
+		return model.NewErrors(http.StatusInternalServerError, err)
 	}
 	var datas []map[string]string
 	err = json.Unmarshal(bs, &datas)
 	if err != nil {
 		log.Printf("[ERROR] Unmarshal datas %v\n", err)
-		return err
+		return model.NewErrors(http.StatusInternalServerError, err)
 	}
 
 	// set up workers
@@ -117,8 +118,8 @@ func processMessage(ctx context.Context, ap *api.API, rawMsg []byte) error {
 		return errs
 	}
 
-	// update post.recordsStatus = READY
-	post.RecordsStatus = model.PostDraft
+	// update post.recordsStatus = load complete
+	post.RecordsStatus = model.PostLoadComplete
 	_, errs = ap.UpdatePost(ctx, post.ID, *post)
 	if errs != nil {
 		log.Printf("[ERROR] UpdatePost %v\n", errs)
@@ -221,9 +222,9 @@ func main() {
 				continue
 			}
 			// process message
-			err = processMessage(ctx, ap, msg.Body)
-			if err != nil {
-				log.Printf("[ERROR] Processing message %v\n", err)
+			errs := processMessage(ctx, ap, msg.Body)
+			if errs != nil {
+				log.Printf("[ERROR] Processing message %v\n", errs)
 				continue
 			}
 			msg.Ack()
