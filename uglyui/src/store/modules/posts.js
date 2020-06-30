@@ -39,9 +39,10 @@ export const actions = {
         commit("POSTS_ADD", response.data);
         const notification = {
           type: "success",
-          message: "Your post has been created!"
+          message: "Your post has been created"
         };
         dispatch("notificationsAdd", notification, { root: true });
+        return response.data;
       })
       .catch(error => {
         const notification = {
@@ -58,9 +59,10 @@ export const actions = {
         commit("POST_UPDATE", response.data);
         const notification = {
           type: "success",
-          message: "Your post has been updated!"
+          message: "Your post has been updated"
         };
         dispatch("notificationsAdd", notification, { root: true });
+        return response.data;
       })
       .catch(error => {
         const notification = {
@@ -74,6 +76,11 @@ export const actions = {
     return Server.postsDelete(id)
       .then(() => {
         commit("POSTS_REMOVE", id);
+        const notification = {
+          type: "success",
+          message: "Your post has been deleted"
+        };
+        dispatch("notificationsAdd", notification, { root: true });
       })
       .catch(error => {
         const notification = {
@@ -87,6 +94,7 @@ export const actions = {
     return Server.postsGetAll()
       .then(response => {
         commit("POSTS_SET", response.data.posts);
+        return response.data.posts;
       })
       .catch(error => {
         const notification = {
@@ -100,6 +108,7 @@ export const actions = {
     return Server.postsGetOne(id)
       .then(response => {
         commit("POST_SET", response.data);
+        return response.data;
       })
       .catch(error => {
         const notification = {

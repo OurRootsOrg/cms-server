@@ -143,8 +143,8 @@ func (app App) PutPost(w http.ResponseWriter, req *http.Request) {
 		ErrorResponse(w, http.StatusBadRequest, msg)
 		return
 	}
-	if in.RecordsStatus != model.PostEmpty && in.RecordsStatus != model.PostDraft && in.RecordsStatus != model.PostPublished {
-		msg := fmt.Sprintf("Records status must be Empty, Draft, or Published: %v", err)
+	if !model.UserAcceptedPostRecordsStatus(in.RecordsStatus) {
+		msg := fmt.Sprintf("Invalid records status: %s", in.RecordsStatus)
 		ErrorResponse(w, http.StatusBadRequest, msg)
 		return
 	}

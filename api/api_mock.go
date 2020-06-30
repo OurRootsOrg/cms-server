@@ -92,3 +92,10 @@ func (a *ApiMock) SearchByID(ctx context.Context, id string) (*model.SearchHit, 
 func (a *ApiMock) SearchDeleteByID(ctx context.Context, id string) *model.Errors {
 	return a.Errors
 }
+
+func (a *ApiMock) GetSettings(ctx context.Context) (*model.Settings, *model.Errors) {
+	return a.Result.(*model.Settings), a.Errors
+}
+func (a *ApiMock) UpdateSettings(ctx context.Context, in model.Settings) (*model.Settings, *model.Errors) {
+	return a.Result.(*model.Settings), a.Errors
+}

@@ -18,19 +18,28 @@ type PostPersister interface {
 }
 
 const (
-	PostEmpty             = "Empty"
 	PostLoading           = "Loading"
+	PostLoadComplete      = "LoadComplete"
 	PostDraft             = "Draft"
 	PostPublishing        = "Publishing"
 	PostPublished         = "Published"
-	PostPublishComplete   = "PublishComplete"
+	PostPublishComplete   = "PublishComplete" // set only by publisher
 	PostUnpublishing      = "Unpublishing"
-	PostUnpublishComplete = "UnpublishComplete"
+	PostUnpublishComplete = "UnpublishComplete" // set only by publisher
 )
 const (
 	PublisherActionIndex   = "index"
 	PublisherActionUnindex = "unindex"
 )
+
+func UserAcceptedPostRecordsStatus(status string) bool {
+	for _, s := range []string{PostLoading, PostDraft, PostPublishing, PostPublished, PostUnpublishing} {
+		if s == status {
+			return true
+		}
+	}
+	return false
+}
 
 type RecordsWriterMsg struct {
 	PostID uint32 `json:"postId"`
@@ -43,9 +52,10 @@ type PublisherMsg struct {
 
 // PostBody is the JSON body of a Post
 type PostBody struct {
-	Name          string `json:"name,omitempty" validate:"required,omitempty"`
-	RecordsKey    string `json:"recordsKey"`
-	RecordsStatus string `json:"recordsStatus"`
+	Name          string                 `json:"name,omitempty" validate:"required,omitempty"`
+	Metadata      map[string]interface{} `json:"metadata"`
+	RecordsKey    string                 `json:"recordsKey"`
+	RecordsStatus string                 `json:"recordsStatus"`
 }
 
 // Value makes PostBody implement the driver.Valuer interface.

@@ -167,5 +167,23 @@ export default {
   },
   searchGetResult(id) {
     return apiClient.get(`/search/${id}`);
+  },
+  async settingsGet() {
+    let auth = await getAuth();
+    let token = await auth.getTokenSilently();
+    return apiClient.get(`/settings`, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+  },
+  async settingsUpdate(post) {
+    let auth = await getAuth();
+    let token = await auth.getTokenSilently();
+    return apiClient.put(`/settings`, post, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
   }
 };
