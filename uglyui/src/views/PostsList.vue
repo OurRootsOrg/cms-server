@@ -1,6 +1,6 @@
 <template>
   <div class="posts-list">
-    <h1>List Posts</h1>
+    <h1>Posts</h1>
     <Tabulator
       :data="getPosts()"
       :columns="getPostColumns()"

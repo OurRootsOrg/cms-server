@@ -85,10 +85,25 @@
         Please fill out the required field(s).
       </p>
     </form>
-    <div v-if="collection.id" class="posts">Collection has {{ posts.length }} posts</div>
-    <BaseButton class="btn" buttonClass="danger" @click="del()" :disabled="posts.length > 0"
+    <BaseButton
+      v-if="collection.id"
+      class="btn"
+      buttonClass="danger"
+      @click="del()"
+      :disabled="postsForCollection.length > 0"
       >Delete Collection</BaseButton
     >
+    <h3 v-if="collection.id">Posts</h3>
+    <Tabulator
+      v-if="collection.id"
+      :data="postsForCollection"
+      :columns="getPostColumns()"
+      layout="fitColumns"
+      :header-sort="true"
+      :selectable="true"
+      :resizable-columns="true"
+      @rowClicked="postRowClicked"
+    />
   </div>
 </template>
 
@@ -138,9 +153,53 @@ const ixEmptyFieldMap = {
 function setup() {
   Object.assign(this.collection, this.collections.collection);
   this.collection.categories = this.collection.categories.map(catId =>
-    this.$store.state.categories.categoriesList.find(cat => cat.id === catId)
+    this.categories.categoriesList.find(cat => cat.id === catId)
   );
-  this.posts = this.$store.state.posts.postsList.filter(p => p.collection === this.collection.id);
+}
+
+// TODO this function and getMetadataColumns are copied from PostsList.vue; figure out how best to share
+function getMetadataColumn(pf) {
+  switch (pf.type) {
+    case "string":
+      return {
+        title: pf.name,
+        field: pf.name,
+        tooltip: pf.tooltip,
+        headerFilter: "input",
+        sorter: "string"
+      };
+    case "number":
+      return {
+        title: pf.name,
+        field: pf.name,
+        tooltip: pf.tooltip,
+        headerFilter: "number",
+        sorter: "number"
+      };
+    case "date":
+      return {
+        title: pf.name,
+        field: pf.name,
+        hozAlign: "center",
+        tooltip: pf.tooltip,
+        headerFilter: "input",
+        sorter: "date",
+        sorterParams: {
+          format: "DD MMM YYYY",
+          alignEmptyValues: "top"
+        }
+      };
+    case "boolean":
+      return {
+        title: pf.name,
+        field: pf.name,
+        tooltip: pf.tooltip,
+        hozAlign: "center",
+        formatter: "tickCross",
+        headerFilter: "tickCross",
+        sorter: "boolean"
+      };
+  }
 }
 
 export default {
@@ -149,7 +208,9 @@ export default {
     let routes = [store.dispatch("categoriesGetAll")];
     if (routeTo.params && routeTo.params.cid) {
       routes.push(store.dispatch("collectionsGetOne", routeTo.params.cid));
+      routes.push(store.dispatch("collectionsGetAll"));
       routes.push(store.dispatch("postsGetAll"));
+      routes.push(store.dispatch("settingsGet"));
     }
     Promise.all(routes).then(() => {
       next();
@@ -163,7 +224,6 @@ export default {
   data() {
     return {
       collection: { categories: [], fields: [], mappings: [] },
-      posts: [],
       fieldColumns: [
         {
           rowHandle: true,
@@ -289,7 +349,23 @@ export default {
       ]
     };
   },
-  computed: mapState(["collections", "categories"]),
+  computed: {
+    postsForCollection() {
+      return this.posts.postsList
+        .filter(p => p.collection === this.collection.id)
+        .map(p => {
+          return {
+            id: p.id,
+            name: p.name,
+            recordsStatus: p.recordsStatus,
+            hasData: !!p.recordsKey,
+            collectionName: this.collections.collectionsList.find(coll => coll.id === p.collection).name,
+            ...p.metadata
+          };
+        });
+    },
+    ...mapState(["collections", "categories", "posts", "settings"])
+  },
   validations: {
     collection: {
       name: { required },
@@ -347,6 +423,47 @@ export default {
         this.collection.mappings = this.collection.mappings.filter(m => m.header !== oldValue);
       }
     },
+    getPostColumns() {
+      let cols = [
+        {
+          title: "Name",
+          field: "name",
+          headerFilter: "input",
+          sorter: "string"
+        },
+        {
+          title: "Status",
+          field: "recordsStatus",
+          headerFilter: "select",
+          headerFilterParams: {
+            values: true
+          },
+          sorter: "string"
+        },
+        {
+          title: "Has Data",
+          field: "hasData",
+          hozAlign: "center",
+          formatter: "tickCross",
+          headerFilter: "tickCross",
+          sorter: "boolean"
+        },
+        {
+          title: "Collection",
+          field: "collectionName",
+          headerFilter: "input",
+          sorter: "string"
+        }
+      ];
+      cols.push(...this.settings.settings.postMetadata.map(pf => getMetadataColumn(pf)));
+      return cols;
+    },
+    postRowClicked(post) {
+      this.$router.push({
+        name: "post-edit",
+        params: { pid: post.id }
+      });
+    },
     save() {
       this.collection.fields = this.collection.fields.filter(f => f.header);
       if (this.collection.fields.length === 0) {
@@ -380,7 +497,7 @@ export default {
       }
     },
     del() {
-      if (this.posts.length > 0) {
+      if (this.postsForCollection.length > 0) {
         return;
       }
       NProgress.start();
@@ -405,7 +522,7 @@ export default {
   margin-top: 32px;
 }
 .tabulator {
-  min-width: 640px;
+  width: 750px;
 }
 .posts {
   margin-top: 32px;
