@@ -22,10 +22,10 @@ export default {
       }
     });
   },
-  async categoriesGetAll() {
+  async categoriesUpdate(cat) {
     let auth = await getAuth();
     let token = await auth.getTokenSilently();
-    return apiClient.get("/categories", {
+    return apiClient.put(`/categories/${cat.id}`, cat, {
       headers: {
         Authorization: `Bearer ${token}`
       }
@@ -35,6 +35,24 @@ export default {
     let auth = await getAuth();
     let token = await auth.getTokenSilently();
     return apiClient.delete(`/categories/${id}`, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+  },
+  async categoriesGetAll() {
+    let auth = await getAuth();
+    let token = await auth.getTokenSilently();
+    return apiClient.get("/categories", {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+  },
+  async categoriesGetOne(id) {
+    let auth = await getAuth();
+    let token = await auth.getTokenSilently();
+    return apiClient.get(`/categories/${id}`, {
       headers: {
         Authorization: `Bearer ${token}`
       }

@@ -687,18 +687,15 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "posts"
+                    "settings"
                 ],
-                "summary": "returns all posts",
-                "operationId": "getPosts",
+                "summary": "returns goobal settings",
+                "operationId": "getSettings",
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/model.Post"
-                            }
+                            "$ref": "#/definitions/model.Settings"
                         }
                     },
                     "500": {
@@ -1064,6 +1061,70 @@ var doc = `{
                     }
                 }
             }
+        },
+        "/settings": {
+            "put": {
+                "security": [
+                    {
+                        "OAuth2Implicit": [
+                            "cms",
+                            "openid",
+                            "profile",
+                            "email"
+                        ]
+                    },
+                    {
+                        "OAuth2AuthCode": [
+                            "cms",
+                            "openid",
+                            "profile",
+                            "email"
+                        ]
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "settings"
+                ],
+                "summary": "updates settings",
+                "operationId": "updateSettings",
+                "parameters": [
+                    {
+                        "description": "Update Settings",
+                        "name": "post",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.Settings"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.Settings"
+                        }
+                    },
+                    "415": {
+                        "description": "Bad Content-Type",
+                        "schema": {
+                            "$ref": "#/definitions/model.Errors"
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "$ref": "#/definitions/model.Errors"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -1233,8 +1294,7 @@ var doc = `{
             "required": [
                 "collection",
                 "id",
-                "name",
-                "recordsKey"
+                "name"
             ],
             "properties": {
                 "collection": {
@@ -1251,6 +1311,10 @@ var doc = `{
                 "last_update_time": {
                     "type": "string"
                 },
+                "metadata": {
+                    "type": "object",
+                    "additionalProperties": true
+                },
                 "name": {
                     "type": "string"
                 },
@@ -1266,13 +1330,16 @@ var doc = `{
             "type": "object",
             "required": [
                 "collection",
-                "name",
-                "recordsKey"
+                "name"
             ],
             "properties": {
                 "collection": {
                     "type": "integer",
                     "example": 999
+                },
+                "metadata": {
+                    "type": "object",
+                    "additionalProperties": true
                 },
                 "name": {
                     "type": "string"
@@ -1423,6 +1490,37 @@ var doc = `{
                 },
                 "total": {
                     "type": "integer"
+                }
+            }
+        },
+        "model.Settings": {
+            "type": "object",
+            "properties": {
+                "insert_time": {
+                    "type": "string"
+                },
+                "last_update_time": {
+                    "type": "string"
+                },
+                "postMetadata": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.SettingsPostMetadata"
+                    }
+                }
+            }
+        },
+        "model.SettingsPostMetadata": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "tooltip": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
                 }
             }
         }

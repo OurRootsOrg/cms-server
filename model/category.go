@@ -32,7 +32,7 @@ type CategoryIn struct {
 
 // CategoryBody is the JSON part of the Category object
 type CategoryBody struct {
-	Name string `json:"name,omitempty" validate:"required"`
+	Name string `json:"name" validate:"required"`
 }
 
 // NewCategoryIn constructs a CategoryIn

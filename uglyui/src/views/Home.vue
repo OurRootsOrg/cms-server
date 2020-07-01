@@ -18,6 +18,23 @@
       <!-- show logout when authenticated -->
       <button v-if="$auth.isAuthenticated" @click="logout">Log out</button>
     </div>
+    <h2>Roadmap for end of September</h2>
+    <ul>
+      <li>Dashboard</li>
+      <li>List users and authorize who can sign in</li>
+      <li>Search dates</li>
+      <li>Search places</li>
+      <li>Include common nicknames in name search</li>
+      <li>Choose name coders in global settings</li>
+      <li>Glue households</li>
+      <li>Collection field templates</li>
+      <li>Pretty search UI</li>
+    </ul>
+    <h2>Feedback?</h2>
+    <ul>
+      <li>heatherdevaun@gmail.com</li>
+      <li>dallan@gmail.com</li>
+    </ul>
   </div>
 </template>
 
