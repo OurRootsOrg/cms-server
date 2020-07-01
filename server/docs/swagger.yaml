@@ -687,16 +687,14 @@ paths:
       - content
   /posts:
     get:
-      operationId: getPosts
+      operationId: getSettings
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            items:
-              $ref: '#/definitions/model.Post'
-            type: array
+            $ref: '#/definitions/model.Settings'
         "500":
           description: Server error
           schema:
@@ -712,9 +710,9 @@ paths:
         - openid
         - profile
         - email
-      summary: returns all posts
+      summary: returns goobal settings
       tags:
-      - posts
+      - settings
     post:
       consumes:
       - application/json
