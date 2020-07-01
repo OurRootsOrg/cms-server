@@ -28,7 +28,23 @@
       <li>Choose name coders in global settings</li>
       <li>Glue households</li>
       <li>Collection field templates</li>
-      <li>Pretty search UI</li>
+      <li>Pretty search UI (replace the Search screen on this UI)</li>
+    </ul>
+    <h2>Roadmap for end of the year</h2>
+    <ul>
+      <li>Pretty admin UI (replace the rest of this UI)</li>
+      <li>Limit volunteer actions (only authorized volunteers can publish)</li>
+      <li>Custom transformations (lookup tables) applied to spreadsheet data during upload</li>
+      <li>Optional integration with WordPress membership system for paid search</li>
+      <li>Records can have images uploaded and associated with them</li>
+      <li>Optional integration with WordPress to display custom search forms</li>
+    </ul>
+    <h2>Future ideas</h2>
+    <ul>
+      <li>Searchable books</li>
+      <li>CSI integration for indexing support</li>
+      <li>Searchable GEDCOMs</li>
+      <li>Searchable record streams (users can submit individual records to index)</li>
     </ul>
     <h2>Feedback?</h2>
     <ul>
