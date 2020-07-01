@@ -10,6 +10,9 @@
       :resizable-columns="true"
       @rowClicked="rowClicked"
     />
+    <div class="create">
+      <router-link to="/categories/create">Create a new category</router-link>
+    </div>
   </div>
 </template>
 
@@ -68,5 +71,8 @@ export default {
 .disabled {
   cursor: not-allowed;
   color: gray;
+}
+.create {
+  margin-top: 8px;
 }
 </style>

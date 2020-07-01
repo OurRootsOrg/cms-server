@@ -10,7 +10,7 @@
         placeholder="Name"
         class="field"
         :class="{ error: $v.collection.name.$error }"
-        @blur="$v.collection.name.$touch()"
+        @blur="touch('name')"
       />
 
       <template v-if="$v.collection.name.$error">
@@ -36,7 +36,7 @@
         placeholder="Search or add a category"
         tag-placeholder="Add this category"
         :class="{ error: $v.collection.categories.$error }"
-        @close="$v.collection.categories.$touch()"
+        @close="touch('categories')"
       ></multiselect>
       <template v-if="$v.collection.categories.$error">
         <p v-if="!$v.collection.categories.required" class="errorMessage">
@@ -78,7 +78,7 @@
         type="submit"
         class="submit-button"
         buttonClass="-fill-gradient"
-        :disabled="$v.$anyError || collection.fields.length === 0 || collection.mappings.length === 0"
+        :disabled="$v.$anyError || collection.fields.length === 0 || collection.mappings.length === 0 || !$v.$anyDirty"
         >Save</BaseButton
       >
       <p v-if="$v.$anyError" class="errorMessage">
@@ -89,6 +89,7 @@
       v-if="collection.id"
       class="btn"
       buttonClass="danger"
+      :title="postsForCollection.length > 0 ? 'Collections with posts cannot be deleted' : 'Cannot be undone!'"
       @click="del()"
       :disabled="postsForCollection.length > 0"
       >Delete Collection</BaseButton
@@ -104,6 +105,9 @@
       :resizable-columns="true"
       @rowClicked="postRowClicked"
     />
+    <div class="create">
+      <router-link to="/posts/create">Create a new post</router-link>
+    </div>
   </div>
 </template>
 
@@ -114,6 +118,7 @@ import Tabulator from "../components/Tabulator";
 import NProgress from "nprogress";
 import { required } from "vuelidate/lib/validators";
 import Multiselect from "vue-multiselect";
+import lodash from "lodash";
 
 const ixRoleMap = {
   na: "Don't index",
@@ -152,9 +157,12 @@ const ixEmptyFieldMap = {
 
 function setup() {
   Object.assign(this.collection, this.collections.collection);
-  this.collection.categories = this.collection.categories.map(catId =>
+  // deep-clone arrays
+  this.collection.categories = this.collections.collection.categories.map(catId =>
     this.categories.categoriesList.find(cat => cat.id === catId)
   );
+  this.collection.fields = lodash.cloneDeep(this.collections.collection.fields);
+  this.collection.mappings = lodash.cloneDeep(this.collections.collection.mappings);
 }
 
 // TODO this function and getMetadataColumns are copied from PostsList.vue; figure out how best to share
@@ -248,7 +256,7 @@ export default {
           editor: "tickCross",
           hozAlign: "center",
           formatter: "tickCross",
-          formatterParams: { allowEmpty: true, crossElement: "&ndash;" }
+          formatterParams: { allowEmpty: true }
         },
         {
           title: "Validation rule",
@@ -369,34 +377,53 @@ export default {
   validations: {
     collection: {
       name: { required },
-      categories: { required }
+      categories: { required },
+      fields: {},
+      mappings: {}
     }
   },
   methods: {
+    touch(attr) {
+      if (this.$v.collection[attr].$dirty) {
+        return;
+      }
+      let value = this.collection[attr];
+      if (attr === "categories") {
+        value = value.map(v => v.id);
+      }
+      if (!this.collection.id || !lodash.isEqual(value, this.collections.collection[attr])) {
+        this.$v.collection[attr].$touch();
+      }
+    },
     addField() {
       this.collection.fields.push({});
     },
     fieldsMoved(data) {
       this.collection.fields = data;
+      this.touch("fields");
     },
     fieldsDelete(ix) {
       let header = this.collection.fields[ix].header;
       this.collection.fields.splice(ix, 1);
       this.syncFieldsMappings(null, header);
+      this.touch("fields");
     },
     fieldsEdited(cell) {
       if (cell.getField() === "header") {
         this.syncFieldsMappings(cell.getValue(), cell.getOldValue());
       }
+      this.touch("fields");
     },
     addMapping() {
       this.collection.mappings.push({ ixRole: "na", ixField: "na" });
     },
     mappingMoved(data) {
       this.collection.mappings = data;
+      this.touch("mappings");
     },
     mappingDelete(ix) {
       this.collection.mappings.splice(ix, 1);
+      this.touch("mappings");
     },
     mappingEdited(cell) {
       if (cell.getField() === "ixRole") {
@@ -407,6 +434,7 @@ export default {
             .setValue("na", true);
         }
       }
+      this.touch("mappings");
     },
     syncFieldsMappings(newValue, oldValue) {
       if (newValue) {
@@ -422,6 +450,7 @@ export default {
       } else {
         this.collection.mappings = this.collection.mappings.filter(m => m.header !== oldValue);
       }
+      this.touch("mappings");
     },
     getPostColumns() {
       let cols = [
@@ -483,6 +512,7 @@ export default {
           .then(result => {
             if (collection.id) {
               setup.bind(this)();
+              this.$v.$reset();
               NProgress.done();
             } else {
               this.$router.push({
@@ -529,5 +559,8 @@ export default {
 }
 .btn {
   margin: 32px 0;
+}
+.create {
+  margin-top: 8px;
 }
 </style>

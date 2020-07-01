@@ -10,7 +10,7 @@
         placeholder="Name"
         class="field"
         :class="{ error: $v.category.name.$error }"
-        @blur="$v.category.name.$touch()"
+        @blur="touch('name')"
       />
 
       <template v-if="$v.category.name.$error">
@@ -19,7 +19,11 @@
         </p>
       </template>
 
-      <BaseButton type="submit" class="submit-button" buttonClass="-fill-gradient" :disabled="$v.$anyError"
+      <BaseButton
+        type="submit"
+        class="submit-button"
+        buttonClass="-fill-gradient"
+        :disabled="$v.$anyError || !$v.$anyDirty"
         >Save</BaseButton
       >
       <p v-if="$v.$anyError" class="errorMessage">
@@ -31,6 +35,7 @@
       class="btn"
       buttonClass="danger"
       @click="del()"
+      :title="collectionsForCategory.length > 0 ? 'Categories with collections cannot be deleted' : 'Cannot be undone!'"
       :disabled="collectionsForCategory.length > 0"
       >Delete Category</BaseButton
     >
@@ -45,6 +50,9 @@
       :resizable-columns="true"
       @rowClicked="collectionRowClicked"
     />
+    <div class="create">
+      <router-link to="/collections/create">Create a new collection</router-link>
+    </div>
   </div>
 </template>
 
@@ -54,6 +62,7 @@ import { mapState } from "vuex";
 import Tabulator from "../components/Tabulator";
 import NProgress from "nprogress";
 import { required } from "vuelidate/lib/validators";
+import lodash from "lodash";
 
 function setup() {
   Object.assign(this.category, this.categories.category);
@@ -128,6 +137,14 @@ export default {
     }
   },
   methods: {
+    touch(attr) {
+      if (this.$v.category[attr].$dirty) {
+        return;
+      }
+      if (!this.category.id || !lodash.isEqual(this.category[attr], this.categories.category[attr])) {
+        this.$v.category[attr].$touch();
+      }
+    },
     collectionRowClicked(coll) {
       this.$router.push({
         name: "collection-edit",
@@ -144,6 +161,7 @@ export default {
           .then(result => {
             if (category.id) {
               setup.bind(this)();
+              this.$v.$reset();
               NProgress.done();
             } else {
               this.$router.push({
@@ -183,5 +201,8 @@ export default {
 }
 .btn {
   margin: 24px 0;
+}
+.create {
+  margin-top: 8px;
 }
 </style>

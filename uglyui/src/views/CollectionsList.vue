@@ -10,6 +10,9 @@
       :resizable-columns="true"
       @rowClicked="rowClicked"
     />
+    <div class="create">
+      <router-link to="/collections/create">Create a new collection</router-link>
+    </div>
   </div>
 </template>
 
@@ -82,5 +85,8 @@ export default {
 .disabled {
   cursor: not-allowed;
   color: gray;
+}
+.create {
+  margin-top: 8px;
 }
 </style>
