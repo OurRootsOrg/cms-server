@@ -33,7 +33,7 @@
           :options="collections.collectionsList"
           v-model="post.collection"
           :class="{ error: $v.post.collection.$error }"
-          @change="touch('collection')"
+          @input="touch('collection')"
         />
         <template v-if="$v.post.collection.$error">
           <p v-if="!$v.post.collection.required" class="errorMessage">
@@ -49,7 +49,7 @@
           :options="getRecordsStatusOptions()"
           v-model="post.recordsStatus"
           :class="{ error: $v.post.recordsStatus.$error }"
-          @change="touch('recordsStatus')"
+          @input="touch('recordsStatus')"
         />
       </div>
 

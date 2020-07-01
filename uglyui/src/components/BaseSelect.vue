@@ -1,7 +1,8 @@
 <template>
   <div>
     <label v-if="label">{{ label }}</label>
-    <select class="select" :value="value" @change="updateValue" v-bind="$attrs" v-on="$listeners">
+    <select class="select" :value="value" @change="updateValue" v-bind="$attrs"
+      ><!-- v-on="$listeners" -->
       <option v-for="option in options" :value="option.id" :key="option.id" :selected="option.id === value">{{
         option.name
       }}</option>
