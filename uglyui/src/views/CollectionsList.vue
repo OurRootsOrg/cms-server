@@ -10,6 +10,9 @@
       :resizable-columns="true"
       @rowClicked="rowClicked"
     />
+    <div class="create">
+      <router-link to="/collections/create">Create a new collection</router-link>
+    </div>
   </div>
 </template>
 
@@ -61,7 +64,7 @@ export default {
           id: c.id,
           name: c.name,
           postsCount: this.posts.postsList.filter(post => post.collection === c.id).length,
-          categoryNames: this.collections.collectionsList
+          categoryNames: this.categories.categoriesList
             .filter(cat => c.categories.includes(cat.id))
             .map(cat => cat.name)
             .join(", ")
@@ -82,5 +85,8 @@ export default {
 .disabled {
   cursor: not-allowed;
   color: gray;
+}
+.create {
+  margin-top: 8px;
 }
 </style>

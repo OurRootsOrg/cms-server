@@ -10,6 +10,9 @@
       :resizable-columns="true"
       @rowClicked="rowClicked"
     />
+    <div class="create">
+      <router-link to="/posts/create">Create a new post</router-link>
+    </div>
   </div>
 </template>
 
@@ -135,5 +138,8 @@ export default {
 <style scoped>
 .tabulator {
   width: 750px;
+}
+.create {
+  margin-top: 8px;
 }
 </style>

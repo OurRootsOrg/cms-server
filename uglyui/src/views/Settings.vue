@@ -10,9 +10,14 @@
         :movable-rows="true"
         :resizable-columns="true"
         @rowMoved="postMetadataMoved"
+        @cellEdited="postMetadataEdited"
       />
       <a href="" @click.prevent="addPostMetadata">Add a row</a>
-      <BaseButton type="submit" class="submit-button" buttonClass="-fill-gradient" :disabled="$v.$anyError"
+      <BaseButton
+        type="submit"
+        class="submit-button"
+        buttonClass="-fill-gradient"
+        :disabled="$v.$anyError || !$v.$anyDirty"
         >Save</BaseButton
       >
       <p v-if="$v.$anyError" class="errorMessage">
@@ -27,6 +32,8 @@ import store from "@/store";
 import { mapState } from "vuex";
 import Tabulator from "../components/Tabulator";
 import NProgress from "nprogress";
+import lodash from "lodash";
+//import {required} from "vuelidate/lib/validators";
 
 const postMetadataTypes = {
   string: "Text",
@@ -37,6 +44,8 @@ const postMetadataTypes = {
 
 function setup() {
   Object.assign(this.settingsObj, this.settings.settings);
+  // deep-clone arrays
+  this.settingsObj.postMetadata = lodash.cloneDeep(this.settings.settings.postMetadata);
 }
 
 export default {
@@ -51,7 +60,7 @@ export default {
   },
   data() {
     return {
-      settingsObj: {},
+      settingsObj: { postMetadata: [] },
       postMetadataColumns: [
         {
           rowHandle: true,
@@ -106,13 +115,29 @@ export default {
     };
   },
   computed: mapState(["settings"]),
-  validations: {},
+  validations: {
+    settingsObj: {
+      postMetadata: {}
+    }
+  },
   methods: {
+    touch(attr) {
+      if (this.$v.settingsObj[attr].$dirty) {
+        return;
+      }
+      if (!lodash.isEqual(this.settingsObj[attr], this.settings.settings[attr])) {
+        this.$v.settingsObj[attr].$touch();
+      }
+    },
     addPostMetadata() {
       this.settingsObj.postMetadata.push({ type: "string" });
     },
     postMetadataMoved(data) {
       this.settingsObj.postMetadata = data;
+      this.touch("postMetadata");
+    },
+    postMetadataEdited() {
+      this.touch("postMetadata");
     },
     postMetadataDelete(ix) {
       this.settingsObj.postMetadata.splice(ix, 1);
@@ -126,6 +151,7 @@ export default {
           .dispatch("settingsUpdate", this.settingsObj)
           .then(() => {
             setup.bind(this)();
+            this.$v.$reset();
             NProgress.done();
           })
           .catch(() => {
