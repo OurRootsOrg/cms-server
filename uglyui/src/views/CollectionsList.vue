@@ -64,7 +64,7 @@ export default {
           id: c.id,
           name: c.name,
           postsCount: this.posts.postsList.filter(post => post.collection === c.id).length,
-          categoryNames: this.collections.collectionsList
+          categoryNames: this.categories.categoriesList
             .filter(cat => c.categories.includes(cat.id))
             .map(cat => cat.name)
             .join(", ")
