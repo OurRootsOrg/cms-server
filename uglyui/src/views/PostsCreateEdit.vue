@@ -10,7 +10,7 @@
         placeholder="Name"
         class="field"
         :class="{ error: $v.post.name.$error }"
-        @blur="$v.post.name.$touch()"
+        @blur="touch('name')"
       />
       <template v-if="$v.post.name.$error">
         <p v-if="!$v.post.name.required" class="errorMessage">
@@ -20,7 +20,11 @@
 
       <div v-if="post.id">
         <h3>Collection</h3>
-        <p>{{ collections.collection.name }}</p>
+        <p>
+          <router-link :to="{ name: 'collection-edit', params: { cid: collections.collection.id } }">{{
+            collections.collection.name
+          }}</router-link>
+        </p>
       </div>
       <div v-else>
         <h3>Select a collection</h3>
@@ -29,7 +33,7 @@
           :options="collections.collectionsList"
           v-model="post.collection"
           :class="{ error: $v.post.collection.$error }"
-          @blur="$v.post.collection.$touch()"
+          @change="touch('collection')"
         />
         <template v-if="$v.post.collection.$error">
           <p v-if="!$v.post.collection.required" class="errorMessage">
@@ -45,19 +49,27 @@
           :options="getRecordsStatusOptions()"
           v-model="post.recordsStatus"
           :class="{ error: $v.post.recordsStatus.$error }"
-          @blur="$v.post.recordsStatus.$touch()"
+          @change="touch('recordsStatus')"
         />
       </div>
 
       <div v-if="settings.settings.postMetadata.length > 0"></div>
       <h3>Custom fields</h3>
-      <Tabulator :data="metadata" :columns="getMetadataColumns()" layout="fitColumns" :resizable-columns="true" />
+      <Tabulator
+        :data="metadata"
+        :columns="getMetadataColumns()"
+        layout="fitColumns"
+        :resizable-columns="true"
+        @cellEdited="metadataEdited"
+      />
 
       <p v-if="$v.$anyError" class="errorMessage">
         Please fill out the required field(s).
       </p>
 
-      <BaseButton type="submit" class="btn" buttonClass="-fill-gradient" :disabled="$v.$anyError">Save</BaseButton>
+      <BaseButton type="submit" class="btn" buttonClass="-fill-gradient" :disabled="$v.$anyError || !$v.$anyDirty"
+        >Save</BaseButton
+      >
 
       <input
         v-if="post.id && post.recordsStatus === 'Draft'"
@@ -90,12 +102,13 @@ import config from "../flatfileConfig.js";
 import Server from "@/services/Server.js";
 import NProgress from "nprogress";
 import moment from "moment";
+import lodash from "lodash";
 
 FlatfileImporter.setVersion(2);
 
 function setup() {
   Object.assign(this.post, this.posts.post);
-  this.metadata.splice(0, 1, this.posts.post.metadata || {});
+  this.metadata.splice(0, 1, Object.assign({}, this.posts.post.metadata));
 }
 
 async function uploadData(store, post, contentType, data) {
@@ -234,10 +247,22 @@ export default {
     post: {
       name: { required },
       collection: { required },
-      recordsStatus: { required }
+      recordsStatus: { required },
+      metadata: {}
     }
   },
   methods: {
+    touch(attr) {
+      if (this.$v.post[attr].$dirty) {
+        return;
+      }
+      if (!this.post.id || attr === "metadata" || !lodash.isEqual(this.post[attr], this.posts.post[attr])) {
+        this.$v.post[attr].$touch();
+      }
+    },
+    metadataEdited() {
+      this.touch("metadata");
+    },
     getRecordColumns() {
       return this.collections.collection.fields.map(f => {
         return { title: f.header, field: f.header };
@@ -268,6 +293,7 @@ export default {
         .then(result => {
           if (post.id) {
             setup.bind(this)();
+            this.$v.$reset();
             NProgress.done();
           } else {
             this.$router.push({
@@ -310,10 +336,11 @@ export default {
               .then(() => {
                 importer.displaySuccess("Success!");
                 setup.bind(this)();
+                this.$v.$reset();
               });
           })
-          .catch(function(error) {
-            console.info(error);
+          .catch(() => {
+            // console.info(error);
           });
       }
     },

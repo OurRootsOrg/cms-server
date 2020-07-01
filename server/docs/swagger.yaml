@@ -119,6 +119,9 @@ definitions:
         type: string
       last_update_time:
         type: string
+      metadata:
+        additionalProperties: true
+        type: object
       name:
         type: string
       recordsKey:
@@ -135,6 +138,9 @@ definitions:
       collection:
         example: 999
         type: integer
+      metadata:
+        additionalProperties: true
+        type: object
       name:
         type: string
       recordsKey:
@@ -238,6 +244,26 @@ definitions:
         type: number
       total:
         type: integer
+    type: object
+  model.Settings:
+    properties:
+      insert_time:
+        type: string
+      last_update_time:
+        type: string
+      postMetadata:
+        items:
+          $ref: '#/definitions/model.SettingsPostMetadata'
+        type: array
+    type: object
+  model.SettingsPostMetadata:
+    properties:
+      name:
+        type: string
+      tooltip:
+        type: string
+      type:
+        type: string
     type: object
 host: api.ourroots.org
 info:
@@ -661,16 +687,14 @@ paths:
       - content
   /posts:
     get:
-      operationId: getPosts
+      operationId: getSettings
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            items:
-              $ref: '#/definitions/model.Post'
-            type: array
+            $ref: '#/definitions/model.Settings'
         "500":
           description: Server error
           schema:
@@ -686,9 +710,9 @@ paths:
         - openid
         - profile
         - email
-      summary: returns all posts
+      summary: returns goobal settings
       tags:
-      - posts
+      - settings
     post:
       consumes:
       - application/json
@@ -919,6 +943,47 @@ paths:
       summary: returns a single search result
       tags:
       - search
+  /settings:
+    put:
+      consumes:
+      - application/json
+      operationId: updateSettings
+      parameters:
+      - description: Update Settings
+        in: body
+        name: post
+        required: true
+        schema:
+          $ref: '#/definitions/model.Settings'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Settings'
+        "415":
+          description: Bad Content-Type
+          schema:
+            $ref: '#/definitions/model.Errors'
+        "500":
+          description: Server error
+          schema:
+            $ref: '#/definitions/model.Errors'
+      security:
+      - OAuth2Implicit:
+        - cms
+        - openid
+        - profile
+        - email
+      - OAuth2AuthCode:
+        - cms
+        - openid
+        - profile
+        - email
+      summary: updates settings
+      tags:
+      - settings
 schemes:
 - http
 - https

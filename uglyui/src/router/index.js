@@ -26,7 +26,12 @@ const routes = [
   {
     path: "/categories/create",
     name: "categories-create",
-    component: () => import(/* webpackChunkName: "about" */ "../views/CategoriesCreate.vue")
+    component: () => import(/* webpackChunkName: "about" */ "../views/CategoriesCreateEdit.vue")
+  },
+  {
+    path: "/categories/:cid",
+    name: "category-edit",
+    component: () => import(/* webpackChunkName: "about" */ "../views/CategoriesCreateEdit.vue")
   },
   {
     path: "/collections",

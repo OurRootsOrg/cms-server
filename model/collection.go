@@ -21,7 +21,7 @@ type CollectionPersister interface {
 
 // CollectionBody is the JSON body of a Collection
 type CollectionBody struct {
-	Name             string              `json:"name,omitempty" validate:"required,omitempty"`
+	Name             string              `json:"name" validate:"required"`
 	Location         string              `json:"location,omitempty"`
 	Fields           []CollectionField   `json:"fields"`
 	Mappings         []CollectionMapping `json:"mappings"`
@@ -30,9 +30,9 @@ type CollectionBody struct {
 
 type CollectionField struct {
 	Header     string `json:"header"`
-	Required   bool   `json:"required,omitempty"`
-	Regex      string `json:"regex,omitempty"`
-	RegexError string `json:"regexError,omitempty"`
+	Required   bool   `json:"required"`
+	Regex      string `json:"regex"`
+	RegexError string `json:"regexError"`
 }
 
 type CollectionMapping struct {

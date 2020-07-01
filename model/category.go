@@ -25,7 +25,7 @@ type CategoryIn struct {
 
 // CategoryBody is the JSON part of the Category object
 type CategoryBody struct {
-	Name string `json:"name,omitempty" validate:"required" dynamodbav:"altSort"`
+	Name string `json:"name" validate:"required" dynamodbav:"altSort"`
 }
 
 // NewCategoryIn constructs a CategoryIn

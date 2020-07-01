@@ -1,6 +1,6 @@
 <template>
   <div class="posts-list">
-    <h1>List Posts</h1>
+    <h1>Posts</h1>
     <Tabulator
       :data="getPosts()"
       :columns="getPostColumns()"
@@ -10,6 +10,9 @@
       :resizable-columns="true"
       @rowClicked="rowClicked"
     />
+    <div class="create">
+      <router-link to="/posts/create">Create a new post</router-link>
+    </div>
   </div>
 </template>
 
@@ -135,5 +138,8 @@ export default {
 <style scoped>
 .tabulator {
   width: 750px;
+}
+.create {
+  margin-top: 8px;
 }
 </style>
