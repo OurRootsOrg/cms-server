@@ -1,19 +1,27 @@
 <template>
-  <div class="posts-list">
-    <h1>Posts</h1>
-    <Tabulator
-      :data="getPosts()"
-      :columns="getPostColumns()"
-      layout="fitColumns"
-      :header-sort="true"
-      :selectable="true"
-      :resizable-columns="true"
-      @rowClicked="rowClicked"
-    />
-    <v-btn color="primary" class="mt-4" to="/posts/create">
-      Create a new post
-    </v-btn>
-  </div>
+  <v-container class="posts-list">
+    <v-layout row>
+      <v-flex>
+        <h1>Posts</h1>
+        <v-btn color="primary" class="mt-2 mb-4" to="/posts/create">
+          Create a new post
+        </v-btn>
+      </v-flex>
+    </v-layout>
+    <v-layout row>
+      <v-flex>
+        <Tabulator
+          :data="getPosts()"
+          :columns="getPostColumns()"
+          layout="fitColumns"
+          :header-sort="true"
+          :selectable="true"
+          :resizable-columns="true"
+          @rowClicked="rowClicked"
+        />
+      </v-flex>
+    </v-layout>
+  </v-container>
 </template>
 
 <script>

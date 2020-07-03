@@ -1,6 +1,6 @@
 <template>
   <v-app id="app">
-    <v-navigation-drawer v-model="drawer" :clipped="$vuetify.breakpoint.lgAndUp" app>
+    <v-navigation-drawer v-model="drawer" :clipped="$vuetify.breakpoint.mdAndUp" app>
       <v-list dense>
         <template v-for="item in items">
           <v-row v-if="item.heading" :key="item.heading" align="center">
@@ -62,11 +62,12 @@
     </v-app-bar>
 
     <v-main>
-      <Notifications />
+      <!--<Notifications />-->
       <v-container fluid>
         <v-row class="pa-4">
           <router-view id="view" :key="$route.fullPath"></router-view>
         </v-row>
+        <v-snackbars :messages.sync="messages" color="warning" bottom right></v-snackbars>
       </v-container>
     </v-main>
 
@@ -78,11 +79,13 @@
 </template>
 
 <script>
-import Notifications from "@/components/Notifications.vue";
+//import Notifications from "@/components/Notifications.vue";
+import VSnackbars from "v-snackbars";
 
 export default {
   components: {
-    Notifications
+    //Notifications
+    "v-snackbars": VSnackbars
   },
   props: {
     source: String
@@ -93,43 +96,14 @@ export default {
     items: [
       { icon: "mdi-home", text: "Home", link: "/" },
       { icon: "mdi-chart-areaspline", text: "Dashboard", link: "/dashboard" },
-      {
-        icon: "mdi-shape",
-        post_icon: "mdi-chevron-up",
-        "post_icon-alt": "mdi-chevron-down",
-        text: "Categories",
-        model: false,
-        children: [
-          { text: "See all categories", link: "/categories" },
-          { text: "Create new category", link: "/categories/create" }
-        ]
-      },
-      {
-        icon: "mdi-book-open-variant",
-        post_icon: "mdi-chevron-up",
-        "post_icon-alt": "mdi-chevron-down",
-        text: "Collections",
-        model: false,
-        children: [
-          { text: "See all collections", link: "/collections" },
-          { text: "Create new collection", link: "/collections/create" }
-        ]
-      },
-      {
-        icon: "mdi-cloud-upload",
-        post_icon: "mdi-chevron-up",
-        "post_icon-alt": "mdi-chevron-down",
-        text: "Posts",
-        model: false,
-        children: [
-          { text: "See all posts", link: "/posts" },
-          { text: "Create new post", link: "/posts/create" }
-        ]
-      },
+      { icon: "mdi-shape", text: "Categories", link: "/categories" },
+      { icon: "mdi-book-open-variant", text: "Collections", link: "/collections" },
+      { icon: "mdi-cloud-upload", text: "Posts", link: "/posts" },
       { icon: "mdi-account-circle", text: "Users", link: "/users" },
       { icon: "mdi-open-in-new", text: "Search", link: "/search" },
       { icon: "mdi-cog", text: "Settings", link: "/settings" }
-    ]
+    ],
+    messages: []
   })
 };
 </script>

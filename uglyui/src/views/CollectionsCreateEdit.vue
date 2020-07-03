@@ -1,6 +1,9 @@
 <template>
-  <div class="collections-create">
-    <h1>{{ collection.id ? "Edit" : "Create" }} Collection</h1>
+  <v-container class="collections-create">
+    <v-layout>
+      <h1>{{ collection.id ? "Edit" : "Create" }} Collection</h1>
+    </v-layout>
+    
     <v-form @submit.prevent="save">
       <h3>Give your collection a name</h3>
       <v-text-field
@@ -113,7 +116,7 @@
     <v-btn outlined color="primary" class="mt-4" to="/posts/create">
       Create a new post
     </v-btn>
-  </div>
+  </v-container>
 </template>
 
 <script>
@@ -552,20 +555,3 @@ export default {
 </script>
 
 <style src="vue-multiselect/dist/vue-multiselect.min.css"></style>
-<style scoped>
-.submit-button {
-  margin-top: 32px;
-}
-.tabulator {
-  width: 750px;
-}
-.posts {
-  margin-top: 32px;
-}
-.btn {
-  margin: 32px 0;
-}
-.create {
-  margin-top: 8px;
-}
-</style>

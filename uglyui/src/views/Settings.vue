@@ -1,26 +1,32 @@
 <template>
-  <div class="settings">
-    <h1>Settings</h1>
-    <form @submit.prevent="save">
-      <h3>Define custom post fields</h3>
-      <Tabulator
-        :data="settingsObj.postMetadata"
-        :columns="postMetadataColumns"
-        layout="fitColumns"
-        :movable-rows="true"
-        :resizable-columns="true"
-        @rowMoved="postMetadataMoved"
-        @cellEdited="postMetadataEdited"
-      />
-      <v-btn color="primary" href="" @click.prevent="addPostMetadata">Add a custom field</v-btn>
-      <v-row class="pl-3">
-        <v-btn type="submit" :disabled="$v.$anyError || !$v.$anyDirty">Save </v-btn>
-        <p v-if="$v.$anyError" class="errorMessage">
-          Please fill out the required field(s).
-        </p>
-      </v-row>
-    </form>
-  </div>
+  <v-container class="settings">
+    <v-layout row>
+      <v-flex>
+        <h1>Settings</h1>
+        <v-btn color="primary" href="" @click.prevent="addPostMetadata">Add a custom field</v-btn>
+      </v-flex>
+    </v-layout>
+    <v-layout row class="mt-4">
+      <form @submit.prevent="save">
+        <h3>Define custom post fields</h3>
+        <Tabulator
+          :data="settingsObj.postMetadata"
+          :columns="postMetadataColumns"
+          layout="fitColumns"
+          :movable-rows="true"
+          :resizable-columns="true"
+          @rowMoved="postMetadataMoved"
+          @cellEdited="postMetadataEdited"
+        />
+        <v-row class="pl-3">
+          <v-btn class="mt-4" type="submit" :disabled="$v.$anyError || !$v.$anyDirty">Save </v-btn>
+          <p v-if="$v.$anyError" class="errorMessage">
+            Please fill out the required field(s).
+          </p>
+        </v-row>
+      </form>
+    </v-layout>
+  </v-container>
 </template>
 
 <script>

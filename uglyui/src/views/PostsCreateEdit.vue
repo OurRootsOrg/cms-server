@@ -73,7 +73,7 @@
         Please fill out the required field(s).
       </p>
 
-      <v-btn type="submit" color="primary" :disabled="$v.$anyError || !$v.$anyDirty">Save </v-btn>
+      <v-btn type="submit" color="primary" class="mt-4" :disabled="$v.$anyError || !$v.$anyDirty">Save </v-btn>
 
       <input
         v-if="post.id && post.recordsStatus === 'Draft'"
