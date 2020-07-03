@@ -31,7 +31,9 @@
         <h3>Select a collection</h3>
         <v-select
           label="Collection"
-          :options="collections.collectionsList"
+          :items="collections.collectionsList"
+          item-text="name"
+          item-value="id"
           v-model="post.collection"
           :class="{ error: $v.post.collection.$error }"
           @input="touch('collection')"
@@ -47,30 +49,31 @@
         <h3>Post status</h3>
         <v-select
           label="Status"
-          :options="getRecordsStatusOptions()"
+          :items="getRecordsStatusOptions()"
+          item-text="name"
+          item-value="id"
           v-model="post.recordsStatus"
           :class="{ error: $v.post.recordsStatus.$error }"
           @input="touch('recordsStatus')"
         ></v-select>
       </div>
 
-      <!--<div v-if="settings.settings.postMetadata.length > 0"></div>-->
-      <h3>Custom fields</h3>
-      <Tabulator
-        :data="metadata"
-        :columns="getMetadataColumns()"
-        layout="fitColumns"
-        :resizable-columns="true"
-        @cellEdited="metadataEdited"
-      />
+      <div v-if="settings.settings.postMetadata.length > 0">
+        <h3>Custom fields</h3>
+        <Tabulator
+          :data="metadata"
+          :columns="getMetadataColumns()"
+          layout="fitColumns"
+          :resizable-columns="true"
+          @cellEdited="metadataEdited"
+        />
+      </div>
 
       <p v-if="$v.$anyError" class="errorMessage">
         Please fill out the required field(s).
       </p>
 
-      <v-btn type="submit" color="primary" :disabled="$v.$anyError || !$v.$anyDirty"
-        >Save
-      </v-btn>
+      <v-btn type="submit" color="primary" :disabled="$v.$anyError || !$v.$anyDirty">Save </v-btn>
 
       <input
         v-if="post.id && post.recordsStatus === 'Draft'"
@@ -81,9 +84,7 @@
       />
     </v-form>
 
-    <v-btn v-if="post.recordsStatus === 'Draft'" @click="del" class="warning"
-      >Delete Post
-    </v-btn>
+    <v-btn v-if="post.recordsStatus === 'Draft'" @click="del" class="warning">Delete Post </v-btn>
 
     <Tabulator
       v-if="post.id && post.recordsKey && post.recordsStatus !== 'Loading'"
@@ -273,7 +274,7 @@ export default {
       let opts = [];
       if (this.post.id) {
         opts.push({ id: this.post.recordsStatus, name: this.post.recordsStatus });
-        if (this.post.recordsStatus === "Draft") {
+        if (this.post.recordsStatus === "Draft" && this.post.recordsKey) {
           opts.push({ id: "Published", name: "Published" });
         } else if (this.post.recordsStatus === "Published") {
           opts.push({ id: "Draft", name: "Draft" });
@@ -284,10 +285,15 @@ export default {
     getMetadataColumns() {
       return this.settings.settings.postMetadata.map(pf => getMetadataColumn(pf));
     },
-    save() {
+    getPostFromForm() {
       let post = Object.assign({}, this.post);
       post.collection = +post.collection; // convert to a number
       post.metadata = this.metadata[0];
+      console.log("this.post", this.post, "post", post);
+      return post;
+    },
+    save() {
+      let post = this.getPostFromForm();
       NProgress.start();
       this.$store
         .dispatch(post.id ? "postsUpdate" : "postsCreate", post)
@@ -321,8 +327,7 @@ export default {
         });
     },
     importData() {
-      let post = Object.assign({}, this.post);
-      post.metadata = this.metadata[0];
+      let post = this.getPostFromForm();
       let store = this.$store;
       this.$v.$touch();
       if (!this.$v.$invalid) {

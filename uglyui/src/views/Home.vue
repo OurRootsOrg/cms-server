@@ -18,7 +18,7 @@
       <!-- show logout when authenticated -->
       <v-btn v-if="$auth.isAuthenticated" @click="logout">Log out</v-btn>
     </div>
-    <br>
+    <br />
     <h2>Roadmap for end of September</h2>
     <ul>
       <li>Dashboard</li>
@@ -31,7 +31,7 @@
       <li>Collection field templates</li>
       <li>Pretty search UI (replace the Search screen on this UI)</li>
     </ul>
-    <br>
+    <br />
     <h2>Roadmap for end of the year</h2>
     <ul>
       <li>Pretty admin UI (replace the rest of this UI)</li>
@@ -41,7 +41,7 @@
       <li>Records can have images uploaded and associated with them</li>
       <li>Optional integration with WordPress to display custom search forms</li>
     </ul>
-    <br>
+    <br />
     <h2>Future ideas</h2>
     <ul>
       <li>Searchable books</li>
@@ -49,7 +49,7 @@
       <li>Searchable GEDCOMs</li>
       <li>Searchable record streams (users can submit individual records to index)</li>
     </ul>
-    <br>
+    <br />
     <h2>Feedback?</h2>
     <ul>
       <li>heatherdevaun@gmail.com</li>

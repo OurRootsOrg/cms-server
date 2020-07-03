@@ -14,13 +14,7 @@
       />
       <v-btn color="primary" href="" @click.prevent="addPostMetadata">Add a custom field</v-btn>
       <v-row class="pl-3">
-        <v-btn
-          type="submit"
-          class="submit-button"
-          buttonClass="-fill-gradient"
-          :disabled="$v.$anyError || !$v.$anyDirty"
-          >Save
-          </v-btn>
+        <v-btn type="submit" :disabled="$v.$anyError || !$v.$anyDirty">Save </v-btn>
         <p v-if="$v.$anyError" class="errorMessage">
           Please fill out the required field(s).
         </p>

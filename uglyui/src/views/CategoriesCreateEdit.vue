@@ -11,22 +11,16 @@
         class="field"
         :class="{ error: $v.category.name.$error }"
         @blur="touch('name')"
-      >  
+      >
       </v-text-field>
-    
+
       <template v-if="$v.category.name.$error">
         <p v-if="!$v.category.name.required" class="errorMessage">
           Name is required.
         </p>
       </template>
 
-      <v-btn color="primary"
-        type="submit"
-        v-on="$listeners" 
-        v-bind="$attrs" 
-        :disabled="$v.$anyError || !$v.$anyDirty"
-        >Save
-      </v-btn>
+      <v-btn color="primary" type="submit" :disabled="$v.$anyError || !$v.$anyDirty">Save </v-btn>
       <p v-if="$v.$anyError" class="errorMessage">
         Please fill out the required field(s).
       </p>
@@ -34,14 +28,12 @@
 
     <v-btn
       v-if="category.id"
-      v-on="$listeners" 
-      v-bind="$attrs" 
       color="warning"
       @click="del()"
       :title="collectionsForCategory.length > 0 ? 'Categories with collections cannot be deleted' : 'Cannot be undone!'"
       :disabled="collectionsForCategory.length > 0"
       >Delete Category
-      </v-btn>
+    </v-btn>
 
     <h3 v-if="category.id">Collections</h3>
     <Tabulator
@@ -55,7 +47,7 @@
       @rowClicked="collectionRowClicked"
     />
     <v-btn outlined color="primary" class="mt-4" to="/collections/create">
-      Create a new collection in this category
+      Create a new collection
     </v-btn>
   </div>
 </template>
@@ -203,5 +195,4 @@ export default {
 .submit-button {
   margin-top: 32px;
 }
-
 </style>

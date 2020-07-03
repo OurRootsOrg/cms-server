@@ -49,7 +49,7 @@
     <v-app-bar :clipped-left="$vuetify.breakpoint.lgAndUp" app dark>
       <v-app-bar-nav-icon @click.stop="drawer = !drawer"></v-app-bar-nav-icon>
       <v-toolbar-title style="width: 300px" class="ml-0 pl-4">
-        <img src="./assets/roots-white.svg" height="25" class="mt-1 mb-n2"/>
+        <img src="./assets/roots-white.svg" height="25" class="mt-1 mb-n2" />
         <span class="hidden-sm-and-down pl-2">OurRoots CMS Sandbox</span>
       </v-toolbar-title>
       <v-spacer></v-spacer>
@@ -61,25 +61,29 @@
       </v-btn>
     </v-app-bar>
 
+    <Notifications />
     <v-main>
       <v-container fluid>
         <v-row class="pa-4">
           <router-view id="view" :key="$route.fullPath"></router-view>
         </v-row>
-      </v-container>    
+      </v-container>
     </v-main>
 
     <!--FAB commented out for now
     <v-btn bottom color="pink" dark fab fixed right @click="dialog = !dialog">
       <v-icon>mdi-plus</v-icon>
     </v-btn>-->
-    
-    
   </v-app>
 </template>
 
 <script>
+import Notifications from "@/components/Notifications.vue";
+
 export default {
+  components: {
+    Notifications
+  },
   props: {
     source: String
   },
@@ -87,15 +91,18 @@ export default {
     dialog: false,
     drawer: null,
     items: [
-      { icon: "mdi-home", text: "Home", link:"/" },
-      { icon: "mdi-chart-areaspline", text: "Dashboard", link:"/dashboard" },
+      { icon: "mdi-home", text: "Home", link: "/" },
+      { icon: "mdi-chart-areaspline", text: "Dashboard", link: "/dashboard" },
       {
         icon: "mdi-shape",
         post_icon: "mdi-chevron-up",
         "post_icon-alt": "mdi-chevron-down",
         text: "Categories",
         model: false,
-        children: [{ text: "See all categories", link:"/categories"}, { text: "Create new category", link:"/categories/create"}]
+        children: [
+          { text: "See all categories", link: "/categories" },
+          { text: "Create new category", link: "/categories/create" }
+        ]
       },
       {
         icon: "mdi-book-open-variant",
@@ -103,7 +110,10 @@ export default {
         "post_icon-alt": "mdi-chevron-down",
         text: "Collections",
         model: false,
-        children: [{ text: "See all collections", link:"/collections" }, { text: "Create new collection", link:"/collections/create" }]
+        children: [
+          { text: "See all collections", link: "/collections" },
+          { text: "Create new collection", link: "/collections/create" }
+        ]
       },
       {
         icon: "mdi-cloud-upload",
@@ -111,11 +121,14 @@ export default {
         "post_icon-alt": "mdi-chevron-down",
         text: "Posts",
         model: false,
-        children: [{ text: "See all posts", link:"/posts" }, { text: "Create new post", link:"/posts/create" }]
+        children: [
+          { text: "See all posts", link: "/posts" },
+          { text: "Create new post", link: "/posts/create" }
+        ]
       },
-      { icon: "mdi-account-circle", text: "Users", link:"/users" },
-      { icon: "mdi-open-in-new", text: "Search", link:"/search"  },
-      { icon: "mdi-cog", text: "Settings", link:"/settings"  }
+      { icon: "mdi-account-circle", text: "Users", link: "/users" },
+      { icon: "mdi-open-in-new", text: "Search", link: "/search" },
+      { icon: "mdi-cog", text: "Settings", link: "/settings" }
     ]
   })
 };

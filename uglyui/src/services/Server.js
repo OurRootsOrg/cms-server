@@ -1,5 +1,5 @@
 import axios from "axios";
-import { getAuth } from "../auth";
+import { getAuth } from "../plugins/auth0";
 import axiosRetry from "axios-retry";
 
 const apiClient = axios.create({

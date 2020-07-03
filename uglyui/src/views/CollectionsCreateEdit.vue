@@ -78,17 +78,17 @@
           type="submit"
           color="primary"
           class="mt-4"
-          v-on="$listeners" 
-          v-bind="$attrs"
-          :disabled="$v.$anyError || collection.fields.length === 0 || collection.mappings.length === 0 || !$v.$anyDirty"
+          :disabled="
+            $v.$anyError || collection.fields.length === 0 || collection.mappings.length === 0 || !$v.$anyDirty
+          "
           >Save
-          </v-btn>
+        </v-btn>
         <p v-if="$v.$anyError" class="errorMessage">
           Please fill out the required field(s).
         </p>
       </v-row>
     </v-form>
-    
+
     <v-btn
       v-if="collection.id"
       class="btn"
@@ -97,7 +97,7 @@
       @click="del()"
       :disabled="postsForCollection.length > 0"
       >Delete Collection
-      </v-btn>
+    </v-btn>
 
     <h3 class="mt-4" v-if="collection.id">Posts</h3>
     <Tabulator
@@ -111,7 +111,7 @@
       @rowClicked="postRowClicked"
     />
     <v-btn outlined color="primary" class="mt-4" to="/posts/create">
-      Create a new post in this collection
+      Create a new post
     </v-btn>
   </div>
 </template>
