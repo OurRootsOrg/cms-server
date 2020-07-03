@@ -61,8 +61,8 @@
       </v-btn>
     </v-app-bar>
 
-    <Notifications />
     <v-main>
+      <Notifications />
       <v-container fluid>
         <v-row class="pa-4">
           <router-view id="view" :key="$route.fullPath"></router-view>

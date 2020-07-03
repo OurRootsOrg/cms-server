@@ -23,8 +23,8 @@ export default {
 <style scoped>
 .notifications {
   position: fixed;
-  top: 0;
+  top: 80px;
   right: 0;
-  padding-right: 40px;
+  padding-right: 32px;
 }
 </style>

@@ -289,7 +289,6 @@ export default {
       let post = Object.assign({}, this.post);
       post.collection = +post.collection; // convert to a number
       post.metadata = this.metadata[0];
-      console.log("this.post", this.post, "post", post);
       return post;
     },
     save() {
