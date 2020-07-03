@@ -1,17 +1,17 @@
 <template>
   <div class="collections-create">
     <h1>{{ collection.id ? "Edit" : "Create" }} Collection</h1>
-    <form @submit.prevent="save">
+    <v-form @submit.prevent="save">
       <h3>Give your collection a name</h3>
-      <BaseInput
-        label="Name"
+      <v-text-field
+        label="Collection Name"
         v-model="collection.name"
         type="text"
         placeholder="Name"
         class="field"
         :class="{ error: $v.collection.name.$error }"
         @blur="touch('name')"
-      />
+      ></v-text-field>
 
       <template v-if="$v.collection.name.$error">
         <p v-if="!$v.collection.name.required" class="errorMessage">
@@ -44,7 +44,7 @@
         </p>
       </template>
 
-      <h3>Define spreadsheet columns</h3>
+      <h3 class="mt-4">Define spreadsheet columns</h3>
       <Tabulator
         :data="collection.fields"
         :columns="fieldColumns"
@@ -54,12 +54,12 @@
         @rowMoved="fieldsMoved"
         @cellEdited="fieldsEdited"
       />
-      <a href="" @click.prevent="addField">Add a row</a>
+      <v-btn small color="primary" class="mt-2" href="" @click.prevent="addField">Add a row</v-btn>
       <span v-if="collection.fields.length === 0">
         (you need at least one)
       </span>
 
-      <h3>Define how spreadsheet columns are displayed and indexed</h3>
+      <h3 class="mt-4">Define how spreadsheet columns are displayed and indexed</h3>
       <Tabulator
         :data="collection.mappings"
         :columns="mappingColumns"
@@ -69,32 +69,37 @@
         @rowMoved="mappingMoved"
         @cellEdited="mappingEdited"
       />
-      <a href="" @click.prevent="addMapping">Add a row</a>
+      <v-btn small color="primary" class="mt-2" href="" @click.prevent="addMapping">Add a row</v-btn>
       <span v-if="collection.mappings.length === 0">
         (you need at least one)
       </span>
-
-      <BaseButton
-        type="submit"
-        class="submit-button"
-        buttonClass="-fill-gradient"
-        :disabled="$v.$anyError || collection.fields.length === 0 || collection.mappings.length === 0 || !$v.$anyDirty"
-        >Save</BaseButton
-      >
-      <p v-if="$v.$anyError" class="errorMessage">
-        Please fill out the required field(s).
-      </p>
-    </form>
-    <BaseButton
+      <v-row class="pl-3">
+        <v-btn
+          type="submit"
+          color="primary"
+          class="mt-4"
+          v-on="$listeners" 
+          v-bind="$attrs"
+          :disabled="$v.$anyError || collection.fields.length === 0 || collection.mappings.length === 0 || !$v.$anyDirty"
+          >Save
+          </v-btn>
+        <p v-if="$v.$anyError" class="errorMessage">
+          Please fill out the required field(s).
+        </p>
+      </v-row>
+    </v-form>
+    
+    <v-btn
       v-if="collection.id"
       class="btn"
       buttonClass="danger"
       :title="postsForCollection.length > 0 ? 'Collections with posts cannot be deleted' : 'Cannot be undone!'"
       @click="del()"
       :disabled="postsForCollection.length > 0"
-      >Delete Collection</BaseButton
-    >
-    <h3 v-if="collection.id">Posts</h3>
+      >Delete Collection
+      </v-btn>
+
+    <h3 class="mt-4" v-if="collection.id">Posts</h3>
     <Tabulator
       v-if="collection.id"
       :data="postsForCollection"
@@ -105,9 +110,9 @@
       :resizable-columns="true"
       @rowClicked="postRowClicked"
     />
-    <div class="create">
-      <router-link to="/posts/create">Create a new post</router-link>
-    </div>
+    <v-btn outlined color="primary" class="mt-4" to="/posts/create">
+      Create a new post in this collection
+    </v-btn>
   </div>
 </template>
 

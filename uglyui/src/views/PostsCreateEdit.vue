@@ -1,17 +1,18 @@
 <template>
   <div class="posts-create">
     <h1>{{ post.id ? "Edit" : "Create" }} Post</h1>
-    <form @submit.prevent="save">
+    <v-form @submit.prevent="save">
       <h3>Give your post a name</h3>
-      <BaseInput
-        label="Name"
+      <v-text-field
+        label="Post Name"
         v-model="post.name"
         type="text"
         placeholder="Name"
         class="field"
         :class="{ error: $v.post.name.$error }"
         @blur="touch('name')"
-      />
+      ></v-text-field>
+
       <template v-if="$v.post.name.$error">
         <p v-if="!$v.post.name.required" class="errorMessage">
           Name is required.
@@ -28,13 +29,13 @@
       </div>
       <div v-else>
         <h3>Select a collection</h3>
-        <BaseSelect
+        <v-select
           label="Collection"
           :options="collections.collectionsList"
           v-model="post.collection"
           :class="{ error: $v.post.collection.$error }"
           @input="touch('collection')"
-        />
+        ></v-select>
         <template v-if="$v.post.collection.$error">
           <p v-if="!$v.post.collection.required" class="errorMessage">
             Collection is required.
@@ -44,16 +45,16 @@
 
       <div v-if="post.id">
         <h3>Post status</h3>
-        <BaseSelect
+        <v-select
           label="Status"
           :options="getRecordsStatusOptions()"
           v-model="post.recordsStatus"
           :class="{ error: $v.post.recordsStatus.$error }"
           @input="touch('recordsStatus')"
-        />
+        ></v-select>
       </div>
 
-      <div v-if="settings.settings.postMetadata.length > 0"></div>
+      <!--<div v-if="settings.settings.postMetadata.length > 0"></div>-->
       <h3>Custom fields</h3>
       <Tabulator
         :data="metadata"
@@ -67,9 +68,9 @@
         Please fill out the required field(s).
       </p>
 
-      <BaseButton type="submit" class="btn" buttonClass="-fill-gradient" :disabled="$v.$anyError || !$v.$anyDirty"
-        >Save</BaseButton
-      >
+      <v-btn type="submit" color="primary" :disabled="$v.$anyError || !$v.$anyDirty"
+        >Save
+      </v-btn>
 
       <input
         v-if="post.id && post.recordsStatus === 'Draft'"
@@ -78,11 +79,11 @@
         :value="post.recordsKey ? 'Replace data' : 'Import data'"
         @click.prevent="importData"
       />
-    </form>
+    </v-form>
 
-    <BaseButton v-if="post.recordsStatus === 'Draft'" @click="del" class="btn" buttonClass="danger"
-      >Delete Post</BaseButton
-    >
+    <v-btn v-if="post.recordsStatus === 'Draft'" @click="del" class="warning"
+      >Delete Post
+    </v-btn>
 
     <Tabulator
       v-if="post.id && post.recordsKey && post.recordsStatus !== 'Loading'"

@@ -12,17 +12,19 @@
         @rowMoved="postMetadataMoved"
         @cellEdited="postMetadataEdited"
       />
-      <a href="" @click.prevent="addPostMetadata">Add a row</a>
-      <BaseButton
-        type="submit"
-        class="submit-button"
-        buttonClass="-fill-gradient"
-        :disabled="$v.$anyError || !$v.$anyDirty"
-        >Save</BaseButton
-      >
-      <p v-if="$v.$anyError" class="errorMessage">
-        Please fill out the required field(s).
-      </p>
+      <v-btn color="primary" href="" @click.prevent="addPostMetadata">Add a custom field</v-btn>
+      <v-row class="pl-3">
+        <v-btn
+          type="submit"
+          class="submit-button"
+          buttonClass="-fill-gradient"
+          :disabled="$v.$anyError || !$v.$anyDirty"
+          >Save
+          </v-btn>
+        <p v-if="$v.$anyError" class="errorMessage">
+          Please fill out the required field(s).
+        </p>
+      </v-row>
     </form>
   </div>
 </template>

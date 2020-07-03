@@ -1,44 +1,48 @@
 <template>
   <div class="categories-create">
     <h1>{{ category.id ? "Edit" : "Create" }} Category</h1>
-    <form @submit.prevent="save">
-      <h3>Give your category a name</h3>
-      <BaseInput
-        label="Name"
+    <v-form @submit.prevent="save">
+      <h3 class="mb-4">Give your category a name</h3>
+      <v-text-field
+        label="Category Name"
         v-model="category.name"
         type="text"
         placeholder="Name"
         class="field"
         :class="{ error: $v.category.name.$error }"
         @blur="touch('name')"
-      />
-
+      >  
+      </v-text-field>
+    
       <template v-if="$v.category.name.$error">
         <p v-if="!$v.category.name.required" class="errorMessage">
           Name is required.
         </p>
       </template>
 
-      <BaseButton
+      <v-btn color="primary"
         type="submit"
-        class="submit-button"
-        buttonClass="-fill-gradient"
+        v-on="$listeners" 
+        v-bind="$attrs" 
         :disabled="$v.$anyError || !$v.$anyDirty"
-        >Save</BaseButton
-      >
+        >Save
+      </v-btn>
       <p v-if="$v.$anyError" class="errorMessage">
         Please fill out the required field(s).
       </p>
-    </form>
-    <BaseButton
+    </v-form>
+
+    <v-btn
       v-if="category.id"
-      class="btn"
-      buttonClass="danger"
+      v-on="$listeners" 
+      v-bind="$attrs" 
+      color="warning"
       @click="del()"
       :title="collectionsForCategory.length > 0 ? 'Categories with collections cannot be deleted' : 'Cannot be undone!'"
       :disabled="collectionsForCategory.length > 0"
-      >Delete Category</BaseButton
-    >
+      >Delete Category
+      </v-btn>
+
     <h3 v-if="category.id">Collections</h3>
     <Tabulator
       v-if="category.id"
@@ -50,9 +54,9 @@
       :resizable-columns="true"
       @rowClicked="collectionRowClicked"
     />
-    <div class="create">
-      <router-link to="/collections/create">Create a new collection</router-link>
-    </div>
+    <v-btn outlined color="primary" class="mt-4" to="/collections/create">
+      Create a new collection in this category
+    </v-btn>
   </div>
 </template>
 
@@ -199,10 +203,5 @@ export default {
 .submit-button {
   margin-top: 32px;
 }
-.btn {
-  margin: 24px 0;
-}
-.create {
-  margin-top: 8px;
-}
+
 </style>

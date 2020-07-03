@@ -10,9 +10,9 @@
       :resizable-columns="true"
       @rowClicked="rowClicked"
     />
-    <div class="create">
-      <router-link to="/collections/create">Create a new collection</router-link>
-    </div>
+    <v-btn color="primary" class="mt-4" to="/collections/create">
+      Create a new collection
+    </v-btn>
   </div>
 </template>
 

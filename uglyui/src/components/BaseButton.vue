@@ -1,8 +1,8 @@
 <template>
   <div>
-    <button v-on="$listeners" v-bind="$attrs" class="button" :class="buttonClass">
+    <v-btn v-on="$listeners" v-bind="$attrs" dark color="lime darken-3">
       <slot />
-    </button>
+    </v-btn>
   </div>
 </template>
 
@@ -17,7 +17,7 @@ export default {
 };
 </script>
 
-<style scoped>
+<!--<style scoped>
 .button {
   display: inline-flex;
   align-items: center;
@@ -87,4 +87,4 @@ export default {
   background: red;
   color: #ffffff;
 }
-</style>
+</style>-->

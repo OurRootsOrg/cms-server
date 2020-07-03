@@ -1,12 +1,12 @@
 <template>
-  <div class="home">
+  <v-container fluid class="home">
     <!--    <img alt="Vue logo" src="../assets/logo.png" />-->
     <h1>Home</h1>
     <Test></Test>
     <!-- Check that the SDK client is not currently loading before accessing is methods -->
     <div v-if="!$auth.loading">
       <div v-if="$auth.user">
-        <img :src="$auth.user.picture" />
+        <v-avatar><img :src="$auth.user.picture"/></v-avatar>
         <h2>{{ $auth.user.name }}</h2>
         <p>{{ $auth.user.email }}</p>
       </div>
@@ -14,10 +14,11 @@
       <!--        <pre>{{ JSON.stringify($auth.user, null, 2) }}</pre>-->
       <!--      </div>-->
       <!-- show login when not authenticated -->
-      <button v-if="!$auth.isAuthenticated" @click="login">Log in</button>
+      <v-btn color="primary" v-if="!$auth.isAuthenticated" @click="login">Log in</v-btn>
       <!-- show logout when authenticated -->
-      <button v-if="$auth.isAuthenticated" @click="logout">Log out</button>
+      <v-btn v-if="$auth.isAuthenticated" @click="logout">Log out</v-btn>
     </div>
+    <br>
     <h2>Roadmap for end of September</h2>
     <ul>
       <li>Dashboard</li>
@@ -30,6 +31,7 @@
       <li>Collection field templates</li>
       <li>Pretty search UI (replace the Search screen on this UI)</li>
     </ul>
+    <br>
     <h2>Roadmap for end of the year</h2>
     <ul>
       <li>Pretty admin UI (replace the rest of this UI)</li>
@@ -39,6 +41,7 @@
       <li>Records can have images uploaded and associated with them</li>
       <li>Optional integration with WordPress to display custom search forms</li>
     </ul>
+    <br>
     <h2>Future ideas</h2>
     <ul>
       <li>Searchable books</li>
@@ -46,12 +49,13 @@
       <li>Searchable GEDCOMs</li>
       <li>Searchable record streams (users can submit individual records to index)</li>
     </ul>
+    <br>
     <h2>Feedback?</h2>
     <ul>
       <li>heatherdevaun@gmail.com</li>
       <li>dallan@gmail.com</li>
     </ul>
-  </div>
+  </v-container>
 </template>
 
 <script>

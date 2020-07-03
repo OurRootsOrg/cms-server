@@ -8,6 +8,7 @@ import { domain, clientId, audience } from "../auth_config.json";
 import { Auth0Plugin } from "./auth";
 import vuetify from "./plugins/vuetify";
 
+
 Vue.use(Vuelidate);
 
 // Install the authentication plugin here
