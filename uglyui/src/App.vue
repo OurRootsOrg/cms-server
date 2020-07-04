@@ -52,7 +52,7 @@
       </v-list>
     </v-navigation-drawer>
 
-    <v-app-bar :clipped-left="true" app dark>
+    <v-app-bar :clipped-left="true" app dark color="primary">
       <v-app-bar-nav-icon @click.stop="drawer = !drawer"></v-app-bar-nav-icon>
       <v-toolbar-title style="width: 300px" class="ml-0 pl-4">
         <img src="./assets/roots-white.svg" height="25" class="mt-1 mb-n2" />

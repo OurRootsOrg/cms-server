@@ -1,5 +1,5 @@
 <template>
-  <div class="categories-create">
+  <v-container class="categories-create">
     <h1>{{ category.id ? "Edit" : "Create" }} Category</h1>
     <v-form @submit.prevent="save">
       <h3 class="mb-4">Give your category a name</h3>
@@ -20,13 +20,18 @@
         </p>
       </template>
 
-      <v-btn color="primary" type="submit" :disabled="$v.$anyError || !$v.$anyDirty">Save </v-btn>
-      <p v-if="$v.$anyError" class="errorMessage">
-        Please fill out the required field(s).
-      </p>
+      <v-layout row>
+        <v-flex justify-center>
+          <v-btn class="ml-2 mb-4" color="primary" type="submit" :disabled="$v.$anyError || !$v.$anyDirty">Save</v-btn>
+          <span v-if="$v.$anyError" class="red--text">
+            Please fill out the required field(s).
+          </span>
+        </v-flex>
+      </v-layout>
     </v-form>
 
     <v-btn
+      class="mt-2 mb-4"
       v-if="category.id"
       color="warning"
       @click="del()"
@@ -49,7 +54,7 @@
     <v-btn outlined color="primary" class="mt-4" to="/collections/create">
       Create a new collection
     </v-btn>
-  </div>
+  </v-container>
 </template>
 
 <script>
@@ -190,9 +195,3 @@ export default {
   }
 };
 </script>
-
-<style scoped>
-.submit-button {
-  margin-top: 32px;
-}
-</style>

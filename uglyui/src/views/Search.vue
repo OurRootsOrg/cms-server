@@ -541,7 +541,7 @@
           </v-row>
         </v-col>
       </v-row>
-      <v-btn type="submit" color="primary">Go</v-btn>
+      <v-btn class="mt-2 mb-4" type="submit" color="primary">Go</v-btn>
     </v-form>
 
     <v-row class="pa-3" v-if="search.searchTotal === 0">
