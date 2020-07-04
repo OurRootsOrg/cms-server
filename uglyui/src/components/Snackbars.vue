@@ -5,7 +5,7 @@
       v-bind="$attrs"
       v-model="snackbar.show"
       :key="snackbar.id"
-      :class="'v-snackbars v-snackbars-' + idx + '-' + identifier"
+      :class="'snackbars snackbars-' + idx + '-' + identifier"
       :timeout="-1"
       :color="snackbar.color"
       v-for="(snackbar, idx) in snackbars"
@@ -17,20 +17,16 @@
         </slot>
       </template>
     </v-snackbar>
-    <css-style>
-      .v-snackbars .v-snack__wrapper { transition: {{ topOrBottom }} 500ms; {{ topOrBottom }}: 0; }
-    </css-style>
+    <css-style> .snackbars .v-snack__wrapper { transition: {{ topOrBottom }} 500ms; {{ topOrBottom }}: 0; } </css-style>
     <css-style :key="'snackbars-css' + idx" v-for="idx in len">
-      .v-snackbars.v-snackbars-{{ idx }}-{{ identifier }} > .v-snack__wrapper { {{ topOrBottom }}:{{
-        idx * distance
-      }}px; }
+      .snackbars.snackbars-{{ idx }}-{{ identifier }} > .v-snack__wrapper { {{ topOrBottom }}:{{ idx * distance }}px; }
     </css-style>
   </div>
 </template>
 
 <script>
 export default {
-  name: "v-snackbars",
+  name: "snackbars",
   props: {
     messages: {
       type: Array,
