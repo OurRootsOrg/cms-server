@@ -80,4 +80,8 @@ export default {
 };
 </script>
 
-<style scoped></style>
+<style>
+.tabulator-header-filter {
+  background: #fff;
+}
+</style>
