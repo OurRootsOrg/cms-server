@@ -68,12 +68,14 @@
     </v-app-bar>
 
     <v-main>
-      <Notifications />
-      <v-container fluid>
-        <v-row class="pa-4">
-          <router-view id="view" :key="$route.fullPath"></router-view>
-        </v-row>
-      </v-container>
+      <div id="container-wrapper">
+        <Notifications />
+        <v-container>
+          <v-row class="pa-4">
+            <router-view id="view" :key="$route.fullPath"></router-view>
+          </v-row>
+        </v-container>
+      </div>
     </v-main>
 
     <!--FAB commented out for now
@@ -85,10 +87,14 @@
 
 <script>
 import Notifications from "@/components/Notifications.vue";
+import NProgress from "nprogress";
 
 export default {
   components: {
     Notifications
+  },
+  mounted() {
+    NProgress.configure({ parent: "#container-wrapper" });
   },
   props: {
     source: String

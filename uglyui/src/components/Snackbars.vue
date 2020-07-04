@@ -75,7 +75,6 @@ export default {
   },
   methods: {
     setSnackbars() {
-      console.log("setSnackbars", this.snackbars, "messages", this.messages);
       this.snackbars = this.snackbars.filter(snackbar =>
         this.messages.some(message => message[this.idKey] === snackbar.id)
       );
