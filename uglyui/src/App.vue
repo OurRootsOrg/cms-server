@@ -1,6 +1,12 @@
 <template>
   <v-app id="app">
-    <v-navigation-drawer v-model="drawer" :clipped="$vuetify.breakpoint.mdAndUp" app>
+    <v-navigation-drawer
+      v-model="drawer"
+      :clipped="true"
+      :mini-variant="$vuetify.breakpoint.mdAndDown"
+      :permanent="drawer"
+      app
+    >
       <v-list dense>
         <template v-for="item in items">
           <v-row v-if="item.heading" :key="item.heading" align="center">
@@ -19,7 +25,7 @@
           >
             <template v-slot:activator>
               <v-list-item-action>
-                <v-icon>{{ item.icon }}</v-icon>
+                <v-icon :title="item.text">{{ item.icon }}</v-icon>
               </v-list-item-action>
               <v-list-item-content>
                 <v-list-item-title>{{ item.text }}</v-list-item-title>
@@ -27,7 +33,7 @@
             </template>
             <v-list-item v-for="(child, i) in item.children" :key="i" :to="child.link" link>
               <v-list-item-action v-if="child.icon">
-                <v-icon>{{ child.icon }}</v-icon>
+                <v-icon :title="child.text">{{ child.icon }}</v-icon>
               </v-list-item-action>
               <v-list-item-content>
                 <v-list-item-title>{{ child.text }}</v-list-item-title>
@@ -36,7 +42,7 @@
           </v-list-group>
           <v-list-item v-else :key="item.text" :to="item.link" link>
             <v-list-item-action>
-              <v-icon>{{ item.icon }}</v-icon>
+              <v-icon :title="item.text">{{ item.icon }}</v-icon>
             </v-list-item-action>
             <v-list-item-content>
               <v-list-item-title>{{ item.text }}</v-list-item-title>
@@ -46,7 +52,7 @@
       </v-list>
     </v-navigation-drawer>
 
-    <v-app-bar :clipped-left="$vuetify.breakpoint.lgAndUp" app dark>
+    <v-app-bar :clipped-left="true" app dark>
       <v-app-bar-nav-icon @click.stop="drawer = !drawer"></v-app-bar-nav-icon>
       <v-toolbar-title style="width: 300px" class="ml-0 pl-4">
         <img src="./assets/roots-white.svg" height="25" class="mt-1 mb-n2" />
@@ -62,12 +68,11 @@
     </v-app-bar>
 
     <v-main>
-      <!--<Notifications />-->
+      <Notifications />
       <v-container fluid>
         <v-row class="pa-4">
           <router-view id="view" :key="$route.fullPath"></router-view>
         </v-row>
-        <v-snackbars :messages.sync="messages" color="warning" bottom right></v-snackbars>
       </v-container>
     </v-main>
 
@@ -79,20 +84,18 @@
 </template>
 
 <script>
-//import Notifications from "@/components/Notifications.vue";
-import VSnackbars from "v-snackbars";
+import Notifications from "@/components/Notifications.vue";
 
 export default {
   components: {
-    //Notifications
-    "v-snackbars": VSnackbars
+    Notifications
   },
   props: {
     source: String
   },
   data: () => ({
     dialog: false,
-    drawer: null,
+    drawer: true,
     items: [
       { icon: "mdi-home", text: "Home", link: "/" },
       { icon: "mdi-chart-areaspline", text: "Dashboard", link: "/dashboard" },
@@ -102,8 +105,7 @@ export default {
       { icon: "mdi-account-circle", text: "Users", link: "/users" },
       { icon: "mdi-open-in-new", text: "Search", link: "/search" },
       { icon: "mdi-cog", text: "Settings", link: "/settings" }
-    ],
-    messages: []
+    ]
   })
 };
 </script>

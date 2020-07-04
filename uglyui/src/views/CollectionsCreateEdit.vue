@@ -3,7 +3,7 @@
     <v-layout>
       <h1>{{ collection.id ? "Edit" : "Create" }} Collection</h1>
     </v-layout>
-    
+
     <v-form @submit.prevent="save">
       <h3>Give your collection a name</h3>
       <v-text-field

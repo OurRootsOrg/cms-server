@@ -1,22 +1,26 @@
 <template>
-  <div class="notifications">
-    <Notification
-      v-for="notification in notifications.notificationsList"
-      :key="notification.id"
-      :notification="notification"
-    />
-  </div>
+  <Snackbars
+    :messages="notifications.notificationsList"
+    id-key="id"
+    color-key="type"
+    text-key="message"
+    timeout="5000"
+    @remove="notificationsRemove"
+    top
+    right
+  ></Snackbars>
 </template>
 
 <script>
-import Notification from "@/components/Notification.vue";
-import { mapState } from "vuex";
+import Snackbars from "./Snackbars.vue";
+import { mapState, mapActions } from "vuex";
 
 export default {
   components: {
-    Notification
+    Snackbars: Snackbars
   },
-  computed: mapState(["notifications"])
+  computed: mapState(["notifications"]),
+  methods: mapActions(["notificationsRemove"])
 };
 </script>
 

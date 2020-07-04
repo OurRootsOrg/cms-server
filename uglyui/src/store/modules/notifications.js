@@ -11,17 +11,15 @@ export const mutations = {
       id: nextId++
     });
   },
-  NOTIFICATIONS_DELETE(state, notificationToRemove) {
-    state.notificationsList = state.notificationsList.filter(
-      notification => notification.id !== notificationToRemove.id
-    );
+  NOTIFICATIONS_DELETE(state, id) {
+    state.notificationsList = state.notificationsList.filter(notification => notification.id !== id);
   }
 };
 export const actions = {
   notificationsAdd({ commit }, notification) {
     commit("NOTIFICATIONS_PUSH", notification);
   },
-  notificationsRemove({ commit }, notificationToRemove) {
-    commit("NOTIFICATIONS_DELETE", notificationToRemove);
+  notificationsRemove({ commit }, id) {
+    commit("NOTIFICATIONS_DELETE", id);
   }
 };

@@ -3,7 +3,7 @@
     <v-layout row>
       <v-flex>
         <h1>Collections</h1>
-        <v-btn color="primary" class="mt-2 mb-4"  to="/collections/create">
+        <v-btn color="primary" class="mt-2 mb-4" to="/collections/create">
           Create a new collection
         </v-btn>
       </v-flex>
