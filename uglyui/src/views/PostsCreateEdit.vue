@@ -84,7 +84,7 @@
       />
     </v-form>
 
-    <v-btn v-if="post.recordsStatus === 'Draft'" @click="del" class="warning">Delete Post </v-btn>
+    <v-btn v-if="post.recordsStatus === 'Draft'" @click="del" class="warning mt-2 mb-4">Delete Post </v-btn>
 
     <Tabulator
       v-if="post.id && post.recordsKey && post.recordsStatus !== 'Loading'"

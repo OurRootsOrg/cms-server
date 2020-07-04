@@ -3,7 +3,7 @@
     <v-layout row>
       <v-flex>
         <h1>Settings</h1>
-        <v-btn color="primary" href="" @click.prevent="addPostMetadata">Add a custom field</v-btn>
+        <v-btn class="mt-2 mb-4" color="primary" href="" @click.prevent="addPostMetadata">Add a custom field</v-btn>
       </v-flex>
     </v-layout>
     <v-layout row class="mt-4">

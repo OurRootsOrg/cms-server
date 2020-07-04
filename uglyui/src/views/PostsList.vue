@@ -3,13 +3,13 @@
     <v-layout row>
       <v-flex>
         <h1>Posts</h1>
-        <v-btn color="primary" class="mt-2 mb-4" to="/posts/create">
+        <v-btn small color="primary" class="mt-2 mb-5" to="/posts/create">
           Create a new post
         </v-btn>
       </v-flex>
     </v-layout>
     <v-layout row>
-      <v-flex>
+      <v-flex class="mt-1">
         <Tabulator
           :data="getPosts()"
           :columns="getPostColumns()"

@@ -72,29 +72,33 @@
         @rowMoved="mappingMoved"
         @cellEdited="mappingEdited"
       />
+
       <v-btn small color="primary" class="mt-2" href="" @click.prevent="addMapping">Add a row</v-btn>
       <span v-if="collection.mappings.length === 0">
         (you need at least one)
       </span>
-      <v-row class="pl-3">
-        <v-btn
-          type="submit"
-          color="primary"
-          class="mt-4"
-          :disabled="
-            $v.$anyError || collection.fields.length === 0 || collection.mappings.length === 0 || !$v.$anyDirty
-          "
-          >Save
-        </v-btn>
-        <p v-if="$v.$anyError" class="errorMessage">
-          Please fill out the required field(s).
-        </p>
-      </v-row>
+
+      <v-layout row>
+        <v-flex class="ma-3" >
+          <v-btn
+            type="submit"
+            color="primary"
+            class="mt-4"
+            :disabled="
+              $v.$anyError || collection.fields.length === 0 || collection.mappings.length === 0 || !$v.$anyDirty
+            "
+            >Save
+          </v-btn>
+          <span v-if="$v.$anyError" class="red--text">
+            Please fill out the required field(s).
+          </span>
+        </v-flex>
+      </v-layout>
     </v-form>
 
     <v-btn
       v-if="collection.id"
-      class="btn"
+      class="mt-2"
       buttonClass="danger"
       :title="postsForCollection.length > 0 ? 'Collections with posts cannot be deleted' : 'Cannot be undone!'"
       @click="del()"
@@ -555,3 +559,9 @@ export default {
 </script>
 
 <style src="vue-multiselect/dist/vue-multiselect.min.css"></style>
+<style>
+.multiselect__tag{color:#006064;line-height:1;background:#B2EBF2;}
+.multiselect__option--highlight{background:#B2EBF2;outline:none;color:#006064}
+.multiselect__option--highlight:after{content:attr(data-select);background:#B2EBF2;color:#006064}
+</style>
+<!--the original green hex #41b883 change to cyan lighten-3 #80DEEA or cyan lighten-4 #B2EBF2-->
