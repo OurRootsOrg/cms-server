@@ -100,6 +100,7 @@
 
     <Tabulator
       v-if="post.id && post.recordsKey && post.recordsStatus !== 'Loading'"
+      layout="fitColumns"
       :data="records.recordsList.map(r => r.data)"
       :columns="getRecordColumns()"
     />
