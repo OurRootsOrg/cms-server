@@ -92,7 +92,7 @@ export default {
   },
   data() {
     return {
-      category: {},
+      category: { id: null, name: null },
       collectionsList: [],
       collectionColumns: [
         {

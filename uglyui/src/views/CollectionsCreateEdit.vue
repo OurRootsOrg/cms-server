@@ -200,7 +200,7 @@ export default {
   },
   data() {
     return {
-      collection: { categories: [], fields: [], mappings: [] },
+      collection: { id: null, name: null, categories: [], fields: [], mappings: [] },
       fieldColumns: [
         {
           rowHandle: true,

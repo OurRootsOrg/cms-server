@@ -69,7 +69,6 @@ export default {
   },
   watch: {
     messages() {
-      console.log("snackbars.watch");
       this.setSnackbars();
     }
   },

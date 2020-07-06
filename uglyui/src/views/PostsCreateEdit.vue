@@ -47,15 +47,7 @@
 
       <div v-if="post.id">
         <h3>Post status</h3>
-        <v-select
-          label="Status"
-          :items="getRecordsStatusOptions()"
-          item-text="name"
-          item-value="id"
-          v-model="post.recordsStatus"
-          :class="{ error: $v.post.recordsStatus.$error }"
-          @input="touch('recordsStatus')"
-        ></v-select>
+        <p>{{ post.recordsStatus }}</p>
       </div>
 
       <div v-if="settings.settings.postMetadata.length > 0">
@@ -73,18 +65,38 @@
         Please fill out the required field(s).
       </p>
 
-      <v-btn type="submit" color="primary" class="mt-4" :disabled="$v.$anyError || !$v.$anyDirty">Save </v-btn>
-
-      <input
-        v-if="isImportable"
-        type="button"
-        id="importData"
-        :value="post.recordsKey ? 'Replace data' : 'Import data'"
-        @click.prevent="importData"
-      />
+      <v-row>
+        <v-btn type="submit" color="primary" class="btn mt-4" :disabled="$v.$anyError || !$v.$anyDirty">Save </v-btn>
+        <v-btn
+          v-if="isPublishable"
+          @click="publish"
+          color="primary"
+          class="btn mt-4"
+          title="Publish the post to make it searchable"
+          >Publish Post</v-btn
+        >
+        <v-btn
+          v-if="isUnpublishable"
+          @click="unpublish"
+          color="primary"
+          class="btn mt-4"
+          title="Unpublish the post to remove it from the index"
+          >Unpublish Post</v-btn
+        >
+        <v-btn
+          v-if="isImportable"
+          id="importData"
+          @click="importData"
+          color="primary"
+          class="btn mt-4"
+          title="Upload or replace records"
+        >
+          {{ post.recordsKey ? "Replace data" : "Import data" }}
+        </v-btn>
+      </v-row>
     </v-form>
 
-    <v-btn v-if="isDeletable" @click="del" class="warning mt-2 mb-4">Delete Post </v-btn>
+    <v-btn :disabled="!isDeletable" @click="del" class="warning mt-2 mb-4">Delete Post </v-btn>
 
     <Tabulator
       v-if="post.id && post.recordsKey && post.recordsStatus !== 'Loading'"
@@ -150,16 +162,22 @@ export default {
   },
   data() {
     return {
-      post: {},
+      post: { id: null, name: null, collection: null, recordsStatus: null, recordsKey: null },
       metadata: [{}]
     };
   },
   computed: {
     isImportable() {
-      return this.post.id && this.post.recordsStatus === "Draft" && this.posts.post.recordsStatus === "Draft";
+      return this.post.id && this.post.recordsStatus === "Draft";
     },
     isDeletable() {
-      return !this.post.id || (this.post.recordsStatus === "Draft" && this.posts.post.recordsStatus === "Draft");
+      return !this.post.id || this.post.recordsStatus === "Draft";
+    },
+    isPublishable() {
+      return this.post.id && this.post.recordsStatus === "Draft" && this.post.recordsKey;
+    },
+    isUnpublishable() {
+      return this.post.id && this.post.recordsStatus === "Published";
     },
     ...mapState(["collections", "posts", "records", "settings"])
   },
@@ -188,18 +206,6 @@ export default {
         return { title: f.header, field: f.header };
       });
     },
-    getRecordsStatusOptions() {
-      let opts = [];
-      if (this.post.id) {
-        opts.push({ id: this.post.recordsStatus, name: this.post.recordsStatus });
-        if (this.post.recordsStatus === "Draft" && this.post.recordsKey) {
-          opts.push({ id: "Published", name: "Published" });
-        } else if (this.post.recordsStatus === "Published") {
-          opts.push({ id: "Draft", name: "Draft" });
-        }
-      }
-      return opts;
-    },
     getMetadataColumns() {
       return this.settings.settings.postMetadata.map(pf => getMetadataColumnForEditing(pf));
     },
@@ -211,6 +217,19 @@ export default {
     },
     save() {
       let post = this.getPostFromForm();
+      this.update(post);
+    },
+    publish() {
+      let post = this.getPostFromForm();
+      post.recordsStatus = "Published";
+      this.update(post);
+    },
+    unpublish() {
+      let post = this.getPostFromForm();
+      post.recordsStatus = "Draft";
+      this.update(post);
+    },
+    update(post) {
       NProgress.start();
       this.$store
         .dispatch(post.id ? "postsUpdate" : "postsCreate", post)
@@ -301,28 +320,6 @@ export default {
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
 .btn {
-  margin: 24px 0;
-}
-#importData {
-  margin: 24px 0;
-  border: none;
-  border-radius: 4px;
-  color: #fff;
-  display: block;
-  padding: 0 64px;
-  height: 44px;
-  cursor: pointer;
-  transition: background-color 0.2s;
-  font-size: 15px;
-  font-weight: 500;
-  outline: 0;
-  background-color: #4a90e2;
-}
-#importData:focus,
-#importData:hover {
-  background-color: #2171ce;
-}
-#importData:active {
-  background-color: #1d62b4;
+  margin: 16px;
 }
 </style>
