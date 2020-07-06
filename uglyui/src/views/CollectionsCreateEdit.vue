@@ -79,7 +79,7 @@
       </span>
 
       <v-layout row>
-        <v-flex class="ma-3" >
+        <v-flex class="ma-3">
           <v-btn
             type="submit"
             color="primary"
@@ -127,6 +127,7 @@
 import store from "@/store";
 import { mapState } from "vuex";
 import Tabulator from "../components/Tabulator";
+import { getMetadataColumn } from "../utils/metadata";
 import NProgress from "nprogress";
 import { required } from "vuelidate/lib/validators";
 import Multiselect from "vue-multiselect";
@@ -168,58 +169,14 @@ const ixEmptyFieldMap = {
 };
 
 function setup() {
-  Object.assign(this.collection, this.collections.collection);
-  // deep-clone arrays
-  this.collection.categories = this.collections.collection.categories.map(catId =>
-    this.categories.categoriesList.find(cat => cat.id === catId)
-  );
-  this.collection.fields = lodash.cloneDeep(this.collections.collection.fields);
-  this.collection.mappings = lodash.cloneDeep(this.collections.collection.mappings);
-}
-
-// TODO this function and getMetadataColumns are copied from PostsList.vue; figure out how best to share
-function getMetadataColumn(pf) {
-  switch (pf.type) {
-    case "string":
-      return {
-        title: pf.name,
-        field: pf.name,
-        tooltip: pf.tooltip,
-        headerFilter: "input",
-        sorter: "string"
-      };
-    case "number":
-      return {
-        title: pf.name,
-        field: pf.name,
-        tooltip: pf.tooltip,
-        headerFilter: "number",
-        sorter: "number"
-      };
-    case "date":
-      return {
-        title: pf.name,
-        field: pf.name,
-        hozAlign: "center",
-        tooltip: pf.tooltip,
-        headerFilter: "input",
-        sorter: "date",
-        sorterParams: {
-          format: "DD MMM YYYY",
-          alignEmptyValues: "top"
-        }
-      };
-    case "boolean":
-      return {
-        title: pf.name,
-        field: pf.name,
-        tooltip: pf.tooltip,
-        hozAlign: "center",
-        formatter: "tickCross",
-        headerFilter: "tickCross",
-        sorter: "boolean"
-      };
-  }
+  this.collection = {
+    ...this.collections.collection,
+    categories: this.collections.collection.categories.map(catId =>
+      this.categories.categoriesList.find(cat => cat.id === catId)
+    ),
+    fields: lodash.cloneDeep(this.collections.collection.fields),
+    mappings: lodash.cloneDeep(this.collections.collection.mappings)
+  };
 }
 
 export default {
@@ -560,8 +517,20 @@ export default {
 
 <style src="vue-multiselect/dist/vue-multiselect.min.css"></style>
 <style>
-.multiselect__tag{color:#006064;line-height:1;background:#B2EBF2;}
-.multiselect__option--highlight{background:#B2EBF2;outline:none;color:#006064}
-.multiselect__option--highlight:after{content:attr(data-select);background:#B2EBF2;color:#006064}
+.multiselect__tag {
+  color: #006064;
+  line-height: 1;
+  background: #b2ebf2;
+}
+.multiselect__option--highlight {
+  background: #b2ebf2;
+  outline: none;
+  color: #006064;
+}
+.multiselect__option--highlight:after {
+  content: attr(data-select);
+  background: #b2ebf2;
+  color: #006064;
+}
 </style>
 <!--the original green hex #41b883 change to cyan lighten-3 #80DEEA or cyan lighten-4 #B2EBF2-->

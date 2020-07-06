@@ -66,7 +66,9 @@ import { required } from "vuelidate/lib/validators";
 import lodash from "lodash";
 
 function setup() {
-  Object.assign(this.category, this.categories.category);
+  this.category = {
+    ...this.categories.category
+  };
 }
 
 export default {

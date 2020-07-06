@@ -25,7 +25,7 @@ export const mutations = {
     if (state.categoriesList) {
       for (let i = 0; i < state.categoriesList.length; i++) {
         if (state.categoriesList[i].id === cat.id) {
-          Object.assign(state.categoriesList[i], cat);
+          state.categoriesList[i] = cat;
         }
       }
     }

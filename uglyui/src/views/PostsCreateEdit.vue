@@ -76,7 +76,7 @@
       <v-btn type="submit" color="primary" class="mt-4" :disabled="$v.$anyError || !$v.$anyDirty">Save </v-btn>
 
       <input
-        v-if="post.id && post.recordsStatus === 'Draft'"
+        v-if="isImportable"
         type="button"
         id="importData"
         :value="post.recordsKey ? 'Replace data' : 'Import data'"
@@ -84,7 +84,7 @@
       />
     </v-form>
 
-    <v-btn v-if="post.recordsStatus === 'Draft'" @click="del" class="warning mt-2 mb-4">Delete Post </v-btn>
+    <v-btn v-if="isDeletable" @click="del" class="warning mt-2 mb-4">Delete Post </v-btn>
 
     <Tabulator
       v-if="post.id && post.recordsKey && post.recordsStatus !== 'Loading'"
@@ -98,19 +98,21 @@
 import store from "@/store";
 import { mapState } from "vuex";
 import { required } from "vuelidate/lib/validators";
+import { getMetadataColumnForEditing } from "../utils/metadata";
 import Tabulator from "../components/Tabulator";
 import FlatfileImporter from "flatfile-csv-importer";
-import config from "../flatfileConfig.js";
+import config from "../utils/flatfileConfig.js";
 import Server from "@/services/Server.js";
 import NProgress from "nprogress";
-import moment from "moment";
 import lodash from "lodash";
 
 FlatfileImporter.setVersion(2);
 
 function setup() {
-  Object.assign(this.post, this.posts.post);
-  this.metadata.splice(0, 1, Object.assign({}, this.posts.post.metadata));
+  this.post = {
+    ...this.posts.post
+  };
+  this.metadata.splice(0, 1, { ...this.posts.post.metadata });
 }
 
 async function uploadData(store, post, contentType, data) {
@@ -119,98 +121,6 @@ async function uploadData(store, post, contentType, data) {
   post.recordsKey = postRequestResult.data.key;
   let postPostResult = await store.dispatch("postsUpdate", post);
   return postPostResult;
-}
-
-function dateEditor(cell, onRendered, success, cancel) {
-  //cell - the cell component for the editable cell
-  //onRendered - function to call when the editor has been rendered
-  //success - function to call to pass the successfuly updated value to Tabulator
-  //cancel - function to call to abort the edit and return to a normal cell
-
-  //create and style input
-  var cellValue = moment(cell.getValue(), "DD MMM YYYY").format("YYYY-MM-DD"),
-    input = document.createElement("input");
-
-  input.setAttribute("type", "date");
-
-  input.style.padding = "4px";
-  input.style.width = "100%";
-  input.style.boxSizing = "border-box";
-
-  input.value = cellValue;
-
-  onRendered(function() {
-    input.focus();
-    input.style.height = "100%";
-  });
-
-  function onChange() {
-    if (input.value !== cellValue) {
-      success(moment(input.value, "YYYY-MM-DD").format("DD MMM YYYY"));
-    } else {
-      cancel();
-    }
-  }
-
-  //submit new value on blur or change
-  input.addEventListener("blur", onChange);
-
-  //submit new value on enter
-  input.addEventListener("keydown", function(e) {
-    if (e.keyCode === 13) {
-      onChange();
-    }
-
-    if (e.keyCode === 27) {
-      cancel();
-    }
-  });
-
-  return input;
-}
-
-function getMetadataColumn(pf) {
-  switch (pf.type) {
-    case "string":
-      return {
-        title: pf.name,
-        minWidth: 200,
-        widthGrow: 2,
-        field: pf.name,
-        tooltip: pf.tooltip,
-        editor: "input"
-      };
-    case "number":
-      return {
-        title: pf.name,
-        minWidth: 75,
-        widthGrow: 1,
-        field: pf.name,
-        tooltip: pf.tooltip,
-        editor: "number"
-      };
-    case "date":
-      return {
-        title: pf.name,
-        minWidth: 140,
-        widthGrow: 1,
-        field: pf.name,
-        tooltip: pf.tooltip,
-        hozAlign: "center",
-        editor: dateEditor
-      };
-    case "boolean":
-      return {
-        title: pf.name,
-        minWidth: 75,
-        widthGrow: 1,
-        field: pf.name,
-        tooltip: pf.tooltip,
-        hozAlign: "center",
-        formatter: "tickCross",
-        editor: true
-      };
-  }
 }
 
 export default {
@@ -244,7 +154,15 @@ export default {
       metadata: [{}]
     };
   },
-  computed: mapState(["collections", "posts", "records", "settings"]),
+  computed: {
+    isImportable() {
+      return this.post.id && this.post.recordsStatus === "Draft" && this.posts.post.recordsStatus === "Draft";
+    },
+    isDeletable() {
+      return !this.post.id || (this.post.recordsStatus === "Draft" && this.posts.post.recordsStatus === "Draft");
+    },
+    ...mapState(["collections", "posts", "records", "settings"])
+  },
   validations: {
     post: {
       name: { required },
@@ -283,7 +201,7 @@ export default {
       return opts;
     },
     getMetadataColumns() {
-      return this.settings.settings.postMetadata.map(pf => getMetadataColumn(pf));
+      return this.settings.settings.postMetadata.map(pf => getMetadataColumnForEditing(pf));
     },
     getPostFromForm() {
       let post = Object.assign({}, this.post);

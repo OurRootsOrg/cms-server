@@ -3,7 +3,6 @@
     <v-layout row>
       <v-flex>
         <h1>Settings</h1>
-        <v-btn class="mt-2 mb-4" color="primary" href="" @click.prevent="addPostMetadata">Add a custom field</v-btn>
       </v-flex>
     </v-layout>
     <v-layout row class="mt-4">
@@ -18,8 +17,9 @@
           @rowMoved="postMetadataMoved"
           @cellEdited="postMetadataEdited"
         />
+        <v-btn small color="primary" class="mt-2" href="" @click.prevent="addPostMetadata">Add a row</v-btn>
         <v-row class="pl-3">
-          <v-btn class="mt-4" type="submit" :disabled="$v.$anyError || !$v.$anyDirty">Save </v-btn>
+          <v-btn class="mt-4" type="submit" color="primary" :disabled="$v.$anyError || !$v.$anyDirty">Save </v-btn>
           <p v-if="$v.$anyError" class="errorMessage">
             Please fill out the required field(s).
           </p>
@@ -45,9 +45,10 @@ const postMetadataTypes = {
 };
 
 function setup() {
-  Object.assign(this.settingsObj, this.settings.settings);
-  // deep-clone arrays
-  this.settingsObj.postMetadata = lodash.cloneDeep(this.settings.settings.postMetadata);
+  this.settingsObj = {
+    ...this.settings.settings,
+    postMetadata: lodash.cloneDeep(this.settings.settings.postMetadata)
+  };
 }
 
 export default {
@@ -143,6 +144,7 @@ export default {
     },
     postMetadataDelete(ix) {
       this.settingsObj.postMetadata.splice(ix, 1);
+      this.touch("postMetadata");
     },
     save() {
       this.settingsObj.postMetadata = this.settingsObj.postMetadata.filter(f => f.name && f.type);

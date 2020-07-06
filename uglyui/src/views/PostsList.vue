@@ -27,51 +27,8 @@
 <script>
 import { mapState } from "vuex";
 import store from "@/store";
+import { getMetadataColumn } from "../utils/metadata";
 import Tabulator from "../components/Tabulator";
-
-function getMetadataColumn(pf) {
-  switch (pf.type) {
-    case "string":
-      return {
-        title: pf.name,
-        field: pf.name,
-        tooltip: pf.tooltip,
-        headerFilter: "input",
-        sorter: "string"
-      };
-    case "number":
-      return {
-        title: pf.name,
-        field: pf.name,
-        tooltip: pf.tooltip,
-        headerFilter: "number",
-        sorter: "number"
-      };
-    case "date":
-      return {
-        title: pf.name,
-        field: pf.name,
-        hozAlign: "center",
-        tooltip: pf.tooltip,
-        headerFilter: "input",
-        sorter: "date",
-        sorterParams: {
-          format: "DD MMM YYYY",
-          alignEmptyValues: "top"
-        }
-      };
-    case "boolean":
-      return {
-        title: pf.name,
-        field: pf.name,
-        tooltip: pf.tooltip,
-        hozAlign: "center",
-        formatter: "tickCross",
-        headerFilter: "tickCross",
-        sorter: "boolean"
-      };
-  }
-}
 
 export default {
   components: { Tabulator },
