@@ -2,7 +2,13 @@
   <v-container fluid class="home">
     <!--    <img alt="Vue logo" src="../assets/logo.png" />-->
     <h1>Home</h1>
-    <Test></Test>
+    <p>
+      Select an option to the left. If you have not registered or logged in, do that first.
+    </p>
+    <p>
+      <i>NOTE:</i> The demo server hibernates after 15 minutes of inactivity to save money. It takes 30 seconds for the
+      server to wake up. You won't experience the 30-second delay in production.
+    </p>
     <!-- Check that the SDK client is not currently loading before accessing is methods -->
     <div v-if="!$auth.loading">
       <div v-if="$auth.user">
@@ -58,14 +64,8 @@
 </template>
 
 <script>
-// @ is an alias to /src
-import Test from "@/components/Test.vue";
-
 export default {
   name: "Home",
-  components: {
-    Test
-  },
   methods: {
     // Log the user in
     login() {
