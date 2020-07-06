@@ -21,7 +21,7 @@ export default {
   categoriesCreate(category) {
     return apiClient.post("/categories", category);
   },
-  async categoriesUpdate(cat) {
+  categoriesUpdate(cat) {
     return apiClient.put(`/categories/${cat.id}`);
   },
   categoriesDelete(id) {
@@ -33,22 +33,22 @@ export default {
   categoriesGetOne(id) {
     return apiClient.get(`/categories/${id}`);
   },
-  async collectionsCreate(collection) {
+  collectionsCreate(collection) {
     return apiClient.post("/collections", collection);
   },
-  async collectionsUpdate(coll) {
+  collectionsUpdate(coll) {
     return apiClient.put(`/collections/${coll.id}`, coll);
   },
-  async collectionsDelete(id) {
+  collectionsDelete(id) {
     return apiClient.delete(`/collections/${id}`);
   },
   collectionsGetAll() {
     return apiClient.get("/collections");
   },
-  async collectionsGetOne(id) {
+  collectionsGetOne(id) {
     return apiClient.get(`/collections/${id}`);
   },
-  async contentPostRequest(contentType) {
+  contentPostRequest(contentType) {
     return apiClient.post("/content", { contentType });
   },
   contentPut(url, contentType, data) {
@@ -58,22 +58,22 @@ export default {
       }
     });
   },
-  async postsGetAll() {
+  postsGetAll() {
     return apiClient.get("/posts");
   },
-  async postsGetOne(id) {
+  postsGetOne(id) {
     return apiClient.get(`/posts/${id}`);
   },
-  async postsCreate(post) {
+  postsCreate(post) {
     return apiClient.post("/posts", post);
   },
-  async postsUpdate(post) {
+  postsUpdate(post) {
     return apiClient.put(`/posts/${post.id}`, post);
   },
-  async postsDelete(id) {
+  postsDelete(id) {
     return apiClient.delete(`/posts/${id}`);
   },
-  async recordsGetForPost(postId) {
+  recordsGetForPost(postId) {
     return apiClient.get("/records", {
       params: { post: postId }
     });
@@ -86,10 +86,10 @@ export default {
   searchGetResult(id) {
     return apiClient.get(`/search/${id}`);
   },
-  async settingsGet() {
+  settingsGet() {
     return apiClient.get(`/settings`);
   },
-  async settingsUpdate(post) {
+  settingsUpdate(post) {
     return apiClient.put(`/settings`, post);
   }
 };
