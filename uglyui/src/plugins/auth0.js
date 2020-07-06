@@ -20,7 +20,7 @@ export const getAuth = () => {
     let timer = setInterval(() => {
       if (total > 10000) {
         clearInterval(timer);
-        reject("Not logged in");
+        reject("Auth0 not loaded");
       }
       if (!instance.loading) {
         clearInterval(timer);

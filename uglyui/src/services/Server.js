@@ -1,5 +1,4 @@
 import axios from "axios";
-import { getAuth } from "../plugins/auth0";
 import axiosRetry from "axios-retry";
 
 const apiClient = axios.create({
@@ -13,108 +12,44 @@ const apiClient = axios.create({
 axiosRetry(apiClient, { retries: 3 }); // retry non-POST requests on network or 5XX errors
 
 export default {
-  async categoriesCreate(category) {
-    let auth = await getAuth();
-    let token = await auth.getTokenSilently();
-    return apiClient.post("/categories", category, {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    });
+  login(token) {
+    apiClient.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+  },
+  isLoggedIn() {
+    return !!apiClient.defaults.headers.common["Authorization"];
+  },
+  categoriesCreate(category) {
+    return apiClient.post("/categories", category);
   },
   async categoriesUpdate(cat) {
-    let auth = await getAuth();
-    let token = await auth.getTokenSilently();
-    return apiClient.put(`/categories/${cat.id}`, cat, {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    });
+    return apiClient.put(`/categories/${cat.id}`);
   },
-  async categoriesDelete(id) {
-    let auth = await getAuth();
-    let token = await auth.getTokenSilently();
-    return apiClient.delete(`/categories/${id}`, {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    });
+  categoriesDelete(id) {
+    return apiClient.delete(`/categories/${id}`);
   },
-  async categoriesGetAll() {
-    let auth = await getAuth();
-    let token = await auth.getTokenSilently();
-    return apiClient.get("/categories", {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    });
+  categoriesGetAll() {
+    return apiClient.get("/categories");
   },
-  async categoriesGetOne(id) {
-    let auth = await getAuth();
-    let token = await auth.getTokenSilently();
-    return apiClient.get(`/categories/${id}`, {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    });
+  categoriesGetOne(id) {
+    return apiClient.get(`/categories/${id}`);
   },
   async collectionsCreate(collection) {
-    let auth = await getAuth();
-    let token = await auth.getTokenSilently();
-    return apiClient.post("/collections", collection, {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    });
+    return apiClient.post("/collections", collection);
   },
   async collectionsUpdate(coll) {
-    let auth = await getAuth();
-    let token = await auth.getTokenSilently();
-    return apiClient.put(`/collections/${coll.id}`, coll, {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    });
+    return apiClient.put(`/collections/${coll.id}`, coll);
   },
   async collectionsDelete(id) {
-    let auth = await getAuth();
-    let token = await auth.getTokenSilently();
-    return apiClient.delete(`/collections/${id}`, {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    });
+    return apiClient.delete(`/collections/${id}`);
   },
-  async collectionsGetAll() {
-    let auth = await getAuth();
-    let token = await auth.getTokenSilently();
-    return apiClient.get("/collections", {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    });
+  collectionsGetAll() {
+    return apiClient.get("/collections");
   },
   async collectionsGetOne(id) {
-    let auth = await getAuth();
-    let token = await auth.getTokenSilently();
-    return apiClient.get(`/collections/${id}`, {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    });
+    return apiClient.get(`/collections/${id}`);
   },
   async contentPostRequest(contentType) {
-    let auth = await getAuth();
-    let token = await auth.getTokenSilently();
-    return apiClient.post(
-      "/content",
-      { contentType },
-      {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      }
-    );
+    return apiClient.post("/content", { contentType });
   },
   contentPut(url, contentType, data) {
     return axios.put(url, data, {
@@ -124,58 +59,23 @@ export default {
     });
   },
   async postsGetAll() {
-    let auth = await getAuth();
-    let token = await auth.getTokenSilently();
-    return apiClient.get("/posts", {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    });
+    return apiClient.get("/posts");
   },
   async postsGetOne(id) {
-    let auth = await getAuth();
-    let token = await auth.getTokenSilently();
-    return apiClient.get(`/posts/${id}`, {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    });
+    return apiClient.get(`/posts/${id}`);
   },
   async postsCreate(post) {
-    let auth = await getAuth();
-    let token = await auth.getTokenSilently();
-    return apiClient.post("/posts", post, {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    });
+    return apiClient.post("/posts", post);
   },
   async postsUpdate(post) {
-    let auth = await getAuth();
-    let token = await auth.getTokenSilently();
-    return apiClient.put(`/posts/${post.id}`, post, {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    });
+    return apiClient.put(`/posts/${post.id}`, post);
   },
   async postsDelete(id) {
-    let auth = await getAuth();
-    let token = await auth.getTokenSilently();
-    return apiClient.delete(`/posts/${id}`, {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    });
+    return apiClient.delete(`/posts/${id}`);
   },
   async recordsGetForPost(postId) {
-    let auth = await getAuth();
-    let token = await auth.getTokenSilently();
     return apiClient.get("/records", {
-      params: { post: postId },
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
+      params: { post: postId }
     });
   },
   search(query) {
@@ -187,21 +87,9 @@ export default {
     return apiClient.get(`/search/${id}`);
   },
   async settingsGet() {
-    let auth = await getAuth();
-    let token = await auth.getTokenSilently();
-    return apiClient.get(`/settings`, {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    });
+    return apiClient.get(`/settings`);
   },
   async settingsUpdate(post) {
-    let auth = await getAuth();
-    let token = await auth.getTokenSilently();
-    return apiClient.put(`/settings`, post, {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    });
+    return apiClient.put(`/settings`, post);
   }
 };

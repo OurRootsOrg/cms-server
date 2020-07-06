@@ -9,7 +9,8 @@
     >
       <v-list dense>
         <template v-for="item in items">
-          <v-row v-if="item.heading" :key="item.heading" align="center">
+          <v-row v-if="!itemAuthorized(item)" :key="item.heading + item.text"></v-row>
+          <v-row v-else-if="item.heading" :key="item.heading" align="center">
             <v-col cols="6">
               <v-subheader v-if="item.heading">{{ item.heading }}</v-subheader>
             </v-col>
@@ -104,14 +105,19 @@ export default {
     drawer: true,
     items: [
       { icon: "mdi-home", text: "Home", link: "/" },
-      { icon: "mdi-chart-areaspline", text: "Dashboard", link: "/dashboard" },
-      { icon: "mdi-shape", text: "Categories", link: "/categories" },
-      { icon: "mdi-book-open-variant", text: "Collections", link: "/collections" },
-      { icon: "mdi-cloud-upload", text: "Posts", link: "/posts" },
-      { icon: "mdi-account-circle", text: "Users", link: "/users" },
+      { icon: "mdi-chart-areaspline", text: "Dashboard", link: "/dashboard", authRequired: true },
+      { icon: "mdi-shape", text: "Categories", link: "/categories", authRequired: true },
+      { icon: "mdi-book-open-variant", text: "Collections", link: "/collections", authRequired: true },
+      { icon: "mdi-cloud-upload", text: "Posts", link: "/posts", authRequired: true },
+      { icon: "mdi-account-circle", text: "Users", link: "/users", authRequired: true },
       { icon: "mdi-open-in-new", text: "Search", link: "/search" },
-      { icon: "mdi-cog", text: "Settings", link: "/settings" }
+      { icon: "mdi-cog", text: "Settings", link: "/settings", authRequired: true }
     ]
-  })
+  }),
+  methods: {
+    itemAuthorized(item) {
+      return !item.authRequired || this.$auth.isAuthenticated;
+    }
+  }
 };
 </script>

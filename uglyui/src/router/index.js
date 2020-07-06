@@ -4,6 +4,8 @@ import NProgress from "nprogress";
 import Home from "../views/Home.vue";
 import NotFound from "../views/NotFound.vue";
 import NetworkIssue from "../views/NetworkIssue.vue";
+import Server from "@/services/Server.js";
+import { getAuth } from "../plugins/auth0";
 
 Vue.use(VueRouter);
 
@@ -16,56 +18,67 @@ const routes = [
   {
     path: "/dashboard",
     name: "dashboard",
+    meta: { requiresAuth: true },
     component: () => import(/* webpackChunkName: "about" */ "../views/Dashboard.vue")
   },
   {
     path: "/categories",
     name: "categories-list",
+    meta: { requiresAuth: true },
     component: () => import(/* webpackChunkName: "about" */ "../views/CategoriesList.vue")
   },
   {
     path: "/categories/create",
     name: "categories-create",
+    meta: { requiresAuth: true },
     component: () => import(/* webpackChunkName: "about" */ "../views/CategoriesCreateEdit.vue")
   },
   {
     path: "/categories/:cid",
     name: "category-edit",
+    meta: { requiresAuth: true },
     component: () => import(/* webpackChunkName: "about" */ "../views/CategoriesCreateEdit.vue")
   },
   {
     path: "/collections",
     name: "collections-list",
+    meta: { requiresAuth: true },
     component: () => import(/* webpackChunkName: "about" */ "../views/CollectionsList.vue")
   },
   {
     path: "/collections/create",
     name: "collections-create",
+    meta: { requiresAuth: true },
     component: () => import(/* webpackChunkName: "about" */ "../views/CollectionsCreateEdit.vue")
   },
   {
     path: "/collections/:cid",
     name: "collection-edit",
+    meta: { requiresAuth: true },
     component: () => import(/* webpackChunkName: "about" */ "../views/CollectionsCreateEdit.vue")
   },
   {
     path: "/posts",
     name: "posts-list",
+    meta: { requiresAuth: true },
     component: () => import(/* webpackChunkName: "about" */ "../views/PostsList.vue")
   },
   {
     path: "/posts/create",
     name: "posts-create",
+    meta: { requiresAuth: true },
     component: () => import(/* webpackChunkName: "about" */ "../views/PostsCreateEdit.vue")
   },
   {
     path: "/posts/:pid",
     name: "post-edit",
+    meta: { requiresAuth: true },
     component: () => import(/* webpackChunkName: "about" */ "../views/PostsCreateEdit.vue")
   },
   {
     path: "/users",
     name: "users-list",
+    meta: { requiresAuth: true },
     component: () => import(/* webpackChunkName: "about" */ "../views/UsersList.vue")
   },
   {
@@ -81,6 +94,7 @@ const routes = [
   {
     path: "/settings",
     name: "settings",
+    meta: { requiresAuth: true },
     component: () => import(/* webpackChunkName: "about" */ "../views/Settings.vue")
   },
   {
@@ -106,9 +120,28 @@ const router = new VueRouter({
   routes
 });
 
+async function checkLogin() {
+  if (Server.isLoggedIn()) {
+    return true;
+  }
+  let auth0 = await getAuth();
+  if (!auth0.isAuthenticated) {
+    return false;
+  }
+  let token = await auth0.getTokenSilently();
+  Server.login(token);
+  return true;
+}
+
 router.beforeEach((routeTo, routeFrom, next) => {
   NProgress.start();
-  next();
+  checkLogin().then(isLoggedIn => {
+    if (!isLoggedIn && routeTo.matched.some(record => record.meta.requiresAuth)) {
+      next("/");
+    } else {
+      next();
+    }
+  });
 });
 
 router.afterEach(() => {

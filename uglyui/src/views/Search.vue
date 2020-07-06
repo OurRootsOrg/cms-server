@@ -15,8 +15,6 @@
               type="text"
               placeholder="Given name"
               class="ma-0 mb-n2"
-              :value="value"
-              @input="updateValue"
             ></v-text-field>
           </v-row>
           <v-row class="pa-0 ma-0 pl-1 mt-n5">
@@ -71,8 +69,6 @@
               type="text"
               placeholder="Surname"
               class="ma-0 mb-n2"
-              :value="value"
-              @input="updateValue"
             ></v-text-field>
           </v-row>
           <v-row class="pa-0 ma-0 pl-1 mt-n5">
@@ -125,8 +121,6 @@
               type="text"
               placeholder="Father's given name"
               class="ma-0 mb-n2"
-              :value="value"
-              @input="updateValue"
             ></v-text-field>
           </v-row>
           <v-row class="pa-0 ma-0 pl-1 mt-n5">
@@ -231,8 +225,6 @@
               type="text"
               placeholder="Mother's given name"
               class="ma-0 mb-n2"
-              :value="value"
-              @input="updateValue"
             ></v-text-field>
           </v-row>
           <v-row class="pa-0 ma-0 pl-1 mt-n5">
@@ -285,8 +277,6 @@
               type="text"
               placeholder="Mother's surname"
               class="ma-0 mb-n2"
-              :value="value"
-              @input="updateValue"
             ></v-text-field>
           </v-row>
           <v-row class="pa-0 ma-0 pl-1 mt-n5">
@@ -339,8 +329,6 @@
               type="text"
               placeholder="Spouse's given name"
               class="ma-0 mb-n2"
-              :value="value"
-              @input="updateValue"
             ></v-text-field>
           </v-row>
           <v-row class="pa-0 ma-0 pl-1 mt-n5">
@@ -393,8 +381,6 @@
               type="text"
               placeholder="Spouse's surname"
               class="ma-0 mb-n2"
-              :value="value"
-              @input="updateValue"
             ></v-text-field>
           </v-row>
           <v-row class="pa-0 ma-0 pl-1 mt-n5">
@@ -447,8 +433,6 @@
               type="text"
               placeholder="Other person's given name"
               class="ma-0 mb-n2"
-              :value="value"
-              @input="updateValue"
             ></v-text-field>
           </v-row>
           <v-row class="pa-0 ma-0 pl-1 mt-n5">
@@ -501,8 +485,6 @@
               type="text"
               placeholder="Other person's surname"
               class="ma-0 mb-n2"
-              :value="value"
-              @input="updateValue"
             ></v-text-field>
           </v-row>
           <v-row class="pa-0 ma-0 pl-1 mt-n5">
@@ -544,10 +526,10 @@
       <v-btn class="mt-2 mb-4" type="submit" color="primary">Go</v-btn>
     </v-form>
 
-    <v-row class="pa-3" v-if="search.searchTotal === 0">
+    <v-row class="pa-3" v-if="searchPerformed && search.searchTotal === 0">
       <p>No results found</p>
     </v-row>
-    <v-row v-if="search.searchTotal > 0">
+    <v-row v-if="searchPerformed && search.searchTotal > 0">
       <p>Showing 1 - {{ search.searchList.length }} of {{ search.searchTotal }}</p>
       <SearchResult v-for="(result, $ix) in search.searchList" :key="$ix" :result="result" />
     </v-row>
@@ -565,6 +547,7 @@ export default {
   },
   data() {
     return {
+      searchPerformed: false,
       query: {},
       fuzziness: {
         principalGiven: [],
@@ -597,6 +580,7 @@ export default {
       this.$store
         .dispatch("search", this.query)
         .then(() => {
+          this.searchPerformed = true;
           NProgress.done();
         })
         .catch(() => {
