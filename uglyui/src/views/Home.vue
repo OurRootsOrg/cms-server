@@ -34,11 +34,10 @@
     <br />
     <h2>Roadmap for end of the year</h2>
     <ul>
-      <li>Pretty admin UI (replace the rest of this UI)</li>
+      <li>Records can have images uploaded and associated with them</li>
       <li>Limit volunteer actions (only authorized volunteers can publish)</li>
       <li>Custom transformations (lookup tables) applied to spreadsheet data during upload</li>
       <li>Optional integration with WordPress membership system for paid search</li>
-      <li>Records can have images uploaded and associated with them</li>
       <li>Optional integration with WordPress to display custom search forms</li>
     </ul>
     <br />
