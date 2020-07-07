@@ -1,15 +1,15 @@
 <template>
   <v-container class="categories-list">
-    <v-layout row>
-      <v-flex>
+    <v-row>
+      <v-col>
         <h1>Categories</h1>
         <v-btn small color="primary" class="mt-2 mb-5" to="/categories/create">
           Create a new category
         </v-btn>
-      </v-flex>
-    </v-layout>
-    <v-layout row>
-      <v-flex class="mt-1">
+      </v-col>
+    </v-row>
+    <v-row>
+      <v-col class="mt-1">
         <Tabulator
           :data="getCategories()"
           :columns="categoryColumns"
@@ -19,8 +19,8 @@
           :resizable-columns="true"
           @rowClicked="rowClicked"
         />
-      </v-flex>
-    </v-layout>
+      </v-col>
+    </v-row>
   </v-container>
 </template>
 <script>

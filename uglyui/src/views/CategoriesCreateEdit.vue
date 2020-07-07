@@ -1,59 +1,69 @@
 <template>
   <v-container class="categories-create">
-    <h1>{{ category.id ? "Edit" : "Create" }} Category</h1>
-    <v-form @submit.prevent="save">
-      <h3 class="mb-4">Give your category a name</h3>
-      <v-text-field
-        label="Category Name"
-        v-model="category.name"
-        type="text"
-        placeholder="Name"
-        class="field"
-        :class="{ error: $v.category.name.$error }"
-        @blur="touch('name')"
-      >
-      </v-text-field>
+    <v-row>
+      <v-col cols="12">
+        <h1>{{ category.id ? "Edit" : "Create" }} Category</h1>
+        <v-form @submit.prevent="save">
+          <h3 class="mb-4">Give your category a name</h3>
+          <v-text-field
+            label="Category Name"
+            v-model="category.name"
+            type="text"
+            placeholder="Name"
+            class="field"
+            :class="{ error: $v.category.name.$error }"
+            @blur="touch('name')"
+          >
+          </v-text-field>
 
-      <template v-if="$v.category.name.$error">
-        <p v-if="!$v.category.name.required" class="errorMessage">
-          Name is required.
-        </p>
-      </template>
-
-      <v-layout row>
-        <v-flex justify-center>
-          <v-btn class="ml-2 mb-4" color="primary" type="submit" :disabled="$v.$anyError || !$v.$anyDirty">Save</v-btn>
-          <span v-if="$v.$anyError" class="red--text">
-            Please fill out the required field(s).
-          </span>
-        </v-flex>
-      </v-layout>
-    </v-form>
-
-    <v-btn
-      class="mt-2 mb-4"
-      v-if="category.id"
-      color="warning"
-      @click="del()"
-      :title="collectionsForCategory.length > 0 ? 'Categories with collections cannot be deleted' : 'Cannot be undone!'"
-      :disabled="collectionsForCategory.length > 0"
-      >Delete Category
-    </v-btn>
-
-    <h3 v-if="category.id">Collections</h3>
-    <Tabulator
-      v-if="category.id"
-      :data="collectionsForCategory"
-      :columns="collectionColumns"
-      layout="fitColumns"
-      :header-sort="true"
-      :selectable="true"
-      :resizable-columns="true"
-      @rowClicked="collectionRowClicked"
-    />
-    <v-btn outlined color="primary" class="mt-4" to="/collections/create">
-      Create a new collection
-    </v-btn>
+          <template v-if="$v.category.name.$error">
+            <p v-if="!$v.category.name.required" class="errorMessage">
+              Name is required.
+            </p>
+          </template>
+    
+          <v-row>
+            <v-col>
+              <v-btn class="mb-4" color="primary" type="submit" :disabled="$v.$anyError || !$v.$anyDirty">Save</v-btn>
+            </v-col>
+            <v-col>
+              <span v-if="$v.$anyError" class="red--text">
+                Please fill out the required field(s).
+              </span>
+            </v-col>
+          </v-row>
+        </v-form>
+      </v-col>
+      <v-col cols="12">
+        <v-btn
+          class="mt-2 mb-4"
+          v-if="category.id"
+          color="warning"
+          @click="del()"
+          :title="collectionsForCategory.length > 0 ? 'Categories with collections cannot be deleted' : 'Cannot be undone!'"
+          :disabled="collectionsForCategory.length > 0"
+          >Delete Category
+        </v-btn>
+      </v-col>
+      <v-col cols="12">
+        <h3 v-if="category.id">Collections</h3>
+        <Tabulator
+          v-if="category.id"
+          :data="collectionsForCategory"
+          :columns="collectionColumns"
+          layout="fitColumns"
+          :header-sort="true"
+          :selectable="true"
+          :resizable-columns="true"
+          @rowClicked="collectionRowClicked"
+        />
+      </v-col>
+      <v-col cols="12">
+        <v-btn outlined color="primary" class="mt-4" to="/collections/create">
+          Create a new collection
+        </v-btn>
+      </v-col>  
+    </v-row>
   </v-container>
 </template>
 

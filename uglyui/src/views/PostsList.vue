@@ -1,15 +1,15 @@
 <template>
   <v-container class="posts-list">
-    <v-layout row>
-      <v-flex>
+    <v-row>
+      <v-col cols="12">
         <h1>Posts</h1>
         <v-btn small color="primary" class="mt-2 mb-5" to="/posts/create">
           Create a new post
         </v-btn>
-      </v-flex>
-    </v-layout>
-    <v-layout row>
-      <v-flex class="mt-1">
+      </v-col>
+    </v-row>
+    <v-row>
+      <v-col cols="12" class="mt-1">
         <Tabulator
           :data="getPosts()"
           :columns="getPostColumns()"
@@ -19,8 +19,8 @@
           :resizable-columns="true"
           @rowClicked="rowClicked"
         />
-      </v-flex>
-    </v-layout>
+      </v-col>
+    </v-row>
   </v-container>
 </template>
 

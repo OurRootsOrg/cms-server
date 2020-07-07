@@ -1,125 +1,129 @@
 <template>
   <v-container class="collections-create">
-    <v-layout>
-      <h1>{{ collection.id ? "Edit" : "Create" }} Collection</h1>
-    </v-layout>
+    <v-row>
+      <v-col cols="12">
+        <h1>{{ collection.id ? "Edit" : "Create" }} Collection</h1>
+        <v-form @submit.prevent="save">
+          <h3>Give your collection a name</h3>
+          <v-text-field
+            label="Collection Name"
+            v-model="collection.name"
+            type="text"
+            placeholder="Name"
+            class="field"
+            :class="{ error: $v.collection.name.$error }"
+            @blur="touch('name')"
+          ></v-text-field>
 
-    <v-form @submit.prevent="save">
-      <h3>Give your collection a name</h3>
-      <v-text-field
-        label="Collection Name"
-        v-model="collection.name"
-        type="text"
-        placeholder="Name"
-        class="field"
-        :class="{ error: $v.collection.name.$error }"
-        @blur="touch('name')"
-      ></v-text-field>
+          <template v-if="$v.collection.name.$error">
+            <p v-if="!$v.collection.name.required" class="errorMessage">
+              Name is required.
+            </p>
+          </template>
 
-      <template v-if="$v.collection.name.$error">
-        <p v-if="!$v.collection.name.required" class="errorMessage">
-          Name is required.
-        </p>
-      </template>
+          <h3>Select one or more categories</h3>
+          <label>Categories (select one or more)</label>
+          <multiselect
+            v-model="collection.categories"
+            :options="categories.categoriesList"
+            :multiple="true"
+            :searchable="true"
+            :close-on-select="false"
+            :clear-on-select="true"
+            :preserve-search="false"
+            :show-labels="true"
+            :allow-empty="true"
+            track-by="id"
+            label="name"
+            placeholder="Search or add a category"
+            tag-placeholder="Add this category"
+            :class="{ error: $v.collection.categories.$error }"
+            @close="touch('categories')"
+          ></multiselect>
+          <template v-if="$v.collection.categories.$error">
+            <p v-if="!$v.collection.categories.required" class="errorMessage">
+              At least one category is required.
+            </p>
+          </template>
 
-      <h3>Select one or more categories</h3>
-      <label>Categories (select one or more)</label>
-      <multiselect
-        v-model="collection.categories"
-        :options="categories.categoriesList"
-        :multiple="true"
-        :searchable="true"
-        :close-on-select="false"
-        :clear-on-select="true"
-        :preserve-search="false"
-        :show-labels="true"
-        :allow-empty="true"
-        track-by="id"
-        label="name"
-        placeholder="Search or add a category"
-        tag-placeholder="Add this category"
-        :class="{ error: $v.collection.categories.$error }"
-        @close="touch('categories')"
-      ></multiselect>
-      <template v-if="$v.collection.categories.$error">
-        <p v-if="!$v.collection.categories.required" class="errorMessage">
-          At least one category is required.
-        </p>
-      </template>
-
-      <h3 class="mt-4">Define spreadsheet columns</h3>
-      <Tabulator
-        :data="collection.fields"
-        :columns="fieldColumns"
-        layout="fitColumns"
-        :movable-rows="true"
-        :resizable-columns="true"
-        @rowMoved="fieldsMoved"
-        @cellEdited="fieldsEdited"
-      />
-      <v-btn small color="primary" class="mt-2" href="" @click.prevent="addField">Add a row</v-btn>
-      <span v-if="collection.fields.length === 0">
-        (you need at least one)
-      </span>
-
-      <h3 class="mt-4">Define how spreadsheet columns are displayed and indexed</h3>
-      <Tabulator
-        :data="collection.mappings"
-        :columns="mappingColumns"
-        layout="fitColumns"
-        :movable-rows="true"
-        :resizable-columns="true"
-        @rowMoved="mappingMoved"
-        @cellEdited="mappingEdited"
-      />
-
-      <v-btn small color="primary" class="mt-2" href="" @click.prevent="addMapping">Add a row</v-btn>
-      <span v-if="collection.mappings.length === 0">
-        (you need at least one)
-      </span>
-
-      <v-layout row>
-        <v-flex class="ma-3">
-          <v-btn
-            type="submit"
-            color="primary"
-            class="mt-4"
-            :disabled="
-              $v.$anyError || collection.fields.length === 0 || collection.mappings.length === 0 || !$v.$anyDirty
-            "
-            >Save
-          </v-btn>
-          <span v-if="$v.$anyError" class="red--text">
-            Please fill out the required field(s).
+          <h3 class="mt-4">Define spreadsheet columns</h3>
+          <Tabulator
+            :data="collection.fields"
+            :columns="fieldColumns"
+            layout="fitColumns"
+            :movable-rows="true"
+            :resizable-columns="true"
+            @rowMoved="fieldsMoved"
+            @cellEdited="fieldsEdited"
+          />
+          <v-btn small color="primary" class="mt-2" href="" @click.prevent="addField">Add a row</v-btn>
+          <span v-if="collection.fields.length === 0">
+            (you need at least one)
           </span>
-        </v-flex>
-      </v-layout>
-    </v-form>
 
-    <v-btn
-      v-if="collection.id"
-      class="mt-2"
-      buttonClass="danger"
-      :title="postsForCollection.length > 0 ? 'Collections with posts cannot be deleted' : 'Cannot be undone!'"
-      @click="del()"
-      :disabled="postsForCollection.length > 0"
-      >Delete Collection
-    </v-btn>
+          <h3 class="mt-4">Define how spreadsheet columns are displayed and indexed</h3>
+          <Tabulator
+            :data="collection.mappings"
+            :columns="mappingColumns"
+            layout="fitColumns"
+            :movable-rows="true"
+            :resizable-columns="true"
+            @rowMoved="mappingMoved"
+            @cellEdited="mappingEdited"
+          />
 
-    <h3 class="mt-4" v-if="collection.id">Posts</h3>
-    <Tabulator
-      v-if="collection.id"
-      :data="postsForCollection"
-      :columns="getPostColumns()"
-      layout="fitColumns"
-      :header-sort="true"
-      :selectable="true"
-      :resizable-columns="true"
-      @rowClicked="postRowClicked"
-    />
-    <v-btn outlined color="primary" class="mt-4" to="/posts/create">
-      Create a new post
-    </v-btn>
+          <v-btn small color="primary" class="mt-2" href="" @click.prevent="addMapping">Add a row</v-btn>
+          <span v-if="collection.mappings.length === 0">
+            (you need at least one)
+          </span>
+
+          <v-layout row>
+            <v-flex class="ma-3">
+              <v-btn
+                type="submit"
+                color="primary"
+                class="mt-4"
+                :disabled="
+                  $v.$anyError || collection.fields.length === 0 || collection.mappings.length === 0 || !$v.$anyDirty
+                "
+                >Save
+              </v-btn>
+              <span v-if="$v.$anyError" class="red--text">
+                Please fill out the required field(s).
+              </span>
+            </v-flex>
+          </v-layout>
+
+        </v-form>
+      </v-col>
+      <v-col cols="12">
+        <v-btn
+          v-if="collection.id"
+          class="mt-2"
+          buttonClass="danger"
+          :title="postsForCollection.length > 0 ? 'Collections with posts cannot be deleted' : 'Cannot be undone!'"
+          @click="del()"
+          :disabled="postsForCollection.length > 0"
+          >Delete Collection
+        </v-btn>
+      </v-col>
+      <v-col cols="12">
+        <h3 class="mt-4" v-if="collection.id">Posts</h3>
+        <Tabulator
+          v-if="collection.id"
+          :data="postsForCollection"
+          :columns="getPostColumns()"
+          layout="fitColumns"
+          :header-sort="true"
+          :selectable="true"
+          :resizable-columns="true"
+          @rowClicked="postRowClicked"
+        />
+        <v-btn outlined color="primary" class="mt-4" to="/posts/create">
+          Create a new post
+        </v-btn>
+    </v-col>
+   </v-row> 
   </v-container>
 </template>
 

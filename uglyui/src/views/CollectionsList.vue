@@ -1,15 +1,15 @@
 <template>
   <v-container class="collections-list">
-    <v-layout row>
-      <v-flex>
+    <v-row>
+      <v-col cols="12">
         <h1>Collections</h1>
         <v-btn small color="primary" class="mt-2 mb-5" to="/collections/create">
           Create a new collection
         </v-btn>
-      </v-flex>
-    </v-layout>
-    <v-layout row>
-      <v-flex class="mt-1">
+      </v-col>
+    </v-row>
+    <v-row>
+      <v-col cols="12" class="mt-1">
         <Tabulator
           :data="getCollections()"
           :columns="collectionColumns"
@@ -19,8 +19,8 @@
           :resizable-columns="true"
           @rowClicked="rowClicked"
         />
-      </v-flex>
-    </v-layout>
+      </v-col>
+    </v-row>
   </v-container>
 </template>
 

@@ -1,110 +1,116 @@
 <template>
-  <div class="posts-create">
-    <h1>{{ post.id ? "Edit" : "Create" }} Post</h1>
-    <v-form @submit.prevent="save">
-      <h3>Give your post a name</h3>
-      <v-text-field
-        label="Post Name"
-        v-model="post.name"
-        type="text"
-        placeholder="Name"
-        class="field"
-        :class="{ error: $v.post.name.$error }"
-        @blur="touch('name')"
-      ></v-text-field>
+  <v-container class="posts-create">
+    <v-row>
+      <v-col cols="12">
+        <h1>{{ post.id ? "Edit" : "Create" }} Post</h1>
+        <v-form @submit.prevent="save">
+          <h3>Give your post a name</h3>
+          <v-text-field
+            label="Post Name"
+            v-model="post.name"
+            type="text"
+            placeholder="Name"
+            class="field"
+            :class="{ error: $v.post.name.$error }"
+            @blur="touch('name')"
+          ></v-text-field>
 
-      <template v-if="$v.post.name.$error">
-        <p v-if="!$v.post.name.required" class="errorMessage">
-          Name is required.
-        </p>
-      </template>
+          <template v-if="$v.post.name.$error">
+            <p v-if="!$v.post.name.required" class="errorMessage">
+              Name is required.
+            </p>
+          </template>
 
-      <div v-if="post.id">
-        <h3>Collection</h3>
-        <p>
-          <router-link :to="{ name: 'collection-edit', params: { cid: collections.collection.id } }">{{
-            collections.collection.name
-          }}</router-link>
-        </p>
-      </div>
-      <div v-else>
-        <h3>Select a collection</h3>
-        <v-select
-          label="Collection"
-          :items="collections.collectionsList"
-          item-text="name"
-          item-value="id"
-          v-model="post.collection"
-          :class="{ error: $v.post.collection.$error }"
-          @input="touch('collection')"
-        ></v-select>
-        <template v-if="$v.post.collection.$error">
-          <p v-if="!$v.post.collection.required" class="errorMessage">
-            Collection is required.
+          <div v-if="post.id">
+            <h3>Collection</h3>
+            <p>
+              <router-link :to="{ name: 'collection-edit', params: { cid: collections.collection.id } }">{{
+                collections.collection.name
+              }}</router-link>
+            </p>
+          </div>
+          <div v-else>
+            <h3>Select a collection</h3>
+            <v-select
+              label="Collection"
+              :items="collections.collectionsList"
+              item-text="name"
+              item-value="id"
+              v-model="post.collection"
+              :class="{ error: $v.post.collection.$error }"
+              @input="touch('collection')"
+            ></v-select>
+            <template v-if="$v.post.collection.$error">
+              <p v-if="!$v.post.collection.required" class="errorMessage">
+                Collection is required.
+              </p>
+            </template>
+          </div>
+
+          <div v-if="post.id">
+            <h3>Post status</h3>
+            <p>{{ post.recordsStatus }}</p>
+          </div>
+
+          <div v-if="settings.settings.postMetadata.length > 0">
+            <h3>Custom fields</h3>
+            <Tabulator
+              :data="metadata"
+              :columns="getMetadataColumns()"
+              layout="fitColumns"
+              :resizable-columns="true"
+              @cellEdited="metadataEdited"
+            />
+          </div>
+
+          <p v-if="$v.$anyError" class="errorMessage">
+            Please fill out the required field(s).
           </p>
-        </template>
-      </div>
 
-      <div v-if="post.id">
-        <h3>Post status</h3>
-        <p>{{ post.recordsStatus }}</p>
-      </div>
-
-      <div v-if="settings.settings.postMetadata.length > 0">
-        <h3>Custom fields</h3>
+          <v-row>
+            <v-btn type="submit" color="primary" class="btn mt-4" :disabled="$v.$anyError || !$v.$anyDirty">Save </v-btn>
+            <v-btn
+              v-if="isPublishable"
+              @click="publish"
+              color="primary"
+              class="btn mt-4"
+              title="Publish the post to make it searchable"
+              >Publish Post</v-btn
+            >
+            <v-btn
+              v-if="isUnpublishable"
+              @click="unpublish"
+              color="primary"
+              class="btn mt-4"
+              title="Unpublish the post to remove it from the index"
+              >Unpublish Post</v-btn
+            >
+            <v-btn
+              v-if="isImportable"
+              id="importData"
+              @click="importData"
+              color="primary"
+              class="btn mt-4"
+              title="Upload or replace records"
+            >
+              {{ post.recordsKey ? "Replace data" : "Import data" }}
+            </v-btn>
+          </v-row>
+        </v-form>
+      </v-col>
+      <v-col cols="12">
+        <v-btn :disabled="!isDeletable" @click="del" class="warning mt-2 mb-4">Delete Post </v-btn>
+      </v-col>
+      <v-col cols="12">
         <Tabulator
-          :data="metadata"
-          :columns="getMetadataColumns()"
+          v-if="post.id && post.recordsKey && post.recordsStatus !== 'Loading'"
           layout="fitColumns"
-          :resizable-columns="true"
-          @cellEdited="metadataEdited"
+          :data="records.recordsList.map(r => r.data)"
+          :columns="getRecordColumns()"
         />
-      </div>
-
-      <p v-if="$v.$anyError" class="errorMessage">
-        Please fill out the required field(s).
-      </p>
-
-      <v-row>
-        <v-btn type="submit" color="primary" class="btn mt-4" :disabled="$v.$anyError || !$v.$anyDirty">Save </v-btn>
-        <v-btn
-          v-if="isPublishable"
-          @click="publish"
-          color="primary"
-          class="btn mt-4"
-          title="Publish the post to make it searchable"
-          >Publish Post</v-btn
-        >
-        <v-btn
-          v-if="isUnpublishable"
-          @click="unpublish"
-          color="primary"
-          class="btn mt-4"
-          title="Unpublish the post to remove it from the index"
-          >Unpublish Post</v-btn
-        >
-        <v-btn
-          v-if="isImportable"
-          id="importData"
-          @click="importData"
-          color="primary"
-          class="btn mt-4"
-          title="Upload or replace records"
-        >
-          {{ post.recordsKey ? "Replace data" : "Import data" }}
-        </v-btn>
-      </v-row>
-    </v-form>
-
-    <v-btn :disabled="!isDeletable" @click="del" class="warning mt-2 mb-4">Delete Post </v-btn>
-
-    <Tabulator
-      v-if="post.id && post.recordsKey && post.recordsStatus !== 'Loading'"
-      layout="fitColumns"
-      :data="records.recordsList.map(r => r.data)"
-      :columns="getRecordColumns()"
-    />
-  </div>
+      </v-col>
+    </v-row>
+  </v-container>
 </template>
 
 <script>

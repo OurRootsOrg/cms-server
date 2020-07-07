@@ -547,10 +547,10 @@
     <v-row class="pa-3" v-if="search.searchTotal === 0">
       <p>No results found</p>
     </v-row>
-    <v-row v-if="search.searchTotal > 0">
+    <v-container v-if="search.searchTotal > 0">
       <p>Showing 1 - {{ search.searchList.length }} of {{ search.searchTotal }}</p>
       <SearchResult v-for="(result, $ix) in search.searchList" :key="$ix" :result="result" />
-    </v-row>
+    </v-container>
   </div>
 </template>
 
