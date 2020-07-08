@@ -83,7 +83,91 @@ Resources:
       IntegrationUri: !Sub "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${OurRootsCMSFunction.Arn}/invocations"
       PayloadFormatVersion: "1.0"
 
-  # GETs to /* go to the bucket root
+  CSSRoute:
+    Type: "AWS::ApiGatewayV2::Route"
+    Properties:
+      ApiId: !Ref OurRootsCMSApi
+      RouteKey: "GET /css/{proxy+}"
+      AuthorizationType: NONE
+      Target: !Join
+        - /
+        - - integrations
+          - !Ref CSSIntegration
+
+  CSSIntegration:
+    Type: "AWS::ApiGatewayV2::Integration"
+    Properties:
+      ApiId: !Ref OurRootsCMSApi
+      Description: Site Bucket CSS Integration
+      IntegrationType: HTTP_PROXY
+      IntegrationUri: !Join [ '/', [ !Ref CMSSiteBucketURL , 'css', '{proxy}' ] ]
+      IntegrationMethod: GET
+      PayloadFormatVersion: "1.0"
+
+  IMGRoute:
+    Type: "AWS::ApiGatewayV2::Route"
+    Properties:
+      ApiId: !Ref OurRootsCMSApi
+      RouteKey: "GET /img/{proxy+}"
+      AuthorizationType: NONE
+      Target: !Join
+        - /
+        - - integrations
+          - !Ref IMGIntegration
+
+  IMGIntegration:
+    Type: "AWS::ApiGatewayV2::Integration"
+    Properties:
+      ApiId: !Ref OurRootsCMSApi
+      Description: Site Bucket IMG Integration
+      IntegrationType: HTTP_PROXY
+      IntegrationUri: !Join [ '/', [ !Ref CMSSiteBucketURL , 'img', '{proxy}' ] ]
+      IntegrationMethod: GET
+      PayloadFormatVersion: "1.0"
+
+  JSRoute:
+    Type: "AWS::ApiGatewayV2::Route"
+    Properties:
+      ApiId: !Ref OurRootsCMSApi
+      RouteKey: "GET /js/{proxy+}"
+      AuthorizationType: NONE
+      Target: !Join
+        - /
+        - - integrations
+          - !Ref JSIntegration
+
+  JSIntegration:
+    Type: "AWS::ApiGatewayV2::Integration"
+    Properties:
+      ApiId: !Ref OurRootsCMSApi
+      Description: Site Bucket JS Integration
+      IntegrationType: HTTP_PROXY
+      IntegrationUri: !Join [ '/', [ !Ref CMSSiteBucketURL , 'js', '{proxy}' ] ]
+      IntegrationMethod: GET
+      PayloadFormatVersion: "1.0"
+
+  FaviconRoute:
+    Type: "AWS::ApiGatewayV2::Route"
+    Properties:
+      ApiId: !Ref OurRootsCMSApi
+      RouteKey: "GET /favicon.ico"
+      AuthorizationType: NONE
+      Target: !Join
+        - /
+        - - integrations
+          - !Ref FaviconIntegration
+
+  FaviconIntegration:
+    Type: "AWS::ApiGatewayV2::Integration"
+    Properties:
+      ApiId: !Ref OurRootsCMSApi
+      Description: Site Bucket favicon.ico Integration
+      IntegrationType: HTTP_PROXY
+      IntegrationUri: !Join [ '/', [ !Ref CMSSiteBucketURL , 'favicon.ico' ] ]
+      IntegrationMethod: GET
+      PayloadFormatVersion: "1.0"
+
+  # GETs to /* go to index.html in the bucket root
   UIRoute:
     Type: "AWS::ApiGatewayV2::Route"
     Properties:
@@ -101,7 +185,7 @@ Resources:
       ApiId: !Ref OurRootsCMSApi
       Description: Site Bucket Integration
       IntegrationType: HTTP_PROXY
-      IntegrationUri: !Join [ '/', [ !Ref CMSSiteBucketURL , '{proxy}' ] ]
+      IntegrationUri: !Join [ '/', [ !Ref CMSSiteBucketURL , 'index.html' ] ]
       IntegrationMethod: GET
       PayloadFormatVersion: "1.0"
 
