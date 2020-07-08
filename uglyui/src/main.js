@@ -5,7 +5,8 @@ import store from "./store";
 import "nprogress/nprogress.css";
 import Vuelidate from "vuelidate";
 import { domain, clientId, audience } from "../auth_config.json";
-import { Auth0Plugin } from "./auth";
+import { Auth0Plugin } from "./plugins/auth0";
+import vuetify from "./plugins/vuetify";
 
 Vue.use(Vuelidate);
 
@@ -35,5 +36,6 @@ requireComponent.keys().forEach(fileName => {
 new Vue({
   router,
   store,
+  vuetify,
   render: h => h(App)
 }).$mount("#app");

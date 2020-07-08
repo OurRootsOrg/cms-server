@@ -1,69 +1,34 @@
 <template>
-  <div class="posts-list">
-    <h1>Posts</h1>
-    <Tabulator
-      :data="getPosts()"
-      :columns="getPostColumns()"
-      layout="fitColumns"
-      :header-sort="true"
-      :selectable="true"
-      :resizable-columns="true"
-      @rowClicked="rowClicked"
-    />
-    <div class="create">
-      <router-link to="/posts/create">Create a new post</router-link>
-    </div>
-  </div>
+  <v-container class="posts-list">
+    <v-layout row>
+      <v-flex>
+        <h1>Posts</h1>
+        <v-btn small color="primary" class="mt-2 mb-5" to="/posts/create">
+          Create a new post
+        </v-btn>
+      </v-flex>
+    </v-layout>
+    <v-layout row>
+      <v-flex class="mt-1">
+        <Tabulator
+          :data="getPosts()"
+          :columns="getPostColumns()"
+          layout="fitColumns"
+          :header-sort="true"
+          :selectable="true"
+          :resizable-columns="true"
+          @rowClicked="rowClicked"
+        />
+      </v-flex>
+    </v-layout>
+  </v-container>
 </template>
 
 <script>
 import { mapState } from "vuex";
 import store from "@/store";
+import { getMetadataColumn } from "../utils/metadata";
 import Tabulator from "../components/Tabulator";
-
-function getMetadataColumn(pf) {
-  switch (pf.type) {
-    case "string":
-      return {
-        title: pf.name,
-        field: pf.name,
-        tooltip: pf.tooltip,
-        headerFilter: "input",
-        sorter: "string"
-      };
-    case "number":
-      return {
-        title: pf.name,
-        field: pf.name,
-        tooltip: pf.tooltip,
-        headerFilter: "number",
-        sorter: "number"
-      };
-    case "date":
-      return {
-        title: pf.name,
-        field: pf.name,
-        hozAlign: "center",
-        tooltip: pf.tooltip,
-        headerFilter: "input",
-        sorter: "date",
-        sorterParams: {
-          format: "DD MMM YYYY",
-          alignEmptyValues: "top"
-        }
-      };
-    case "boolean":
-      return {
-        title: pf.name,
-        field: pf.name,
-        tooltip: pf.tooltip,
-        hozAlign: "center",
-        formatter: "tickCross",
-        headerFilter: "tickCross",
-        sorter: "boolean"
-      };
-  }
-}
 
 export default {
   components: { Tabulator },

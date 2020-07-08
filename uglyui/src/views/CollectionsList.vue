@@ -1,19 +1,27 @@
 <template>
-  <div class="collections-list">
-    <h1>Collections</h1>
-    <Tabulator
-      :data="getCollections()"
-      :columns="collectionColumns"
-      layout="fitColumns"
-      :header-sort="true"
-      :selectable="true"
-      :resizable-columns="true"
-      @rowClicked="rowClicked"
-    />
-    <div class="create">
-      <router-link to="/collections/create">Create a new collection</router-link>
-    </div>
-  </div>
+  <v-container class="collections-list">
+    <v-layout row>
+      <v-flex>
+        <h1>Collections</h1>
+        <v-btn small color="primary" class="mt-2 mb-5" to="/collections/create">
+          Create a new collection
+        </v-btn>
+      </v-flex>
+    </v-layout>
+    <v-layout row>
+      <v-flex class="mt-1">
+        <Tabulator
+          :data="getCollections()"
+          :columns="collectionColumns"
+          layout="fitColumns"
+          :header-sort="true"
+          :selectable="true"
+          :resizable-columns="true"
+          @rowClicked="rowClicked"
+        />
+      </v-flex>
+    </v-layout>
+  </v-container>
 </template>
 
 <script>

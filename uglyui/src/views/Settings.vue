@@ -1,30 +1,32 @@
 <template>
-  <div class="settings">
-    <h1>Settings</h1>
-    <form @submit.prevent="save">
-      <h3>Define custom post fields</h3>
-      <Tabulator
-        :data="settingsObj.postMetadata"
-        :columns="postMetadataColumns"
-        layout="fitColumns"
-        :movable-rows="true"
-        :resizable-columns="true"
-        @rowMoved="postMetadataMoved"
-        @cellEdited="postMetadataEdited"
-      />
-      <a href="" @click.prevent="addPostMetadata">Add a row</a>
-      <BaseButton
-        type="submit"
-        class="submit-button"
-        buttonClass="-fill-gradient"
-        :disabled="$v.$anyError || !$v.$anyDirty"
-        >Save</BaseButton
-      >
-      <p v-if="$v.$anyError" class="errorMessage">
-        Please fill out the required field(s).
-      </p>
-    </form>
-  </div>
+  <v-container class="settings">
+    <v-layout row>
+      <v-flex>
+        <h1>Settings</h1>
+      </v-flex>
+    </v-layout>
+    <v-layout row class="mt-4">
+      <form @submit.prevent="save">
+        <h3>Define custom post fields</h3>
+        <Tabulator
+          :data="settingsObj.postMetadata"
+          :columns="postMetadataColumns"
+          layout="fitColumns"
+          :movable-rows="true"
+          :resizable-columns="true"
+          @rowMoved="postMetadataMoved"
+          @cellEdited="postMetadataEdited"
+        />
+        <v-btn small color="primary" class="mt-2" href="" @click.prevent="addPostMetadata">Add a row</v-btn>
+        <v-row class="pl-3">
+          <v-btn class="mt-4" type="submit" color="primary" :disabled="$v.$anyError || !$v.$anyDirty">Save </v-btn>
+          <p v-if="$v.$anyError" class="errorMessage">
+            Please fill out the required field(s).
+          </p>
+        </v-row>
+      </form>
+    </v-layout>
+  </v-container>
 </template>
 
 <script>
@@ -43,9 +45,10 @@ const postMetadataTypes = {
 };
 
 function setup() {
-  Object.assign(this.settingsObj, this.settings.settings);
-  // deep-clone arrays
-  this.settingsObj.postMetadata = lodash.cloneDeep(this.settings.settings.postMetadata);
+  this.settingsObj = {
+    ...this.settings.settings,
+    postMetadata: lodash.cloneDeep(this.settings.settings.postMetadata)
+  };
 }
 
 export default {
@@ -141,6 +144,7 @@ export default {
     },
     postMetadataDelete(ix) {
       this.settingsObj.postMetadata.splice(ix, 1);
+      this.touch("postMetadata");
     },
     save() {
       this.settingsObj.postMetadata = this.settingsObj.postMetadata.filter(f => f.name && f.type);

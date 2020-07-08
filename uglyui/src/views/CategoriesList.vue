@@ -1,21 +1,28 @@
 <template>
-  <div class="categories-list">
-    <h1>Categories</h1>
-    <Tabulator
-      :data="getCategories()"
-      :columns="categoryColumns"
-      layout="fitColumns"
-      :header-sort="true"
-      :selectable="true"
-      :resizable-columns="true"
-      @rowClicked="rowClicked"
-    />
-    <div class="create">
-      <router-link to="/categories/create">Create a new category</router-link>
-    </div>
-  </div>
+  <v-container class="categories-list">
+    <v-layout row>
+      <v-flex>
+        <h1>Categories</h1>
+        <v-btn small color="primary" class="mt-2 mb-5" to="/categories/create">
+          Create a new category
+        </v-btn>
+      </v-flex>
+    </v-layout>
+    <v-layout row>
+      <v-flex class="mt-1">
+        <Tabulator
+          :data="getCategories()"
+          :columns="categoryColumns"
+          layout="fitColumns"
+          :header-sort="true"
+          :selectable="true"
+          :resizable-columns="true"
+          @rowClicked="rowClicked"
+        />
+      </v-flex>
+    </v-layout>
+  </v-container>
 </template>
-
 <script>
 import { mapState } from "vuex";
 import store from "@/store";

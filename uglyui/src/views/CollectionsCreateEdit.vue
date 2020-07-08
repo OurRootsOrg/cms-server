@@ -1,17 +1,20 @@
 <template>
-  <div class="collections-create">
-    <h1>{{ collection.id ? "Edit" : "Create" }} Collection</h1>
-    <form @submit.prevent="save">
+  <v-container class="collections-create">
+    <v-layout>
+      <h1>{{ collection.id ? "Edit" : "Create" }} Collection</h1>
+    </v-layout>
+
+    <v-form @submit.prevent="save">
       <h3>Give your collection a name</h3>
-      <BaseInput
-        label="Name"
+      <v-text-field
+        label="Collection Name"
         v-model="collection.name"
         type="text"
         placeholder="Name"
         class="field"
         :class="{ error: $v.collection.name.$error }"
         @blur="touch('name')"
-      />
+      ></v-text-field>
 
       <template v-if="$v.collection.name.$error">
         <p v-if="!$v.collection.name.required" class="errorMessage">
@@ -44,7 +47,7 @@
         </p>
       </template>
 
-      <h3>Define spreadsheet columns</h3>
+      <h3 class="mt-4">Define spreadsheet columns</h3>
       <Tabulator
         :data="collection.fields"
         :columns="fieldColumns"
@@ -54,12 +57,12 @@
         @rowMoved="fieldsMoved"
         @cellEdited="fieldsEdited"
       />
-      <a href="" @click.prevent="addField">Add a row</a>
+      <v-btn small color="primary" class="mt-2" href="" @click.prevent="addField">Add a row</v-btn>
       <span v-if="collection.fields.length === 0">
         (you need at least one)
       </span>
 
-      <h3>Define how spreadsheet columns are displayed and indexed</h3>
+      <h3 class="mt-4">Define how spreadsheet columns are displayed and indexed</h3>
       <Tabulator
         :data="collection.mappings"
         :columns="mappingColumns"
@@ -69,32 +72,41 @@
         @rowMoved="mappingMoved"
         @cellEdited="mappingEdited"
       />
-      <a href="" @click.prevent="addMapping">Add a row</a>
+
+      <v-btn small color="primary" class="mt-2" href="" @click.prevent="addMapping">Add a row</v-btn>
       <span v-if="collection.mappings.length === 0">
         (you need at least one)
       </span>
 
-      <BaseButton
-        type="submit"
-        class="submit-button"
-        buttonClass="-fill-gradient"
-        :disabled="$v.$anyError || collection.fields.length === 0 || collection.mappings.length === 0 || !$v.$anyDirty"
-        >Save</BaseButton
-      >
-      <p v-if="$v.$anyError" class="errorMessage">
-        Please fill out the required field(s).
-      </p>
-    </form>
-    <BaseButton
+      <v-layout row>
+        <v-flex class="ma-3">
+          <v-btn
+            type="submit"
+            color="primary"
+            class="mt-4"
+            :disabled="
+              $v.$anyError || collection.fields.length === 0 || collection.mappings.length === 0 || !$v.$anyDirty
+            "
+            >Save
+          </v-btn>
+          <span v-if="$v.$anyError" class="red--text">
+            Please fill out the required field(s).
+          </span>
+        </v-flex>
+      </v-layout>
+    </v-form>
+
+    <v-btn
       v-if="collection.id"
-      class="btn"
+      class="mt-2"
       buttonClass="danger"
       :title="postsForCollection.length > 0 ? 'Collections with posts cannot be deleted' : 'Cannot be undone!'"
       @click="del()"
       :disabled="postsForCollection.length > 0"
-      >Delete Collection</BaseButton
-    >
-    <h3 v-if="collection.id">Posts</h3>
+      >Delete Collection
+    </v-btn>
+
+    <h3 class="mt-4" v-if="collection.id">Posts</h3>
     <Tabulator
       v-if="collection.id"
       :data="postsForCollection"
@@ -105,16 +117,17 @@
       :resizable-columns="true"
       @rowClicked="postRowClicked"
     />
-    <div class="create">
-      <router-link to="/posts/create">Create a new post</router-link>
-    </div>
-  </div>
+    <v-btn outlined color="primary" class="mt-4" to="/posts/create">
+      Create a new post
+    </v-btn>
+  </v-container>
 </template>
 
 <script>
 import store from "@/store";
 import { mapState } from "vuex";
 import Tabulator from "../components/Tabulator";
+import { getMetadataColumn } from "../utils/metadata";
 import NProgress from "nprogress";
 import { required } from "vuelidate/lib/validators";
 import Multiselect from "vue-multiselect";
@@ -156,58 +169,14 @@ const ixEmptyFieldMap = {
 };
 
 function setup() {
-  Object.assign(this.collection, this.collections.collection);
-  // deep-clone arrays
-  this.collection.categories = this.collections.collection.categories.map(catId =>
-    this.categories.categoriesList.find(cat => cat.id === catId)
-  );
-  this.collection.fields = lodash.cloneDeep(this.collections.collection.fields);
-  this.collection.mappings = lodash.cloneDeep(this.collections.collection.mappings);
-}
-
-// TODO this function and getMetadataColumns are copied from PostsList.vue; figure out how best to share
-function getMetadataColumn(pf) {
-  switch (pf.type) {
-    case "string":
-      return {
-        title: pf.name,
-        field: pf.name,
-        tooltip: pf.tooltip,
-        headerFilter: "input",
-        sorter: "string"
-      };
-    case "number":
-      return {
-        title: pf.name,
-        field: pf.name,
-        tooltip: pf.tooltip,
-        headerFilter: "number",
-        sorter: "number"
-      };
-    case "date":
-      return {
-        title: pf.name,
-        field: pf.name,
-        hozAlign: "center",
-        tooltip: pf.tooltip,
-        headerFilter: "input",
-        sorter: "date",
-        sorterParams: {
-          format: "DD MMM YYYY",
-          alignEmptyValues: "top"
-        }
-      };
-    case "boolean":
-      return {
-        title: pf.name,
-        field: pf.name,
-        tooltip: pf.tooltip,
-        hozAlign: "center",
-        formatter: "tickCross",
-        headerFilter: "tickCross",
-        sorter: "boolean"
-      };
-  }
+  this.collection = {
+    ...this.collections.collection,
+    categories: this.collections.collection.categories.map(catId =>
+      this.categories.categoriesList.find(cat => cat.id === catId)
+    ),
+    fields: lodash.cloneDeep(this.collections.collection.fields),
+    mappings: lodash.cloneDeep(this.collections.collection.mappings)
+  };
 }
 
 export default {
@@ -231,7 +200,7 @@ export default {
   },
   data() {
     return {
-      collection: { categories: [], fields: [], mappings: [] },
+      collection: { id: null, name: null, categories: [], fields: [], mappings: [] },
       fieldColumns: [
         {
           rowHandle: true,
@@ -547,20 +516,21 @@ export default {
 </script>
 
 <style src="vue-multiselect/dist/vue-multiselect.min.css"></style>
-<style scoped>
-.submit-button {
-  margin-top: 32px;
+<style>
+.multiselect__tag {
+  color: #006064;
+  line-height: 1;
+  background: #b2ebf2;
 }
-.tabulator {
-  width: 750px;
+.multiselect__option--highlight {
+  background: #b2ebf2;
+  outline: none;
+  color: #006064;
 }
-.posts {
-  margin-top: 32px;
-}
-.btn {
-  margin: 32px 0;
-}
-.create {
-  margin-top: 8px;
+.multiselect__option--highlight:after {
+  content: attr(data-select);
+  background: #b2ebf2;
+  color: #006064;
 }
 </style>
+<!--the original green hex #41b883 change to cyan lighten-3 #80DEEA or cyan lighten-4 #B2EBF2-->

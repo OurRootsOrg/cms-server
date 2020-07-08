@@ -1,17 +1,18 @@
 <template>
-  <div class="categories-create">
+  <v-container class="categories-create">
     <h1>{{ category.id ? "Edit" : "Create" }} Category</h1>
-    <form @submit.prevent="save">
-      <h3>Give your category a name</h3>
-      <BaseInput
-        label="Name"
+    <v-form @submit.prevent="save">
+      <h3 class="mb-4">Give your category a name</h3>
+      <v-text-field
+        label="Category Name"
         v-model="category.name"
         type="text"
         placeholder="Name"
         class="field"
         :class="{ error: $v.category.name.$error }"
         @blur="touch('name')"
-      />
+      >
+      </v-text-field>
 
       <template v-if="$v.category.name.$error">
         <p v-if="!$v.category.name.required" class="errorMessage">
@@ -19,26 +20,26 @@
         </p>
       </template>
 
-      <BaseButton
-        type="submit"
-        class="submit-button"
-        buttonClass="-fill-gradient"
-        :disabled="$v.$anyError || !$v.$anyDirty"
-        >Save</BaseButton
-      >
-      <p v-if="$v.$anyError" class="errorMessage">
-        Please fill out the required field(s).
-      </p>
-    </form>
-    <BaseButton
+      <v-layout row>
+        <v-flex justify-center>
+          <v-btn class="ml-2 mb-4" color="primary" type="submit" :disabled="$v.$anyError || !$v.$anyDirty">Save</v-btn>
+          <span v-if="$v.$anyError" class="red--text">
+            Please fill out the required field(s).
+          </span>
+        </v-flex>
+      </v-layout>
+    </v-form>
+
+    <v-btn
+      class="mt-2 mb-4"
       v-if="category.id"
-      class="btn"
-      buttonClass="danger"
+      color="warning"
       @click="del()"
       :title="collectionsForCategory.length > 0 ? 'Categories with collections cannot be deleted' : 'Cannot be undone!'"
       :disabled="collectionsForCategory.length > 0"
-      >Delete Category</BaseButton
-    >
+      >Delete Category
+    </v-btn>
+
     <h3 v-if="category.id">Collections</h3>
     <Tabulator
       v-if="category.id"
@@ -50,10 +51,10 @@
       :resizable-columns="true"
       @rowClicked="collectionRowClicked"
     />
-    <div class="create">
-      <router-link to="/collections/create">Create a new collection</router-link>
-    </div>
-  </div>
+    <v-btn outlined color="primary" class="mt-4" to="/collections/create">
+      Create a new collection
+    </v-btn>
+  </v-container>
 </template>
 
 <script>
@@ -65,7 +66,9 @@ import { required } from "vuelidate/lib/validators";
 import lodash from "lodash";
 
 function setup() {
-  Object.assign(this.category, this.categories.category);
+  this.category = {
+    ...this.categories.category
+  };
 }
 
 export default {
@@ -89,7 +92,7 @@ export default {
   },
   data() {
     return {
-      category: {},
+      category: { id: null, name: null },
       collectionsList: [],
       collectionColumns: [
         {
@@ -194,15 +197,3 @@ export default {
   }
 };
 </script>
-
-<style scoped>
-.submit-button {
-  margin-top: 32px;
-}
-.btn {
-  margin: 24px 0;
-}
-.create {
-  margin-top: 8px;
-}
-</style>
