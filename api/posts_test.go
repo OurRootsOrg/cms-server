@@ -19,31 +19,57 @@ func TestPosts(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping tests in short mode")
 	}
-	db, err := postgres.Open(context.TODO(), os.Getenv("DATABASE_URL"))
-	if err != nil {
-		log.Fatalf("Error opening database connection: %v\n  DATABASE_URL: %s",
-			err,
-			os.Getenv("DATABASE_URL"),
-		)
+
+	databaseURL := os.Getenv("DATABASE_URL")
+	if databaseURL != "" {
+		db, err := postgres.Open(context.TODO(), databaseURL)
+		if err != nil {
+			log.Fatalf("Error opening database connection: %v\n  DATABASE_URL: %s",
+				err,
+				databaseURL,
+			)
+		}
+		p := persist.NewPostgresPersister(db)
+		doPostsTests(t, p, p, p, p)
 	}
-	p := persist.NewPostgresPersister(db)
+	dynamoDBTableName := os.Getenv("DYNAMODB_TEST_TABLE_NAME")
+	if dynamoDBTableName != "" {
+		// config := aws.Config{
+		// 	Region:      aws.String("us-east-1"),
+		// 	Endpoint:    aws.String("http://localhost:18000"),
+		// 	DisableSSL:  aws.Bool(true),
+		// 	Credentials: credentials.NewStaticCredentials("ACCESS_KEY", "SECRET", ""),
+		// }
+		// sess, err := session.NewSession(&config)
+		// assert.NoError(t, err)
+		// p, err := dynamo.NewPersister(sess, dynamoDBTableName)
+		// assert.NoError(t, err)
+		// doPostsTests(t, p, p, nil, nil)
+	}
+}
+func doPostsTests(t *testing.T,
+	catP model.CategoryPersister,
+	colP model.CollectionPersister,
+	postP model.PostPersister,
+	recordP model.RecordPersister,
+) {
 	testApi, err := api.NewAPI()
 	assert.NoError(t, err)
 	defer testApi.Close()
 	testApi = testApi.
 		QueueConfig("recordswriter", "amqp://guest:guest@localhost:35672/").
 		QueueConfig("publisher", "amqp://guest:guest@localhost:35672/").
-		CollectionPersister(p).
-		PostPersister(p).
-		RecordPersister(p)
+		CollectionPersister(colP).
+		PostPersister(postP).
+		RecordPersister(recordP)
 
 	// Add a test category and test collection for referential integrity
-	testCategory, err := createTestCategory(p)
+	testCategory, err := createTestCategory(catP)
 	assert.Nil(t, err, "Error creating test category")
-	defer deleteTestCategory(p, testCategory)
-	testCollection, err := createTestCollection(p, testCategory.ID)
+	defer deleteTestCategory(catP, testCategory)
+	testCollection, err := createTestCollection(colP, testCategory.ID)
 	assert.Nil(t, err, "Error creating test collection")
-	defer deleteTestCollection(p, testCollection)
+	defer deleteTestCollection(colP, testCollection)
 
 	empty, errors := testApi.GetPosts(context.TODO())
 	assert.Nil(t, errors)
@@ -58,7 +84,7 @@ func TestPosts(t *testing.T) {
 	}
 	created, errors := testApi.AddPost(context.TODO(), in)
 	assert.Nil(t, errors)
-	defer deleteTestPost(p, created)
+	defer deleteTestPost(postP, created)
 	assert.Equal(t, in.Name, created.Name, "Expected Name to match")
 	assert.NotEmpty(t, created.ID)
 	assert.Equal(t, in.Collection, created.Collection)
@@ -159,7 +185,7 @@ func createTestCollection(p model.CollectionPersister, categoryID uint32) (*mode
 	if err != nil {
 		return nil, err
 	}
-	return &created, err
+	return created, err
 }
 
 func deleteTestCollection(p model.CollectionPersister, collection *model.Collection) error {

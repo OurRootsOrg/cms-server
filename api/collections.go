@@ -44,7 +44,7 @@ func (api API) GetCollection(ctx context.Context, id uint32) (*model.Collection,
 	} else if err != nil {
 		return nil, model.NewErrors(http.StatusInternalServerError, err)
 	}
-	return &collection, nil
+	return collection, nil
 }
 
 // AddCollection holds the business logic around adding a Collection
@@ -62,13 +62,13 @@ func (api API) AddCollection(ctx context.Context, in model.CollectionIn) (*model
 		log.Printf("[ERROR] Internal server error: %v", err)
 		return nil, model.NewErrors(http.StatusInternalServerError, err)
 	}
-	return &collection, nil
+	return collection, nil
 }
 
 // UpdateCollection holds the business logic around updating a Collection
 func (api API) UpdateCollection(ctx context.Context, id uint32, in model.Collection) (*model.Collection, *model.Errors) {
 	err := api.validate.Struct(in)
-	log.Printf("[INFO] Collection=%v err=%v\n", in, err)
+	log.Printf("[DEBUG] Collection=%v err=%v\n", in, err)
 	if err != nil {
 		return nil, model.NewErrors(http.StatusBadRequest, err)
 	}
@@ -87,7 +87,7 @@ func (api API) UpdateCollection(ctx context.Context, id uint32, in model.Collect
 	} else if err != nil {
 		return nil, model.NewErrors(http.StatusInternalServerError, err)
 	}
-	return &collection, nil
+	return collection, nil
 }
 
 // DeleteCollection holds the business logic around deleting a Collection

@@ -160,7 +160,7 @@ func createTestCollection(p model.CollectionPersister, categoryID uint32) (*mode
 	if err != nil {
 		return nil, err
 	}
-	return &created, err
+	return created, err
 }
 
 func deleteTestCollection(p model.CollectionPersister, collection *model.Collection) error {

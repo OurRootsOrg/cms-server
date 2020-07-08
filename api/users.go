@@ -46,7 +46,7 @@ func (api API) RetrieveUser(ctx context.Context, provider OIDCProvider, token *o
 	userClaims := make(map[string]interface{})
 	err = userInfo.Claims(&userClaims)
 	if err != nil {
-		log.Printf("[ERROR] Error getting claims: %v", err)
+		log.Printf("[INFO] Error getting claims: %v", err)
 	}
 	log.Printf("[DEBUG] Claims: %#v", userClaims)
 	name := userClaims["name"]

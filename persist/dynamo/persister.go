@@ -1,6 +1,7 @@
 package dynamo
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"strconv"
@@ -40,8 +41,17 @@ func NewPersister(session *session.Session, tableName string) (Persister, error)
 	return p, err
 }
 
-// getSequenceValue returns a unique sequence value
-func (p *Persister) getSequenceValue() (uint32, error) {
+// GetSequenceValue returns a unique sequence value
+func (p *Persister) GetSequenceValue() (uint32, error) {
+	v, err := p.GetMultipleSequenceValues(1)
+	return v[0], err
+}
+
+// GetMultipleSequenceValues returns a slice of unique sequence values
+func (p *Persister) GetMultipleSequenceValues(cnt int) ([]uint32, error) {
+	if cnt < 1 || cnt > 10000 {
+		return nil, errors.New("Must request between 1 and 10,000 sequence values")
+	}
 	uii := &dynamodb.UpdateItemInput{
 		TableName: p.tableName,
 		Key: map[string]*dynamodb.AttributeValue{
@@ -50,16 +60,23 @@ func (p *Persister) getSequenceValue() (uint32, error) {
 		},
 		UpdateExpression: aws.String("ADD sequenceValue :i"),
 		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
-			":i": {N: aws.String("1")},
+			":i": {N: aws.String(strconv.Itoa(cnt))},
 		},
 		ReturnValues: aws.String("ALL_NEW"),
 	}
 	uio, err := p.svc.UpdateItem(uii)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
-	i, err := strconv.ParseUint(*uio.Attributes["sequenceValue"].N, 10, 32)
-	return uint32(i), err
+	v, err := strconv.ParseUint(*uio.Attributes["sequenceValue"].N, 10, 32)
+	if err != nil {
+		return nil, err
+	}
+	ret := make([]uint32, cnt)
+	for i := uint32(0); i < uint32(cnt); i++ {
+		ret[i] = uint32(v) - uint32(cnt) + i + 1
+	}
+	return ret, err
 }
 
 func ensureTableExists(svc *dynamodb.DynamoDB, tableName string) error {

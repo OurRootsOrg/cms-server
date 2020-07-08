@@ -186,6 +186,7 @@ Resources:
                 - dynamodb:Query
                 - dynamodb:Scan
                 - dynamodb:UpdateItem
+                - dynamodb:ConditionCheckItem
               Resource: !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${EnvironmentName}*"
       Timeout: 50
       Environment:
@@ -264,6 +265,7 @@ Resources:
                 - dynamodb:Query
                 - dynamodb:Scan
                 - dynamodb:UpdateItem
+                - dynamodb:ConditionCheckItem
               Resource: !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${EnvironmentName}*"
       Timeout: 60
       Environment:
@@ -339,6 +341,7 @@ Resources:
                 - dynamodb:Query
                 - dynamodb:Scan
                 - dynamodb:UpdateItem
+                - dynamodb:ConditionCheckItem
               Resource: !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${EnvironmentName}*"
       Timeout: 60
       Environment:

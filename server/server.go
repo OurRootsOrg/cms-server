@@ -184,7 +184,7 @@ func main() {
 		}
 		ap.
 			CategoryPersister(p).
-			// CollectionPersister(p).
+			CollectionPersister(p).
 			// PostPersister(p).
 			// RecordPersister(p).
 			// SettingsPersister(p).

@@ -33,7 +33,7 @@ func TestCategories(t *testing.T) {
 			)
 		}
 		p := persist.NewPostgresPersister(db)
-		doTests(t, p)
+		doCategoriesTests(t, p)
 	}
 	dynamoDBTableName := os.Getenv("DYNAMODB_TEST_TABLE_NAME")
 	if dynamoDBTableName != "" {
@@ -47,11 +47,11 @@ func TestCategories(t *testing.T) {
 		assert.NoError(t, err)
 		p, err := dynamo.NewPersister(sess, dynamoDBTableName)
 		assert.NoError(t, err)
-		doTests(t, p)
+		doCategoriesTests(t, p)
 	}
 
 }
-func doTests(t *testing.T, p model.CategoryPersister) {
+func doCategoriesTests(t *testing.T, p model.CategoryPersister) {
 	ap, err := api.NewAPI()
 	assert.NoError(t, err)
 	defer ap.Close()

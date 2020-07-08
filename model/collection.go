@@ -13,15 +13,15 @@ import (
 type CollectionPersister interface {
 	SelectCollections(ctx context.Context) ([]Collection, error)
 	SelectCollectionsByID(ctx context.Context, ids []uint32) ([]Collection, error)
-	SelectOneCollection(ctx context.Context, id uint32) (Collection, error)
-	InsertCollection(ctx context.Context, in CollectionIn) (Collection, error)
-	UpdateCollection(ctx context.Context, id uint32, in Collection) (Collection, error)
+	SelectOneCollection(ctx context.Context, id uint32) (*Collection, error)
+	InsertCollection(ctx context.Context, in CollectionIn) (*Collection, error)
+	UpdateCollection(ctx context.Context, id uint32, in Collection) (*Collection, error)
 	DeleteCollection(ctx context.Context, id uint32) error
 }
 
 // CollectionBody is the JSON body of a Collection
 type CollectionBody struct {
-	Name             string              `json:"name" validate:"required"`
+	Name             string              `json:"name" validate:"required" dynamodbav:"altSort"`
 	Location         string              `json:"location,omitempty"`
 	Fields           []CollectionField   `json:"fields"`
 	Mappings         []CollectionMapping `json:"mappings"`
@@ -64,7 +64,8 @@ type CollectionIn struct {
 
 // Collection represents a set of related Records
 type Collection struct {
-	ID uint32 `json:"id,omitempty" example:"999" validate:"required"`
+	ID   uint32 `json:"id,omitempty" example:"999" validate:"required" dynamodbav:"pk"`
+	Type string `json:"-" dynamodbav:"sk"`
 	CollectionIn
 	InsertTime     time.Time `json:"insert_time,omitempty"`
 	LastUpdateTime time.Time `json:"last_update_time,omitempty"`

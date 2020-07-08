@@ -55,6 +55,14 @@ func (p Persister) RetrieveUser(ctx context.Context, in model.UserIn) (*model.Us
 			return nil, translateError(err)
 		}
 		user = users[0]
+		key, err := url.ParseQuery(user.SortKey)
+		if err != nil {
+			log.Printf("[ERROR] Failed to parse key (%s) err: %v", user.SortKey, err)
+			return nil, translateError(err)
+		}
+		user.Issuer = key.Get("iss")
+		user.Subject = key.Get("sub")
+
 		if !user.Enabled {
 			msg := fmt.Sprintf("User '%d' is not enabled", user.ID)
 			log.Printf("[DEBUG] %s", msg)
@@ -66,7 +74,7 @@ func (p Persister) RetrieveUser(ctx context.Context, in model.UserIn) (*model.Us
 	}
 	log.Printf("[DEBUG] No user with subject '%s' found in database, so creating one", in.Subject)
 
-	user.ID, err = p.getSequenceValue()
+	user.ID, err = p.GetSequenceValue()
 	if err != nil {
 		return nil, translateError(err)
 	}

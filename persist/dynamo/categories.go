@@ -112,7 +112,7 @@ func (p Persister) SelectOneCategory(ctx context.Context, id uint32) (model.Cate
 func (p Persister) InsertCategory(ctx context.Context, in model.CategoryIn) (model.Category, error) {
 	var cat model.Category
 	var err error
-	cat.ID, err = p.getSequenceValue()
+	cat.ID, err = p.GetSequenceValue()
 	if err != nil {
 		return cat, translateError(err)
 	}
@@ -131,7 +131,7 @@ func (p Persister) InsertCategory(ctx context.Context, in model.CategoryIn) (mod
 	pii := &dynamodb.PutItemInput{
 		TableName:           p.tableName,
 		Item:                avs,
-		ConditionExpression: aws.String("attribute_not_exists(id)"), // Make duplicate insert fail
+		ConditionExpression: aws.String("attribute_not_exists(pk)"), // Make duplicate insert fail
 	}
 	pio, err := p.svc.PutItem(pii)
 	if err != nil {
