@@ -211,7 +211,7 @@ func getIDFromRequest(req *http.Request) (uint32, *model.Errors) {
 	vars := mux.Vars(req)
 	catID, err := strconv.Atoi(vars["id"])
 	if err != nil || catID <= 0 {
-		return 0, model.NewErrors(http.StatusBadRequest, err, fmt.Sprintf("Bad id '%s'", vars["id"]))
+		return 0, model.NewErrors(http.StatusBadRequest, fmt.Errorf("Bad id '%s': %v", vars["id"], err))
 	}
 	return uint32(catID), nil
 }

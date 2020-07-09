@@ -39,6 +39,9 @@ func (api API) GetCollectionsByID(ctx context.Context, ids []uint32) ([]model.Co
 // GetCollection holds the business logic around getting a Collection
 func (api API) GetCollection(ctx context.Context, id uint32) (*model.Collection, *model.Errors) {
 	collection, err := api.collectionPersister.SelectOneCollection(ctx, id)
+	// if err != nil {
+	// 	return nil, checkErr(err)
+	// }
 	if err == persist.ErrNoRows {
 		return nil, model.NewErrors(http.StatusNotFound, model.NewError(model.ErrNotFound, strconv.Itoa(int(id))))
 	} else if err != nil {

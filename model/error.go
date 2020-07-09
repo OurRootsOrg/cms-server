@@ -64,8 +64,33 @@ type Errors struct {
 	httpStatus int
 }
 
+// NewErrorsFromError builds an Errors collection from a `model.Error`
+// func NewErrorsFromError(e Error) *Errors {
+// 	var httpStatus int
+// 	switch e.Code {
+// 	case ErrBadReference:
+// 		httpStatus = http.StatusBadRequest
+// 	case ErrConcurrentUpdate:
+// 		httpStatus = http.StatusConflict
+// 	case ErrNotFound:
+// 		httpStatus = http.StatusNotFound
+// 	case ErrRequired:
+// 		httpStatus = http.StatusBadRequest
+// 	case ErrOther:
+// 		httpStatus = http.StatusInternalServerError
+// 	default: // Shouldn't hit this unless someone adds a new code
+// 		log.Printf("[INFO] Encountered unexpected error code: %s", e.Code)
+// 		httpStatus = http.StatusInternalServerError
+// 	}
+
+// 	return &Errors{
+// 		errs:       []Error{e},
+// 		httpStatus: httpStatus,
+// 	}
+// }
+
 // NewErrors builds an Errors collection from an `error`, which may actually be a ValidationErrors collection
-func NewErrors(httpStatus int, err error, params ...string) *Errors {
+func NewErrors(httpStatus int, err error) *Errors {
 	errors := Errors{
 		errs:       make([]Error, 0),
 		httpStatus: httpStatus,

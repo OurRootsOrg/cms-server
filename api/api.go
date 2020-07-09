@@ -258,3 +258,11 @@ func pingElasticsearch(es *elasticsearch.Client) error {
 	log.Printf("[DEBUG] Elasticsearch server: %s", r["version"].(map[string]interface{})["number"])
 	return nil
 }
+
+// func checkErr(err error) *model.Errors {
+// 	e, ok := err.(model.Error)
+// 	if ok {
+// 		return model.NewErrorsFromError(e)
+// 	}
+// 	return model.NewErrors(http.StatusInternalServerError, err)
+// }

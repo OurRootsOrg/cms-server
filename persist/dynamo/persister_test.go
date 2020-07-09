@@ -185,6 +185,52 @@ func TestCollection(t *testing.T) {
 	t.Logf("Error: %#v", err)
 }
 
+func TestPost(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping tests in short mode")
+	}
+	p, teardown := setupTestCase(t)
+	defer teardown(t)
+
+	_, err := p.SelectOnePost(context.TODO(), 1)
+	assert.Error(t, err)
+	assert.Equal(t, persist.ErrNoRows, err)
+
+	cati, err := model.NewCategoryIn("Test Category")
+	assert.NoError(t, err)
+
+	cat, err := p.InsertCategory(context.TODO(), cati)
+	assert.NoError(t, err)
+	assert.Equal(t, cati.Name, cat.Name)
+
+	ci := model.NewCollectionIn("Test Collection", []uint32{cat.ID})
+
+	coll, err := p.InsertCollection(context.TODO(), ci)
+	assert.NoError(t, err)
+	assert.Equal(t, ci.Name, coll.Name)
+
+	// then := time.Now().Truncate(0)
+	in := model.NewPostIn("Post 1", coll.ID, "")
+	out, err := p.InsertPost(context.TODO(), in)
+	assert.NoError(t, err)
+	assert.Equal(t, in.Name, out.Name)
+	assert.Equal(t, in.Collection, out.Collection)
+	assert.Equal(t, in.RecordsKey, out.RecordsKey)
+
+	post, err := p.SelectOnePost(context.TODO(), out.ID)
+	assert.NoError(t, err)
+	assert.Equal(t, out.Name, post.Name)
+	assert.Equal(t, out.Collection, post.Collection)
+	assert.Equal(t, out.InsertTime, post.InsertTime)
+	assert.Equal(t, out.LastUpdateTime, post.InsertTime)
+
+	// Try to create a post with a non-existent collectio ID
+	in = model.NewPostIn("Bad Post", 123456, "")
+	out, err = p.InsertPost(context.TODO(), in)
+	assert.Error(t, err)
+	t.Logf("Error: %#v", err)
+}
+
 func TestSequences(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping tests in short mode")

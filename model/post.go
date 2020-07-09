@@ -52,7 +52,7 @@ type PublisherMsg struct {
 
 // PostBody is the JSON body of a Post
 type PostBody struct {
-	Name          string                 `json:"name" validate:"required"`
+	Name          string                 `json:"name" validate:"required" dynamodbav:"altSort"`
 	Metadata      map[string]interface{} `json:"metadata"`
 	RecordsKey    string                 `json:"recordsKey"`
 	RecordsStatus string                 `json:"recordsStatus"`
@@ -80,7 +80,8 @@ type PostIn struct {
 
 // Post represents a set of related Records
 type Post struct {
-	ID uint32 `json:"id,omitempty" example:"999" validate:"required"`
+	ID   uint32 `json:"id,omitempty" example:"999" validate:"required" dynamodbav:"pk"`
+	Type string `json:"-" dynamodbav:"sk"`
 	PostIn
 	InsertTime     time.Time `json:"insert_time,omitempty"`
 	LastUpdateTime time.Time `json:"last_update_time,omitempty"`
