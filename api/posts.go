@@ -39,7 +39,7 @@ func (api API) GetPost(ctx context.Context, id uint32) (*model.Post, *model.Erro
 	} else if err != nil {
 		return nil, model.NewErrors(http.StatusInternalServerError, err)
 	}
-	return &post, nil
+	return post, nil
 }
 
 // AddPost holds the business logic around adding a Post
@@ -90,7 +90,7 @@ func (api API) AddPost(ctx context.Context, in model.PostIn) (*model.Post, *mode
 		}
 	}
 
-	return &post, nil
+	return post, nil
 }
 
 // UpdatePost holds the business logic around updating a Post
@@ -202,7 +202,7 @@ func (api API) UpdatePost(ctx context.Context, id uint32, in model.Post) (*model
 	if currPost.RecordsKey != "" && currPost.RecordsKey != in.RecordsKey {
 		api.deleteRecordsData(ctx, currPost.RecordsKey)
 	}
-	return &post, nil
+	return post, nil
 }
 
 // DeletePost holds the business logic around deleting a Post

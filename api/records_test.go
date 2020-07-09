@@ -140,7 +140,7 @@ func createTestPost(p model.PostPersister, collectionID uint32) (*model.Post, er
 	if err != nil {
 		return nil, err
 	}
-	return &created, err
+	return created, err
 }
 
 func deleteTestPost(p model.PostPersister, post *model.Post) error {

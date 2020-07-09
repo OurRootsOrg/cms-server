@@ -43,7 +43,7 @@ func (api API) GetRecord(ctx context.Context, id uint32) (*model.Record, *model.
 	} else if err != nil {
 		return nil, model.NewErrors(http.StatusInternalServerError, err)
 	}
-	return &record, nil
+	return record, nil
 }
 
 // AddRecord holds the business logic around adding a Record
@@ -62,7 +62,7 @@ func (api API) AddRecord(ctx context.Context, in model.RecordIn) (*model.Record,
 		log.Printf("[ERROR] Internal server error: %v", err)
 		return nil, model.NewErrors(http.StatusInternalServerError, err)
 	}
-	return &record, nil
+	return record, nil
 }
 
 // UpdateRecord holds the business logic around updating a Record
@@ -86,7 +86,7 @@ func (api API) UpdateRecord(ctx context.Context, id uint32, in model.Record) (*m
 	} else if err != nil {
 		return nil, model.NewErrors(http.StatusInternalServerError, err)
 	}
-	return &record, nil
+	return record, nil
 }
 
 // DeleteRecord holds the business logic around deleting a Record

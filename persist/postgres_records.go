@@ -51,7 +51,7 @@ func (p PostgresPersister) SelectRecordsByID(ctx context.Context, ids []uint32) 
 }
 
 // SelectOneRecord selects a single record
-func (p PostgresPersister) SelectOneRecord(ctx context.Context, id uint32) (model.Record, error) {
+func (p PostgresPersister) SelectOneRecord(ctx context.Context, id uint32) (*model.Record, error) {
 	var record model.Record
 	err := p.db.QueryRowContext(ctx, "SELECT id, post_id, body, ix_hash, insert_time, last_update_time FROM record WHERE id=$1", id).Scan(
 		&record.ID,
@@ -62,17 +62,17 @@ func (p PostgresPersister) SelectOneRecord(ctx context.Context, id uint32) (mode
 		&record.LastUpdateTime,
 	)
 	if err != nil {
-		return record, translateError(err)
+		return nil, translateError(err)
 	}
-	return record, nil
+	return &record, nil
 }
 
 // InsertRecord inserts a RecordBody into the database and returns the inserted Record
-func (p PostgresPersister) InsertRecord(ctx context.Context, in model.RecordIn) (model.Record, error) {
+func (p PostgresPersister) InsertRecord(ctx context.Context, in model.RecordIn) (*model.Record, error) {
 	var record model.Record
 	err := p.db.QueryRowContext(ctx,
-		`INSERT INTO record (post_id, body) 
-		 VALUES ($1, $2) 
+		`INSERT INTO record (post_id, body)
+		 VALUES ($1, $2)
 		 RETURNING id, post_id, body, ix_hash, insert_time, last_update_time`,
 		in.Post, in.RecordBody).
 		Scan(
@@ -83,14 +83,14 @@ func (p PostgresPersister) InsertRecord(ctx context.Context, in model.RecordIn) 
 			&record.InsertTime,
 			&record.LastUpdateTime,
 		)
-	return record, translateError(err)
+	return &record, translateError(err)
 }
 
 // UpdateRecord updates a Record in the database and returns the updated Record
-func (p PostgresPersister) UpdateRecord(ctx context.Context, id uint32, in model.Record) (model.Record, error) {
+func (p PostgresPersister) UpdateRecord(ctx context.Context, id uint32, in model.Record) (*model.Record, error) {
 	var record model.Record
 	err := p.db.QueryRowContext(ctx,
-		`UPDATE record SET body = $1, post_id = $2, ix_hash = $3, last_update_time = CURRENT_TIMESTAMP 
+		`UPDATE record SET body = $1, post_id = $2, ix_hash = $3, last_update_time = CURRENT_TIMESTAMP
 		 WHERE id = $4 AND last_update_time = $5
 		 RETURNING id, post_id, body, ix_hash, insert_time, last_update_time`,
 		in.RecordBody, in.Post, in.IxHash, id, in.LastUpdateTime).
@@ -105,13 +105,13 @@ func (p PostgresPersister) UpdateRecord(ctx context.Context, id uint32, in model
 	if err != nil && err == sql.ErrNoRows {
 		// Either non-existent or last_update_time didn't match
 		c, _ := p.SelectOneRecord(ctx, id)
-		if c.ID == id {
+		if c != nil && c.ID == id {
 			// Row exists, so it must be a non-matching update time
-			return record, model.NewError(model.ErrConcurrentUpdate, c.LastUpdateTime.String(), in.LastUpdateTime.String())
+			return nil, model.NewError(model.ErrConcurrentUpdate, c.LastUpdateTime.String(), in.LastUpdateTime.String())
 		}
-		return record, model.NewError(model.ErrNotFound, strconv.Itoa(int(id)))
+		return nil, model.NewError(model.ErrNotFound, strconv.Itoa(int(id)))
 	}
-	return record, translateError(err)
+	return &record, translateError(err)
 }
 
 // DeleteRecord deletes a Record

@@ -12,9 +12,9 @@ import (
 type CategoryPersister interface {
 	SelectCategories(ctx context.Context) ([]Category, error)
 	SelectCategoriesByID(ctx context.Context, ids []uint32) ([]Category, error)
-	SelectOneCategory(ctx context.Context, id uint32) (Category, error)
-	InsertCategory(ctx context.Context, in CategoryIn) (Category, error)
-	UpdateCategory(ctx context.Context, id uint32, body Category) (Category, error)
+	SelectOneCategory(ctx context.Context, id uint32) (*Category, error)
+	InsertCategory(ctx context.Context, in CategoryIn) (*Category, error)
+	UpdateCategory(ctx context.Context, id uint32, body Category) (*Category, error)
 	DeleteCategory(ctx context.Context, id uint32) error
 }
 

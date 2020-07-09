@@ -12,9 +12,9 @@ import (
 type RecordPersister interface {
 	SelectRecordsForPost(ctx context.Context, postID uint32) ([]Record, error)
 	SelectRecordsByID(ctx context.Context, ids []uint32) ([]Record, error)
-	SelectOneRecord(ctx context.Context, id uint32) (Record, error)
-	InsertRecord(ctx context.Context, in RecordIn) (Record, error)
-	UpdateRecord(ctx context.Context, id uint32, in Record) (Record, error)
+	SelectOneRecord(ctx context.Context, id uint32) (*Record, error)
+	InsertRecord(ctx context.Context, in RecordIn) (*Record, error)
+	UpdateRecord(ctx context.Context, id uint32, in Record) (*Record, error)
 	DeleteRecord(ctx context.Context, id uint32) error
 	DeleteRecordsForPost(ctx context.Context, postID uint32) error
 }

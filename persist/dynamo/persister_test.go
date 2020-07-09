@@ -88,24 +88,24 @@ func TestCategory(t *testing.T) {
 	cats, err := p.SelectCategoriesByID(context.TODO(), []uint32{cat.ID, cat2.ID})
 	assert.NoError(t, err)
 	assert.Equal(t, 2, len(cats))
-	assert.Contains(t, cats, cat)
-	assert.Contains(t, cats, cat2)
+	assert.Contains(t, cats, *cat)
+	assert.Contains(t, cats, *cat2)
 
 	oldCat2 := cat2
 	cat2.Name = "New Name 2"
-	cat2, err = p.UpdateCategory(context.TODO(), cat2.ID, cat2)
+	cat2, err = p.UpdateCategory(context.TODO(), cat2.ID, *cat2)
 	assert.NoError(t, err)
 	assert.Equal(t, "New Name 2", cat2.Name)
 
 	// Try to update using old lastUpdateTime
-	oldCat2, err = p.UpdateCategory(context.TODO(), oldCat2.ID, oldCat2)
+	oldCat2, err = p.UpdateCategory(context.TODO(), oldCat2.ID, *oldCat2)
 	assert.Error(t, err)
 	assert.Equal(t, model.ErrConcurrentUpdate, err.(model.Error).Code)
 
 	// Try to update non-existent category
 	cat3 := cat2
 	cat3.ID = 123456
-	cat3, err = p.UpdateCategory(context.TODO(), cat3.ID, cat3)
+	cat3, err = p.UpdateCategory(context.TODO(), cat3.ID, *cat3)
 	assert.Error(t, err)
 	assert.Equal(t, model.ErrNotFound, err.(model.Error).Code)
 

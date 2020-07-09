@@ -165,7 +165,7 @@ func createTestCategory(p model.CategoryPersister) (*model.Category, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &created, err
+	return created, err
 }
 
 func deleteTestCategory(p model.CategoryPersister, category *model.Category) error {

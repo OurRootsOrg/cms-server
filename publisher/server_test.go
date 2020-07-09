@@ -52,7 +52,7 @@ func TestPublisher(t *testing.T) {
 	defer deleteTestRecords(p, testRecords)
 	// force post to draft status
 	testPost.RecordsStatus = model.PostDraft
-	*testPost, err = p.UpdatePost(ctx, testPost.ID, *testPost)
+	testPost, err = p.UpdatePost(ctx, testPost.ID, *testPost)
 	assert.Nil(t, err, "Error updating test post")
 	assert.Equal(t, model.PostDraft, testPost.RecordsStatus, "Unexpected post recordsStatus")
 
@@ -127,7 +127,7 @@ func createTestCategory(p model.CategoryPersister) (*model.Category, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &created, err
+	return created, err
 }
 
 func deleteTestCategory(p model.CategoryPersister, category *model.Category) error {
@@ -173,7 +173,7 @@ func createTestPost(p model.PostPersister, collectionID uint32) (*model.Post, er
 	if err != nil {
 		return nil, err
 	}
-	return &created, err
+	return created, err
 }
 
 func deleteTestPost(p model.PostPersister, post *model.Post) error {
@@ -199,7 +199,7 @@ func createTestRecords(p model.RecordPersister, postID uint32) ([]model.Record, 
 		if err != nil {
 			return records, err
 		}
-		records = append(records, record)
+		records = append(records, *record)
 	}
 	return records, nil
 }

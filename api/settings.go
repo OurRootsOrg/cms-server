@@ -13,14 +13,14 @@ func (api API) GetSettings(ctx context.Context) (*model.Settings, *model.Errors)
 	settings, err := api.settingsPersister.SelectSettings(ctx)
 	// if no settings, return a default settings object
 	if err == persist.ErrNoRows {
-		settings = model.Settings{
+		settings = &model.Settings{
 			SettingsIn: model.NewSettingsIn([]model.SettingsPostMetadata{}),
 		}
 		err = nil
 	} else if err != nil {
 		return nil, model.NewErrors(http.StatusInternalServerError, err)
 	}
-	return &settings, nil
+	return settings, nil
 }
 
 // UpsertSettings holds the business logic around updating a Settings object
@@ -40,5 +40,5 @@ func (api API) UpdateSettings(ctx context.Context, in model.Settings) (*model.Se
 		return nil, model.NewErrors(http.StatusInternalServerError, err)
 	}
 
-	return &settings, nil
+	return settings, nil
 }

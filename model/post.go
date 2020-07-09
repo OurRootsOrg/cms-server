@@ -11,9 +11,9 @@ import (
 // PostPersister defines methods needed to persist categories
 type PostPersister interface {
 	SelectPosts(ctx context.Context) ([]Post, error)
-	SelectOnePost(ctx context.Context, id uint32) (Post, error)
-	InsertPost(ctx context.Context, in PostIn) (Post, error)
-	UpdatePost(ctx context.Context, id uint32, in Post) (Post, error)
+	SelectOnePost(ctx context.Context, id uint32) (*Post, error)
+	InsertPost(ctx context.Context, in PostIn) (*Post, error)
+	UpdatePost(ctx context.Context, id uint32, in Post) (*Post, error)
 	DeletePost(ctx context.Context, id uint32) error
 }
 

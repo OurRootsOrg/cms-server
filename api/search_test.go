@@ -109,7 +109,7 @@ func createTestRecords(p model.RecordPersister, postID uint32) ([]model.Record, 
 		if err != nil {
 			return records, err
 		}
-		records = append(records, record)
+		records = append(records, *record)
 	}
 	return records, nil
 }

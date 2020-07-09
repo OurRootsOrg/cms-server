@@ -64,7 +64,7 @@ func (api API) GetCategory(ctx context.Context, id uint32) (*model.Category, *mo
 	} else if err != nil {
 		return nil, model.NewErrors(http.StatusInternalServerError, err)
 	}
-	return &category, nil
+	return category, nil
 }
 
 // AddCategory holds the business logic around adding a Category
@@ -77,7 +77,7 @@ func (api API) AddCategory(ctx context.Context, in model.CategoryIn) (*model.Cat
 	if err != nil {
 		return nil, model.NewErrors(http.StatusInternalServerError, err)
 	}
-	return &category, nil
+	return category, nil
 }
 
 // UpdateCategory holds the business logic around updating a Category
@@ -98,7 +98,7 @@ func (api API) UpdateCategory(ctx context.Context, id uint32, in model.Category)
 	if err != nil {
 		return nil, model.NewErrors(http.StatusInternalServerError, err)
 	}
-	return &category, nil
+	return category, nil
 }
 
 // DeleteCategory holds the business logic around deleting a Category
