@@ -9,10 +9,10 @@ import (
 )
 
 // SelectPosts selects all posts
-func (p PostgresPersister) SelectPosts(ctx context.Context) ([]model.Post, error) {
+func (p PostgresPersister) SelectPosts(ctx context.Context) ([]model.Post, *model.Error) {
 	rows, err := p.db.QueryContext(ctx, "SELECT id, collection_id, body, insert_time, last_update_time FROM post")
 	if err != nil {
-		return nil, translateError(err)
+		return nil, translateError(err, nil, nil, "")
 	}
 	defer rows.Close()
 	posts := make([]model.Post, 0)
@@ -20,7 +20,7 @@ func (p PostgresPersister) SelectPosts(ctx context.Context) ([]model.Post, error
 		var post model.Post
 		err := rows.Scan(&post.ID, &post.Collection, &post.PostBody, &post.InsertTime, &post.LastUpdateTime)
 		if err != nil {
-			return nil, translateError(err)
+			return nil, translateError(err, nil, nil, "")
 		}
 		posts = append(posts, post)
 	}
@@ -28,7 +28,7 @@ func (p PostgresPersister) SelectPosts(ctx context.Context) ([]model.Post, error
 }
 
 // SelectOnePost selects a single post
-func (p PostgresPersister) SelectOnePost(ctx context.Context, id uint32) (*model.Post, error) {
+func (p PostgresPersister) SelectOnePost(ctx context.Context, id uint32) (*model.Post, *model.Error) {
 	var post model.Post
 	err := p.db.QueryRowContext(ctx, "SELECT id, collection_id, body, insert_time, last_update_time FROM post WHERE id=$1", id).Scan(
 		&post.ID,
@@ -38,13 +38,13 @@ func (p PostgresPersister) SelectOnePost(ctx context.Context, id uint32) (*model
 		&post.LastUpdateTime,
 	)
 	if err != nil {
-		return nil, translateError(err)
+		return nil, translateError(err, &id, nil, "")
 	}
 	return &post, nil
 }
 
 // InsertPost inserts a PostBody into the database and returns the inserted Post
-func (p PostgresPersister) InsertPost(ctx context.Context, in model.PostIn) (*model.Post, error) {
+func (p PostgresPersister) InsertPost(ctx context.Context, in model.PostIn) (*model.Post, *model.Error) {
 	var post model.Post
 	err := p.db.QueryRowContext(ctx,
 		`INSERT INTO post (collection_id, body)
@@ -58,11 +58,11 @@ func (p PostgresPersister) InsertPost(ctx context.Context, in model.PostIn) (*mo
 			&post.InsertTime,
 			&post.LastUpdateTime,
 		)
-	return &post, translateError(err)
+	return &post, translateError(err, nil, &in.Collection, "collection")
 }
 
 // UpdatePost updates a Post in the database and returns the updated Post
-func (p PostgresPersister) UpdatePost(ctx context.Context, id uint32, in model.Post) (*model.Post, error) {
+func (p PostgresPersister) UpdatePost(ctx context.Context, id uint32, in model.Post) (*model.Post, *model.Error) {
 	var post model.Post
 	err := p.db.QueryRowContext(ctx,
 		`UPDATE post SET body = $1, collection_id = $2, last_update_time = CURRENT_TIMESTAMP
@@ -85,11 +85,11 @@ func (p PostgresPersister) UpdatePost(ctx context.Context, id uint32, in model.P
 		}
 		return nil, model.NewError(model.ErrNotFound, strconv.Itoa(int(id)))
 	}
-	return &post, translateError(err)
+	return &post, translateError(err, &id, &in.Collection, "collection")
 }
 
 // DeletePost deletes a Post
-func (p PostgresPersister) DeletePost(ctx context.Context, id uint32) error {
+func (p PostgresPersister) DeletePost(ctx context.Context, id uint32) *model.Error {
 	_, err := p.db.ExecContext(ctx, "DELETE FROM post WHERE id = $1", id)
-	return translateError(err)
+	return translateError(err, nil, nil, "")
 }

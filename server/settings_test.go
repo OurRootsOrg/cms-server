@@ -39,7 +39,7 @@ func TestGetSettings(t *testing.T) {
 
 	settings = nil
 	am.Result = settings
-	am.Errors = model.NewErrors(http.StatusNotFound, model.NewError(model.ErrNotFound, "/settings"))
+	am.Errors = model.NewErrorsFromError(model.NewError(model.ErrNotFound, "/settings"))
 
 	request, _ = http.NewRequest("GET", "/settings", nil)
 	response = httptest.NewRecorder()

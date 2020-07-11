@@ -68,12 +68,10 @@ func doPostsTests(t *testing.T,
 		RecordPersister(recordP)
 
 	// Add a test category and test collection for referential integrity
-	testCategory, err := createTestCategory(catP)
-	assert.Nil(t, err, "Error creating test category")
-	defer deleteTestCategory(catP, testCategory)
-	testCollection, err := createTestCollection(colP, testCategory.ID)
-	assert.Nil(t, err, "Error creating test collection")
-	defer deleteTestCollection(colP, testCollection)
+	testCategory := createTestCategory(t, catP)
+	defer deleteTestCategory(t, catP, testCategory)
+	testCollection := createTestCollection(t, colP, testCategory.ID)
+	defer deleteTestCollection(t, colP, testCollection)
 
 	empty, errors := testApi.GetPosts(context.TODO())
 	assert.Nil(t, errors)
@@ -88,7 +86,7 @@ func doPostsTests(t *testing.T,
 	}
 	created, errors := testApi.AddPost(context.TODO(), in)
 	assert.Nil(t, errors)
-	defer deleteTestPost(postP, created)
+	defer deleteTestPost(t, postP, created)
 	assert.Equal(t, in.Name, created.Name, "Expected Name to match")
 	assert.NotEmpty(t, created.ID)
 	assert.Equal(t, in.Collection, created.Collection)
@@ -161,7 +159,7 @@ func doPostsTests(t *testing.T,
 	assert.Equal(t, model.ErrNotFound, errors.Errs()[0].Code, "errors.Errs()[0]: %#v", errors.Errs()[0])
 }
 
-func createTestCollection(p model.CollectionPersister, categoryID uint32) (*model.Collection, error) {
+func createTestCollection(t *testing.T, p model.CollectionPersister, categoryID uint32) *model.Collection {
 	in := model.NewCollectionIn("Test", []uint32{categoryID})
 	in.Fields = []model.CollectionField{
 		{
@@ -185,13 +183,12 @@ func createTestCollection(p model.CollectionPersister, categoryID uint32) (*mode
 			IxField: "surname",
 		},
 	}
-	created, err := p.InsertCollection(context.TODO(), in)
-	if err != nil {
-		return nil, err
-	}
-	return created, err
+	created, e := p.InsertCollection(context.TODO(), in)
+	assert.Nil(t, e)
+	return created
 }
 
-func deleteTestCollection(p model.CollectionPersister, collection *model.Collection) error {
-	return p.DeleteCollection(context.TODO(), collection.ID)
+func deleteTestCollection(t *testing.T, p model.CollectionPersister, collection *model.Collection) {
+	e := p.DeleteCollection(context.TODO(), collection.ID)
+	assert.Nil(t, e)
 }

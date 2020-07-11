@@ -43,18 +43,14 @@ func TestSearch(t *testing.T) {
 		ElasticsearchConfig("http://localhost:19200", nil)
 
 	// Add a test category and test collection and test post and test records
-	testCategory, err := createTestCategory(p)
-	assert.Nil(t, err, "Error creating test category")
-	defer deleteTestCategory(p, testCategory)
-	testCollection, err := createTestCollection(p, testCategory.ID)
-	assert.Nil(t, err, "Error creating test collection")
-	defer deleteTestCollection(p, testCollection)
-	testPost, err := createTestPost(p, testCollection.ID)
-	assert.Nil(t, err, "Error creating test post")
-	defer deleteTestPost(p, testPost)
-	records, err := createTestRecords(p, testPost.ID)
-	assert.Nil(t, err, "Error creating test records")
-	defer deleteTestRecords(p, records)
+	testCategory := createTestCategory(t, p)
+	defer deleteTestCategory(t, p, testCategory)
+	testCollection := createTestCollection(t, p, testCategory.ID)
+	defer deleteTestCollection(t, p, testCollection)
+	testPost := createTestPost(t, p, testCollection.ID)
+	defer deleteTestPost(t, p, testPost)
+	records := createTestRecords(t, p, testPost.ID)
+	defer deleteTestRecords(t, p, records)
 
 	// index post
 	err = testApi.IndexPost(ctx, testPost)
@@ -101,25 +97,20 @@ var recordData = []map[string]string{
 	},
 }
 
-func createTestRecords(p model.RecordPersister, postID uint32) ([]model.Record, error) {
+func createTestRecords(t *testing.T, p model.RecordPersister, postID uint32) []model.Record {
 	var records []model.Record
 	for _, data := range recordData {
 		in := model.NewRecordIn(data, postID)
-		record, err := p.InsertRecord(context.TODO(), in)
-		if err != nil {
-			return records, err
-		}
+		record, e := p.InsertRecord(context.TODO(), in)
+		assert.Nil(t, e)
 		records = append(records, *record)
 	}
-	return records, nil
+	return records
 }
 
-func deleteTestRecords(p model.RecordPersister, records []model.Record) error {
-	var err error
+func deleteTestRecords(t *testing.T, p model.RecordPersister, records []model.Record) {
 	for _, record := range records {
-		if e := p.DeleteRecord(context.TODO(), record.ID); e != nil {
-			err = e
-		}
+		e := p.DeleteRecord(context.TODO(), record.ID)
+		assert.Nil(t, e)
 	}
-	return err
 }

@@ -10,12 +10,12 @@ import (
 
 // CategoryPersister defines methods needed to persist categories
 type CategoryPersister interface {
-	SelectCategories(ctx context.Context) ([]Category, error)
-	SelectCategoriesByID(ctx context.Context, ids []uint32) ([]Category, error)
-	SelectOneCategory(ctx context.Context, id uint32) (*Category, error)
-	InsertCategory(ctx context.Context, in CategoryIn) (*Category, error)
-	UpdateCategory(ctx context.Context, id uint32, body Category) (*Category, error)
-	DeleteCategory(ctx context.Context, id uint32) error
+	SelectCategories(ctx context.Context) ([]Category, *Error)
+	SelectCategoriesByID(ctx context.Context, ids []uint32) ([]Category, *Error)
+	SelectOneCategory(ctx context.Context, id uint32) (*Category, *Error)
+	InsertCategory(ctx context.Context, in CategoryIn) (*Category, *Error)
+	UpdateCategory(ctx context.Context, id uint32, body Category) (*Category, *Error)
+	DeleteCategory(ctx context.Context, id uint32) *Error
 }
 
 // CategoryIn is the payload to create or update a category

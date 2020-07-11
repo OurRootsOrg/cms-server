@@ -2,13 +2,9 @@ package api
 
 import (
 	"context"
-	"fmt"
-	"log"
 	"net/http"
-	"strconv"
 
 	"github.com/ourrootsorg/cms-server/model"
-	"github.com/ourrootsorg/cms-server/persist"
 )
 
 // CategoryResult is a paged Category result
@@ -40,7 +36,7 @@ func (api API) GetCategories(ctx context.Context /* filter/search criteria */) (
 	// TODO: handle search criteria and paged results
 	cols, err := api.categoryPersister.SelectCategories(ctx)
 	if err != nil {
-		return nil, model.NewErrors(http.StatusInternalServerError, err)
+		return nil, model.NewErrorsFromError(err)
 	}
 	return &CategoryResult{Categories: cols}, nil
 }
@@ -49,7 +45,7 @@ func (api API) GetCategories(ctx context.Context /* filter/search criteria */) (
 func (api API) GetCategoriesByID(ctx context.Context, ids []uint32) ([]model.Category, *model.Errors) {
 	cats, err := api.categoryPersister.SelectCategoriesByID(ctx, ids)
 	if err != nil {
-		return nil, model.NewErrors(http.StatusInternalServerError, err)
+		return nil, model.NewErrorsFromError(err)
 	}
 	return cats, nil
 }
@@ -57,12 +53,8 @@ func (api API) GetCategoriesByID(ctx context.Context, ids []uint32) ([]model.Cat
 // GetCategory holds the business logic around getting a Category
 func (api API) GetCategory(ctx context.Context, id uint32) (*model.Category, *model.Errors) {
 	category, err := api.categoryPersister.SelectOneCategory(ctx, id)
-	if err == persist.ErrNoRows {
-		msg := fmt.Sprintf("Not Found: %v", err)
-		log.Print("[ERROR] " + msg)
-		return nil, model.NewErrors(http.StatusNotFound, model.NewError(model.ErrNotFound, strconv.Itoa(int(id))))
-	} else if err != nil {
-		return nil, model.NewErrors(http.StatusInternalServerError, err)
+	if err != nil {
+		return nil, model.NewErrorsFromError(err)
 	}
 	return category, nil
 }
@@ -73,9 +65,9 @@ func (api API) AddCategory(ctx context.Context, in model.CategoryIn) (*model.Cat
 	if err != nil {
 		return nil, model.NewErrors(http.StatusBadRequest, err)
 	}
-	category, err := api.categoryPersister.InsertCategory(ctx, in)
+	category, e := api.categoryPersister.InsertCategory(ctx, in)
 	if err != nil {
-		return nil, model.NewErrors(http.StatusInternalServerError, err)
+		return nil, model.NewErrorsFromError(e)
 	}
 	return category, nil
 }
@@ -86,17 +78,9 @@ func (api API) UpdateCategory(ctx context.Context, id uint32, in model.Category)
 	if err != nil {
 		return nil, model.NewErrors(http.StatusBadRequest, err)
 	}
-	category, err := api.categoryPersister.UpdateCategory(ctx, id, in)
-	if er, ok := err.(model.Error); ok {
-		if er.Code == model.ErrConcurrentUpdate {
-			return nil, model.NewErrors(http.StatusConflict, er)
-		} else if er.Code == model.ErrNotFound {
-			// Not allowed to add a Category with PUT
-			return nil, model.NewErrors(http.StatusNotFound, er)
-		}
-	}
-	if err != nil {
-		return nil, model.NewErrors(http.StatusInternalServerError, err)
+	category, e := api.categoryPersister.UpdateCategory(ctx, id, in)
+	if e != nil {
+		return nil, model.NewErrorsFromError(e)
 	}
 	return category, nil
 }
@@ -105,7 +89,7 @@ func (api API) UpdateCategory(ctx context.Context, id uint32, in model.Category)
 func (api API) DeleteCategory(ctx context.Context, id uint32) *model.Errors {
 	err := api.categoryPersister.DeleteCategory(ctx, id)
 	if err != nil {
-		return model.NewErrors(http.StatusInternalServerError, err)
+		return model.NewErrorsFromError(err)
 	}
 	return nil
 }

@@ -3,6 +3,7 @@ package model
 import (
 	"fmt"
 	"log"
+	"net/http"
 	"strings"
 
 	"github.com/go-playground/validator/v10"
@@ -36,14 +37,14 @@ type Error struct {
 }
 
 // NewError build an error. If the error code is unknown it is set to ErrOther.
-func NewError(code ErrorCode, params ...string) Error {
+func NewError(code ErrorCode, params ...string) *Error {
 	msg, ok := errorMessages[code]
 	if !ok {
 		log.Printf("[INFO] Unknown error code '%s', setting to ErrOther", code)
 		code = ErrOther
 		msg = errorMessages[code]
 	}
-	return Error{
+	return &Error{
 		Code:    code,
 		Message: msg,
 		Params:  params,
@@ -64,30 +65,30 @@ type Errors struct {
 	httpStatus int
 }
 
-// NewErrorsFromError builds an Errors collection from a `model.Error`
-// func NewErrorsFromError(e Error) *Errors {
-// 	var httpStatus int
-// 	switch e.Code {
-// 	case ErrBadReference:
-// 		httpStatus = http.StatusBadRequest
-// 	case ErrConcurrentUpdate:
-// 		httpStatus = http.StatusConflict
-// 	case ErrNotFound:
-// 		httpStatus = http.StatusNotFound
-// 	case ErrRequired:
-// 		httpStatus = http.StatusBadRequest
-// 	case ErrOther:
-// 		httpStatus = http.StatusInternalServerError
-// 	default: // Shouldn't hit this unless someone adds a new code
-// 		log.Printf("[INFO] Encountered unexpected error code: %s", e.Code)
-// 		httpStatus = http.StatusInternalServerError
-// 	}
+// NewErrorsFromError builds an Errors collection from a `*model.Error`
+func NewErrorsFromError(e *Error) *Errors {
+	var httpStatus int
+	switch e.Code {
+	case ErrBadReference:
+		httpStatus = http.StatusBadRequest
+	case ErrConcurrentUpdate:
+		httpStatus = http.StatusConflict
+	case ErrNotFound:
+		httpStatus = http.StatusNotFound
+	case ErrRequired:
+		httpStatus = http.StatusBadRequest
+	case ErrOther:
+		httpStatus = http.StatusInternalServerError
+	default: // Shouldn't hit this unless someone adds a new code
+		log.Printf("[INFO] Encountered unexpected error code: %s", e.Code)
+		httpStatus = http.StatusInternalServerError
+	}
 
-// 	return &Errors{
-// 		errs:       []Error{e},
-// 		httpStatus: httpStatus,
-// 	}
-// }
+	return &Errors{
+		errs:       []Error{*e},
+		httpStatus: httpStatus,
+	}
+}
 
 // NewErrors builds an Errors collection from an `error`, which may actually be a ValidationErrors collection
 func NewErrors(httpStatus int, err error) *Errors {
@@ -100,15 +101,15 @@ func NewErrors(httpStatus int, err error) *Errors {
 			if fe.Tag() == "required" {
 				name := strings.SplitN(fe.Namespace(), ".", 2)
 				// log.Printf("name: %v", name)
-				errors.errs = append(errors.errs, NewError(ErrRequired, name[1]))
+				errors.errs = append(errors.errs, *NewError(ErrRequired, name[1]))
 			} else {
-				errors.errs = append(errors.errs, NewError(ErrOther, fmt.Sprintf("Key: '%s' Error:Field validation for '%s' failed on the '%s' tag", fe.Namespace(), fe.Field(), fe.Tag())))
+				errors.errs = append(errors.errs, *NewError(ErrOther, fmt.Sprintf("Key: '%s' Error:Field validation for '%s' failed on the '%s' tag", fe.Namespace(), fe.Field(), fe.Tag())))
 			}
 		}
 	} else if er, ok := err.(Error); ok {
 		errors.errs = append(errors.errs, er)
 	} else {
-		errors.errs = append(errors.errs, NewError(ErrOther, err.Error()))
+		errors.errs = append(errors.errs, *NewError(ErrOther, err.Error()))
 	}
 	return &errors
 }

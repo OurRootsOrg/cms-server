@@ -59,9 +59,8 @@ func doCollectionsTests(t *testing.T, catP model.CategoryPersister, colP model.C
 		CategoryPersister(catP).
 		CollectionPersister(colP)
 		// Add a test category for referential integrity
-	testCategory, err := createTestCategory(catP)
-	assert.Nil(t, err, "Error creating test category")
-	defer deleteTestCategory(catP, testCategory)
+	testCategory := createTestCategory(t, catP)
+	defer deleteTestCategory(t, catP, testCategory)
 
 	// empty, errors := testApi.GetCollections(context.TODO())
 	// assert.Nil(t, errors)
@@ -156,18 +155,15 @@ func doCollectionsTests(t *testing.T, catP model.CategoryPersister, colP model.C
 	assert.Equal(t, model.ErrNotFound, errors.Errs()[0].Code, "errors.Errs()[0]: %#v", errors.Errs()[0])
 }
 
-func createTestCategory(p model.CategoryPersister) (*model.Category, error) {
+func createTestCategory(t *testing.T, p model.CategoryPersister) *model.Category {
 	in, err := model.NewCategoryIn("Test")
-	if err != nil {
-		return nil, err
-	}
-	created, err := p.InsertCategory(context.TODO(), in)
-	if err != nil {
-		return nil, err
-	}
-	return created, err
+	assert.NoError(t, err)
+	created, e := p.InsertCategory(context.TODO(), in)
+	assert.Nil(t, e)
+	return created
 }
 
-func deleteTestCategory(p model.CategoryPersister, category *model.Category) error {
-	return p.DeleteCategory(context.TODO(), category.ID)
+func deleteTestCategory(t *testing.T, p model.CategoryPersister, category *model.Category) {
+	e := p.DeleteCategory(context.TODO(), category.ID)
+	assert.Nil(t, e)
 }

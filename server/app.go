@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -192,7 +193,7 @@ func serverError(w http.ResponseWriter, err error) {
 
 // ErrorResponse returns an error response
 func ErrorResponse(w http.ResponseWriter, code int, message string) {
-	ErrorsResponse(w, model.NewErrors(code, model.NewError(model.ErrOther, message)))
+	ErrorsResponse(w, model.NewErrors(code, errors.New(message)))
 }
 
 // ErrorsResponse returns an HTTP response from a model.Errors

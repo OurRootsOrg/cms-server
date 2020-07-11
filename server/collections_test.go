@@ -114,7 +114,7 @@ func TestGetCollection(t *testing.T) {
 
 	collection = nil
 	am.Result = collection
-	am.Errors = model.NewErrors(http.StatusNotFound, model.NewError(model.ErrNotFound, "/collections/1"))
+	am.Errors = model.NewErrorsFromError(model.NewError(model.ErrNotFound, "/collections/1"))
 
 	request, _ = http.NewRequest("GET", "/collections/1", nil)
 	response = httptest.NewRecorder()

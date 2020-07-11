@@ -37,15 +37,12 @@ func TestRecords(t *testing.T) {
 		RecordPersister(p)
 
 	// Add a test category and test collection and test post for referential integrity
-	testCategory, err := createTestCategory(p)
-	assert.Nil(t, err, "Error creating test category")
-	defer deleteTestCategory(p, testCategory)
-	testCollection, err := createTestCollection(p, testCategory.ID)
-	assert.Nil(t, err, "Error creating test collection")
-	defer deleteTestCollection(p, testCollection)
-	testPost, err := createTestPost(p, testCollection.ID)
-	assert.Nil(t, err, "Error creating test post")
-	defer deleteTestPost(p, testPost)
+	testCategory := createTestCategory(t, p)
+	defer deleteTestCategory(t, p, testCategory)
+	testCollection := createTestCollection(t, p, testCategory.ID)
+	defer deleteTestCollection(t, p, testCollection)
+	testPost := createTestPost(t, p, testCollection.ID)
+	defer deleteTestPost(t, p, testPost)
 
 	empty, errors := testApi.GetRecordsForPost(context.TODO(), testPost.ID)
 	assert.Nil(t, errors)
@@ -134,15 +131,14 @@ func TestRecords(t *testing.T) {
 	assert.Nil(t, errors)
 }
 
-func createTestPost(p model.PostPersister, collectionID uint32) (*model.Post, error) {
+func createTestPost(t *testing.T, p model.PostPersister, collectionID uint32) *model.Post {
 	in := model.NewPostIn("Test", collectionID, "")
-	created, err := p.InsertPost(context.TODO(), in)
-	if err != nil {
-		return nil, err
-	}
-	return created, err
+	created, e := p.InsertPost(context.TODO(), in)
+	assert.Nil(t, e)
+	return created
 }
 
-func deleteTestPost(p model.PostPersister, post *model.Post) error {
-	return p.DeletePost(context.TODO(), post.ID)
+func deleteTestPost(t *testing.T, p model.PostPersister, post *model.Post) {
+	e := p.DeletePost(context.TODO(), post.ID)
+	assert.Nil(t, e)
 }

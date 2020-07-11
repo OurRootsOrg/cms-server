@@ -116,7 +116,7 @@ func TestGetCategory(t *testing.T) {
 
 	category = nil
 	am.Result = category
-	am.Errors = model.NewErrors(http.StatusNotFound, model.NewError(model.ErrNotFound, "/categories/1"))
+	am.Errors = model.NewErrorsFromError(model.NewError(model.ErrNotFound, "/categories/1"))
 
 	request, _ = http.NewRequest("GET", "/categories/1", nil)
 	response = httptest.NewRecorder()

@@ -14,7 +14,6 @@ import (
 
 var decoder = schema.NewDecoder()
 
-// TODO need to specify possible query parameters
 // Search returns search results matching a query
 // @summary returns search results
 // @router /search [get]
@@ -23,6 +22,7 @@ var decoder = schema.NewDecoder()
 // @produce application/json
 // @success 200 {array} model.SearchResult "OK"
 // @failure 500 {object} model.Errors "Server error"
+// TODO need to specify possible query parameters
 func (app App) Search(w http.ResponseWriter, req *http.Request) {
 	var searchRequest api.SearchRequest
 	err := decoder.Decode(&searchRequest, req.URL.Query())

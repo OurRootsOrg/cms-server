@@ -58,12 +58,10 @@ func TestRecordsWriter(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Add a test category and test collection and test post for referential integrity
-	testCategory, err := createTestCategory(p)
-	assert.Nil(t, err, "Error creating test category")
-	defer deleteTestCategory(p, testCategory)
-	testCollection, err := createTestCollection(p, testCategory.ID)
-	assert.Nil(t, err, "Error creating test collection")
-	defer deleteTestCollection(p, testCollection)
+	testCategory := createTestCategory(t, p)
+	defer deleteTestCategory(t, p, testCategory)
+	testCollection := createTestCollection(t, p, testCategory.ID)
+	defer deleteTestCollection(t, p, testCollection)
 
 	// Add a Post
 	in := model.PostIn{
@@ -105,31 +103,27 @@ func TestRecordsWriter(t *testing.T) {
 	assert.Equal(t, 0, len(records.Records), "Expected empty slice, got %#v", records)
 }
 
-func createTestCategory(p model.CategoryPersister) (*model.Category, error) {
+func createTestCategory(t *testing.T, p model.CategoryPersister) *model.Category {
 	in, err := model.NewCategoryIn("Test")
-	if err != nil {
-		return nil, err
-	}
-	created, err := p.InsertCategory(context.TODO(), in)
-	if err != nil {
-		return nil, err
-	}
-	return created, err
+	assert.NoError(t, err)
+	created, e := p.InsertCategory(context.TODO(), in)
+	assert.Nil(t, e)
+	return created
 }
 
-func deleteTestCategory(p model.CategoryPersister, category *model.Category) error {
-	return p.DeleteCategory(context.TODO(), category.ID)
+func deleteTestCategory(t *testing.T, p model.CategoryPersister, category *model.Category) {
+	e := p.DeleteCategory(context.TODO(), category.ID)
+	assert.Nil(t, e)
 }
 
-func createTestCollection(p model.CollectionPersister, categoryID uint32) (*model.Collection, error) {
+func createTestCollection(t *testing.T, p model.CollectionPersister, categoryID uint32) *model.Collection {
 	in := model.NewCollectionIn("Test", []uint32{categoryID})
-	created, err := p.InsertCollection(context.TODO(), in)
-	if err != nil {
-		return nil, err
-	}
-	return created, err
+	created, e := p.InsertCollection(context.TODO(), in)
+	assert.Nil(t, e)
+	return created
 }
 
-func deleteTestCollection(p model.CollectionPersister, collection *model.Collection) error {
-	return p.DeleteCollection(context.TODO(), collection.ID)
+func deleteTestCollection(t *testing.T, p model.CollectionPersister, collection *model.Collection) {
+	e := p.DeleteCollection(context.TODO(), collection.ID)
+	assert.Nil(t, e)
 }

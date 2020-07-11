@@ -37,23 +37,20 @@ func TestPublisher(t *testing.T) {
 		RecordPersister(p)
 
 	// Add a test category and test collection and test post for referential integrity
-	testCategory, err := createTestCategory(p)
-	assert.Nil(t, err, "Error creating test category")
-	defer deleteTestCategory(p, testCategory)
-	testCollection, err := createTestCollection(p, testCategory.ID)
-	assert.Nil(t, err, "Error creating test collection")
-	defer deleteTestCollection(p, testCollection)
-	testPost, err := createTestPost(p, testCollection.ID)
-	assert.Nil(t, err, "Error creating test post")
-	defer deleteTestPost(p, testPost)
+	testCategory := createTestCategory(t, p)
+	defer deleteTestCategory(t, p, testCategory)
+	testCollection := createTestCollection(t, p, testCategory.ID)
+	defer deleteTestCollection(t, p, testCollection)
+	testPost := createTestPost(t, p, testCollection.ID)
+	defer deleteTestPost(t, p, testPost)
 	// create records
-	testRecords, err := createTestRecords(p, testPost.ID)
-	assert.Nil(t, err, "Error creating test records")
-	defer deleteTestRecords(p, testRecords)
+	testRecords := createTestRecords(t, p, testPost.ID)
+	defer deleteTestRecords(t, p, testRecords)
 	// force post to draft status
 	testPost.RecordsStatus = model.PostDraft
-	testPost, err = p.UpdatePost(ctx, testPost.ID, *testPost)
-	assert.Nil(t, err, "Error updating test post")
+	var e *model.Error
+	testPost, e = p.UpdatePost(ctx, testPost.ID, *testPost)
+	assert.Nil(t, e, "Error updating test post")
 	assert.Equal(t, model.PostDraft, testPost.RecordsStatus, "Unexpected post recordsStatus")
 
 	// Publish post
@@ -118,23 +115,20 @@ func TestPublisher(t *testing.T) {
 	assert.Nil(t, errors)
 }
 
-func createTestCategory(p model.CategoryPersister) (*model.Category, error) {
+func createTestCategory(t *testing.T, p model.CategoryPersister) *model.Category {
 	in, err := model.NewCategoryIn("Test")
-	if err != nil {
-		return nil, err
-	}
-	created, err := p.InsertCategory(context.TODO(), in)
-	if err != nil {
-		return nil, err
-	}
-	return created, err
+	assert.NoError(t, err)
+	created, e := p.InsertCategory(context.TODO(), in)
+	assert.Nil(t, e)
+	return created
 }
 
-func deleteTestCategory(p model.CategoryPersister, category *model.Category) error {
-	return p.DeleteCategory(context.TODO(), category.ID)
+func deleteTestCategory(t *testing.T, p model.CategoryPersister, category *model.Category) {
+	e := p.DeleteCategory(context.TODO(), category.ID)
+	assert.Nil(t, e)
 }
 
-func createTestCollection(p model.CollectionPersister, categoryID uint32) (*model.Collection, error) {
+func createTestCollection(t *testing.T, p model.CollectionPersister, categoryID uint32) *model.Collection {
 	in := model.NewCollectionIn("Test", []uint32{categoryID})
 	in.Fields = []model.CollectionField{
 		{
@@ -156,28 +150,26 @@ func createTestCollection(p model.CollectionPersister, categoryID uint32) (*mode
 			IxField: "surname",
 		},
 	}
-	created, err := p.InsertCollection(context.TODO(), in)
-	if err != nil {
-		return nil, err
-	}
-	return created, err
+	created, e := p.InsertCollection(context.TODO(), in)
+	assert.Nil(t, e)
+	return created
 }
 
-func deleteTestCollection(p model.CollectionPersister, collection *model.Collection) error {
-	return p.DeleteCollection(context.TODO(), collection.ID)
+func deleteTestCollection(t *testing.T, p model.CollectionPersister, collection *model.Collection) {
+	e := p.DeleteCollection(context.TODO(), collection.ID)
+	assert.Nil(t, e)
 }
 
-func createTestPost(p model.PostPersister, collectionID uint32) (*model.Post, error) {
+func createTestPost(t *testing.T, p model.PostPersister, collectionID uint32) *model.Post {
 	in := model.NewPostIn("Test", collectionID, "")
-	created, err := p.InsertPost(context.TODO(), in)
-	if err != nil {
-		return nil, err
-	}
-	return created, err
+	created, e := p.InsertPost(context.TODO(), in)
+	assert.Nil(t, e)
+	return created
 }
 
-func deleteTestPost(p model.PostPersister, post *model.Post) error {
-	return p.DeletePost(context.TODO(), post.ID)
+func deleteTestPost(t *testing.T, p model.PostPersister, post *model.Post) {
+	e := p.DeletePost(context.TODO(), post.ID)
+	assert.Nil(t, e)
 }
 
 var recordData = []map[string]string{
@@ -191,25 +183,20 @@ var recordData = []map[string]string{
 	},
 }
 
-func createTestRecords(p model.RecordPersister, postID uint32) ([]model.Record, error) {
+func createTestRecords(t *testing.T, p model.RecordPersister, postID uint32) []model.Record {
 	var records []model.Record
 	for _, data := range recordData {
 		in := model.NewRecordIn(data, postID)
-		record, err := p.InsertRecord(context.TODO(), in)
-		if err != nil {
-			return records, err
-		}
+		record, e := p.InsertRecord(context.TODO(), in)
+		assert.Nil(t, e)
 		records = append(records, *record)
 	}
-	return records, nil
+	return records
 }
 
-func deleteTestRecords(p model.RecordPersister, records []model.Record) error {
-	var err error
+func deleteTestRecords(t *testing.T, p model.RecordPersister, records []model.Record) {
 	for _, record := range records {
-		if e := p.DeleteRecord(context.TODO(), record.ID); e != nil {
-			err = e
-		}
+		e := p.DeleteRecord(context.TODO(), record.ID)
+		assert.Nil(t, e)
 	}
-	return err
 }

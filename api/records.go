@@ -4,10 +4,8 @@ import (
 	"context"
 	"log"
 	"net/http"
-	"strconv"
 
 	"github.com/ourrootsorg/cms-server/model"
-	"github.com/ourrootsorg/cms-server/persist"
 )
 
 // RecordResult is a paged Record result
@@ -21,7 +19,7 @@ func (api API) GetRecordsForPost(ctx context.Context, postID uint32) (*RecordRes
 	// TODO: handle search criteria and paged results
 	records, err := api.recordPersister.SelectRecordsForPost(ctx, postID)
 	if err != nil {
-		return nil, model.NewErrors(http.StatusInternalServerError, err)
+		return nil, model.NewErrorsFromError(err)
 	}
 	return &RecordResult{Records: records}, nil
 }
@@ -30,7 +28,7 @@ func (api API) GetRecordsForPost(ctx context.Context, postID uint32) (*RecordRes
 func (api API) GetRecordsByID(ctx context.Context, ids []uint32) ([]model.Record, *model.Errors) {
 	records, err := api.recordPersister.SelectRecordsByID(ctx, ids)
 	if err != nil {
-		return nil, model.NewErrors(http.StatusInternalServerError, err)
+		return nil, model.NewErrorsFromError(err)
 	}
 	return records, nil
 }
@@ -38,10 +36,8 @@ func (api API) GetRecordsByID(ctx context.Context, ids []uint32) ([]model.Record
 // GetRecord holds the business logic around getting a Record
 func (api API) GetRecord(ctx context.Context, id uint32) (*model.Record, *model.Errors) {
 	record, err := api.recordPersister.SelectOneRecord(ctx, id)
-	if err == persist.ErrNoRows {
-		return nil, model.NewErrors(http.StatusNotFound, model.NewError(model.ErrNotFound, strconv.Itoa(int(id))))
-	} else if err != nil {
-		return nil, model.NewErrors(http.StatusInternalServerError, err)
+	if err != nil {
+		return nil, model.NewErrorsFromError(err)
 	}
 	return record, nil
 }
@@ -54,13 +50,9 @@ func (api API) AddRecord(ctx context.Context, in model.RecordIn) (*model.Record,
 		return nil, model.NewErrors(http.StatusBadRequest, err)
 	}
 	// insert
-	record, err := api.recordPersister.InsertRecord(ctx, in)
-	if err == persist.ErrForeignKeyViolation {
-		log.Printf("[ERROR] Invalid post reference: %v", err)
-		return nil, model.NewErrors(http.StatusBadRequest, model.NewError(model.ErrBadReference, strconv.Itoa(int(in.Post)), "post"))
-	} else if err != nil {
-		log.Printf("[ERROR] Internal server error: %v", err)
-		return nil, model.NewErrors(http.StatusInternalServerError, err)
+	record, e := api.recordPersister.InsertRecord(ctx, in)
+	if e != nil {
+		return nil, model.NewErrorsFromError(e)
 	}
 	return record, nil
 }
@@ -71,20 +63,9 @@ func (api API) UpdateRecord(ctx context.Context, id uint32, in model.Record) (*m
 	if err != nil {
 		return nil, model.NewErrors(http.StatusBadRequest, err)
 	}
-	record, err := api.recordPersister.UpdateRecord(ctx, id, in)
-	if er, ok := err.(model.Error); ok {
-		if er.Code == model.ErrConcurrentUpdate {
-			return nil, model.NewErrors(http.StatusConflict, er)
-		} else if er.Code == model.ErrNotFound {
-			// Not allowed to add a Record with PUT
-			return nil, model.NewErrors(http.StatusNotFound, er)
-		}
-	}
-	if err == persist.ErrForeignKeyViolation {
-		log.Printf("[ERROR] Invalid post reference: %v", err)
-		return nil, model.NewErrors(http.StatusBadRequest, model.NewError(model.ErrBadReference, strconv.Itoa(int(in.Post)), "post"))
-	} else if err != nil {
-		return nil, model.NewErrors(http.StatusInternalServerError, err)
+	record, e := api.recordPersister.UpdateRecord(ctx, id, in)
+	if e != nil {
+		return nil, model.NewErrorsFromError(e)
 	}
 	return record, nil
 }
@@ -93,16 +74,16 @@ func (api API) UpdateRecord(ctx context.Context, id uint32, in model.Record) (*m
 func (api API) DeleteRecord(ctx context.Context, id uint32) *model.Errors {
 	err := api.recordPersister.DeleteRecord(ctx, id)
 	if err != nil {
-		return model.NewErrors(http.StatusInternalServerError, err)
+		return model.NewErrorsFromError(err)
 	}
 	return nil
 }
 
-// DeleteRecord holds the business logic around deleting a Record
+// DeleteRecordsForPost holds the business logic around deleting the Records for a Post
 func (api API) DeleteRecordsForPost(ctx context.Context, postID uint32) *model.Errors {
 	err := api.recordPersister.DeleteRecordsForPost(ctx, postID)
 	if err != nil {
-		return model.NewErrors(http.StatusInternalServerError, err)
+		return model.NewErrorsFromError(err)
 	}
 	return nil
 }

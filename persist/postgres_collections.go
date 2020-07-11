@@ -13,12 +13,12 @@ import (
 // Collection persistence methods
 
 // SelectCollections selects all collections
-func (p PostgresPersister) SelectCollections(ctx context.Context) ([]model.Collection, error) {
+func (p PostgresPersister) SelectCollections(ctx context.Context) ([]model.Collection, *model.Error) {
 	rows, err := p.db.QueryContext(ctx,
 		`SELECT id, array_agg(cc.category_id), body, insert_time, last_update_time
 			   FROM collection LEFT JOIN collection_category cc ON id = cc.collection_id GROUP BY id`)
 	if err != nil {
-		return nil, translateError(err)
+		return nil, translateError(err, nil, nil, "")
 	}
 	defer rows.Close()
 	collections := make([]model.Collection, 0)
@@ -27,7 +27,7 @@ func (p PostgresPersister) SelectCollections(ctx context.Context) ([]model.Colle
 		var collection model.Collection
 		err := rows.Scan(&collection.ID, pq.Array(&categories), &collection.CollectionBody, &collection.InsertTime, &collection.LastUpdateTime)
 		if err != nil {
-			return nil, translateError(err)
+			return nil, translateError(err, nil, nil, "")
 		}
 		collection.Categories = make([]uint32, len(categories))
 		for i, cat := range categories {
@@ -39,7 +39,7 @@ func (p PostgresPersister) SelectCollections(ctx context.Context) ([]model.Colle
 }
 
 // SelectCollectionsByID selects many collections
-func (p PostgresPersister) SelectCollectionsByID(ctx context.Context, ids []uint32) ([]model.Collection, error) {
+func (p PostgresPersister) SelectCollectionsByID(ctx context.Context, ids []uint32) ([]model.Collection, *model.Error) {
 	collections := make([]model.Collection, 0)
 	if len(ids) == 0 {
 		return collections, nil
@@ -49,7 +49,7 @@ func (p PostgresPersister) SelectCollectionsByID(ctx context.Context, ids []uint
 		`SELECT id, array_agg(cc.category_id), body, insert_time, last_update_time
 			   FROM collection LEFT JOIN collection_category cc ON id = cc.collection_id WHERE id = ANY($1) GROUP BY id`, pq.Array(ids))
 	if err != nil {
-		return nil, translateError(err)
+		return nil, translateError(err, nil, nil, "")
 	}
 	defer rows.Close()
 	for rows.Next() {
@@ -57,7 +57,7 @@ func (p PostgresPersister) SelectCollectionsByID(ctx context.Context, ids []uint
 		var collection model.Collection
 		err := rows.Scan(&collection.ID, pq.Array(&categories), &collection.CollectionBody, &collection.InsertTime, &collection.LastUpdateTime)
 		if err != nil {
-			return nil, translateError(err)
+			return nil, translateError(err, nil, nil, "")
 		}
 		collection.Categories = make([]uint32, len(categories))
 		for i, cat := range categories {
@@ -69,7 +69,7 @@ func (p PostgresPersister) SelectCollectionsByID(ctx context.Context, ids []uint
 }
 
 // SelectOneCollection selects a single collection
-func (p PostgresPersister) SelectOneCollection(ctx context.Context, id uint32) (*model.Collection, error) {
+func (p PostgresPersister) SelectOneCollection(ctx context.Context, id uint32) (*model.Collection, *model.Error) {
 	var categories []int64
 	var collection model.Collection
 	err := p.db.QueryRowContext(ctx,
@@ -82,7 +82,7 @@ func (p PostgresPersister) SelectOneCollection(ctx context.Context, id uint32) (
 		&collection.LastUpdateTime,
 	)
 	if err != nil {
-		return nil, translateError(err)
+		return nil, translateError(err, &id, nil, "")
 	}
 	collection.Categories = make([]uint32, len(categories))
 	for i, cat := range categories {
@@ -92,12 +92,12 @@ func (p PostgresPersister) SelectOneCollection(ctx context.Context, id uint32) (
 }
 
 // InsertCollection inserts a CollectionBody into the database and returns the inserted Collection
-func (p PostgresPersister) InsertCollection(ctx context.Context, in model.CollectionIn) (*model.Collection, error) {
+func (p PostgresPersister) InsertCollection(ctx context.Context, in model.CollectionIn) (*model.Collection, *model.Error) {
 	var collection model.Collection
 	// create a transaction so collection and collection_category stay in sync
 	tx, err := p.db.Begin()
 	if err != nil {
-		return nil, translateError(err)
+		return nil, translateError(err, nil, nil, "")
 	}
 	defer tx.Rollback()
 
@@ -113,26 +113,26 @@ func (p PostgresPersister) InsertCollection(ctx context.Context, in model.Collec
 			&collection.LastUpdateTime,
 		)
 	if err != nil {
-		return nil, translateError(err)
+		return nil, translateError(err, nil, nil, "")
 	}
 	for _, category := range in.Categories {
 		_, err = tx.ExecContext(ctx, "INSERT INTO collection_category (collection_id, category_id) VALUES ($1, $2)", collection.ID, category)
 		if err != nil {
-			return nil, translateError(err)
+			return nil, translateError(err, &collection.ID, &category, "category")
 		}
 	}
 	collection.Categories = append([]uint32(nil), in.Categories...)
 	err = tx.Commit()
-	return &collection, translateError(err)
+	return &collection, translateError(err, nil, nil, "")
 }
 
 // UpdateCollection updates a Collection in the database and returns the updated Collection
-func (p PostgresPersister) UpdateCollection(ctx context.Context, id uint32, in model.Collection) (*model.Collection, error) {
+func (p PostgresPersister) UpdateCollection(ctx context.Context, id uint32, in model.Collection) (*model.Collection, *model.Error) {
 	var collection model.Collection
 	// create a transaction so collection and collection_category stay in sync
 	tx, err := p.db.Begin()
 	if err != nil {
-		return nil, translateError(err)
+		return nil, translateError(err, &id, nil, "")
 	}
 	defer tx.Rollback()
 
@@ -159,36 +159,36 @@ func (p PostgresPersister) UpdateCollection(ctx context.Context, id uint32, in m
 	// delete and re-add categories (in the future we could calculate the differences and add/delete just what we need to)
 	_, err = tx.ExecContext(ctx, "DELETE FROM collection_category WHERE collection_id = $1", id)
 	if err != nil {
-		return nil, translateError(err)
+		return nil, translateError(err, &id, nil, "")
 	}
 	for _, category := range in.Categories {
 		_, err = tx.ExecContext(ctx, "INSERT INTO collection_category (collection_id, category_id) VALUES ($1, $2)", collection.ID, category)
 		if err != nil {
-			return nil, translateError(err)
+			return nil, translateError(err, &collection.ID, &category, "category")
 		}
 	}
 	collection.Categories = append([]uint32(nil), in.Categories...)
 	err = tx.Commit()
-	return &collection, translateError(err)
+	return &collection, translateError(err, nil, nil, "")
 }
 
 // DeleteCollection deletes a Collection
-func (p PostgresPersister) DeleteCollection(ctx context.Context, id uint32) error {
+func (p PostgresPersister) DeleteCollection(ctx context.Context, id uint32) *model.Error {
 	// create a transaction so collection and collection_category stay in sync
 	tx, err := p.db.Begin()
 	if err != nil {
-		return translateError(err)
+		return translateError(err, &id, nil, "")
 	}
 	defer tx.Rollback()
 
 	_, err = tx.ExecContext(ctx, "DELETE FROM collection_category WHERE collection_id = $1", id)
 	if err != nil {
-		return translateError(err)
+		return translateError(err, &id, nil, "")
 	}
 	_, err = tx.ExecContext(ctx, "DELETE FROM collection WHERE id = $1", id)
 	if err != nil {
-		return translateError(err)
+		return translateError(err, &id, nil, "")
 	}
 	err = tx.Commit()
-	return translateError(err)
+	return translateError(err, &id, nil, "")
 }

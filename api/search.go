@@ -532,7 +532,7 @@ func (api API) SearchByID(ctx context.Context, id string) (*model.SearchHit, *mo
 			msg := fmt.Sprintf("[%s] %s: %s id=%s", res.Status(), e.Error.Type, e.Error.Reason, id)
 			log.Println(msg)
 			if res.StatusCode == http.StatusNotFound {
-				return nil, model.NewErrors(http.StatusNotFound, model.NewError(model.ErrNotFound, id))
+				return nil, model.NewErrorsFromError(model.NewError(model.ErrNotFound, id))
 			}
 			return nil, model.NewErrors(http.StatusInternalServerError, errors.New(msg))
 		}
@@ -546,7 +546,7 @@ func (api API) SearchByID(ctx context.Context, id string) (*model.SearchHit, *mo
 	}
 	if !hit.Found {
 		log.Printf("[ERROR] record ID %s not found\n", id)
-		return nil, model.NewErrors(http.StatusNotFound, model.NewError(model.ErrNotFound, id))
+		return nil, model.NewErrorsFromError(model.NewError(model.ErrNotFound, id))
 	}
 	hitData, err := getHitData(hit)
 	if err != nil {
