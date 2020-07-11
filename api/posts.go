@@ -20,7 +20,7 @@ type PostResult struct {
 }
 
 // GetPosts holds the business logic around getting many Posts
-func (api API) GetPosts(ctx context.Context /* filter/search criteria */) (*PostResult, *model.Errors) {
+func (api API) GetPosts(ctx context.Context /* filter/search criteria */) (*PostResult, error) {
 	// TODO: handle search criteria and paged results
 	posts, err := api.postPersister.SelectPosts(ctx)
 	if err != nil {
@@ -30,7 +30,7 @@ func (api API) GetPosts(ctx context.Context /* filter/search criteria */) (*Post
 }
 
 // GetPost holds the business logic around getting a Post
-func (api API) GetPost(ctx context.Context, id uint32) (*model.Post, *model.Errors) {
+func (api API) GetPost(ctx context.Context, id uint32) (*model.Post, error) {
 	post, err := api.postPersister.SelectOnePost(ctx, id)
 	if err != nil {
 		return nil, model.NewErrors(0, err)
@@ -39,7 +39,7 @@ func (api API) GetPost(ctx context.Context, id uint32) (*model.Post, *model.Erro
 }
 
 // AddPost holds the business logic around adding a Post
-func (api API) AddPost(ctx context.Context, in model.PostIn) (*model.Post, *model.Errors) {
+func (api API) AddPost(ctx context.Context, in model.PostIn) (*model.Post, error) {
 	err := api.validate.Struct(in)
 	if err != nil {
 		log.Printf("[ERROR] Invalid post %v", err)
@@ -86,7 +86,7 @@ func (api API) AddPost(ctx context.Context, in model.PostIn) (*model.Post, *mode
 }
 
 // UpdatePost holds the business logic around updating a Post
-func (api API) UpdatePost(ctx context.Context, id uint32, in model.Post) (*model.Post, *model.Errors) {
+func (api API) UpdatePost(ctx context.Context, id uint32, in model.Post) (*model.Post, error) {
 	err := api.validate.Struct(in)
 	if err != nil {
 		return nil, model.NewErrors(http.StatusBadRequest, err)
@@ -187,7 +187,7 @@ func (api API) UpdatePost(ctx context.Context, id uint32, in model.Post) (*model
 }
 
 // DeletePost holds the business logic around deleting a Post
-func (api API) DeletePost(ctx context.Context, id uint32) *model.Errors {
+func (api API) DeletePost(ctx context.Context, id uint32) error {
 	post, err := api.GetPost(ctx, id)
 	if err != nil {
 		return model.NewErrors(http.StatusNotFound, err)

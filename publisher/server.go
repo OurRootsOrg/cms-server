@@ -29,7 +29,7 @@ import (
 
 const defaultURL = "http://localhost:3000"
 
-func indexPost(ctx context.Context, ap *api.API, msg model.PublisherMsg) *model.Errors {
+func indexPost(ctx context.Context, ap *api.API, msg model.PublisherMsg) error {
 	// read post
 	post, errs := ap.GetPost(ctx, msg.PostID)
 	if errs != nil {
@@ -57,7 +57,7 @@ func indexPost(ctx context.Context, ap *api.API, msg model.PublisherMsg) *model.
 	return errs
 }
 
-func unindexPost(ctx context.Context, ap *api.API, msg model.PublisherMsg) *model.Errors {
+func unindexPost(ctx context.Context, ap *api.API, msg model.PublisherMsg) error {
 	// read post
 	post, errs := ap.GetPost(ctx, msg.PostID)
 	if errs != nil {
@@ -84,7 +84,7 @@ func unindexPost(ctx context.Context, ap *api.API, msg model.PublisherMsg) *mode
 	return errs
 }
 
-func processMessage(ctx context.Context, ap *api.API, rawMsg []byte) *model.Errors {
+func processMessage(ctx context.Context, ap *api.API, rawMsg []byte) error {
 	var msg model.PublisherMsg
 	err := json.Unmarshal(rawMsg, &msg)
 	if err != nil {

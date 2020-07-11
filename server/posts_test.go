@@ -85,7 +85,7 @@ func TestGetAllPosts(t *testing.T) {
 	}
 	assert.NotNil(t, errRet)
 	assert.Equal(t, 1, len(errRet))
-	assert.Equal(t, am.Errors.Errs(), errRet)
+	assert.Equal(t, am.Errors.(*model.Errors).Errs(), errRet)
 }
 func TestGetPost(t *testing.T) {
 	am := &api.ApiMock{}
@@ -130,7 +130,7 @@ func TestGetPost(t *testing.T) {
 	}
 	assert.NotNil(t, errRet)
 	assert.Equal(t, 1, len(errRet))
-	assert.Equal(t, am.Errors.Errs(), errRet)
+	assert.Equal(t, am.Errors.(*model.Errors).Errs(), errRet)
 }
 
 func TestPostPost(t *testing.T) {

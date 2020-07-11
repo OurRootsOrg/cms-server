@@ -8,7 +8,7 @@ import (
 )
 
 // GetSettings holds the business logic around getting a Settings object
-func (api API) GetSettings(ctx context.Context) (*model.Settings, *model.Errors) {
+func (api API) GetSettings(ctx context.Context) (*model.Settings, error) {
 	settings, err := api.settingsPersister.SelectSettings(ctx)
 	if err != nil {
 		// if no settings, return a default settings object
@@ -26,7 +26,7 @@ func (api API) GetSettings(ctx context.Context) (*model.Settings, *model.Errors)
 }
 
 // UpdateSettings holds the business logic around updating a Settings object
-func (api API) UpdateSettings(ctx context.Context, in model.Settings) (*model.Settings, *model.Errors) {
+func (api API) UpdateSettings(ctx context.Context, in model.Settings) (*model.Settings, error) {
 	err := api.validate.Struct(in)
 	if err != nil {
 		return nil, model.NewErrors(http.StatusBadRequest, err)

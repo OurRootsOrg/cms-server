@@ -85,7 +85,7 @@ func TestGetAllCollections(t *testing.T) {
 	}
 	assert.NotNil(t, errRet)
 	assert.Equal(t, 1, len(errRet))
-	assert.Equal(t, am.Errors.Errs(), errRet)
+	assert.Equal(t, am.Errors.(*model.Errors).Errs(), errRet)
 }
 func TestGetCollection(t *testing.T) {
 	am := &api.ApiMock{}
@@ -130,7 +130,7 @@ func TestGetCollection(t *testing.T) {
 	}
 	assert.NotNil(t, errRet)
 	assert.Equal(t, 1, len(errRet))
-	assert.Equal(t, am.Errors.Errs(), errRet)
+	assert.Equal(t, am.Errors.(*model.Errors).Errs(), errRet)
 }
 
 func TestPostCollection(t *testing.T) {

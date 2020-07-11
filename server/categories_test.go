@@ -86,7 +86,7 @@ func TestGetAllCategories(t *testing.T) {
 	}
 	assert.NotNil(t, errRet)
 	assert.Equal(t, 1, len(errRet))
-	assert.Equal(t, am.Errors.Errs(), errRet)
+	assert.Equal(t, am.Errors.(*model.Errors).Errs(), errRet)
 }
 func TestGetCategory(t *testing.T) {
 	am := &api.ApiMock{}
@@ -132,7 +132,7 @@ func TestGetCategory(t *testing.T) {
 	}
 	assert.NotNil(t, errRet)
 	assert.Equal(t, 1, len(errRet))
-	assert.Equal(t, am.Errors.Errs(), errRet)
+	assert.Equal(t, am.Errors.(*model.Errors).Errs(), errRet)
 }
 
 func TestPostCategory(t *testing.T) {

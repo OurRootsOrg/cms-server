@@ -15,7 +15,7 @@ type CollectionResult struct {
 }
 
 // GetCollections holds the business logic around getting all Collections
-func (api API) GetCollections(ctx context.Context /* filter/search criteria */) (*CollectionResult, *model.Errors) {
+func (api API) GetCollections(ctx context.Context /* filter/search criteria */) (*CollectionResult, error) {
 	// TODO: handle search criteria and paged results
 	cols, err := api.collectionPersister.SelectCollections(ctx)
 	if err != nil {
@@ -25,7 +25,7 @@ func (api API) GetCollections(ctx context.Context /* filter/search criteria */) 
 }
 
 // GetCollectionsByID holds the business logic around getting many Collections
-func (api API) GetCollectionsByID(ctx context.Context, ids []uint32) ([]model.Collection, *model.Errors) {
+func (api API) GetCollectionsByID(ctx context.Context, ids []uint32) ([]model.Collection, error) {
 	colls, err := api.collectionPersister.SelectCollectionsByID(ctx, ids)
 	if err != nil {
 		return nil, model.NewErrors(0, err)
@@ -34,7 +34,7 @@ func (api API) GetCollectionsByID(ctx context.Context, ids []uint32) ([]model.Co
 }
 
 // GetCollection holds the business logic around getting a Collection
-func (api API) GetCollection(ctx context.Context, id uint32) (*model.Collection, *model.Errors) {
+func (api API) GetCollection(ctx context.Context, id uint32) (*model.Collection, error) {
 	collection, err := api.collectionPersister.SelectOneCollection(ctx, id)
 	if err != nil {
 		return nil, model.NewErrors(0, err)
@@ -43,7 +43,7 @@ func (api API) GetCollection(ctx context.Context, id uint32) (*model.Collection,
 }
 
 // AddCollection holds the business logic around adding a Collection
-func (api API) AddCollection(ctx context.Context, in model.CollectionIn) (*model.Collection, *model.Errors) {
+func (api API) AddCollection(ctx context.Context, in model.CollectionIn) (*model.Collection, error) {
 	err := api.validate.Struct(in)
 	if err != nil {
 		log.Printf("[ERROR] Invalid collection %v", err)
@@ -57,7 +57,7 @@ func (api API) AddCollection(ctx context.Context, in model.CollectionIn) (*model
 }
 
 // UpdateCollection holds the business logic around updating a Collection
-func (api API) UpdateCollection(ctx context.Context, id uint32, in model.Collection) (*model.Collection, *model.Errors) {
+func (api API) UpdateCollection(ctx context.Context, id uint32, in model.Collection) (*model.Collection, error) {
 	err := api.validate.Struct(in)
 	log.Printf("[DEBUG] Collection=%v err=%v\n", in, err)
 	if err != nil {
@@ -71,7 +71,7 @@ func (api API) UpdateCollection(ctx context.Context, id uint32, in model.Collect
 }
 
 // DeleteCollection holds the business logic around deleting a Collection
-func (api API) DeleteCollection(ctx context.Context, id uint32) *model.Errors {
+func (api API) DeleteCollection(ctx context.Context, id uint32) error {
 	err := api.collectionPersister.DeleteCollection(ctx, id)
 	if err != nil {
 		return model.NewErrors(0, err)

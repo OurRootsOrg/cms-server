@@ -85,7 +85,7 @@ func TestGetRecordsForPost(t *testing.T) {
 	}
 	assert.NotNil(t, errRet)
 	assert.Equal(t, 1, len(errRet))
-	assert.Equal(t, am.Errors.Errs(), errRet)
+	assert.Equal(t, am.Errors.(*model.Errors).Errs(), errRet)
 }
 
 func makeRecordIn(t *testing.T) (model.RecordIn, *bytes.Buffer) {

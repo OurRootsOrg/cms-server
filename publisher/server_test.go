@@ -54,15 +54,15 @@ func TestPublisher(t *testing.T) {
 
 	// Publish post
 	testPost.RecordsStatus = model.PostPublished
-	testPost, errors := testAPI.UpdatePost(ctx, testPost.ID, *testPost)
-	assert.Nil(t, errors, "Error setting post to published")
+	testPost, err = testAPI.UpdatePost(ctx, testPost.ID, *testPost)
+	assert.NoError(t, err, "Error setting post to published")
 
 	var post *model.Post
 	// wait up to 10 seconds
 	for i := 0; i < 10; i++ {
 		// read post and look for Ready
-		post, errors = testAPI.GetPost(ctx, testPost.ID)
-		assert.Nil(t, errors)
+		post, err = testAPI.GetPost(ctx, testPost.ID)
+		assert.NoError(t, err)
 		if post.RecordsStatus == model.PostPublished {
 			break
 		}
@@ -75,7 +75,7 @@ func TestPublisher(t *testing.T) {
 	for _, testRecord := range testRecords {
 		searchID := strconv.Itoa(int(testRecord.ID))
 		res, err := testAPI.SearchByID(ctx, searchID)
-		assert.Nil(t, err)
+		assert.NoError(t, err)
 		assert.Equal(t, searchID, res.ID, "Record not found")
 		assert.Equal(t, testCollection.ID, res.CollectionID, "Collection not found")
 	}
@@ -83,15 +83,15 @@ func TestPublisher(t *testing.T) {
 	// Unpublish post
 	testPost, err = testAPI.GetPost(ctx, testPost.ID)
 	testPost.RecordsStatus = model.PostDraft
-	testPost, errors = testAPI.UpdatePost(ctx, testPost.ID, *testPost)
-	assert.Nil(t, errors, "Error setting post back to draft")
+	testPost, err = testAPI.UpdatePost(ctx, testPost.ID, *testPost)
+	assert.NoError(t, err, "Error setting post back to draft")
 
 	post = nil
 	// wait up to 10 seconds
 	for i := 0; i < 10; i++ {
 		// read post and look for Draft
-		post, errors = testAPI.GetPost(ctx, testPost.ID)
-		assert.Nil(t, errors)
+		post, err = testAPI.GetPost(ctx, testPost.ID)
+		assert.NoError(t, err)
 		if post.RecordsStatus == model.PostDraft {
 			break
 		}
@@ -103,28 +103,29 @@ func TestPublisher(t *testing.T) {
 	// verify records no longer searchable
 	for _, testRecord := range testRecords {
 		searchID := strconv.Itoa(int(testRecord.ID))
-		_, errors := testAPI.SearchByID(ctx, searchID)
-		assert.NotNil(t, errors)
-		assert.Len(t, errors.Errs(), 1)
-		assert.Equal(t, model.ErrNotFound, errors.Errs()[0].Code, "errors.Errs()[0]: %#v", errors.Errs()[0])
+		_, err := testAPI.SearchByID(ctx, searchID)
+		assert.Error(t, err)
+		assert.IsType(t, &model.Errors{}, err)
+		assert.Len(t, err.(*model.Errors).Errs(), 1)
+		assert.Equal(t, model.ErrNotFound, err.(*model.Errors).Errs()[0].Code, "err.(*model.Errors).Errs()[0]: %#v", err.(*model.Errors).Errs()[0])
 	}
 
 	// delete post
-	errors = testAPI.DeletePost(ctx, testPost.ID)
-	assert.Nil(t, errors)
+	err = testAPI.DeletePost(ctx, testPost.ID)
+	assert.NoError(t, err)
 }
 
 func createTestCategory(t *testing.T, p model.CategoryPersister) *model.Category {
 	in, err := model.NewCategoryIn("Test")
 	assert.NoError(t, err)
 	created, e := p.InsertCategory(context.TODO(), in)
-	assert.Nil(t, e)
+	assert.NoError(t, e)
 	return created
 }
 
 func deleteTestCategory(t *testing.T, p model.CategoryPersister, category *model.Category) {
 	e := p.DeleteCategory(context.TODO(), category.ID)
-	assert.Nil(t, e)
+	assert.NoError(t, e)
 }
 
 func createTestCollection(t *testing.T, p model.CollectionPersister, categoryID uint32) *model.Collection {
@@ -150,25 +151,25 @@ func createTestCollection(t *testing.T, p model.CollectionPersister, categoryID 
 		},
 	}
 	created, e := p.InsertCollection(context.TODO(), in)
-	assert.Nil(t, e)
+	assert.NoError(t, e)
 	return created
 }
 
 func deleteTestCollection(t *testing.T, p model.CollectionPersister, collection *model.Collection) {
 	e := p.DeleteCollection(context.TODO(), collection.ID)
-	assert.Nil(t, e)
+	assert.NoError(t, e)
 }
 
 func createTestPost(t *testing.T, p model.PostPersister, collectionID uint32) *model.Post {
 	in := model.NewPostIn("Test", collectionID, "")
 	created, e := p.InsertPost(context.TODO(), in)
-	assert.Nil(t, e)
+	assert.NoError(t, e)
 	return created
 }
 
 func deleteTestPost(t *testing.T, p model.PostPersister, post *model.Post) {
 	e := p.DeletePost(context.TODO(), post.ID)
-	assert.Nil(t, e)
+	assert.NoError(t, e)
 }
 
 var recordData = []map[string]string{
@@ -187,7 +188,7 @@ func createTestRecords(t *testing.T, p model.RecordPersister, postID uint32) []m
 	for _, data := range recordData {
 		in := model.NewRecordIn(data, postID)
 		record, e := p.InsertRecord(context.TODO(), in)
-		assert.Nil(t, e)
+		assert.NoError(t, e)
 		records = append(records, *record)
 	}
 	return records
@@ -196,6 +197,6 @@ func createTestRecords(t *testing.T, p model.RecordPersister, postID uint32) []m
 func deleteTestRecords(t *testing.T, p model.RecordPersister, records []model.Record) {
 	for _, record := range records {
 		e := p.DeleteRecord(context.TODO(), record.ID)
-		assert.Nil(t, e)
+		assert.NoError(t, e)
 	}
 }

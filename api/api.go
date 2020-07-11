@@ -33,32 +33,32 @@ const TokenProperty TokenKey = "token"
 const UserProperty TokenKey = "user"
 
 type LocalAPI interface {
-	GetCategories(context.Context) (*CategoryResult, *model.Errors)
-	GetCategoriesByID(ctx context.Context, ids []uint32) ([]model.Category, *model.Errors)
-	GetCategory(ctx context.Context, id uint32) (*model.Category, *model.Errors)
-	AddCategory(ctx context.Context, in model.CategoryIn) (*model.Category, *model.Errors)
-	UpdateCategory(ctx context.Context, id uint32, in model.Category) (*model.Category, *model.Errors)
-	DeleteCategory(ctx context.Context, id uint32) *model.Errors
-	GetCollections(ctx context.Context /* filter/search criteria */) (*CollectionResult, *model.Errors)
-	GetCollectionsByID(ctx context.Context, ids []uint32) ([]model.Collection, *model.Errors)
-	GetCollection(ctx context.Context, id uint32) (*model.Collection, *model.Errors)
-	AddCollection(ctx context.Context, in model.CollectionIn) (*model.Collection, *model.Errors)
-	UpdateCollection(ctx context.Context, id uint32, in model.Collection) (*model.Collection, *model.Errors)
-	DeleteCollection(ctx context.Context, id uint32) *model.Errors
-	GetPosts(ctx context.Context /* filter/search criteria */) (*PostResult, *model.Errors)
-	GetPost(ctx context.Context, id uint32) (*model.Post, *model.Errors)
-	AddPost(ctx context.Context, in model.PostIn) (*model.Post, *model.Errors)
-	UpdatePost(ctx context.Context, id uint32, in model.Post) (*model.Post, *model.Errors)
-	DeletePost(ctx context.Context, id uint32) *model.Errors
-	PostContentRequest(ctx context.Context, contentRequest ContentRequest) (*ContentResult, *model.Errors)
-	GetContent(ctx context.Context, key string) ([]byte, *model.Errors)
-	RetrieveUser(ctx context.Context, provider OIDCProvider, token *oidc.IDToken, rawToken string) (*model.User, *model.Errors)
-	GetRecordsForPost(ctx context.Context, postid uint32) (*RecordResult, *model.Errors)
-	Search(ctx context.Context, req *SearchRequest) (*model.SearchResult, *model.Errors)
-	SearchByID(ctx context.Context, id string) (*model.SearchHit, *model.Errors)
-	SearchDeleteByID(ctx context.Context, id string) *model.Errors
-	GetSettings(ctx context.Context) (*model.Settings, *model.Errors)
-	UpdateSettings(ctx context.Context, in model.Settings) (*model.Settings, *model.Errors)
+	GetCategories(context.Context) (*CategoryResult, error)
+	GetCategoriesByID(ctx context.Context, ids []uint32) ([]model.Category, error)
+	GetCategory(ctx context.Context, id uint32) (*model.Category, error)
+	AddCategory(ctx context.Context, in model.CategoryIn) (*model.Category, error)
+	UpdateCategory(ctx context.Context, id uint32, in model.Category) (*model.Category, error)
+	DeleteCategory(ctx context.Context, id uint32) error
+	GetCollections(ctx context.Context /* filter/search criteria */) (*CollectionResult, error)
+	GetCollectionsByID(ctx context.Context, ids []uint32) ([]model.Collection, error)
+	GetCollection(ctx context.Context, id uint32) (*model.Collection, error)
+	AddCollection(ctx context.Context, in model.CollectionIn) (*model.Collection, error)
+	UpdateCollection(ctx context.Context, id uint32, in model.Collection) (*model.Collection, error)
+	DeleteCollection(ctx context.Context, id uint32) error
+	GetPosts(ctx context.Context /* filter/search criteria */) (*PostResult, error)
+	GetPost(ctx context.Context, id uint32) (*model.Post, error)
+	AddPost(ctx context.Context, in model.PostIn) (*model.Post, error)
+	UpdatePost(ctx context.Context, id uint32, in model.Post) (*model.Post, error)
+	DeletePost(ctx context.Context, id uint32) error
+	PostContentRequest(ctx context.Context, contentRequest ContentRequest) (*ContentResult, error)
+	GetContent(ctx context.Context, key string) ([]byte, error)
+	RetrieveUser(ctx context.Context, provider OIDCProvider, token *oidc.IDToken, rawToken string) (*model.User, error)
+	GetRecordsForPost(ctx context.Context, postid uint32) (*RecordResult, error)
+	Search(ctx context.Context, req *SearchRequest) (*model.SearchResult, error)
+	SearchByID(ctx context.Context, id string) (*model.SearchHit, error)
+	SearchDeleteByID(ctx context.Context, id string) error
+	GetSettings(ctx context.Context) (*model.Settings, error)
+	UpdateSettings(ctx context.Context, in model.Settings) (*model.Settings, error)
 }
 
 // API is the container for the apilication
@@ -259,7 +259,7 @@ func pingElasticsearch(es *elasticsearch.Client) error {
 	return nil
 }
 
-// func checkErr(err error) *model.Errors {
+// func checkErr(err error) error {
 // 	e, ok := err.(model.Error)
 // 	if ok {
 // 		return model.NewErrorsFromError(e)

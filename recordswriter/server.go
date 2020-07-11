@@ -32,7 +32,7 @@ const (
 
 const numWorkers = 10
 
-func processMessage(ctx context.Context, ap *api.API, rawMsg []byte) *model.Errors {
+func processMessage(ctx context.Context, ap *api.API, rawMsg []byte) error {
 	var msg model.RecordsWriterMsg
 	err := json.Unmarshal(rawMsg, &msg)
 	if err != nil {
@@ -83,9 +83,9 @@ func processMessage(ctx context.Context, ap *api.API, rawMsg []byte) *model.Erro
 
 	// set up workers
 	in := make(chan map[string]string)
-	out := make(chan *model.Errors)
+	out := make(chan error)
 	for i := 0; i < numWorkers; i++ {
-		go func(in chan map[string]string, out chan *model.Errors) {
+		go func(in chan map[string]string, out chan error) {
 			for data := range in {
 				_, errs := ap.AddRecord(ctx, model.RecordIn{
 					RecordBody: model.RecordBody{

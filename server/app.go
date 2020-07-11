@@ -197,18 +197,24 @@ func ErrorResponse(w http.ResponseWriter, code int, message string) {
 }
 
 // ErrorsResponse returns an HTTP response from a model.Errors
-func ErrorsResponse(w http.ResponseWriter, errors *model.Errors) {
+func ErrorsResponse(w http.ResponseWriter, err error) {
+	var errors *model.Errors
+	var ok bool
+	if errors, ok = err.(*model.Errors); !ok {
+		log.Printf("[INFO] Unexpectedly received an `error` instead of a `*model.Errors`: '%v'", err)
+		errors = model.NewErrors(http.StatusInternalServerError, err)
+	}
 	w.Header().Set("Content-Type", contentType)
 	w.WriteHeader(errors.HTTPStatus())
 	enc := json.NewEncoder(w)
-	err := enc.Encode(errors.Errs())
+	err = enc.Encode(errors.Errs())
 	if err != nil {
 		log.Printf("[ERROR] Failure encoding error response: '%v'", err)
 	}
 }
 
 // get a "id" variable from the request and validate > 0
-func getIDFromRequest(req *http.Request) (uint32, *model.Errors) {
+func getIDFromRequest(req *http.Request) (uint32, error) {
 	vars := mux.Vars(req)
 	catID, err := strconv.Atoi(vars["id"])
 	if err != nil || catID <= 0 {

@@ -17,7 +17,7 @@ type OIDCProvider interface {
 }
 
 // RetrieveUser constructs or retrieves a User, either from the database or cache
-func (api API) RetrieveUser(ctx context.Context, provider OIDCProvider, token *oidc.IDToken, rawToken string) (*model.User, *model.Errors) {
+func (api API) RetrieveUser(ctx context.Context, provider OIDCProvider, token *oidc.IDToken, rawToken string) (*model.User, error) {
 	var user model.User
 	cacheKey := token.Issuer + "|" + token.Subject
 	u, ok := api.userCache.Get(cacheKey)

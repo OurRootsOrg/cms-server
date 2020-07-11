@@ -22,7 +22,7 @@ type ContentResult struct {
 }
 
 // PostContentRequest returns a URL for posting content
-func (api API) PostContentRequest(ctx context.Context, contentRequest ContentRequest) (*ContentResult, *model.Errors) {
+func (api API) PostContentRequest(ctx context.Context, contentRequest ContentRequest) (*ContentResult, error) {
 	bucket, err := api.OpenBucket(ctx)
 	if err != nil {
 		return nil, model.NewErrors(http.StatusInternalServerError, err)
@@ -42,7 +42,7 @@ func (api API) PostContentRequest(ctx context.Context, contentRequest ContentReq
 	return &ContentResult{signedURL, key}, nil
 }
 
-func (api API) GetContent(ctx context.Context, key string) ([]byte, *model.Errors) {
+func (api API) GetContent(ctx context.Context, key string) ([]byte, error) {
 	bucket, err := api.OpenBucket(ctx)
 	if err != nil {
 		return nil, model.NewErrors(http.StatusInternalServerError, err)

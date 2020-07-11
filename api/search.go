@@ -512,7 +512,7 @@ func indexRecord(record *model.Record, post *model.Post, collection *model.Colle
 	return nil
 }
 
-func (api API) SearchByID(ctx context.Context, id string) (*model.SearchHit, *model.Errors) {
+func (api API) SearchByID(ctx context.Context, id string) (*model.SearchHit, error) {
 	res, err := api.es.Get("records", id,
 		api.es.Get.WithContext(ctx),
 	)
@@ -575,7 +575,7 @@ func (api API) SearchByID(ctx context.Context, id string) (*model.SearchHit, *mo
 	}, nil
 }
 
-func (api API) SearchDeleteByPost(ctx context.Context, id uint32) *model.Errors {
+func (api API) SearchDeleteByPost(ctx context.Context, id uint32) error {
 	search := Search{
 		Query: Query{
 			Term: map[string]TermQuery{
@@ -601,7 +601,7 @@ func (api API) SearchDeleteByPost(ctx context.Context, id uint32) *model.Errors 
 	return nil
 }
 
-func (api API) SearchDeleteByID(ctx context.Context, id string) *model.Errors {
+func (api API) SearchDeleteByID(ctx context.Context, id string) error {
 	res, err := api.es.Delete("records", id,
 		api.es.Delete.WithContext(ctx),
 	)
@@ -614,7 +614,7 @@ func (api API) SearchDeleteByID(ctx context.Context, id string) *model.Errors {
 }
 
 // Search
-func (api API) Search(ctx context.Context, req *SearchRequest) (*model.SearchResult, *model.Errors) {
+func (api API) Search(ctx context.Context, req *SearchRequest) (*model.SearchResult, error) {
 	search := constructSearchQuery(req)
 
 	var buf bytes.Buffer
