@@ -10,12 +10,12 @@ import (
 
 // UserPersister defines methods needed to persist categories
 type UserPersister interface {
-	RetrieveUser(ctx context.Context, in UserIn) (*User, *Error)
-	// SelectUsers(ctx context.Context) ([]User, *Error)
-	// SelectOneUser(ctx context.Context, id string) (User, *Error)
-	// InsertUser(ctx context.Context, in UserIn) (User, *Error)
-	// UpdateUser(ctx context.Context, id string, body User) (User, *Error)
-	// DeleteUser(ctx context.Context, id string) *Error
+	RetrieveUser(ctx context.Context, in UserIn) (*User, error)
+	// SelectUsers(ctx context.Context) ([]User, error)
+	// SelectOneUser(ctx context.Context, id string) (User, error)
+	// InsertUser(ctx context.Context, in UserIn) (User, error)
+	// UpdateUser(ctx context.Context, id string, body User) (User, error)
+	// DeleteUser(ctx context.Context, id string) error
 }
 
 // UserIn is the payload to create or update a category

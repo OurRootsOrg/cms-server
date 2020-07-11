@@ -24,7 +24,7 @@ func (api API) GetPosts(ctx context.Context /* filter/search criteria */) (*Post
 	// TODO: handle search criteria and paged results
 	posts, err := api.postPersister.SelectPosts(ctx)
 	if err != nil {
-		return nil, model.NewErrorsFromError(err)
+		return nil, model.NewErrors(0, err)
 	}
 	return &PostResult{Posts: posts}, nil
 }
@@ -33,7 +33,7 @@ func (api API) GetPosts(ctx context.Context /* filter/search criteria */) (*Post
 func (api API) GetPost(ctx context.Context, id uint32) (*model.Post, *model.Errors) {
 	post, err := api.postPersister.SelectOnePost(ctx, id)
 	if err != nil {
-		return nil, model.NewErrorsFromError(err)
+		return nil, model.NewErrors(0, err)
 	}
 	return post, nil
 }
@@ -60,7 +60,7 @@ func (api API) AddPost(ctx context.Context, in model.PostIn) (*model.Post, *mode
 	// insert
 	post, e := api.postPersister.InsertPost(ctx, in)
 	if e != nil {
-		return nil, model.NewErrorsFromError(e)
+		return nil, model.NewErrors(0, e)
 	}
 
 	if in.RecordsKey != "" {
@@ -166,7 +166,7 @@ func (api API) UpdatePost(ctx context.Context, id uint32, in model.Post) (*model
 
 	post, e := api.postPersister.UpdatePost(ctx, id, in)
 	if e != nil {
-		return nil, model.NewErrorsFromError(e)
+		return nil, model.NewErrors(0, e)
 	}
 
 	if topic != nil && msg != nil {
@@ -200,7 +200,7 @@ func (api API) DeletePost(ctx context.Context, id uint32) *model.Errors {
 		return err
 	}
 	if err := api.postPersister.DeletePost(ctx, id); err != nil {
-		return model.NewErrorsFromError(err)
+		return model.NewErrors(0, err)
 	}
 	if post.RecordsKey != "" {
 		api.deleteRecordsData(ctx, post.RecordsKey)

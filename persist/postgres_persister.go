@@ -22,7 +22,7 @@ func NewPostgresPersister(db *sql.DB) PostgresPersister {
 	}
 }
 
-func translateError(err error, id *uint32, refID *uint32, refType string) *model.Error {
+func translateError(err error, id *uint32, refID *uint32, refType string) error {
 	switch err {
 	case nil:
 		return nil

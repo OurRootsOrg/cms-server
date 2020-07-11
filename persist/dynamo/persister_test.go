@@ -41,12 +41,12 @@ func setupTestCase(t *testing.T) (dynamo.Persister, func(t *testing.T)) {
 			assert.Nil(t, e)
 		}
 
-		cats, e := p.SelectCategories(context.TODO())
-		assert.Nil(t, e)
+		cats, err := p.SelectCategories(context.TODO())
+		assert.NoError(t, err)
 
 		for _, c := range cats {
-			e = p.DeleteCategory(context.TODO(), c.ID)
-			assert.Nil(t, e)
+			err = p.DeleteCategory(context.TODO(), c.ID)
+			assert.NoError(t, e)
 		}
 	}
 }
@@ -58,10 +58,11 @@ func TestCategory(t *testing.T) {
 	p, teardown := setupTestCase(t)
 	defer teardown(t)
 
-	_, e := p.SelectOneCategory(context.TODO(), 1)
-	assert.NotNil(t, e)
-	assert.Equal(t, model.ErrNotFound, e.Code)
-	assert.Equal(t, "1", e.Params[0])
+	_, err := p.SelectOneCategory(context.TODO(), 1)
+	assert.Error(t, err)
+	assert.IsType(t, &model.Error{}, err)
+	assert.Equal(t, model.ErrNotFound, err.(*model.Error).Code)
+	assert.Equal(t, "1", err.(*model.Error).Params[0])
 
 	ci, err := model.NewCategoryIn("Test Category")
 	assert.Nil(t, err)
@@ -96,16 +97,18 @@ func TestCategory(t *testing.T) {
 	assert.Equal(t, "New Name 2", cat2.Name)
 
 	// Try to update using old lastUpdateTime
-	oldCat2, e = p.UpdateCategory(context.TODO(), oldCat2.ID, *oldCat2)
-	assert.NotNil(t, e)
-	assert.Equal(t, model.ErrConcurrentUpdate, e.Code)
+	oldCat2, err = p.UpdateCategory(context.TODO(), oldCat2.ID, *oldCat2)
+	assert.Error(t, err)
+	assert.IsType(t, &model.Error{}, err)
+	assert.Equal(t, model.ErrConcurrentUpdate, err.(*model.Error).Code)
 
 	// Try to update non-existent category
 	cat3 := cat2
 	cat3.ID = 123456
-	cat3, e = p.UpdateCategory(context.TODO(), cat3.ID, *cat3)
-	assert.NotNil(t, e)
-	assert.Equal(t, model.ErrNotFound, e.Code)
+	cat3, err = p.UpdateCategory(context.TODO(), cat3.ID, *cat3)
+	assert.Error(t, err)
+	assert.IsType(t, &model.Error{}, err)
+	assert.Equal(t, model.ErrNotFound, err.(*model.Error).Code)
 
 	cs, e := p.SelectCategories(context.TODO())
 	assert.Nil(t, e)
@@ -149,15 +152,16 @@ func TestCollection(t *testing.T) {
 	p, teardown := setupTestCase(t)
 	defer teardown(t)
 
-	_, e := p.SelectOneCollection(context.TODO(), 1)
-	assert.NotNil(t, e)
-	assert.Equal(t, model.ErrNotFound, e.Code)
+	_, err := p.SelectOneCollection(context.TODO(), 1)
+	assert.Error(t, err)
+	assert.IsType(t, &model.Error{}, err)
+	assert.Equal(t, model.ErrNotFound, err.(*model.Error).Code)
 
 	ci, err := model.NewCategoryIn("Test Category")
 	assert.Nil(t, err)
 
-	cat, e := p.InsertCategory(context.TODO(), ci)
-	assert.Nil(t, e)
+	cat, err := p.InsertCategory(context.TODO(), ci)
+	assert.NoError(t, err)
 	assert.Equal(t, ci.Name, cat.Name)
 
 	// then := time.Now().Truncate(0)
@@ -190,15 +194,16 @@ func TestPost(t *testing.T) {
 	p, teardown := setupTestCase(t)
 	defer teardown(t)
 
-	_, e := p.SelectOnePost(context.TODO(), 1)
-	assert.NotNil(t, e)
-	assert.Equal(t, model.ErrNotFound, e.Code)
+	_, err := p.SelectOnePost(context.TODO(), 1)
+	assert.Error(t, err)
+	assert.IsType(t, &model.Error{}, err)
+	assert.Equal(t, model.ErrNotFound, err.(*model.Error).Code)
 
 	cati, err := model.NewCategoryIn("Test Category")
 	assert.Nil(t, err)
 
-	cat, e := p.InsertCategory(context.TODO(), cati)
-	assert.Nil(t, e)
+	cat, err := p.InsertCategory(context.TODO(), cati)
+	assert.NoError(t, err)
 	assert.Equal(t, cati.Name, cat.Name)
 
 	ci := model.NewCollectionIn("Test Collection", []uint32{cat.ID})
@@ -224,8 +229,8 @@ func TestPost(t *testing.T) {
 
 	// Try to create a post with a non-existent collectio ID
 	in = model.NewPostIn("Bad Post", 123456, "")
-	out, e = p.InsertPost(context.TODO(), in)
-	assert.NotNil(t, e)
+	out, err = p.InsertPost(context.TODO(), in)
+	assert.Error(t, err)
 	t.Logf("Error: %#v", e)
 }
 

@@ -17,7 +17,7 @@ const userType = "user"
 
 // RetrieveUser either retrieves a user record from the database, or creates the record if it doesn't
 // already exist.
-func (p Persister) RetrieveUser(ctx context.Context, in model.UserIn) (*model.User, *model.Error) {
+func (p Persister) RetrieveUser(ctx context.Context, in model.UserIn) (*model.User, error) {
 	var user model.User
 	var err error
 	log.Printf("[DEBUG] Looking up subject '%s' in database", in.Subject)

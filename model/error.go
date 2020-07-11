@@ -12,6 +12,14 @@ import (
 // ErrorCode is one of the valid error codes the API can return
 type ErrorCode string
 
+// Matches returns `true` if the passed `error` is a `model.Error` with a matching `ErrorCode`
+func (code ErrorCode) Matches(err error) bool {
+	if e, ok := err.(*Error); ok {
+		return e.Code == code
+	}
+	return false
+}
+
 // Standard error codes
 const (
 	ErrRequired         ErrorCode = "REQUIRED"
@@ -91,11 +99,32 @@ func NewErrorsFromError(e *Error) *Errors {
 }
 
 // NewErrors builds an Errors collection from an `error`, which may actually be a ValidationErrors collection
+// or a `model.Error`
 func NewErrors(httpStatus int, err error) *Errors {
+	var e *Error
+	var isModelError bool
+	e, isModelError = err.(*Error)
+	if !isModelError {
+		e1, ok := err.(Error)
+		if ok {
+			e = &e1
+			isModelError = true
+		}
+	}
+	if httpStatus <= 0 && !isModelError {
+		log.Printf("[INFO] Warning httpStatus = %d and err is not a model.Error: %#v", httpStatus, err)
+		httpStatus = http.StatusInternalServerError
+	}
+	if isModelError {
+		// Note that this ignores `httpStatus`
+		return NewErrorsFromError(e)
+	}
+
 	errors := Errors{
 		errs:       make([]Error, 0),
 		httpStatus: httpStatus,
 	}
+
 	if ves, ok := err.(validator.ValidationErrors); ok {
 		for _, fe := range ves {
 			if fe.Tag() == "required" {
@@ -106,8 +135,6 @@ func NewErrors(httpStatus int, err error) *Errors {
 				errors.errs = append(errors.errs, *NewError(ErrOther, fmt.Sprintf("Key: '%s' Error:Field validation for '%s' failed on the '%s' tag", fe.Namespace(), fe.Field(), fe.Tag())))
 			}
 		}
-	} else if er, ok := err.(Error); ok {
-		errors.errs = append(errors.errs, er)
 	} else {
 		errors.errs = append(errors.errs, *NewError(ErrOther, err.Error()))
 	}

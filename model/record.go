@@ -10,13 +10,13 @@ import (
 
 // RecordPersister defines methods needed to persist records
 type RecordPersister interface {
-	SelectRecordsForPost(ctx context.Context, postID uint32) ([]Record, *Error)
-	SelectRecordsByID(ctx context.Context, ids []uint32) ([]Record, *Error)
-	SelectOneRecord(ctx context.Context, id uint32) (*Record, *Error)
-	InsertRecord(ctx context.Context, in RecordIn) (*Record, *Error)
-	UpdateRecord(ctx context.Context, id uint32, in Record) (*Record, *Error)
-	DeleteRecord(ctx context.Context, id uint32) *Error
-	DeleteRecordsForPost(ctx context.Context, postID uint32) *Error
+	SelectRecordsForPost(ctx context.Context, postID uint32) ([]Record, error)
+	SelectRecordsByID(ctx context.Context, ids []uint32) ([]Record, error)
+	SelectOneRecord(ctx context.Context, id uint32) (*Record, error)
+	InsertRecord(ctx context.Context, in RecordIn) (*Record, error)
+	UpdateRecord(ctx context.Context, id uint32, in Record) (*Record, error)
+	DeleteRecord(ctx context.Context, id uint32) error
+	DeleteRecordsForPost(ctx context.Context, postID uint32) error
 }
 
 // RecordBody is the JSON body of a Record

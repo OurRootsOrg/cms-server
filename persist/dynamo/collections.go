@@ -25,7 +25,7 @@ type collectionCategory struct {
 }
 
 // SelectCollections loads all the collections from the database
-func (p Persister) SelectCollections(ctx context.Context) ([]model.Collection, *model.Error) {
+func (p Persister) SelectCollections(ctx context.Context) ([]model.Collection, error) {
 	qi := &dynamodb.QueryInput{
 		TableName:              p.tableName,
 		IndexName:              aws.String(gsiName),
@@ -51,7 +51,7 @@ func (p Persister) SelectCollections(ctx context.Context) ([]model.Collection, *
 }
 
 // SelectCollectionsByID selects many collections
-func (p Persister) SelectCollectionsByID(ctx context.Context, ids []uint32) ([]model.Collection, *model.Error) {
+func (p Persister) SelectCollectionsByID(ctx context.Context, ids []uint32) ([]model.Collection, error) {
 	colls := make([]model.Collection, 0)
 	if len(ids) == 0 {
 		return colls, nil
@@ -88,7 +88,7 @@ func (p Persister) SelectCollectionsByID(ctx context.Context, ids []uint32) ([]m
 }
 
 // SelectOneCollection loads a single collection from the database
-func (p Persister) SelectOneCollection(ctx context.Context, id uint32) (*model.Collection, *model.Error) {
+func (p Persister) SelectOneCollection(ctx context.Context, id uint32) (*model.Collection, error) {
 	var coll model.Collection
 	sid := strconv.FormatInt(int64(id), 10)
 	qi := &dynamodb.QueryInput{
@@ -167,7 +167,7 @@ func compareIDs(s1, s2 []uint32) bool {
 }
 
 // InsertCollection inserts a Collection into the database and returns the inserted Collection
-func (p Persister) InsertCollection(ctx context.Context, in model.CollectionIn) (*model.Collection, *model.Error) {
+func (p Persister) InsertCollection(ctx context.Context, in model.CollectionIn) (*model.Collection, error) {
 	var coll model.Collection
 	var err error
 	coll.ID, err = p.GetSequenceValue()
@@ -271,7 +271,7 @@ func (p Persister) InsertCollection(ctx context.Context, in model.CollectionIn) 
 }
 
 // UpdateCollection updates a Collection in the database and returns the updated Collection
-func (p Persister) UpdateCollection(ctx context.Context, id uint32, in model.Collection) (*model.Collection, *model.Error) {
+func (p Persister) UpdateCollection(ctx context.Context, id uint32, in model.Collection) (*model.Collection, error) {
 	var coll model.Collection
 	var err error
 	coll = in
@@ -417,14 +417,14 @@ func (p Persister) UpdateCollection(ctx context.Context, id uint32, in model.Col
 }
 
 // DeleteCollection deletes a Collection
-func (p Persister) DeleteCollection(ctx context.Context, id uint32) *model.Error {
+func (p Persister) DeleteCollection(ctx context.Context, id uint32) error {
 	// Read to get the category list, so that we can delete them
-	current, e := p.SelectOneCollection(ctx, id)
-	if e != nil {
-		if e.Code == model.ErrNotFound {
+	current, err := p.SelectOneCollection(ctx, id)
+	if err != nil {
+		if model.ErrNotFound.Matches(err) {
 			return nil
 		}
-		return e
+		return err
 	}
 	twi := make([]*dynamodb.TransactWriteItem, len(current.Categories)+1)
 	item := 0
@@ -454,7 +454,7 @@ func (p Persister) DeleteCollection(ctx context.Context, id uint32) *model.Error
 		TransactItems: twi,
 	}
 	// log.Printf("[DEBUG] Executing TransactWriteItems(%#v)", twii)
-	_, err := p.svc.TransactWriteItems(twii)
+	_, err = p.svc.TransactWriteItems(twii)
 	if err != nil {
 		return model.NewError(model.ErrOther, err.Error())
 	}

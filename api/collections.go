@@ -19,7 +19,7 @@ func (api API) GetCollections(ctx context.Context /* filter/search criteria */) 
 	// TODO: handle search criteria and paged results
 	cols, err := api.collectionPersister.SelectCollections(ctx)
 	if err != nil {
-		return nil, model.NewErrorsFromError(err)
+		return nil, model.NewErrors(0, err)
 	}
 	return &CollectionResult{Collections: cols}, nil
 }
@@ -28,7 +28,7 @@ func (api API) GetCollections(ctx context.Context /* filter/search criteria */) 
 func (api API) GetCollectionsByID(ctx context.Context, ids []uint32) ([]model.Collection, *model.Errors) {
 	colls, err := api.collectionPersister.SelectCollectionsByID(ctx, ids)
 	if err != nil {
-		return nil, model.NewErrorsFromError(err)
+		return nil, model.NewErrors(0, err)
 	}
 	return colls, nil
 }
@@ -37,7 +37,7 @@ func (api API) GetCollectionsByID(ctx context.Context, ids []uint32) ([]model.Co
 func (api API) GetCollection(ctx context.Context, id uint32) (*model.Collection, *model.Errors) {
 	collection, err := api.collectionPersister.SelectOneCollection(ctx, id)
 	if err != nil {
-		return nil, model.NewErrorsFromError(err)
+		return nil, model.NewErrors(0, err)
 	}
 	return collection, nil
 }
@@ -51,7 +51,7 @@ func (api API) AddCollection(ctx context.Context, in model.CollectionIn) (*model
 	}
 	collection, e := api.collectionPersister.InsertCollection(ctx, in)
 	if e != nil {
-		return nil, model.NewErrorsFromError(e)
+		return nil, model.NewErrors(0, e)
 	}
 	return collection, nil
 }
@@ -65,7 +65,7 @@ func (api API) UpdateCollection(ctx context.Context, id uint32, in model.Collect
 	}
 	collection, e := api.collectionPersister.UpdateCollection(ctx, id, in)
 	if e != nil {
-		return nil, model.NewErrorsFromError(e)
+		return nil, model.NewErrors(0, e)
 	}
 	return collection, nil
 }
@@ -74,7 +74,7 @@ func (api API) UpdateCollection(ctx context.Context, id uint32, in model.Collect
 func (api API) DeleteCollection(ctx context.Context, id uint32) *model.Errors {
 	err := api.collectionPersister.DeleteCollection(ctx, id)
 	if err != nil {
-		return model.NewErrorsFromError(err)
+		return model.NewErrors(0, err)
 	}
 	return nil
 }

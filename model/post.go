@@ -10,11 +10,11 @@ import (
 
 // PostPersister defines methods needed to persist categories
 type PostPersister interface {
-	SelectPosts(ctx context.Context) ([]Post, *Error)
-	SelectOnePost(ctx context.Context, id uint32) (*Post, *Error)
-	InsertPost(ctx context.Context, in PostIn) (*Post, *Error)
-	UpdatePost(ctx context.Context, id uint32, in Post) (*Post, *Error)
-	DeletePost(ctx context.Context, id uint32) *Error
+	SelectPosts(ctx context.Context) ([]Post, error)
+	SelectOnePost(ctx context.Context, id uint32) (*Post, error)
+	InsertPost(ctx context.Context, in PostIn) (*Post, error)
+	UpdatePost(ctx context.Context, id uint32, in Post) (*Post, error)
+	DeletePost(ctx context.Context, id uint32) error
 }
 
 const (

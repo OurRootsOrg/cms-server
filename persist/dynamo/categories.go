@@ -16,7 +16,7 @@ import (
 const categoryType = "category"
 
 // SelectCategories loads all the categories from the database
-func (p Persister) SelectCategories(ctx context.Context) ([]model.Category, *model.Error) {
+func (p Persister) SelectCategories(ctx context.Context) ([]model.Category, error) {
 	qi := &dynamodb.QueryInput{
 		TableName:              p.tableName,
 		IndexName:              aws.String(gsiName),
@@ -42,7 +42,7 @@ func (p Persister) SelectCategories(ctx context.Context) ([]model.Category, *mod
 }
 
 // SelectCategoriesByID selects many categories
-func (p Persister) SelectCategoriesByID(ctx context.Context, ids []uint32) ([]model.Category, *model.Error) {
+func (p Persister) SelectCategoriesByID(ctx context.Context, ids []uint32) ([]model.Category, error) {
 	cats := make([]model.Category, 0)
 	if len(ids) == 0 {
 		return cats, nil
@@ -79,7 +79,7 @@ func (p Persister) SelectCategoriesByID(ctx context.Context, ids []uint32) ([]mo
 }
 
 // SelectOneCategory loads a single category from the database
-func (p Persister) SelectOneCategory(ctx context.Context, id uint32) (*model.Category, *model.Error) {
+func (p Persister) SelectOneCategory(ctx context.Context, id uint32) (*model.Category, error) {
 	var cat model.Category
 	gii := &dynamodb.GetItemInput{
 		TableName: p.tableName,
@@ -109,7 +109,7 @@ func (p Persister) SelectOneCategory(ctx context.Context, id uint32) (*model.Cat
 }
 
 // InsertCategory inserts a CategoryBody into the database and returns the inserted Category
-func (p Persister) InsertCategory(ctx context.Context, in model.CategoryIn) (*model.Category, *model.Error) {
+func (p Persister) InsertCategory(ctx context.Context, in model.CategoryIn) (*model.Category, error) {
 	var cat model.Category
 	var err error
 	cat.ID, err = p.GetSequenceValue()
@@ -149,7 +149,7 @@ func (p Persister) InsertCategory(ctx context.Context, in model.CategoryIn) (*mo
 }
 
 // UpdateCategory updates a Category in the database and returns the updated Category
-func (p Persister) UpdateCategory(ctx context.Context, id uint32, in model.Category) (*model.Category, *model.Error) {
+func (p Persister) UpdateCategory(ctx context.Context, id uint32, in model.Category) (*model.Category, error) {
 	var cat model.Category
 	var err error
 	cat = in
@@ -194,7 +194,7 @@ func (p Persister) UpdateCategory(ctx context.Context, id uint32, in model.Categ
 }
 
 // DeleteCategory deletes a Category
-func (p Persister) DeleteCategory(ctx context.Context, id uint32) *model.Error {
+func (p Persister) DeleteCategory(ctx context.Context, id uint32) error {
 	dii := &dynamodb.DeleteItemInput{
 		TableName: p.tableName,
 		Key: map[string]*dynamodb.AttributeValue{

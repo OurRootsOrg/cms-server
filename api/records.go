@@ -19,7 +19,7 @@ func (api API) GetRecordsForPost(ctx context.Context, postID uint32) (*RecordRes
 	// TODO: handle search criteria and paged results
 	records, err := api.recordPersister.SelectRecordsForPost(ctx, postID)
 	if err != nil {
-		return nil, model.NewErrorsFromError(err)
+		return nil, model.NewErrors(0, err)
 	}
 	return &RecordResult{Records: records}, nil
 }
@@ -28,7 +28,7 @@ func (api API) GetRecordsForPost(ctx context.Context, postID uint32) (*RecordRes
 func (api API) GetRecordsByID(ctx context.Context, ids []uint32) ([]model.Record, *model.Errors) {
 	records, err := api.recordPersister.SelectRecordsByID(ctx, ids)
 	if err != nil {
-		return nil, model.NewErrorsFromError(err)
+		return nil, model.NewErrors(0, err)
 	}
 	return records, nil
 }
@@ -37,7 +37,7 @@ func (api API) GetRecordsByID(ctx context.Context, ids []uint32) ([]model.Record
 func (api API) GetRecord(ctx context.Context, id uint32) (*model.Record, *model.Errors) {
 	record, err := api.recordPersister.SelectOneRecord(ctx, id)
 	if err != nil {
-		return nil, model.NewErrorsFromError(err)
+		return nil, model.NewErrors(0, err)
 	}
 	return record, nil
 }
@@ -52,7 +52,7 @@ func (api API) AddRecord(ctx context.Context, in model.RecordIn) (*model.Record,
 	// insert
 	record, e := api.recordPersister.InsertRecord(ctx, in)
 	if e != nil {
-		return nil, model.NewErrorsFromError(e)
+		return nil, model.NewErrors(0, e)
 	}
 	return record, nil
 }
@@ -65,7 +65,7 @@ func (api API) UpdateRecord(ctx context.Context, id uint32, in model.Record) (*m
 	}
 	record, e := api.recordPersister.UpdateRecord(ctx, id, in)
 	if e != nil {
-		return nil, model.NewErrorsFromError(e)
+		return nil, model.NewErrors(0, e)
 	}
 	return record, nil
 }
@@ -74,7 +74,7 @@ func (api API) UpdateRecord(ctx context.Context, id uint32, in model.Record) (*m
 func (api API) DeleteRecord(ctx context.Context, id uint32) *model.Errors {
 	err := api.recordPersister.DeleteRecord(ctx, id)
 	if err != nil {
-		return model.NewErrorsFromError(err)
+		return model.NewErrors(0, err)
 	}
 	return nil
 }
@@ -83,7 +83,7 @@ func (api API) DeleteRecord(ctx context.Context, id uint32) *model.Errors {
 func (api API) DeleteRecordsForPost(ctx context.Context, postID uint32) *model.Errors {
 	err := api.recordPersister.DeleteRecordsForPost(ctx, postID)
 	if err != nil {
-		return model.NewErrorsFromError(err)
+		return model.NewErrors(0, err)
 	}
 	return nil
 }

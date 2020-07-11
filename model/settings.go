@@ -10,8 +10,8 @@ import (
 
 // SettingsPersister defines methods needed to persist settings
 type SettingsPersister interface {
-	SelectSettings(ctx context.Context) (*Settings, *Error)
-	UpsertSettings(ctx context.Context, in Settings) (*Settings, *Error)
+	SelectSettings(ctx context.Context) (*Settings, error)
+	UpsertSettings(ctx context.Context, in Settings) (*Settings, error)
 }
 
 // SettingsBody is the JSON body of a Settings object

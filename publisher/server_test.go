@@ -48,9 +48,8 @@ func TestPublisher(t *testing.T) {
 	defer deleteTestRecords(t, p, testRecords)
 	// force post to draft status
 	testPost.RecordsStatus = model.PostDraft
-	var e *model.Error
-	testPost, e = p.UpdatePost(ctx, testPost.ID, *testPost)
-	assert.Nil(t, e, "Error updating test post")
+	testPost, err = p.UpdatePost(ctx, testPost.ID, *testPost)
+	assert.NoError(t, err, "Error updating test post")
 	assert.Equal(t, model.PostDraft, testPost.RecordsStatus, "Unexpected post recordsStatus")
 
 	// Publish post

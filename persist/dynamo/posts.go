@@ -16,7 +16,7 @@ import (
 const postType = "post"
 
 // SelectPosts selects all posts
-func (p Persister) SelectPosts(ctx context.Context) ([]model.Post, *model.Error) {
+func (p Persister) SelectPosts(ctx context.Context) ([]model.Post, error) {
 	qi := &dynamodb.QueryInput{
 		TableName:              p.tableName,
 		IndexName:              aws.String(gsiName),
@@ -56,7 +56,7 @@ func (p Persister) SelectPosts(ctx context.Context) ([]model.Post, *model.Error)
 }
 
 // SelectOnePost selects a single post
-func (p Persister) SelectOnePost(ctx context.Context, id uint32) (*model.Post, *model.Error) {
+func (p Persister) SelectOnePost(ctx context.Context, id uint32) (*model.Post, error) {
 	var post model.Post
 	gii := &dynamodb.GetItemInput{
 		TableName: p.tableName,
@@ -96,7 +96,7 @@ func (p Persister) SelectOnePost(ctx context.Context, id uint32) (*model.Post, *
 }
 
 // InsertPost inserts a PostBody into the database and returns the inserted Post
-func (p Persister) InsertPost(ctx context.Context, in model.PostIn) (*model.Post, *model.Error) {
+func (p Persister) InsertPost(ctx context.Context, in model.PostIn) (*model.Post, error) {
 	var post model.Post
 	var err error
 	post.ID, err = p.GetSequenceValue()
@@ -182,7 +182,7 @@ func (p Persister) InsertPost(ctx context.Context, in model.PostIn) (*model.Post
 }
 
 // UpdatePost updates a Post in the database and returns the updated Post
-func (p Persister) UpdatePost(ctx context.Context, id uint32, in model.Post) (*model.Post, *model.Error) {
+func (p Persister) UpdatePost(ctx context.Context, id uint32, in model.Post) (*model.Post, error) {
 	var post model.Post
 	var err error
 	post = in
@@ -281,7 +281,7 @@ func (p Persister) UpdatePost(ctx context.Context, id uint32, in model.Post) (*m
 }
 
 // DeletePost deletes a Post
-func (p Persister) DeletePost(ctx context.Context, id uint32) *model.Error {
+func (p Persister) DeletePost(ctx context.Context, id uint32) error {
 	dii := &dynamodb.DeleteItemInput{
 		TableName: p.tableName,
 		Key: map[string]*dynamodb.AttributeValue{

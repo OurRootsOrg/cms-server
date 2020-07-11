@@ -13,7 +13,7 @@ import (
 // Collection persistence methods
 
 // SelectCollections selects all collections
-func (p PostgresPersister) SelectCollections(ctx context.Context) ([]model.Collection, *model.Error) {
+func (p PostgresPersister) SelectCollections(ctx context.Context) ([]model.Collection, error) {
 	rows, err := p.db.QueryContext(ctx,
 		`SELECT id, array_agg(cc.category_id), body, insert_time, last_update_time
 			   FROM collection LEFT JOIN collection_category cc ON id = cc.collection_id GROUP BY id`)
@@ -39,7 +39,7 @@ func (p PostgresPersister) SelectCollections(ctx context.Context) ([]model.Colle
 }
 
 // SelectCollectionsByID selects many collections
-func (p PostgresPersister) SelectCollectionsByID(ctx context.Context, ids []uint32) ([]model.Collection, *model.Error) {
+func (p PostgresPersister) SelectCollectionsByID(ctx context.Context, ids []uint32) ([]model.Collection, error) {
 	collections := make([]model.Collection, 0)
 	if len(ids) == 0 {
 		return collections, nil
@@ -69,7 +69,7 @@ func (p PostgresPersister) SelectCollectionsByID(ctx context.Context, ids []uint
 }
 
 // SelectOneCollection selects a single collection
-func (p PostgresPersister) SelectOneCollection(ctx context.Context, id uint32) (*model.Collection, *model.Error) {
+func (p PostgresPersister) SelectOneCollection(ctx context.Context, id uint32) (*model.Collection, error) {
 	var categories []int64
 	var collection model.Collection
 	err := p.db.QueryRowContext(ctx,
@@ -92,7 +92,7 @@ func (p PostgresPersister) SelectOneCollection(ctx context.Context, id uint32) (
 }
 
 // InsertCollection inserts a CollectionBody into the database and returns the inserted Collection
-func (p PostgresPersister) InsertCollection(ctx context.Context, in model.CollectionIn) (*model.Collection, *model.Error) {
+func (p PostgresPersister) InsertCollection(ctx context.Context, in model.CollectionIn) (*model.Collection, error) {
 	var collection model.Collection
 	// create a transaction so collection and collection_category stay in sync
 	tx, err := p.db.Begin()
@@ -127,7 +127,7 @@ func (p PostgresPersister) InsertCollection(ctx context.Context, in model.Collec
 }
 
 // UpdateCollection updates a Collection in the database and returns the updated Collection
-func (p PostgresPersister) UpdateCollection(ctx context.Context, id uint32, in model.Collection) (*model.Collection, *model.Error) {
+func (p PostgresPersister) UpdateCollection(ctx context.Context, id uint32, in model.Collection) (*model.Collection, error) {
 	var collection model.Collection
 	// create a transaction so collection and collection_category stay in sync
 	tx, err := p.db.Begin()
@@ -173,7 +173,7 @@ func (p PostgresPersister) UpdateCollection(ctx context.Context, id uint32, in m
 }
 
 // DeleteCollection deletes a Collection
-func (p PostgresPersister) DeleteCollection(ctx context.Context, id uint32) *model.Error {
+func (p PostgresPersister) DeleteCollection(ctx context.Context, id uint32) error {
 	// create a transaction so collection and collection_category stay in sync
 	tx, err := p.db.Begin()
 	if err != nil {

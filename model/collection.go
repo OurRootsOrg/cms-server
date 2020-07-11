@@ -11,12 +11,12 @@ import (
 
 // CollectionPersister defines methods needed to persist categories
 type CollectionPersister interface {
-	SelectCollections(ctx context.Context) ([]Collection, *Error)
-	SelectCollectionsByID(ctx context.Context, ids []uint32) ([]Collection, *Error)
-	SelectOneCollection(ctx context.Context, id uint32) (*Collection, *Error)
-	InsertCollection(ctx context.Context, in CollectionIn) (*Collection, *Error)
-	UpdateCollection(ctx context.Context, id uint32, in Collection) (*Collection, *Error)
-	DeleteCollection(ctx context.Context, id uint32) *Error
+	SelectCollections(ctx context.Context) ([]Collection, error)
+	SelectCollectionsByID(ctx context.Context, ids []uint32) ([]Collection, error)
+	SelectOneCollection(ctx context.Context, id uint32) (*Collection, error)
+	InsertCollection(ctx context.Context, in CollectionIn) (*Collection, error)
+	UpdateCollection(ctx context.Context, id uint32, in Collection) (*Collection, error)
+	DeleteCollection(ctx context.Context, id uint32) error
 }
 
 // CollectionBody is the JSON body of a Collection

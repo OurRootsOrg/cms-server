@@ -114,7 +114,7 @@ func TestGetPost(t *testing.T) {
 
 	post = nil
 	am.Result = post
-	am.Errors = model.NewErrorsFromError(model.NewError(model.ErrNotFound, "/posts/1"))
+	am.Errors = model.NewErrorsFromError(model.NewError(model.ErrNotFound, "1"))
 
 	request, _ = http.NewRequest("GET", "/posts/1", nil)
 	response = httptest.NewRecorder()

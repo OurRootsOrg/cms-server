@@ -10,7 +10,7 @@ import (
 )
 
 // SelectRecordsForPost selects all records for a post
-func (p PostgresPersister) SelectRecordsForPost(ctx context.Context, postID uint32) ([]model.Record, *model.Error) {
+func (p PostgresPersister) SelectRecordsForPost(ctx context.Context, postID uint32) ([]model.Record, error) {
 	rows, err := p.db.QueryContext(ctx, "SELECT id, post_id, body, ix_hash, insert_time, last_update_time FROM record WHERE post_id=$1", postID)
 	if err != nil {
 		return nil, translateError(err, &postID, nil, "")
@@ -29,7 +29,7 @@ func (p PostgresPersister) SelectRecordsForPost(ctx context.Context, postID uint
 }
 
 // SelectRecordsByID selects many records
-func (p PostgresPersister) SelectRecordsByID(ctx context.Context, ids []uint32) ([]model.Record, *model.Error) {
+func (p PostgresPersister) SelectRecordsByID(ctx context.Context, ids []uint32) ([]model.Record, error) {
 	records := make([]model.Record, 0)
 	if len(ids) == 0 {
 		return records, nil
@@ -51,7 +51,7 @@ func (p PostgresPersister) SelectRecordsByID(ctx context.Context, ids []uint32) 
 }
 
 // SelectOneRecord selects a single record
-func (p PostgresPersister) SelectOneRecord(ctx context.Context, id uint32) (*model.Record, *model.Error) {
+func (p PostgresPersister) SelectOneRecord(ctx context.Context, id uint32) (*model.Record, error) {
 	var record model.Record
 	err := p.db.QueryRowContext(ctx, "SELECT id, post_id, body, ix_hash, insert_time, last_update_time FROM record WHERE id=$1", id).Scan(
 		&record.ID,
@@ -68,7 +68,7 @@ func (p PostgresPersister) SelectOneRecord(ctx context.Context, id uint32) (*mod
 }
 
 // InsertRecord inserts a RecordBody into the database and returns the inserted Record
-func (p PostgresPersister) InsertRecord(ctx context.Context, in model.RecordIn) (*model.Record, *model.Error) {
+func (p PostgresPersister) InsertRecord(ctx context.Context, in model.RecordIn) (*model.Record, error) {
 	var record model.Record
 	err := p.db.QueryRowContext(ctx,
 		`INSERT INTO record (post_id, body)
@@ -87,7 +87,7 @@ func (p PostgresPersister) InsertRecord(ctx context.Context, in model.RecordIn) 
 }
 
 // UpdateRecord updates a Record in the database and returns the updated Record
-func (p PostgresPersister) UpdateRecord(ctx context.Context, id uint32, in model.Record) (*model.Record, *model.Error) {
+func (p PostgresPersister) UpdateRecord(ctx context.Context, id uint32, in model.Record) (*model.Record, error) {
 	var record model.Record
 	err := p.db.QueryRowContext(ctx,
 		`UPDATE record SET body = $1, post_id = $2, ix_hash = $3, last_update_time = CURRENT_TIMESTAMP
@@ -115,13 +115,13 @@ func (p PostgresPersister) UpdateRecord(ctx context.Context, id uint32, in model
 }
 
 // DeleteRecord deletes a Record
-func (p PostgresPersister) DeleteRecord(ctx context.Context, id uint32) *model.Error {
+func (p PostgresPersister) DeleteRecord(ctx context.Context, id uint32) error {
 	_, err := p.db.ExecContext(ctx, "DELETE FROM record WHERE id = $1", id)
 	return translateError(err, &id, nil, "")
 }
 
 // DeleteRecordsForPost deletes all Records for a post
-func (p PostgresPersister) DeleteRecordsForPost(ctx context.Context, postID uint32) *model.Error {
+func (p PostgresPersister) DeleteRecordsForPost(ctx context.Context, postID uint32) error {
 	_, err := p.db.ExecContext(ctx, "DELETE FROM record WHERE post_id = $1", postID)
 	return translateError(err, &postID, nil, "")
 }

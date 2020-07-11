@@ -13,7 +13,7 @@ import (
 
 // RetrieveUser either retrieves a user record from the database, or creates the record if it doesn't
 // already exist.
-func (p PostgresPersister) RetrieveUser(ctx context.Context, in model.UserIn) (*model.User, *model.Error) {
+func (p PostgresPersister) RetrieveUser(ctx context.Context, in model.UserIn) (*model.User, error) {
 	var user model.User
 	log.Printf("[DEBUG] Looking up subject '%s' in database", in.Subject)
 	err := p.db.QueryRowContext(ctx, `SELECT id, body, insert_time, last_update_time
