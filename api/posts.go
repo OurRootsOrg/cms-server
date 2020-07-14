@@ -24,7 +24,7 @@ func (api API) GetPosts(ctx context.Context /* filter/search criteria */) (*Post
 	// TODO: handle search criteria and paged results
 	posts, err := api.postPersister.SelectPosts(ctx)
 	if err != nil {
-		return nil, model.NewErrors(0, err)
+		return nil, NewErrors(0, err)
 	}
 	return &PostResult{Posts: posts}, nil
 }
@@ -33,7 +33,7 @@ func (api API) GetPosts(ctx context.Context /* filter/search criteria */) (*Post
 func (api API) GetPost(ctx context.Context, id uint32) (*model.Post, error) {
 	post, err := api.postPersister.SelectOnePost(ctx, id)
 	if err != nil {
-		return nil, model.NewErrors(0, err)
+		return nil, NewErrors(0, err)
 	}
 	return post, nil
 }
@@ -43,13 +43,13 @@ func (api API) AddPost(ctx context.Context, in model.PostIn) (*model.Post, error
 	err := api.validate.Struct(in)
 	if err != nil {
 		log.Printf("[ERROR] Invalid post %v", err)
-		return nil, model.NewErrors(http.StatusBadRequest, err)
+		return nil, NewErrors(http.StatusBadRequest, err)
 	}
 	// prepare to send a message
 	topic, err := api.OpenTopic(ctx, "recordswriter")
 	if err != nil {
 		log.Printf("[ERROR] Can't open recordswriter topic %v", err)
-		return nil, model.NewErrors(http.StatusInternalServerError, err)
+		return nil, NewErrors(http.StatusInternalServerError, err)
 	}
 	defer topic.Shutdown(ctx)
 	// set records status
@@ -60,7 +60,7 @@ func (api API) AddPost(ctx context.Context, in model.PostIn) (*model.Post, error
 	// insert
 	post, e := api.postPersister.InsertPost(ctx, in)
 	if e != nil {
-		return nil, model.NewErrors(0, e)
+		return nil, NewErrors(0, e)
 	}
 
 	if in.RecordsKey != "" {
@@ -71,14 +71,14 @@ func (api API) AddPost(ctx context.Context, in model.PostIn) (*model.Post, error
 		body, err := json.Marshal(msg)
 		if err != nil { // this had best never happen
 			log.Printf("[ERROR] Can't marshal message %v", err)
-			return nil, model.NewErrors(http.StatusInternalServerError, err)
+			return nil, NewErrors(http.StatusInternalServerError, err)
 		}
 		err = topic.Send(ctx, &pubsub.Message{Body: body})
 		if err != nil { // this had best never happen
 			log.Printf("[ERROR] Can't send message %v", err)
 			// undo the insert
 			_ = api.postPersister.DeletePost(ctx, post.ID)
-			return nil, model.NewErrors(http.StatusInternalServerError, err)
+			return nil, NewErrors(http.StatusInternalServerError, err)
 		}
 	}
 
@@ -89,7 +89,7 @@ func (api API) AddPost(ctx context.Context, in model.PostIn) (*model.Post, error
 func (api API) UpdatePost(ctx context.Context, id uint32, in model.Post) (*model.Post, error) {
 	err := api.validate.Struct(in)
 	if err != nil {
-		return nil, model.NewErrors(http.StatusBadRequest, err)
+		return nil, NewErrors(http.StatusBadRequest, err)
 	}
 
 	// read current records status
@@ -104,13 +104,13 @@ func (api API) UpdatePost(ctx context.Context, id uint32, in model.Post) (*model
 	if currPost.RecordsKey != in.RecordsKey {
 		// handle records key change
 		if currPost.RecordsStatus != in.RecordsStatus || in.RecordsStatus != model.PostDraft {
-			return nil, model.NewErrors(http.StatusBadRequest, errors.New(fmt.Sprintf("cannot change recordsKey unless recordsStatus is Draft; status is %s", currPost.RecordsStatus)))
+			return nil, NewErrors(http.StatusBadRequest, errors.New(fmt.Sprintf("cannot change recordsKey unless recordsStatus is Draft; status is %s", currPost.RecordsStatus)))
 		}
 		// prepare to send a message
 		topic, err = api.OpenTopic(ctx, "recordswriter")
 		if err != nil {
 			log.Printf("[ERROR] Can't open recordswriter topic %v", err)
-			return nil, model.NewErrors(http.StatusInternalServerError, err)
+			return nil, NewErrors(http.StatusInternalServerError, err)
 		}
 		defer topic.Shutdown(ctx)
 
@@ -120,7 +120,7 @@ func (api API) UpdatePost(ctx context.Context, id uint32, in model.Post) (*model
 		})
 		if err != nil {
 			log.Printf("[ERROR] Can't marshal message %v", err)
-			return nil, model.NewErrors(http.StatusInternalServerError, err)
+			return nil, NewErrors(http.StatusInternalServerError, err)
 		}
 	} else if currPost.RecordsStatus != in.RecordsStatus {
 		// handle records status change
@@ -131,7 +131,7 @@ func (api API) UpdatePost(ctx context.Context, id uint32, in model.Post) (*model
 			topic, err = api.OpenTopic(ctx, "publisher")
 			if err != nil {
 				log.Printf("[ERROR] Can't open publisher topic %v", err)
-				return nil, model.NewErrors(http.StatusInternalServerError, err)
+				return nil, NewErrors(http.StatusInternalServerError, err)
 			}
 			defer topic.Shutdown(ctx)
 
@@ -149,7 +149,7 @@ func (api API) UpdatePost(ctx context.Context, id uint32, in model.Post) (*model
 			})
 			if err != nil {
 				log.Printf("[ERROR] Can't marshal message %v", err)
-				return nil, model.NewErrors(http.StatusInternalServerError, err)
+				return nil, NewErrors(http.StatusInternalServerError, err)
 			}
 		case currPost.RecordsStatus == model.PostPublishing && in.RecordsStatus == model.PostPublishComplete:
 			in.RecordsStatus = model.PostPublished
@@ -160,13 +160,13 @@ func (api API) UpdatePost(ctx context.Context, id uint32, in model.Post) (*model
 		default:
 			msg := fmt.Sprintf("[ERROR] cannot change records status from %s to %s", currPost.RecordsStatus, in.RecordsStatus)
 			log.Println(msg)
-			return nil, model.NewErrors(http.StatusBadRequest, errors.New(msg))
+			return nil, NewErrors(http.StatusBadRequest, errors.New(msg))
 		}
 	}
 
 	post, e := api.postPersister.UpdatePost(ctx, id, in)
 	if e != nil {
-		return nil, model.NewErrors(0, e)
+		return nil, NewErrors(0, e)
 	}
 
 	if topic != nil && msg != nil {
@@ -176,7 +176,7 @@ func (api API) UpdatePost(ctx context.Context, id uint32, in model.Post) (*model
 			log.Printf("[ERROR] Can't send message %v", err)
 			// undo the update
 			_, _ = api.postPersister.UpdatePost(ctx, id, *currPost)
-			return nil, model.NewErrors(http.StatusInternalServerError, err)
+			return nil, NewErrors(http.StatusInternalServerError, err)
 		}
 	}
 
@@ -190,17 +190,17 @@ func (api API) UpdatePost(ctx context.Context, id uint32, in model.Post) (*model
 func (api API) DeletePost(ctx context.Context, id uint32) error {
 	post, err := api.GetPost(ctx, id)
 	if err != nil {
-		return model.NewErrors(http.StatusNotFound, err)
+		return NewErrors(http.StatusNotFound, err)
 	}
 	if post.RecordsStatus != model.PostDraft {
-		return model.NewErrors(http.StatusBadRequest, fmt.Errorf("post must be in Draft status; is %s", post.RecordsStatus))
+		return NewErrors(http.StatusBadRequest, fmt.Errorf("post must be in Draft status; is %s", post.RecordsStatus))
 	}
 	// delete records for post first so we don't have referential integrity errors
 	if err := api.DeleteRecordsForPost(ctx, id); err != nil {
 		return err
 	}
 	if err := api.postPersister.DeletePost(ctx, id); err != nil {
-		return model.NewErrors(0, err)
+		return NewErrors(0, err)
 	}
 	if post.RecordsKey != "" {
 		api.deleteRecordsData(ctx, post.RecordsKey)

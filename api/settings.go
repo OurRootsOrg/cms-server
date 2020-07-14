@@ -18,9 +18,9 @@ func (api API) GetSettings(ctx context.Context) (*model.Settings, error) {
 			}
 			err = nil
 		} else {
-			return nil, model.NewErrors(0, err)
+			return nil, NewErrors(0, err)
 		}
-		return nil, model.NewErrors(http.StatusInternalServerError, err)
+		return nil, NewErrors(http.StatusInternalServerError, err)
 	}
 	return settings, nil
 }
@@ -29,12 +29,12 @@ func (api API) GetSettings(ctx context.Context) (*model.Settings, error) {
 func (api API) UpdateSettings(ctx context.Context, in model.Settings) (*model.Settings, error) {
 	err := api.validate.Struct(in)
 	if err != nil {
-		return nil, model.NewErrors(http.StatusBadRequest, err)
+		return nil, NewErrors(http.StatusBadRequest, err)
 	}
 
 	settings, e := api.settingsPersister.UpsertSettings(ctx, in)
 	if e != nil {
-		return nil, model.NewErrors(0, e)
+		return nil, NewErrors(0, e)
 	}
 	return settings, nil
 }

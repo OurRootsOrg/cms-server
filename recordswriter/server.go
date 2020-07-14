@@ -64,7 +64,7 @@ func processMessage(ctx context.Context, ap *api.API, rawMsg []byte) error {
 	bucket, err := ap.OpenBucket(ctx)
 	if err != nil {
 		log.Printf("[ERROR] OpenBucket %v\n", err)
-		return model.NewErrors(http.StatusInternalServerError, err)
+		return api.NewErrors(http.StatusInternalServerError, err)
 	}
 	defer bucket.Close()
 
@@ -72,13 +72,13 @@ func processMessage(ctx context.Context, ap *api.API, rawMsg []byte) error {
 	bs, err := bucket.ReadAll(ctx, post.RecordsKey)
 	if err != nil {
 		log.Printf("[ERROR] ReadAll %v\n", err)
-		return model.NewErrors(http.StatusInternalServerError, err)
+		return api.NewErrors(http.StatusInternalServerError, err)
 	}
 	var datas []map[string]string
 	err = json.Unmarshal(bs, &datas)
 	if err != nil {
 		log.Printf("[ERROR] Unmarshal datas %v\n", err)
-		return model.NewErrors(http.StatusInternalServerError, err)
+		return api.NewErrors(http.StatusInternalServerError, err)
 	}
 
 	// set up workers

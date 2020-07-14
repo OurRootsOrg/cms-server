@@ -18,7 +18,7 @@ func (api API) GetCategories(ctx context.Context /* filter/search criteria */) (
 	// TODO: handle search criteria and paged results
 	cols, err := api.categoryPersister.SelectCategories(ctx)
 	if err != nil {
-		return nil, model.NewErrors(0, err)
+		return nil, NewErrors(0, err)
 	}
 	return &CategoryResult{Categories: cols}, nil
 }
@@ -27,7 +27,7 @@ func (api API) GetCategories(ctx context.Context /* filter/search criteria */) (
 func (api API) GetCategoriesByID(ctx context.Context, ids []uint32) ([]model.Category, error) {
 	cats, err := api.categoryPersister.SelectCategoriesByID(ctx, ids)
 	if err != nil {
-		return nil, model.NewErrors(0, err)
+		return nil, NewErrors(0, err)
 	}
 	return cats, nil
 }
@@ -36,7 +36,7 @@ func (api API) GetCategoriesByID(ctx context.Context, ids []uint32) ([]model.Cat
 func (api API) GetCategory(ctx context.Context, id uint32) (*model.Category, error) {
 	category, err := api.categoryPersister.SelectOneCategory(ctx, id)
 	if err != nil {
-		return nil, model.NewErrors(0, err)
+		return nil, NewErrors(0, err)
 	}
 	return category, nil
 }
@@ -45,11 +45,11 @@ func (api API) GetCategory(ctx context.Context, id uint32) (*model.Category, err
 func (api API) AddCategory(ctx context.Context, in model.CategoryIn) (*model.Category, error) {
 	err := api.validate.Struct(in)
 	if err != nil {
-		return nil, model.NewErrors(http.StatusBadRequest, err)
+		return nil, NewErrors(http.StatusBadRequest, err)
 	}
 	category, e := api.categoryPersister.InsertCategory(ctx, in)
 	if err != nil {
-		return nil, model.NewErrors(0, e)
+		return nil, NewErrors(0, e)
 	}
 	return category, nil
 }
@@ -58,11 +58,11 @@ func (api API) AddCategory(ctx context.Context, in model.CategoryIn) (*model.Cat
 func (api API) UpdateCategory(ctx context.Context, id uint32, in model.Category) (*model.Category, error) {
 	err := api.validate.Struct(in)
 	if err != nil {
-		return nil, model.NewErrors(http.StatusBadRequest, err)
+		return nil, NewErrors(http.StatusBadRequest, err)
 	}
 	category, err := api.categoryPersister.UpdateCategory(ctx, id, in)
 	if err != nil {
-		return nil, model.NewErrors(0, err)
+		return nil, NewErrors(0, err)
 	}
 	return category, nil
 }
@@ -71,7 +71,7 @@ func (api API) UpdateCategory(ctx context.Context, id uint32, in model.Category)
 func (api API) DeleteCategory(ctx context.Context, id uint32) error {
 	err := api.categoryPersister.DeleteCategory(ctx, id)
 	if err != nil {
-		return model.NewErrors(0, err)
+		return NewErrors(0, err)
 	}
 	return nil
 }

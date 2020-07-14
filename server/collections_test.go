@@ -70,7 +70,7 @@ func TestGetAllCollections(t *testing.T) {
 
 	// error result
 	am.Result = (*api.CollectionResult)(nil)
-	am.Errors = model.NewErrors(http.StatusInternalServerError, assert.AnError)
+	am.Errors = api.NewErrors(http.StatusInternalServerError, assert.AnError)
 	request, _ = http.NewRequest("GET", "/collections", nil)
 	response = httptest.NewRecorder()
 	r.ServeHTTP(response, request)
@@ -85,7 +85,7 @@ func TestGetAllCollections(t *testing.T) {
 	}
 	assert.NotNil(t, errRet)
 	assert.Equal(t, 1, len(errRet))
-	assert.Equal(t, am.Errors.(*model.Errors).Errs(), errRet)
+	assert.Equal(t, am.Errors.(*api.Errors).Errs(), errRet)
 }
 func TestGetCollection(t *testing.T) {
 	am := &api.ApiMock{}
@@ -114,7 +114,7 @@ func TestGetCollection(t *testing.T) {
 
 	collection = nil
 	am.Result = collection
-	am.Errors = model.NewErrorsFromError(model.NewError(model.ErrNotFound, "1"))
+	am.Errors = api.NewErrorsFromError(model.NewError(model.ErrNotFound, "1"))
 
 	request, _ = http.NewRequest("GET", "/collections/1", nil)
 	response = httptest.NewRecorder()
@@ -130,7 +130,7 @@ func TestGetCollection(t *testing.T) {
 	}
 	assert.NotNil(t, errRet)
 	assert.Equal(t, 1, len(errRet))
-	assert.Equal(t, am.Errors.(*model.Errors).Errs(), errRet)
+	assert.Equal(t, am.Errors.(*api.Errors).Errs(), errRet)
 }
 
 func TestPostCollection(t *testing.T) {

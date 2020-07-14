@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log"
 	"math"
 	"net/http"
@@ -259,10 +260,94 @@ func pingElasticsearch(es *elasticsearch.Client) error {
 	return nil
 }
 
-// func checkErr(err error) error {
-// 	e, ok := err.(model.Error)
-// 	if ok {
-// 		return model.NewErrorsFromError(e)
-// 	}
-// 	return model.NewErrors(http.StatusInternalServerError, err)
-// }
+// Errors is an ordered collection of errors
+type Errors struct {
+	errs       []model.Error
+	httpStatus int
+}
+
+// NewErrorsFromError builds an Errors collection from a `*model.Error`
+func NewErrorsFromError(e *model.Error) *Errors {
+	var httpStatus int
+	switch e.Code {
+	case model.ErrBadReference:
+		httpStatus = http.StatusBadRequest
+	case model.ErrConcurrentUpdate:
+		httpStatus = http.StatusConflict
+	case model.ErrNotFound:
+		httpStatus = http.StatusNotFound
+	case model.ErrRequired:
+		httpStatus = http.StatusBadRequest
+	case model.ErrOther:
+		httpStatus = http.StatusInternalServerError
+	default: // Shouldn't hit this unless someone adds a new code
+		log.Printf("[INFO] Encountered unexpected error code: %s", e.Code)
+		httpStatus = http.StatusInternalServerError
+	}
+
+	return &Errors{
+		errs:       []model.Error{*e},
+		httpStatus: httpStatus,
+	}
+}
+
+// NewErrors builds an Errors collection from an `error`, which may actually be a ValidationErrors collection
+// or a `model.Error`
+func NewErrors(httpStatus int, err error) *Errors {
+	var e *model.Error
+	var isModelError bool
+	e, isModelError = err.(*model.Error)
+	if !isModelError {
+		e1, ok := err.(model.Error)
+		if ok {
+			e = &e1
+			isModelError = true
+		}
+	}
+	if httpStatus <= 0 && !isModelError {
+		log.Printf("[INFO] Warning httpStatus = %d and err is not a model.Error: %#v", httpStatus, err)
+		httpStatus = http.StatusInternalServerError
+	}
+	if isModelError {
+		// Note that this ignores `httpStatus`
+		return NewErrorsFromError(e)
+	}
+
+	errors := Errors{
+		errs:       make([]model.Error, 0),
+		httpStatus: httpStatus,
+	}
+
+	if ves, ok := err.(validator.ValidationErrors); ok {
+		for _, fe := range ves {
+			if fe.Tag() == "required" {
+				name := strings.SplitN(fe.Namespace(), ".", 2)
+				// log.Printf("name: %v", name)
+				errors.errs = append(errors.errs, *model.NewError(model.ErrRequired, name[1]))
+			} else {
+				errors.errs = append(errors.errs, *model.NewError(model.ErrOther, fmt.Sprintf("Key: '%s' Error: Field validation for '%s' failed on the '%s' tag", fe.Namespace(), fe.Field(), fe.Tag())))
+			}
+		}
+	} else {
+		errors.errs = append(errors.errs, *model.NewError(model.ErrOther, err.Error()))
+	}
+	return &errors
+}
+
+// HTTPStatus returns the HTTP status code
+func (e Errors) HTTPStatus() int {
+	return e.httpStatus
+}
+
+// Errs returns the slice of model.Error structs
+func (e Errors) Errs() []model.Error {
+	return e.errs
+}
+
+func (e Errors) Error() string {
+	s := "Errors:"
+	for _, er := range e.Errs() {
+		s += "\n  " + er.Error()
+	}
+	return s
+}

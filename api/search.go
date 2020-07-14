@@ -518,7 +518,7 @@ func (api API) SearchByID(ctx context.Context, id string) (*model.SearchHit, err
 	)
 	if err != nil {
 		log.Printf("[ERROR] SearchByID %v", err)
-		return nil, model.NewErrors(http.StatusInternalServerError, err)
+		return nil, NewErrors(http.StatusInternalServerError, err)
 	}
 	defer res.Body.Close()
 
@@ -526,15 +526,15 @@ func (api API) SearchByID(ctx context.Context, id string) (*model.SearchHit, err
 		var e ESErrorResponse
 		if err := json.NewDecoder(res.Body).Decode(&e); err != nil {
 			log.Printf("Error parsing the response body: %v", err)
-			return nil, model.NewErrors(http.StatusInternalServerError, err)
+			return nil, NewErrors(http.StatusInternalServerError, err)
 		} else {
 			// Print the response status and error information.
 			msg := fmt.Sprintf("[%s] %s: %s id=%s", res.Status(), e.Error.Type, e.Error.Reason, id)
 			log.Println(msg)
 			if res.StatusCode == http.StatusNotFound {
-				return nil, model.NewErrorsFromError(model.NewError(model.ErrNotFound, id))
+				return nil, NewErrorsFromError(model.NewError(model.ErrNotFound, id))
 			}
-			return nil, model.NewErrors(http.StatusInternalServerError, errors.New(msg))
+			return nil, NewErrors(http.StatusInternalServerError, errors.New(msg))
 		}
 	}
 
@@ -542,16 +542,16 @@ func (api API) SearchByID(ctx context.Context, id string) (*model.SearchHit, err
 	var hit ESSearchHit
 	if err := json.NewDecoder(res.Body).Decode(&hit); err != nil {
 		log.Printf("Error parsing the response body: %s\n", err)
-		return nil, model.NewErrors(http.StatusInternalServerError, err)
+		return nil, NewErrors(http.StatusInternalServerError, err)
 	}
 	if !hit.Found {
 		log.Printf("[ERROR] record ID %s not found\n", id)
-		return nil, model.NewErrorsFromError(model.NewError(model.ErrNotFound, id))
+		return nil, NewErrorsFromError(model.NewError(model.ErrNotFound, id))
 	}
 	hitData, err := getHitData(hit)
 	if err != nil {
 		log.Printf("[ERROR] getting hit data %v\n", err)
-		return nil, model.NewErrors(http.StatusInternalServerError, err)
+		return nil, NewErrors(http.StatusInternalServerError, err)
 	}
 
 	// read record and collection
@@ -588,14 +588,14 @@ func (api API) SearchDeleteByPost(ctx context.Context, id uint32) error {
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(search); err != nil {
 		log.Printf("[ERROR] encoding delete by post query %v\n", err)
-		return model.NewErrors(http.StatusInternalServerError, err)
+		return NewErrors(http.StatusInternalServerError, err)
 	}
 	res, err := api.es.DeleteByQuery([]string{"records"}, &buf,
 		api.es.DeleteByQuery.WithContext(ctx),
 	)
 	if err != nil {
 		log.Printf("[ERROR] SearchDeleteByPost %v", err)
-		return model.NewErrors(http.StatusInternalServerError, err)
+		return NewErrors(http.StatusInternalServerError, err)
 	}
 	defer res.Body.Close()
 	return nil
@@ -607,7 +607,7 @@ func (api API) SearchDeleteByID(ctx context.Context, id string) error {
 	)
 	if err != nil {
 		log.Printf("[ERROR] DeleteByID %v", err)
-		return model.NewErrors(http.StatusInternalServerError, err)
+		return NewErrors(http.StatusInternalServerError, err)
 	}
 	defer res.Body.Close()
 	return nil
@@ -620,7 +620,7 @@ func (api API) Search(ctx context.Context, req *SearchRequest) (*model.SearchRes
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(search); err != nil {
 		log.Printf("[ERROR] encoding query %v\n", err)
-		return nil, model.NewErrors(http.StatusInternalServerError, err)
+		return nil, NewErrors(http.StatusInternalServerError, err)
 	}
 	log.Printf("[DEBUG] Request=%v Query=%s\n", req, string(buf.Bytes()))
 
@@ -632,7 +632,7 @@ func (api API) Search(ctx context.Context, req *SearchRequest) (*model.SearchRes
 	)
 	if err != nil {
 		log.Printf("[ERROR] Search %v", err)
-		return nil, model.NewErrors(http.StatusInternalServerError, err)
+		return nil, NewErrors(http.StatusInternalServerError, err)
 	}
 	defer res.Body.Close()
 
@@ -640,12 +640,12 @@ func (api API) Search(ctx context.Context, req *SearchRequest) (*model.SearchRes
 		var e ESErrorResponse
 		if err := json.NewDecoder(res.Body).Decode(&e); err != nil {
 			log.Printf("Error parsing the response body: %v", err)
-			return nil, model.NewErrors(http.StatusInternalServerError, err)
+			return nil, NewErrors(http.StatusInternalServerError, err)
 		} else {
 			// Print the response status and error information.
 			msg := fmt.Sprintf("[%s] %s: %s", res.Status(), e.Error.Type, e.Error.Reason)
 			log.Println(msg)
-			return nil, model.NewErrors(http.StatusInternalServerError, errors.New(msg))
+			return nil, NewErrors(http.StatusInternalServerError, errors.New(msg))
 		}
 	}
 
@@ -653,7 +653,7 @@ func (api API) Search(ctx context.Context, req *SearchRequest) (*model.SearchRes
 	var r ESSearchResponse
 	if err := json.NewDecoder(res.Body).Decode(&r); err != nil {
 		log.Printf("Error parsing the response body: %s\n", err)
-		return nil, model.NewErrors(http.StatusInternalServerError, err)
+		return nil, NewErrors(http.StatusInternalServerError, err)
 	}
 	var hitDatas []HitData
 	var recordIDs []uint32
@@ -661,7 +661,7 @@ func (api API) Search(ctx context.Context, req *SearchRequest) (*model.SearchRes
 	for _, hit := range r.Hits.Hits {
 		hitData, err := getHitData(hit)
 		if err != nil {
-			return nil, model.NewErrors(http.StatusInternalServerError, err)
+			return nil, NewErrors(http.StatusInternalServerError, err)
 		}
 		hitDatas = append(hitDatas, *hitData)
 		recordIDs = append(recordIDs, hitData.RecordID)
@@ -702,7 +702,7 @@ func (api API) Search(ctx context.Context, req *SearchRequest) (*model.SearchRes
 		}
 		if !found {
 			msg := fmt.Sprintf("[ERROR] record %d not found\n", hitData.RecordID)
-			return nil, model.NewErrors(http.StatusInternalServerError, errors.New(msg))
+			return nil, NewErrors(http.StatusInternalServerError, errors.New(msg))
 		}
 
 		// get collection
@@ -717,7 +717,7 @@ func (api API) Search(ctx context.Context, req *SearchRequest) (*model.SearchRes
 		}
 		if !found {
 			msg := fmt.Sprintf("[ERROR] collection %d not found\n", hitData.CollectionID)
-			return nil, model.NewErrors(http.StatusInternalServerError, errors.New(msg))
+			return nil, NewErrors(http.StatusInternalServerError, errors.New(msg))
 		}
 
 		// construct search hit

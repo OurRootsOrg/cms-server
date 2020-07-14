@@ -39,7 +39,7 @@ func TestGetSettings(t *testing.T) {
 
 	settings = nil
 	am.Result = settings
-	am.Errors = model.NewErrorsFromError(model.NewError(model.ErrNotFound, ""))
+	am.Errors = api.NewErrorsFromError(model.NewError(model.ErrNotFound, ""))
 
 	request, _ = http.NewRequest("GET", "/settings", nil)
 	response = httptest.NewRecorder()
@@ -55,7 +55,7 @@ func TestGetSettings(t *testing.T) {
 	}
 	assert.NotNil(t, errRet)
 	assert.Equal(t, 1, len(errRet))
-	assert.Equal(t, am.Errors.(*model.Errors).Errs(), errRet)
+	assert.Equal(t, am.Errors.(*api.Errors).Errs(), errRet)
 }
 
 func TestPutSettings(t *testing.T) {

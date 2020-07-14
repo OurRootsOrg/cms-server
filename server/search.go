@@ -21,7 +21,7 @@ var decoder = schema.NewDecoder()
 // @id search
 // @produce application/json
 // @success 200 {array} model.SearchResult "OK"
-// @failure 500 {object} model.Errors "Server error"
+// @failure 500 {object} api.Errors "Server error"
 // TODO need to specify possible query parameters
 func (app App) Search(w http.ResponseWriter, req *http.Request) {
 	var searchRequest api.SearchRequest
@@ -55,8 +55,8 @@ func (app App) Search(w http.ResponseWriter, req *http.Request) {
 // @Param id path string true "Search Result ID"
 // @produce application/json
 // @success 200 {object} model.SearchHit "OK"
-// @failure 404 {object} model.Errors "Not found"
-// @failure 500 {object} model.Errors "Server error"
+// @failure 404 {object} api.Errors "Not found"
+// @failure 500 {object} api.Errors "Server error"
 func (app App) SearchByID(w http.ResponseWriter, req *http.Request) {
 	vars := mux.Vars(req)
 

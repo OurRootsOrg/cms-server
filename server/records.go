@@ -15,7 +15,7 @@ import (
 // @id getRecords
 // @produce application/json
 // @success 200 {array} model.Record "OK"
-// @failure 500 {object} model.Errors "Server error"
+// @failure 500 {object} api.Errors "Server error"
 // @Security OAuth2Implicit[cms,openid,profile,email]
 // @Security OAuth2AuthCode[cms,openid,profile,email]
 func (app App) GetRecords(w http.ResponseWriter, req *http.Request) {

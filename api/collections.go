@@ -19,7 +19,7 @@ func (api API) GetCollections(ctx context.Context /* filter/search criteria */) 
 	// TODO: handle search criteria and paged results
 	cols, err := api.collectionPersister.SelectCollections(ctx)
 	if err != nil {
-		return nil, model.NewErrors(0, err)
+		return nil, NewErrors(0, err)
 	}
 	return &CollectionResult{Collections: cols}, nil
 }
@@ -28,7 +28,7 @@ func (api API) GetCollections(ctx context.Context /* filter/search criteria */) 
 func (api API) GetCollectionsByID(ctx context.Context, ids []uint32) ([]model.Collection, error) {
 	colls, err := api.collectionPersister.SelectCollectionsByID(ctx, ids)
 	if err != nil {
-		return nil, model.NewErrors(0, err)
+		return nil, NewErrors(0, err)
 	}
 	return colls, nil
 }
@@ -37,7 +37,7 @@ func (api API) GetCollectionsByID(ctx context.Context, ids []uint32) ([]model.Co
 func (api API) GetCollection(ctx context.Context, id uint32) (*model.Collection, error) {
 	collection, err := api.collectionPersister.SelectOneCollection(ctx, id)
 	if err != nil {
-		return nil, model.NewErrors(0, err)
+		return nil, NewErrors(0, err)
 	}
 	return collection, nil
 }
@@ -47,11 +47,11 @@ func (api API) AddCollection(ctx context.Context, in model.CollectionIn) (*model
 	err := api.validate.Struct(in)
 	if err != nil {
 		log.Printf("[ERROR] Invalid collection %v", err)
-		return nil, model.NewErrors(http.StatusBadRequest, err)
+		return nil, NewErrors(http.StatusBadRequest, err)
 	}
 	collection, e := api.collectionPersister.InsertCollection(ctx, in)
 	if e != nil {
-		return nil, model.NewErrors(0, e)
+		return nil, NewErrors(0, e)
 	}
 	return collection, nil
 }
@@ -61,11 +61,11 @@ func (api API) UpdateCollection(ctx context.Context, id uint32, in model.Collect
 	err := api.validate.Struct(in)
 	log.Printf("[DEBUG] Collection=%v err=%v\n", in, err)
 	if err != nil {
-		return nil, model.NewErrors(http.StatusBadRequest, err)
+		return nil, NewErrors(http.StatusBadRequest, err)
 	}
 	collection, e := api.collectionPersister.UpdateCollection(ctx, id, in)
 	if e != nil {
-		return nil, model.NewErrors(0, e)
+		return nil, NewErrors(0, e)
 	}
 	return collection, nil
 }
@@ -74,7 +74,7 @@ func (api API) UpdateCollection(ctx context.Context, id uint32, in model.Collect
 func (api API) DeleteCollection(ctx context.Context, id uint32) error {
 	err := api.collectionPersister.DeleteCollection(ctx, id)
 	if err != nil {
-		return model.NewErrors(0, err)
+		return NewErrors(0, err)
 	}
 	return nil
 }
