@@ -8,10 +8,10 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/coreos/go-oidc"
 	"github.com/gorilla/mux"
 	"github.com/ourrootsorg/cms-server/api"
 	"github.com/ourrootsorg/cms-server/model"
+	"github.com/ourrootsorg/go-oidc"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )

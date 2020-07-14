@@ -6,10 +6,10 @@ import (
 	"os"
 	"testing"
 
-	"github.com/coreos/go-oidc"
 	"github.com/ourrootsorg/cms-server/api"
 	"github.com/ourrootsorg/cms-server/model"
 	"github.com/ourrootsorg/cms-server/persist"
+	"github.com/ourrootsorg/go-oidc"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"gocloud.dev/postgres"

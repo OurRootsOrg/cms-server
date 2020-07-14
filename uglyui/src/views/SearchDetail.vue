@@ -16,9 +16,14 @@ import store from "@/store";
 
 export default {
   beforeRouteEnter(routeTo, routeFrom, next) {
-    store.dispatch("searchGetResult", routeTo.params.rid).then(() => {
-      next();
-    });
+    store
+      .dispatch("searchGetResult", routeTo.params.rid)
+      .then(() => {
+        next();
+      })
+      .catch(() => {
+        next("/");
+      });
   },
   computed: mapState(["search"])
 };

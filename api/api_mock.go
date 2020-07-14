@@ -3,8 +3,8 @@ package api
 import (
 	"context"
 
-	"github.com/coreos/go-oidc"
 	"github.com/ourrootsorg/cms-server/model"
+	"github.com/ourrootsorg/go-oidc"
 )
 
 type ApiMock struct {

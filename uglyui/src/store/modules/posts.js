@@ -46,6 +46,7 @@ export const actions = {
       })
       .catch(error => {
         const notification = {
+          error,
           type: "error",
           message: "There was a problem creating your post: " + error.message
         };
@@ -66,10 +67,12 @@ export const actions = {
       })
       .catch(error => {
         const notification = {
+          error,
           type: "error",
           message: "There was a problem updating your post: " + error.message
         };
         dispatch("notificationsAdd", notification, { root: true });
+        throw error;
       });
   },
   postsDelete({ commit, dispatch }, id) {
@@ -84,10 +87,12 @@ export const actions = {
       })
       .catch(error => {
         const notification = {
+          error,
           type: "error",
           message: "There was a problem deleting the post: " + error.message
         };
         dispatch("notificationsAdd", notification, { root: true });
+        throw error;
       });
   },
   postsGetAll({ commit, dispatch }) {
@@ -98,10 +103,12 @@ export const actions = {
       })
       .catch(error => {
         const notification = {
+          error,
           type: "error",
-          message: "There was a problem fetching posts: " + error.message
+          message: "There was a problem reading posts: " + error.message
         };
         dispatch("notificationsAdd", notification, { root: true });
+        throw error;
       });
   },
   postsGetOne({ commit, dispatch }, id) {
@@ -112,10 +119,12 @@ export const actions = {
       })
       .catch(error => {
         const notification = {
+          error,
           type: "error",
-          message: "There was a problem fetching the post: " + error.message
+          message: "There was a problem reading post: " + id + " " + error.message
         };
         dispatch("notificationsAdd", notification, { root: true });
+        throw error;
       });
   }
 };

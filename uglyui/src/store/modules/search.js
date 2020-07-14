@@ -24,10 +24,12 @@ export const actions = {
       })
       .catch(error => {
         const notification = {
+          error,
           type: "error",
           message: "There was a problem during search: " + error.message
         };
         dispatch("notificationsAdd", notification, { root: true });
+        throw error;
       });
   },
   searchGetResult({ commit, dispatch }, id) {
@@ -37,10 +39,12 @@ export const actions = {
       })
       .catch(error => {
         const notification = {
+          error,
           type: "error",
           message: "There was a problem getting the search result: " + error.message
         };
         dispatch("notificationsAdd", notification, { root: true });
+        throw error;
       });
   }
 };

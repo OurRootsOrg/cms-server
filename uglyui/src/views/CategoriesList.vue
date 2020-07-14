@@ -31,9 +31,13 @@ import Tabulator from "../components/Tabulator";
 export default {
   components: { Tabulator },
   beforeRouteEnter(routeTo, routeFrom, next) {
-    Promise.all([store.dispatch("categoriesGetAll"), store.dispatch("collectionsGetAll")]).then(() => {
-      next();
-    });
+    Promise.all([store.dispatch("categoriesGetAll"), store.dispatch("collectionsGetAll")])
+      .then(() => {
+        next();
+      })
+      .catch(() => {
+        next("/");
+      });
   },
   data() {
     return {

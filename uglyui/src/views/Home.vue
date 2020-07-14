@@ -10,20 +10,15 @@
       server to wake up. You won't experience the 30-second delay in production.
     </p>
     <!-- Check that the SDK client is not currently loading before accessing is methods -->
-    <div v-if="!$auth.loading">
-      <div v-if="$auth.user">
-        <v-avatar><img :src="$auth.user.picture"/></v-avatar>
-        <h2>{{ $auth.user.name }}</h2>
-        <p>{{ $auth.user.email }}</p>
-      </div>
-      <!--      <div>-->
-      <!--        <pre>{{ JSON.stringify($auth.user, null, 2) }}</pre>-->
-      <!--      </div>-->
-      <!-- show login when not authenticated -->
-      <v-btn color="primary" v-if="!$auth.isAuthenticated" @click="login">Log in</v-btn>
-      <!-- show logout when authenticated -->
-      <v-btn v-if="$auth.isAuthenticated" @click="logout">Log out</v-btn>
+    <div v-if="user.user">
+      <v-avatar v-if="user.user.picture"><img :src="user.user.picture"/></v-avatar>
+      <h2>{{ user.user.name }}</h2>
+      <p>{{ user.user.email }}</p>
     </div>
+    <!-- show login when not authenticated -->
+    <v-btn color="primary" v-if="!user.user" @click="login">Log in</v-btn>
+    <!-- show logout when authenticated -->
+    <v-btn v-if="!!user.user" @click="logout">Log out</v-btn>
     <br />
     <h2>Roadmap for end of September</h2>
     <ul>
@@ -64,18 +59,20 @@
 </template>
 
 <script>
+import Auth from "@/services/Auth";
+import { mapState } from "vuex";
+
 export default {
   name: "Home",
+  computed: mapState(["user"]),
   methods: {
     // Log the user in
     login() {
-      this.$auth.loginWithRedirect();
+      Auth.login();
     },
     // Log the user out
     logout() {
-      this.$auth.logout({
-        returnTo: window.location.origin
-      });
+      Auth.logout();
     }
   }
 };

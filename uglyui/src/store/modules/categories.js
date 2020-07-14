@@ -46,6 +46,7 @@ export const actions = {
       })
       .catch(error => {
         const notification = {
+          error,
           type: "error",
           message: "There was a problem creating your category: " + error.message
         };
@@ -66,10 +67,12 @@ export const actions = {
       })
       .catch(error => {
         const notification = {
+          error,
           type: "error",
           message: "There was a problem updating your category: " + error.message
         };
         dispatch("notificationsAdd", notification, { root: true });
+        throw error;
       });
   },
   categoriesGetAll({ commit, dispatch }) {
@@ -80,17 +83,29 @@ export const actions = {
       })
       .catch(error => {
         const notification = {
+          error,
           type: "error",
-          message: "There was a problem fetching categories: " + error.message
+          message: "There was a problem reading categories: " + error.message
         };
         dispatch("notificationsAdd", notification, { root: true });
+        throw error;
       });
   },
-  categoriesGetOne({ commit }, id) {
-    return Server.categoriesGetOne(id).then(response => {
-      commit("CATEGORY_SET", response.data);
-      return response.data;
-    });
+  categoriesGetOne({ commit, dispatch }, id) {
+    return Server.categoriesGetOne(id)
+      .then(response => {
+        commit("CATEGORY_SET", response.data);
+        return response.data;
+      })
+      .catch(error => {
+        const notification = {
+          error,
+          type: "error",
+          message: "There was a problem reading category: " + id + " " + error.message
+        };
+        dispatch("notificationsAdd", notification, { root: true });
+        throw error;
+      });
   },
   categoriesDelete({ commit, dispatch }, id) {
     return Server.categoriesDelete(id)
@@ -104,10 +119,12 @@ export const actions = {
       })
       .catch(error => {
         const notification = {
+          error,
           type: "error",
           message: "There was a problem deleting the category: " + error.message
         };
         dispatch("notificationsAdd", notification, { root: true });
+        throw error;
       });
   }
 };

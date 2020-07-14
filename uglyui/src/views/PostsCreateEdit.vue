@@ -146,15 +146,19 @@ export default {
     } else {
       routes.push(store.dispatch("collectionsGetAll"));
     }
-    Promise.all(routes).then(() => {
-      if (routeTo.params && routeTo.params.pid) {
-        store.dispatch("collectionsGetOne", store.state.posts.post.collection).then(() => {
+    Promise.all(routes)
+      .then(() => {
+        if (routeTo.params && routeTo.params.pid) {
+          store.dispatch("collectionsGetOne", store.state.posts.post.collection).then(() => {
+            next();
+          });
+        } else {
           next();
-        });
-      } else {
-        next();
-      }
-    });
+        }
+      })
+      .catch(() => {
+        next("/");
+      });
   },
   created() {
     if (this.$route.params && this.$route.params.pid) {

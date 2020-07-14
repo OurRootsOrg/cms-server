@@ -19,10 +19,12 @@ export const actions = {
       })
       .catch(error => {
         const notification = {
+          error,
           type: "error",
-          message: "There was a problem fetching records: " + error.message
+          message: "There was a problem reading records: " + error.message
         };
         dispatch("notificationsAdd", notification, { root: true });
+        throw error;
       });
   }
 };

@@ -13,7 +13,7 @@ import (
 
 	"github.com/cenkalti/backoff/v4"
 
-	"github.com/coreos/go-oidc"
+	"github.com/ourrootsorg/go-oidc"
 	"github.com/streadway/amqp"
 
 	"github.com/elastic/go-elasticsearch/v7"
