@@ -192,16 +192,16 @@ func serverError(w http.ResponseWriter, err error) {
 
 // ErrorResponse returns an error response
 func ErrorResponse(w http.ResponseWriter, code int, message string) {
-	ErrorsResponse(w, api.NewErrors(code, errors.New(message)))
+	ErrorsResponse(w, api.NewError(errors.New(message)))
 }
 
 // ErrorsResponse returns an HTTP response from a api.Errors
 func ErrorsResponse(w http.ResponseWriter, err error) {
-	var errors *api.Errors
+	var errors *api.Error
 	var ok bool
-	if errors, ok = err.(*api.Errors); !ok {
+	if errors, ok = err.(*api.Error); !ok {
 		log.Printf("[INFO] Unexpectedly received an `error` instead of a `*api.Errors`: '%v'", err)
-		errors = api.NewErrors(http.StatusInternalServerError, err)
+		errors = api.NewError(err)
 	}
 	w.Header().Set("Content-Type", contentType)
 	w.WriteHeader(errors.HTTPStatus())
@@ -217,7 +217,7 @@ func getIDFromRequest(req *http.Request) (uint32, error) {
 	vars := mux.Vars(req)
 	catID, err := strconv.Atoi(vars["id"])
 	if err != nil || catID <= 0 {
-		return 0, api.NewErrors(http.StatusBadRequest, fmt.Errorf("Bad id '%s': %v", vars["id"], err))
+		return 0, api.NewError(fmt.Errorf("Bad id '%s': %v", vars["id"], err))
 	}
 	return uint32(catID), nil
 }

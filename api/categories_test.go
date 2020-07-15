@@ -86,9 +86,9 @@ func doCategoriesTests(t *testing.T, p model.CategoryPersister) {
 	// Category not found
 	_, err = testApi.GetCategory(context.TODO(), created.ID+99)
 	assert.Error(t, err)
-	assert.IsType(t, &api.Errors{}, err)
-	assert.Len(t, err.(*api.Errors).Errs(), 1)
-	assert.Equal(t, model.ErrNotFound, err.(*api.Errors).Errs()[0].Code, "err.(*api.Errors).Errs()[0]: %#v", err.(*api.Errors).Errs()[0])
+	assert.IsType(t, &api.Error{}, err)
+	assert.Len(t, err.(*api.Error).Errs(), 1)
+	assert.Equal(t, model.ErrNotFound, err.(*api.Error).Errs()[0].Code, "err.(*api.Errors).Errs()[0]: %#v", err.(*api.Error).Errs()[0])
 
 	// Update
 	ret2.Name = "Updated"
@@ -99,17 +99,17 @@ func doCategoriesTests(t *testing.T, p model.CategoryPersister) {
 
 	// Update non-existent
 	_, err = testApi.UpdateCategory(context.TODO(), created.ID+99, *created)
-	assert.IsType(t, &api.Errors{}, err)
-	assert.Len(t, err.(*api.Errors).Errs(), 1)
-	assert.Equal(t, model.ErrNotFound, err.(*api.Errors).Errs()[0].Code, "err.(*api.Errors).Errs()[0]: %#v", err.(*api.Errors).Errs()[0])
+	assert.IsType(t, &api.Error{}, err)
+	assert.Len(t, err.(*api.Error).Errs(), 1)
+	assert.Equal(t, model.ErrNotFound, err.(*api.Error).Errs()[0].Code, "err.(*api.Errors).Errs()[0]: %#v", err.(*api.Error).Errs()[0])
 
 	// Update with bad LastUpdateTime
 	updated.LastUpdateTime = time.Now().Add(-time.Minute)
 	updated, err = testApi.UpdateCategory(context.TODO(), updated.ID, *updated)
 	if assert.Error(t, err) {
-		assert.IsType(t, &api.Errors{}, err)
-		assert.Len(t, err.(*api.Errors).Errs(), 1)
-		assert.Equal(t, model.ErrConcurrentUpdate, err.(*api.Errors).Errs()[0].Code, "err.(*api.Errors).Errs()[0]: %#v", err.(*api.Errors).Errs()[0])
+		assert.IsType(t, &api.Error{}, err)
+		assert.Len(t, err.(*api.Error).Errs(), 1)
+		assert.Equal(t, model.ErrConcurrentUpdate, err.(*api.Error).Errs()[0].Code, "err.(*api.Errors).Errs()[0]: %#v", err.(*api.Error).Errs()[0])
 	}
 
 	// DELETE
@@ -117,7 +117,7 @@ func doCategoriesTests(t *testing.T, p model.CategoryPersister) {
 	assert.NoError(t, err)
 	_, err = testApi.GetCategory(context.TODO(), created.ID)
 	assert.Error(t, err)
-	assert.IsType(t, &api.Errors{}, err)
-	assert.Len(t, err.(*api.Errors).Errs(), 1)
-	assert.Equal(t, model.ErrNotFound, err.(*api.Errors).Errs()[0].Code, "err.(*api.Errors).Errs()[0]: %#v", err.(*api.Errors).Errs()[0])
+	assert.IsType(t, &api.Error{}, err)
+	assert.Len(t, err.(*api.Error).Errs(), 1)
+	assert.Equal(t, model.ErrNotFound, err.(*api.Error).Errs()[0].Code, "err.(*api.Errors).Errs()[0]: %#v", err.(*api.Error).Errs()[0])
 }

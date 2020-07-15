@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"log"
 	"math"
-	"net/http"
 	"net/url"
 	"os"
 	"reflect"
@@ -64,7 +63,7 @@ func processMessage(ctx context.Context, ap *api.API, rawMsg []byte) error {
 	bucket, err := ap.OpenBucket(ctx)
 	if err != nil {
 		log.Printf("[ERROR] OpenBucket %v\n", err)
-		return api.NewErrors(http.StatusInternalServerError, err)
+		return api.NewError(err)
 	}
 	defer bucket.Close()
 
@@ -72,13 +71,13 @@ func processMessage(ctx context.Context, ap *api.API, rawMsg []byte) error {
 	bs, err := bucket.ReadAll(ctx, post.RecordsKey)
 	if err != nil {
 		log.Printf("[ERROR] ReadAll %v\n", err)
-		return api.NewErrors(http.StatusInternalServerError, err)
+		return api.NewError(err)
 	}
 	var datas []map[string]string
 	err = json.Unmarshal(bs, &datas)
 	if err != nil {
 		log.Printf("[ERROR] Unmarshal datas %v\n", err)
-		return api.NewErrors(http.StatusInternalServerError, err)
+		return api.NewError(err)
 	}
 
 	// set up workers

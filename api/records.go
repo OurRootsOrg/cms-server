@@ -3,7 +3,6 @@ package api
 import (
 	"context"
 	"log"
-	"net/http"
 
 	"github.com/ourrootsorg/cms-server/model"
 )
@@ -19,7 +18,7 @@ func (api API) GetRecordsForPost(ctx context.Context, postID uint32) (*RecordRes
 	// TODO: handle search criteria and paged results
 	records, err := api.recordPersister.SelectRecordsForPost(ctx, postID)
 	if err != nil {
-		return nil, NewErrors(0, err)
+		return nil, NewError(err)
 	}
 	return &RecordResult{Records: records}, nil
 }
@@ -28,7 +27,7 @@ func (api API) GetRecordsForPost(ctx context.Context, postID uint32) (*RecordRes
 func (api API) GetRecordsByID(ctx context.Context, ids []uint32) ([]model.Record, error) {
 	records, err := api.recordPersister.SelectRecordsByID(ctx, ids)
 	if err != nil {
-		return nil, NewErrors(0, err)
+		return nil, NewError(err)
 	}
 	return records, nil
 }
@@ -37,7 +36,7 @@ func (api API) GetRecordsByID(ctx context.Context, ids []uint32) ([]model.Record
 func (api API) GetRecord(ctx context.Context, id uint32) (*model.Record, error) {
 	record, err := api.recordPersister.SelectOneRecord(ctx, id)
 	if err != nil {
-		return nil, NewErrors(0, err)
+		return nil, NewError(err)
 	}
 	return record, nil
 }
@@ -47,12 +46,12 @@ func (api API) AddRecord(ctx context.Context, in model.RecordIn) (*model.Record,
 	err := api.validate.Struct(in)
 	if err != nil {
 		log.Printf("[ERROR] Invalid record %v", err)
-		return nil, NewErrors(http.StatusBadRequest, err)
+		return nil, NewError(err)
 	}
 	// insert
 	record, e := api.recordPersister.InsertRecord(ctx, in)
 	if e != nil {
-		return nil, NewErrors(0, e)
+		return nil, NewError(e)
 	}
 	return record, nil
 }
@@ -61,11 +60,11 @@ func (api API) AddRecord(ctx context.Context, in model.RecordIn) (*model.Record,
 func (api API) UpdateRecord(ctx context.Context, id uint32, in model.Record) (*model.Record, error) {
 	err := api.validate.Struct(in)
 	if err != nil {
-		return nil, NewErrors(http.StatusBadRequest, err)
+		return nil, NewError(err)
 	}
 	record, e := api.recordPersister.UpdateRecord(ctx, id, in)
 	if e != nil {
-		return nil, NewErrors(0, e)
+		return nil, NewError(e)
 	}
 	return record, nil
 }
@@ -74,7 +73,7 @@ func (api API) UpdateRecord(ctx context.Context, id uint32, in model.Record) (*m
 func (api API) DeleteRecord(ctx context.Context, id uint32) error {
 	err := api.recordPersister.DeleteRecord(ctx, id)
 	if err != nil {
-		return NewErrors(0, err)
+		return NewError(err)
 	}
 	return nil
 }
@@ -83,7 +82,7 @@ func (api API) DeleteRecord(ctx context.Context, id uint32) error {
 func (api API) DeleteRecordsForPost(ctx context.Context, postID uint32) error {
 	err := api.recordPersister.DeleteRecordsForPost(ctx, postID)
 	if err != nil {
-		return NewErrors(0, err)
+		return NewError(err)
 	}
 	return nil
 }

@@ -3,7 +3,6 @@ package api
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"time"
 
 	"gocloud.dev/blob"
@@ -24,7 +23,7 @@ type ContentResult struct {
 func (api API) PostContentRequest(ctx context.Context, contentRequest ContentRequest) (*ContentResult, error) {
 	bucket, err := api.OpenBucket(ctx)
 	if err != nil {
-		return nil, NewErrors(http.StatusInternalServerError, err)
+		return nil, NewError(err)
 	}
 	defer bucket.Close()
 
@@ -36,7 +35,7 @@ func (api API) PostContentRequest(ctx context.Context, contentRequest ContentReq
 		ContentType: contentRequest.ContentType,
 	})
 	if err != nil {
-		return nil, NewErrors(http.StatusInternalServerError, err)
+		return nil, NewError(err)
 	}
 	return &ContentResult{signedURL, key}, nil
 }
@@ -44,14 +43,14 @@ func (api API) PostContentRequest(ctx context.Context, contentRequest ContentReq
 func (api API) GetContent(ctx context.Context, key string) ([]byte, error) {
 	bucket, err := api.OpenBucket(ctx)
 	if err != nil {
-		return nil, NewErrors(http.StatusInternalServerError, err)
+		return nil, NewError(err)
 	}
 	defer bucket.Close()
 
 	content, err := bucket.ReadAll(ctx, key)
 
 	if err != nil {
-		return nil, NewErrors(http.StatusNotFound, err)
+		return nil, NewError(err)
 	}
 	return content, nil
 }

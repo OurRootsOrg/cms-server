@@ -40,7 +40,7 @@ type Error struct {
 	Message string    `json:"message"`
 }
 
-// NewError build an error. If the error code is unknown it is set to ErrOther.
+// NewError builds an error. If the error code is unknown it is set to ErrOther.
 func NewError(code ErrorCode, params ...string) *Error {
 	msg, ok := errorMessages[code]
 	if !ok {

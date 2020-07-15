@@ -105,9 +105,9 @@ func TestPublisher(t *testing.T) {
 		searchID := strconv.Itoa(int(testRecord.ID))
 		_, err := testAPI.SearchByID(ctx, searchID)
 		assert.Error(t, err)
-		assert.IsType(t, &api.Errors{}, err)
-		assert.Len(t, err.(*api.Errors).Errs(), 1)
-		assert.Equal(t, model.ErrNotFound, err.(*api.Errors).Errs()[0].Code, "err.(*api.Errors).Errs()[0]: %#v", err.(*api.Errors).Errs()[0])
+		assert.IsType(t, &api.Error{}, err)
+		assert.Len(t, err.(*api.Error).Errs(), 1)
+		assert.Equal(t, model.ErrNotFound, err.(*api.Error).Errs()[0].Code, "err.(*api.Errors).Errs()[0]: %#v", err.(*api.Error).Errs()[0])
 	}
 
 	// delete post

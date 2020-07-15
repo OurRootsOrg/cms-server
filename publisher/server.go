@@ -44,7 +44,7 @@ func indexPost(ctx context.Context, ap *api.API, msg model.PublisherMsg) error {
 	// index post
 	if err := ap.IndexPost(ctx, post); err != nil {
 		log.Printf("[ERROR] Error calling IndexPost on %d: %v", post.ID, err)
-		return api.NewErrors(http.StatusInternalServerError, err)
+		return api.NewError(err)
 	}
 
 	// update post.recordsStatus = Published
@@ -71,7 +71,7 @@ func unindexPost(ctx context.Context, ap *api.API, msg model.PublisherMsg) error
 
 	if err := ap.SearchDeleteByPost(ctx, msg.PostID); err != nil {
 		log.Printf("[ERROR] Error calling SearchDeleteByPost on %d: %v", msg.PostID, err)
-		return api.NewErrors(http.StatusInternalServerError, err)
+		return api.NewError(err)
 	}
 
 	// update post.recordsStatus = Draft
@@ -100,7 +100,7 @@ func processMessage(ctx context.Context, ap *api.API, rawMsg []byte) error {
 	case model.PublisherActionUnindex:
 		return unindexPost(ctx, ap, msg)
 	default:
-		return api.NewErrors(http.StatusInternalServerError, fmt.Errorf("Unknown action %s", msg.Action))
+		return api.NewError(fmt.Errorf("Unknown action %s", msg.Action))
 	}
 }
 

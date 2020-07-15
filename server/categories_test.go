@@ -71,7 +71,7 @@ func TestGetAllCategories(t *testing.T) {
 
 	// error result
 	am.Result = (*api.CategoryResult)(nil)
-	am.Errors = api.NewErrors(http.StatusInternalServerError, assert.AnError)
+	am.Errors = api.NewError(assert.AnError)
 	request, _ = http.NewRequest("GET", "/categories", nil)
 	response = httptest.NewRecorder()
 	r.ServeHTTP(response, request)
@@ -86,7 +86,7 @@ func TestGetAllCategories(t *testing.T) {
 	}
 	assert.NotNil(t, errRet)
 	assert.Equal(t, 1, len(errRet))
-	assert.Equal(t, am.Errors.(*api.Errors).Errs(), errRet)
+	assert.Equal(t, am.Errors.(*api.Error).Errs(), errRet)
 }
 func TestGetCategory(t *testing.T) {
 	am := &api.ApiMock{}
@@ -116,7 +116,7 @@ func TestGetCategory(t *testing.T) {
 
 	category = nil
 	am.Result = category
-	am.Errors = api.NewErrorsFromError(model.NewError(model.ErrNotFound, "1"))
+	am.Errors = api.NewError(model.NewError("1"))
 
 	request, _ = http.NewRequest("GET", "/categories/1", nil)
 	response = httptest.NewRecorder()
@@ -132,7 +132,7 @@ func TestGetCategory(t *testing.T) {
 	}
 	assert.NotNil(t, errRet)
 	assert.Equal(t, 1, len(errRet))
-	assert.Equal(t, am.Errors.(*api.Errors).Errs(), errRet)
+	assert.Equal(t, am.Errors.(*api.Error).Errs(), errRet)
 }
 
 func TestPostCategory(t *testing.T) {

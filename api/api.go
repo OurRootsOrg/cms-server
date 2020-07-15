@@ -260,14 +260,14 @@ func pingElasticsearch(es *elasticsearch.Client) error {
 	return nil
 }
 
-// Errors is an ordered collection of errors
-type Errors struct {
+// Error is an ordered collection of errors
+type Error struct {
 	errs       []model.Error
 	httpStatus int
 }
 
-// NewErrorsFromError builds an Errors collection from a `*model.Error`
-func NewErrorsFromError(e *model.Error) *Errors {
+// fromError builds an Errors collection from a `*model.Error`
+func fromError(e *model.Error) *Error {
 	var httpStatus int
 	switch e.Code {
 	case model.ErrBadReference:
@@ -285,15 +285,15 @@ func NewErrorsFromError(e *model.Error) *Errors {
 		httpStatus = http.StatusInternalServerError
 	}
 
-	return &Errors{
+	return &Error{
 		errs:       []model.Error{*e},
 		httpStatus: httpStatus,
 	}
 }
 
-// NewErrors builds an Errors collection from an `error`, which may actually be a ValidationErrors collection
+// NewError builds an Error collection from an `error`, which may actually be a ValidationErrors collection
 // or a `model.Error`
-func NewErrors(httpStatus int, err error) *Errors {
+func NewError(err error) *Error {
 	var e *model.Error
 	var isModelError bool
 	e, isModelError = err.(*model.Error)
@@ -304,21 +304,22 @@ func NewErrors(httpStatus int, err error) *Errors {
 			isModelError = true
 		}
 	}
-	if httpStatus <= 0 && !isModelError {
-		log.Printf("[INFO] Warning httpStatus = %d and err is not a model.Error: %#v", httpStatus, err)
-		httpStatus = http.StatusInternalServerError
-	}
+	// if httpStatus <= 0 && !isModelError {
+	// 	log.Printf("[INFO] Warning httpStatus = %d and err is not a model.Error: %#v", httpStatus, err)
+	// 	httpStatus = http.StatusInternalServerError
+	// }
 	if isModelError {
 		// Note that this ignores `httpStatus`
-		return NewErrorsFromError(e)
+		return fromError(e)
 	}
 
-	errors := Errors{
-		errs:       make([]model.Error, 0),
-		httpStatus: httpStatus,
+	errors := Error{
+		errs: make([]model.Error, 0),
+		// httpStatus: httpStatus,
 	}
 
 	if ves, ok := err.(validator.ValidationErrors); ok {
+		errors.httpStatus = http.StatusBadRequest
 		for _, fe := range ves {
 			if fe.Tag() == "required" {
 				name := strings.SplitN(fe.Namespace(), ".", 2)
@@ -329,22 +330,23 @@ func NewErrors(httpStatus int, err error) *Errors {
 			}
 		}
 	} else {
+		errors.httpStatus = http.StatusInternalServerError
 		errors.errs = append(errors.errs, *model.NewError(model.ErrOther, err.Error()))
 	}
 	return &errors
 }
 
 // HTTPStatus returns the HTTP status code
-func (e Errors) HTTPStatus() int {
+func (e Error) HTTPStatus() int {
 	return e.httpStatus
 }
 
 // Errs returns the slice of model.Error structs
-func (e Errors) Errs() []model.Error {
+func (e Error) Errs() []model.Error {
 	return e.errs
 }
 
-func (e Errors) Error() string {
+func (e Error) Error() string {
 	s := "Errors:"
 	for _, er := range e.Errs() {
 		s += "\n  " + er.Error()

@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"net/http"
 
 	"github.com/ourrootsorg/cms-server/model"
 )
@@ -18,9 +17,9 @@ func (api API) GetSettings(ctx context.Context) (*model.Settings, error) {
 			}
 			err = nil
 		} else {
-			return nil, NewErrors(0, err)
+			return nil, NewError(err)
 		}
-		return nil, NewErrors(http.StatusInternalServerError, err)
+		return nil, NewError(err)
 	}
 	return settings, nil
 }
@@ -29,12 +28,12 @@ func (api API) GetSettings(ctx context.Context) (*model.Settings, error) {
 func (api API) UpdateSettings(ctx context.Context, in model.Settings) (*model.Settings, error) {
 	err := api.validate.Struct(in)
 	if err != nil {
-		return nil, NewErrors(http.StatusBadRequest, err)
+		return nil, NewError(err)
 	}
 
 	settings, e := api.settingsPersister.UpsertSettings(ctx, in)
 	if e != nil {
-		return nil, NewErrors(0, e)
+		return nil, NewError(e)
 	}
 	return settings, nil
 }
