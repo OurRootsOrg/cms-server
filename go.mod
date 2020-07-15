@@ -11,7 +11,6 @@ require (
 	github.com/awslabs/aws-lambda-go-api-proxy v0.6.1-0.20200609195354-9acdb20aee66
 	github.com/cenkalti/backoff/v4 v4.0.2
 	github.com/codingconcepts/env v0.0.0-20190614135724-bb4545dff6a4
-	github.com/coreos/go-oidc v2.2.1+incompatible
 	github.com/elastic/go-elasticsearch/v7 v7.7.0
 	github.com/go-openapi/spec v0.19.7 // indirect
 	github.com/go-openapi/swag v0.19.9 // indirect
@@ -26,6 +25,7 @@ require (
 	github.com/jriquelme/awsgosigv4 v0.0.0-20200515043227-0e5300b5f3e2
 	github.com/lib/pq v1.3.0
 	github.com/mailru/easyjson v0.7.1 // indirect
+	github.com/ourrootsorg/go-oidc v2.2.1-cognito2+incompatible
 	github.com/pquerna/cachecontrol v0.0.0-20180517163645-1555304b9b35 // indirect
 	github.com/streadway/amqp v0.0.0-20200108173154-1c71cc93ed71
 	github.com/stretchr/testify v1.5.1

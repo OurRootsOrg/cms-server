@@ -242,7 +242,7 @@ Resources:
           BLOB_STORE_BUCKET: !Ref "CMSBlobStoreBucketName"
           PUB_SUB_RECORDSWRITER_URL: !Ref "CMSRecordsWriterQueueURL"
           PUB_SUB_PUBLISHER_URL: !Ref "CMSPublisherQueueURL"
-          OIDC_DOMAIN: 'ourroots.auth0.com'
+          OIDC_DOMAIN: 'https://ourroots.auth0.com/'
           OIDC_AUDIENCE: 'https://api.ourroots.org/preprod'
           ELASTICSEARCH_URL: !Join
             - ''

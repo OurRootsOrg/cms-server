@@ -1,3 +1,5 @@
+import Auth from "@/services/Auth.js";
+
 export const state = {
   notificationsList: []
 };
@@ -17,6 +19,10 @@ export const mutations = {
 };
 export const actions = {
   notificationsAdd({ commit }, notification) {
+    if (notification.error === Auth.loginRequiredError) {
+      notification.message = "Please log in";
+      notification.type = "blue";
+    }
     commit("NOTIFICATIONS_PUSH", notification);
   },
   notificationsRemove({ commit }, id) {

@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Waiting...</title>
+</head>
+<body>
+<script src="js/oidc-client.min.js"></script>
+<script>
+  const authCanRefreshKey = "authCanRefreshKey";
+  let mgr = new Oidc.UserManager({
+    response_mode: window.location.search && window.location.search.startsWith("?") ? "query" : undefined,
+    userStore: new Oidc.WebStorageStateStore({ store: window.sessionStorage })
+  });
+
+  mgr.signinRedirectCallback().then(function (user) {
+    sessionStorage.setItem(authCanRefreshKey, 'true');
+    window.location.href = "/";
+  }).catch(function (err) {
+    console.log("callback error", err);
+  });
+</script>
+</body>
+</html>

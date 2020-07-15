@@ -36,9 +36,13 @@ export default {
       store.dispatch("categoriesGetAll"),
       store.dispatch("collectionsGetAll"),
       store.dispatch("postsGetAll")
-    ]).then(() => {
-      next();
-    });
+    ])
+      .then(() => {
+        next();
+      })
+      .catch(() => {
+        next("/");
+      });
   },
   data() {
     return {

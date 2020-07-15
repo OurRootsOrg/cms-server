@@ -24,10 +24,12 @@ export const actions = {
       })
       .catch(error => {
         const notification = {
+          error,
           type: "error",
           message: "There was a problem updating your settings: " + error.message
         };
         dispatch("notificationsAdd", notification, { root: true });
+        throw error;
       });
   },
   settingsGet({ commit, dispatch }) {
@@ -38,10 +40,12 @@ export const actions = {
       })
       .catch(error => {
         const notification = {
+          error,
           type: "error",
-          message: "There was a problem fetching settings: " + error.message
+          message: "There was a problem reading settings: " + error.message
         };
         dispatch("notificationsAdd", notification, { root: true });
+        throw error;
       });
   }
 };

@@ -118,8 +118,10 @@ services:
       - BLOB_STORE_DISABLE_SSL=true
       - PUB_SUB_RECORDSWRITER_URL=amqp://guest:guest@rabbitmq:5672/
       - PUB_SUB_PUBLISHER_URL=amqp://guest:guest@rabbitmq:5672/
-      - OIDC_DOMAIN=ourroots.auth0.com
+      - OIDC_DOMAIN=https://ourroots.auth0.com/
       - OIDC_AUDIENCE=https://api.ourroots.org/preprod
+      # - OIDC_DOMAIN=https://cognito-idp.us-east-1.amazonaws.com/us-east-1_Ueg25pMGY
+      # - OIDC_AUDIENCE=61n9ggblojaf6tfj1n4lre40g
       - ELASTICSEARCH_URL=http://elasticsearch:9200
     networks:
       - mynetwork

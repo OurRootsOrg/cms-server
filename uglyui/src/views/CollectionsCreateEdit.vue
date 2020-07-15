@@ -189,9 +189,13 @@ export default {
       routes.push(store.dispatch("postsGetAll"));
       routes.push(store.dispatch("settingsGet"));
     }
-    Promise.all(routes).then(() => {
-      next();
-    });
+    Promise.all(routes)
+      .then(() => {
+        next();
+      })
+      .catch(() => {
+        next("/");
+      });
   },
   created() {
     if (this.$route.params && this.$route.params.cid) {

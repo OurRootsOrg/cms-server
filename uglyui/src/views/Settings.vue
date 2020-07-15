@@ -54,9 +54,14 @@ function setup() {
 export default {
   components: { Tabulator },
   beforeRouteEnter: function(routeTo, routeFrom, next) {
-    store.dispatch("settingsGet").then(() => {
-      next();
-    });
+    store
+      .dispatch("settingsGet")
+      .then(() => {
+        next();
+      })
+      .catch(() => {
+        next("/");
+      });
   },
   created() {
     setup.bind(this)();
