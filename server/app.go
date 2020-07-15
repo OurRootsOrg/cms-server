@@ -143,9 +143,9 @@ func (app App) verifyToken(next http.Handler) http.Handler {
 func (app App) NewRouter() *mux.Router {
 	r := mux.NewRouter()
 	r.StrictSlash(true)
-	r.HandleFunc(app.baseURL.Path+"/", app.GetIndex).Methods("GET", "OPTIONS")
-	r.HandleFunc(app.baseURL.Path+"/health", app.GetHealth).Methods("GET", "OPTIONS")
-	r.HandleFunc(app.baseURL.Path+"/index.html", app.GetIndex).Methods("GET", "OPTIONS")
+	r.HandleFunc(app.baseURL.Path+"/", app.GetIndex).Methods("GET")
+	r.HandleFunc(app.baseURL.Path+"/health", app.GetHealth).Methods("GET")
+	r.HandleFunc(app.baseURL.Path+"/index.html", app.GetIndex).Methods("GET")
 
 	r.Handle(app.baseURL.Path+"/categories", app.verifyToken(http.HandlerFunc(app.GetAllCategories))).Methods("GET", "OPTIONS")
 	r.Handle(app.baseURL.Path+"/categories", app.verifyToken(http.HandlerFunc(app.PostCategory))).Methods("POST")
