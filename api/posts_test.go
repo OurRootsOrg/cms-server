@@ -48,7 +48,7 @@ func TestPosts(t *testing.T) {
 		assert.NoError(t, err)
 		p, err := dynamo.NewPersister(sess, dynamoDBTableName)
 		assert.NoError(t, err)
-		doPostsTests(t, p, p, p, nil)
+		doPostsTests(t, p, p, p, p)
 	}
 }
 func doPostsTests(t *testing.T,
@@ -96,7 +96,7 @@ func doPostsTests(t *testing.T,
 	_, err = testApi.AddPost(context.TODO(), in)
 	assert.IsType(t, &api.Error{}, err)
 	assert.Len(t, err.(*api.Error).Errs(), 1)
-	assert.Equal(t, model.ErrBadReference, err.(*api.Error).Errs()[0].Code, "err.(*api.Errors).Errs()[0]: %#v", err.(*api.Error).Errs()[0])
+	assert.Equal(t, model.ErrBadReference, err.(*api.Error).Errs()[0].Code, "err.(*api.Error).Errs()[0]: %#v", err.(*api.Error).Errs()[0])
 
 	// GET /posts should now return the created Post
 	ret, err := testApi.GetPosts(context.TODO())
@@ -114,7 +114,7 @@ func doPostsTests(t *testing.T,
 	in.Collection = 0
 	_, err = testApi.AddPost(context.TODO(), in)
 	assert.IsType(t, &api.Error{}, err)
-	if assert.Len(t, err.(*api.Error).Errs(), 1, "err.(*api.Errors).Errs(): %#v", err.(*api.Error).Errs()) {
+	if assert.Len(t, err.(*api.Error).Errs(), 1, "err.(*api.Error).Errs(): %#v", err.(*api.Error).Errs()) {
 		assert.Equal(t, err.(*api.Error).Errs()[0].Code, model.ErrRequired)
 	}
 
@@ -123,7 +123,7 @@ func doPostsTests(t *testing.T,
 	assert.Error(t, err)
 	assert.IsType(t, &api.Error{}, err)
 	assert.Len(t, err.(*api.Error).Errs(), 1)
-	assert.Equal(t, model.ErrNotFound, err.(*api.Error).Errs()[0].Code, "err.(*api.Errors).Errs()[0]: %#v", err.(*api.Error).Errs()[0])
+	assert.Equal(t, model.ErrNotFound, err.(*api.Error).Errs()[0].Code, "err.(*api.Error).Errs()[0]: %#v", err.(*api.Error).Errs()[0])
 
 	// Update
 	ret2.Name = "Updated"
@@ -137,14 +137,14 @@ func doPostsTests(t *testing.T,
 	_, err = testApi.UpdatePost(context.TODO(), updated.ID+99, *updated)
 	assert.IsType(t, &api.Error{}, err)
 	assert.Len(t, err.(*api.Error).Errs(), 1)
-	assert.Equal(t, model.ErrNotFound, err.(*api.Error).Errs()[0].Code, "err.(*api.Errors).Errs()[0]: %#v", err.(*api.Error).Errs()[0])
+	assert.Equal(t, model.ErrNotFound, err.(*api.Error).Errs()[0].Code, "err.(*api.Error).Errs()[0]: %#v", err.(*api.Error).Errs()[0])
 
 	// Update with bad collection
 	updated.Collection = updated.Collection + 99
 	_, err = testApi.UpdatePost(context.TODO(), updated.ID, *updated)
 	assert.IsType(t, &api.Error{}, err)
 	assert.Len(t, err.(*api.Error).Errs(), 1)
-	assert.Equal(t, model.ErrBadReference, err.(*api.Error).Errs()[0].Code, "err.(*api.Errors).Errs()[0]: %#v", err.(*api.Error).Errs()[0])
+	assert.Equal(t, model.ErrBadReference, err.(*api.Error).Errs()[0].Code, "err.(*api.Error).Errs()[0]: %#v", err.(*api.Error).Errs()[0])
 
 	// Update with bad LastUpdateTime
 	updated.Collection = ret2.Collection
@@ -153,7 +153,7 @@ func doPostsTests(t *testing.T,
 	if assert.Error(t, err) {
 		assert.IsType(t, &api.Error{}, err)
 		assert.Len(t, err.(*api.Error).Errs(), 1)
-		assert.Equal(t, model.ErrConcurrentUpdate, err.(*api.Error).Errs()[0].Code, "err.(*api.Errors).Errs()[0]: %#v", err.(*api.Error).Errs()[0])
+		assert.Equal(t, model.ErrConcurrentUpdate, err.(*api.Error).Errs()[0].Code, "err.(*api.Error).Errs()[0]: %#v", err.(*api.Error).Errs()[0])
 	}
 
 	// DELETE
@@ -163,7 +163,7 @@ func doPostsTests(t *testing.T,
 	assert.Error(t, err)
 	assert.IsType(t, &api.Error{}, err)
 	assert.Len(t, err.(*api.Error).Errs(), 1)
-	assert.Equal(t, model.ErrNotFound, err.(*api.Error).Errs()[0].Code, "err.(*api.Errors).Errs()[0]: %#v", err.(*api.Error).Errs()[0])
+	assert.Equal(t, model.ErrNotFound, err.(*api.Error).Errs()[0].Code, "err.(*api.Error).Errs()[0]: %#v", err.(*api.Error).Errs()[0])
 }
 
 func createTestCollection(t *testing.T, p model.CollectionPersister, categoryID uint32) *model.Collection {

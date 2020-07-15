@@ -88,7 +88,7 @@ func doCategoriesTests(t *testing.T, p model.CategoryPersister) {
 	assert.Error(t, err)
 	assert.IsType(t, &api.Error{}, err)
 	assert.Len(t, err.(*api.Error).Errs(), 1)
-	assert.Equal(t, model.ErrNotFound, err.(*api.Error).Errs()[0].Code, "err.(*api.Errors).Errs()[0]: %#v", err.(*api.Error).Errs()[0])
+	assert.Equal(t, model.ErrNotFound, err.(*api.Error).Errs()[0].Code, "err.(*api.Error).Errs()[0]: %#v", err.(*api.Error).Errs()[0])
 
 	// Update
 	ret2.Name = "Updated"
@@ -101,7 +101,7 @@ func doCategoriesTests(t *testing.T, p model.CategoryPersister) {
 	_, err = testApi.UpdateCategory(context.TODO(), created.ID+99, *created)
 	assert.IsType(t, &api.Error{}, err)
 	assert.Len(t, err.(*api.Error).Errs(), 1)
-	assert.Equal(t, model.ErrNotFound, err.(*api.Error).Errs()[0].Code, "err.(*api.Errors).Errs()[0]: %#v", err.(*api.Error).Errs()[0])
+	assert.Equal(t, model.ErrNotFound, err.(*api.Error).Errs()[0].Code, "err.(*api.Error).Errs()[0]: %#v", err.(*api.Error).Errs()[0])
 
 	// Update with bad LastUpdateTime
 	updated.LastUpdateTime = time.Now().Add(-time.Minute)
@@ -109,7 +109,7 @@ func doCategoriesTests(t *testing.T, p model.CategoryPersister) {
 	if assert.Error(t, err) {
 		assert.IsType(t, &api.Error{}, err)
 		assert.Len(t, err.(*api.Error).Errs(), 1)
-		assert.Equal(t, model.ErrConcurrentUpdate, err.(*api.Error).Errs()[0].Code, "err.(*api.Errors).Errs()[0]: %#v", err.(*api.Error).Errs()[0])
+		assert.Equal(t, model.ErrConcurrentUpdate, err.(*api.Error).Errs()[0].Code, "err.(*api.Error).Errs()[0]: %#v", err.(*api.Error).Errs()[0])
 	}
 
 	// DELETE
@@ -119,5 +119,5 @@ func doCategoriesTests(t *testing.T, p model.CategoryPersister) {
 	assert.Error(t, err)
 	assert.IsType(t, &api.Error{}, err)
 	assert.Len(t, err.(*api.Error).Errs(), 1)
-	assert.Equal(t, model.ErrNotFound, err.(*api.Error).Errs()[0].Code, "err.(*api.Errors).Errs()[0]: %#v", err.(*api.Error).Errs()[0])
+	assert.Equal(t, model.ErrNotFound, err.(*api.Error).Errs()[0].Code, "err.(*api.Error).Errs()[0]: %#v", err.(*api.Error).Errs()[0])
 }

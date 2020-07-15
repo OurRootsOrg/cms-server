@@ -248,15 +248,20 @@ func (p Persister) InsertCollection(ctx context.Context, in model.CollectionIn) 
 		switch e := err.(type) {
 		case *dynamodb.TransactionCanceledException:
 			for i, r := range e.CancellationReasons {
-				if r != nil && *r.Code == "ConditionalCheckFailed" {
-					switch {
-					case i < len(in.Categories):
-						// Theese items are the Category ID reference checks
-						return nil, model.NewError(model.ErrBadReference, strconv.FormatInt(int64(in.Categories[i]), 10), categoryType)
-					case i == len(in.Categories):
-						return nil, model.NewError(model.ErrOther, fmt.Sprintf("Insert failed. Collection ID %d already exists", coll.ID))
-					default: // i > len(in.Categories)
-						// These are the collection_category puts.
+				if r != nil && *r.Code != "None" {
+					if *r.Code == "ConditionalCheckFailed" {
+						switch {
+						case i < len(in.Categories):
+							// Theese items are the Category ID reference checks
+							return nil, model.NewError(model.ErrBadReference, strconv.FormatInt(int64(in.Categories[i]), 10), categoryType)
+						case i == len(in.Categories):
+							return nil, model.NewError(model.ErrOther, fmt.Sprintf("Insert failed. Collection ID %d already exists", coll.ID))
+						default: // i > len(in.Categories)
+							// These are the collection_category puts.
+							log.Printf("[ERROR] Failed to put collection %#v. twii: %#v err: %v", coll, twii, err)
+							return nil, model.NewError(model.ErrOther, err.Error())
+						}
+					} else {
 						log.Printf("[ERROR] Failed to put collection %#v. twii: %#v err: %v", coll, twii, err)
 						return nil, model.NewError(model.ErrOther, err.Error())
 					}
@@ -393,16 +398,21 @@ func (p Persister) UpdateCollection(ctx context.Context, id uint32, in model.Col
 		switch e := err.(type) {
 		case *dynamodb.TransactionCanceledException:
 			for i, r := range e.CancellationReasons {
-				if r != nil && *r.Code == "ConditionalCheckFailed" {
-					switch {
-					case i < len(toAdd):
-						// These are the category condition checks
-						return nil, model.NewError(model.ErrBadReference, strconv.FormatInt(int64(toAdd[i]), 10), categoryType)
-					case i == len(toAdd):
-						// This is the actual put, so an error here is due to lastUpdateTime not matching
-						return nil, model.NewError(model.ErrConcurrentUpdate, current.LastUpdateTime.Format(time.RFC3339Nano), lastUpdateTime)
-					default: // i > len(toAdd)
-						// These are the collection_category updates
+				if r != nil && *r.Code != "None" {
+					if *r.Code == "ConditionalCheckFailed" {
+						switch {
+						case i < len(toAdd):
+							// These are the category condition checks
+							return nil, model.NewError(model.ErrBadReference, strconv.FormatInt(int64(toAdd[i]), 10), categoryType)
+						case i == len(toAdd):
+							// This is the actual put, so an error here is due to lastUpdateTime not matching
+							return nil, model.NewError(model.ErrConcurrentUpdate, current.LastUpdateTime.Format(time.RFC3339Nano), lastUpdateTime)
+						default: // i > len(toAdd)
+							// These are the collection_category updates
+							log.Printf("[ERROR] Failed to put collection %#v. twii: %#v err: %v", coll, twii, err)
+							return nil, model.NewError(model.ErrOther, err.Error())
+						}
+					} else {
 						log.Printf("[ERROR] Failed to put collection %#v. twii: %#v err: %v", coll, twii, err)
 						return nil, model.NewError(model.ErrOther, err.Error())
 					}

@@ -52,7 +52,7 @@ type PublisherMsg struct {
 
 // PostBody is the JSON body of a Post
 type PostBody struct {
-	Name          string                 `json:"name" validate:"required" dynamodbav:"altSort"`
+	Name          string                 `json:"name" validate:"required"`
 	Metadata      map[string]interface{} `json:"metadata"`
 	RecordsKey    string                 `json:"recordsKey"`
 	RecordsStatus string                 `json:"recordsStatus"`
@@ -75,7 +75,7 @@ func (cb *PostBody) Scan(value interface{}) error {
 // PostIn is the payload to create or update a Post
 type PostIn struct {
 	PostBody
-	Collection uint32 `json:"collection" example:"999" validate:"required"`
+	Collection uint32 `json:"collection" example:"999" validate:"required" dynamodbav:"altSort,string"`
 }
 
 // Post represents a set of related Records

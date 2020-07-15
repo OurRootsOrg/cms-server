@@ -15,9 +15,7 @@ func (api API) GetSettings(ctx context.Context) (*model.Settings, error) {
 			settings = &model.Settings{
 				SettingsIn: model.NewSettingsIn([]model.SettingsPostMetadata{}),
 			}
-			err = nil
-		} else {
-			return nil, NewError(err)
+			return settings, nil
 		}
 		return nil, NewError(err)
 	}

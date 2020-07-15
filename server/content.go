@@ -18,8 +18,8 @@ import (
 // @accept application/json
 // @produce application/json
 // @success 200 {object} model.Category "OK"
-// @failure 415 {object} api.Errors "Bad Content-Type"
-// @failure 500 {object} api.Errors "Server error"
+// @failure 415 {object} api.Error "Bad Content-Type"
+// @failure 500 {object} api.Error "Server error"
 // @Security OAuth2Implicit[cms,openid,profile,email]
 // @Security OAuth2AuthCode[cms,openid,profile,email]
 func (app App) PostContentRequest(w http.ResponseWriter, req *http.Request) {

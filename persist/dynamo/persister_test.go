@@ -33,12 +33,32 @@ func setupTestCase(t *testing.T) (dynamo.Persister, func(t *testing.T)) {
 	assert.Nil(t, err)
 	return p, func(t *testing.T) {
 		t.Log("teardown test case")
-		colls, e := p.SelectCollections(context.TODO())
-		assert.Nil(t, e)
+
+		posts, err := p.SelectPosts(context.TODO())
+		assert.NoError(t, err)
+		for _, post := range posts {
+			err = p.DeleteRecordsForPost(context.TODO(), post.ID)
+			assert.NoError(t, err)
+
+			err = p.DeletePost(context.TODO(), post.ID)
+			assert.NoError(t, err)
+			// Make sure it's gone
+			_, err := p.SelectOnePost(context.TODO(), post.ID)
+			assert.Error(t, err)
+		}
+		records, err := p.SelectRecords(context.TODO())
+		assert.NoError(t, err)
+		assert.Len(t, records, 0)
+
+		colls, err := p.SelectCollections(context.TODO())
+		assert.NoError(t, err)
 
 		for _, c := range colls {
-			e = p.DeleteCollection(context.TODO(), c.ID)
-			assert.Nil(t, e)
+			err = p.DeleteCollection(context.TODO(), c.ID)
+			assert.NoError(t, err)
+			// Make sure it's gone
+			_, err := p.SelectOneCollection(context.TODO(), c.ID)
+			assert.Error(t, err)
 		}
 
 		cats, err := p.SelectCategories(context.TODO())
@@ -46,7 +66,10 @@ func setupTestCase(t *testing.T) (dynamo.Persister, func(t *testing.T)) {
 
 		for _, c := range cats {
 			err = p.DeleteCategory(context.TODO(), c.ID)
-			assert.NoError(t, e)
+			assert.NoError(t, err)
+			// Make sure it's gone
+			_, err := p.SelectOneCategory(context.TODO(), c.ID)
+			assert.Error(t, err)
 		}
 	}
 }
@@ -208,37 +231,108 @@ func TestPost(t *testing.T) {
 
 	ci := model.NewCollectionIn("Test Collection", []uint32{cat.ID})
 
-	coll, e := p.InsertCollection(context.TODO(), ci)
-	assert.Nil(t, e)
+	coll, err := p.InsertCollection(context.TODO(), ci)
+	assert.NoError(t, err)
 	assert.Equal(t, ci.Name, coll.Name)
 
 	// then := time.Now().Truncate(0)
 	in := model.NewPostIn("Post 1", coll.ID, "")
-	out, e := p.InsertPost(context.TODO(), in)
-	assert.Nil(t, e)
+	out, err := p.InsertPost(context.TODO(), in)
+	assert.NoError(t, err)
 	assert.Equal(t, in.Name, out.Name)
 	assert.Equal(t, in.Collection, out.Collection)
 	assert.Equal(t, in.RecordsKey, out.RecordsKey)
 
-	post, e := p.SelectOnePost(context.TODO(), out.ID)
-	assert.Nil(t, e)
+	post, err := p.SelectOnePost(context.TODO(), out.ID)
+	assert.NoError(t, err)
 	assert.Equal(t, out.Name, post.Name)
 	assert.Equal(t, out.Collection, post.Collection)
 	assert.Equal(t, out.InsertTime, post.InsertTime)
 	assert.Equal(t, out.LastUpdateTime, post.InsertTime)
 
-	// Try to create a post with a non-existent collectio ID
+	// Try to create a post with a non-existent collection ID
 	in = model.NewPostIn("Bad Post", 123456, "")
 	out, err = p.InsertPost(context.TODO(), in)
+	assert.Error(t, err)
+	// t.Logf("Error: %#v", err)
+}
+
+func TestRecord(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping tests in short mode")
+	}
+	p, teardown := setupTestCase(t)
+	defer teardown(t)
+
+	_, err := p.SelectOneRecord(context.TODO(), 1)
+	assert.Error(t, err)
+	assert.IsType(t, &model.Error{}, err)
+	assert.Equal(t, model.ErrNotFound, err.(*model.Error).Code)
+
+	cati, err := model.NewCategoryIn("Test Category")
+	assert.Nil(t, err)
+
+	cat, err := p.InsertCategory(context.TODO(), cati)
+	assert.NoError(t, err)
+	assert.Equal(t, cati.Name, cat.Name)
+
+	ci := model.NewCollectionIn("Test Collection", []uint32{cat.ID})
+
+	coll, e := p.InsertCollection(context.TODO(), ci)
+	assert.Nil(t, e)
+	assert.Equal(t, ci.Name, coll.Name)
+
+	// then := time.Now().Truncate(0)
+	postIn := model.NewPostIn("Post 1", coll.ID, "")
+	post, e := p.InsertPost(context.TODO(), postIn)
+	assert.Nil(t, e)
+	assert.Equal(t, postIn.Name, post.Name)
+
+	// then := time.Now().Truncate(0)
+	recordIn := model.NewRecordIn(map[string]string{"test": "data"}, post.ID)
+	out, e := p.InsertRecord(context.TODO(), recordIn)
+	assert.Nil(t, e)
+	assert.Equal(t, recordIn.Data, out.Data)
+	assert.Equal(t, recordIn.Post, out.Post)
+
+	record, e := p.SelectOneRecord(context.TODO(), out.ID)
+	assert.Nil(t, e)
+	assert.Equal(t, out.Data, record.Data)
+	assert.Equal(t, out.Post, record.Post)
+	assert.Equal(t, out.InsertTime, record.InsertTime)
+	assert.Equal(t, out.LastUpdateTime, record.InsertTime)
+
+	// Try to create a record with a non-existent  ID
+	recordIn = model.NewRecordIn(map[string]string{"test": "Bad Record"}, 123456)
+	out, err = p.InsertRecord(context.TODO(), recordIn)
 	assert.Error(t, err)
 	t.Logf("Error: %#v", e)
 }
 
-func TestSequences(t *testing.T) {
+func TestSettings(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping tests in short mode")
 	}
+	p, teardown := setupTestCase(t)
+	defer teardown(t)
+	s, err := p.SelectSettings(context.TODO())
+	assert.Error(t, err)
+	assert.Nil(t, s)
+	var in model.Settings
+	in.PostMetadata = append(in.PostMetadata, model.SettingsPostMetadata{
+		Name:    "First",
+		Type:    "string",
+		Tooltip: "Tooltip 1",
+	})
+	s, err = p.UpsertSettings(context.TODO(), in)
+	assert.NoError(t, err)
+	in = *s
+	s, err = p.SelectSettings(context.TODO())
+	assert.NoError(t, err)
+	assert.Equal(t, in.PostMetadata, s.PostMetadata)
+}
 
+func TestSequences(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping tests in short mode")
 	}

@@ -147,15 +147,20 @@ func (p Persister) InsertPost(ctx context.Context, in model.PostIn) (*model.Post
 		switch e := err.(type) {
 		case *dynamodb.TransactionCanceledException:
 			for i, r := range e.CancellationReasons {
-				if r != nil && *r.Code == "ConditionalCheckFailed" {
-					switch i {
-					case 0:
-						// This is the Collection ID reference check
-						return nil, model.NewError(model.ErrBadReference, strconv.FormatInt(int64(post.Collection), 10), collectionType)
-					case 1:
-						return nil, model.NewError(model.ErrOther, fmt.Sprintf("Insert failed. Post ID %d already exists", post.ID))
-					default: // i >= 2
-						// Should never happen
+				if r != nil && *r.Code != "None" {
+					if *r.Code == "ConditionalCheckFailed" {
+						switch i {
+						case 0:
+							// This is the Collection ID reference check
+							return nil, model.NewError(model.ErrBadReference, strconv.FormatInt(int64(post.Collection), 10), collectionType)
+						case 1:
+							return nil, model.NewError(model.ErrOther, fmt.Sprintf("Insert failed. Post ID %d already exists", post.ID))
+						default: // i >= 2
+							// Should never happen
+							log.Printf("[ERROR] Failed to put post %#v. twii: %#v err: %v", post, twii, err)
+							return nil, model.NewError(model.ErrOther, err.Error())
+						}
+					} else {
 						log.Printf("[ERROR] Failed to put post %#v. twii: %#v err: %v", post, twii, err)
 						return nil, model.NewError(model.ErrOther, err.Error())
 					}
@@ -231,21 +236,26 @@ func (p Persister) UpdatePost(ctx context.Context, id uint32, in model.Post) (*m
 		switch e := err.(type) {
 		case *dynamodb.TransactionCanceledException:
 			for i, r := range e.CancellationReasons {
-				if r != nil && *r.Code == "ConditionalCheckFailed" {
-					switch i {
-					case 0:
-						// This is the Collection ID reference check
-						return nil, model.NewError(model.ErrBadReference, strconv.FormatInt(int64(post.Collection), 10), collectionType)
-					case 1:
-						// This is the actual put, so an error here is due to either lastUpdateTime not matching or the item not existing
-						// Do a select to distinguish the cases
-						current, e := p.SelectOnePost(ctx, id)
-						if e != nil {
-							return nil, e
+				if r != nil && *r.Code != "None" {
+					if *r.Code == "ConditionalCheckFailed" {
+						switch i {
+						case 0:
+							// This is the Collection ID reference check
+							return nil, model.NewError(model.ErrBadReference, strconv.FormatInt(int64(post.Collection), 10), collectionType)
+						case 1:
+							// This is the actual put, so an error here is due to either lastUpdateTime not matching or the item not existing
+							// Do a select to distinguish the cases
+							current, e := p.SelectOnePost(ctx, id)
+							if e != nil {
+								return nil, e
+							}
+							return nil, model.NewError(model.ErrConcurrentUpdate, current.LastUpdateTime.Format(time.RFC3339Nano), lastUpdateTime)
+						default: // i >= 2
+							// Should never happen
+							log.Printf("[ERROR] Failed to put post %#v. twii: %#v err: %v", post, twii, err)
+							return nil, model.NewError(model.ErrOther, err.Error())
 						}
-						return nil, model.NewError(model.ErrConcurrentUpdate, current.LastUpdateTime.Format(time.RFC3339Nano), lastUpdateTime)
-					default: // i >= 2
-						// Should never happen
+					} else {
 						log.Printf("[ERROR] Failed to put post %#v. twii: %#v err: %v", post, twii, err)
 						return nil, model.NewError(model.ErrOther, err.Error())
 					}
@@ -257,27 +267,6 @@ func (p Persister) UpdatePost(ctx context.Context, id uint32, in model.Post) (*m
 		}
 	}
 	return &post, nil
-	// err := p.db.QueryRowContext(ctx,
-	// 	`UPDATE post SET body = $1, post_id = $2, last_update_time = CURRENT_TIMESTAMP
-	// 	 WHERE id = $3 AND last_update_time = $4
-	// 	 RETURNING id, post_id, body, insert_time, last_update_time`,
-	// 	in.PostBody, in.Post, id, in.LastUpdateTime).
-	// 	Scan(
-	// 		&post.ID,
-	// 		&post.Post,
-	// 		&post.PostBody,
-	// 		&post.InsertTime,
-	// 		&post.LastUpdateTime,
-	// 	)
-	// if err != nil && err == sql.ErrNoRows {
-	// 	// Either non-existent or last_update_time didn't match
-	// 	c, _ := p.SelectOnePost(ctx, id)
-	// 	if c.ID == id {
-	// 		// Row exists, so it must be a non-matching update time
-	// 		return nil, model.NewError(model.ErrConcurrentUpdate, c.LastUpdateTime.String(), in.LastUpdateTime.String())
-	// 	}
-	// 	return nil, model.NewError(model.ErrNotFound, strconv.Itoa(int(id)))
-	// }
 }
 
 // DeletePost deletes a Post
@@ -286,14 +275,12 @@ func (p Persister) DeletePost(ctx context.Context, id uint32) error {
 		TableName: p.tableName,
 		Key: map[string]*dynamodb.AttributeValue{
 			pkName: {N: aws.String(strconv.FormatInt(int64(id), 10))},
-			skName: {S: aws.String(collectionType)},
+			skName: {S: aws.String(postType)},
 		},
 	}
 	_, err := p.svc.DeleteItem(dii)
 	if err != nil {
 		return model.NewError(model.ErrOther, err.Error())
 	}
-	// _, err := p.db.ExecContext(ctx, "DELETE FROM post WHERE id = $1", id)
-	// return model.NewError(model.ErrOther, err.Error())
 	return nil
 }

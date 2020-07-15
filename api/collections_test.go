@@ -84,7 +84,7 @@ func doCollectionsTests(t *testing.T, catP model.CategoryPersister, colP model.C
 	_, err = testApi.AddCollection(context.TODO(), in)
 	assert.IsType(t, &api.Error{}, err)
 	assert.Len(t, err.(*api.Error).Errs(), 1)
-	assert.Equal(t, model.ErrBadReference, err.(*api.Error).Errs()[0].Code, "err.(*api.Errors).Errs()[0]: %#v", err.(*api.Error).Errs()[0])
+	assert.Equal(t, model.ErrBadReference, err.(*api.Error).Errs()[0].Code, "err.(*api.Error).Errs()[0]: %#v", err.(*api.Error).Errs()[0])
 
 	// // GET /collections should now return the created Collection
 	// ret, err := testApi.GetCollections(context.TODO())
@@ -108,7 +108,7 @@ func doCollectionsTests(t *testing.T, catP model.CategoryPersister, colP model.C
 	in.Categories = nil
 	_, err = testApi.AddCollection(context.TODO(), in)
 	assert.IsType(t, &api.Error{}, err)
-	if assert.Len(t, err.(*api.Error).Errs(), 1, "err.(*api.Errors).Errs(): %#v", err.(*api.Error).Errs()) {
+	if assert.Len(t, err.(*api.Error).Errs(), 1, "err.(*api.Error).Errs(): %#v", err.(*api.Error).Errs()) {
 		assert.Equal(t, err.(*api.Error).Errs()[0].Code, model.ErrRequired)
 	}
 
@@ -117,7 +117,7 @@ func doCollectionsTests(t *testing.T, catP model.CategoryPersister, colP model.C
 	assert.Error(t, err)
 	assert.IsType(t, &api.Error{}, err)
 	assert.Len(t, err.(*api.Error).Errs(), 1)
-	assert.Equal(t, model.ErrNotFound, err.(*api.Error).Errs()[0].Code, "err.(*api.Errors).Errs()[0]: %#v", err.(*api.Error).Errs()[0])
+	assert.Equal(t, model.ErrNotFound, err.(*api.Error).Errs()[0].Code, "err.(*api.Error).Errs()[0]: %#v", err.(*api.Error).Errs()[0])
 
 	// Update
 	ret2.Name = "Updated"
@@ -132,7 +132,7 @@ func doCollectionsTests(t *testing.T, catP model.CategoryPersister, colP model.C
 	if assert.Error(t, err) {
 		assert.IsType(t, &api.Error{}, err)
 		assert.Len(t, err.(*api.Error).Errs(), 1)
-		assert.Equal(t, model.ErrNotFound, err.(*api.Error).Errs()[0].Code, "err.(*api.Errors).Errs()[0]: %#v", err.(*api.Error).Errs()[0])
+		assert.Equal(t, model.ErrNotFound, err.(*api.Error).Errs()[0].Code, "err.(*api.Error).Errs()[0]: %#v", err.(*api.Error).Errs()[0])
 	}
 	// Update with bad category
 	updated.Categories = []uint32{999999}
@@ -140,7 +140,7 @@ func doCollectionsTests(t *testing.T, catP model.CategoryPersister, colP model.C
 	if assert.Error(t, err) {
 		assert.IsType(t, &api.Error{}, err)
 		assert.Len(t, err.(*api.Error).Errs(), 1)
-		assert.Equal(t, model.ErrBadReference, err.(*api.Error).Errs()[0].Code, "err.(*api.Errors).Errs()[0]: %#v", err.(*api.Error).Errs()[0])
+		assert.Equal(t, model.ErrBadReference, err.(*api.Error).Errs()[0].Code, "err.(*api.Error).Errs()[0]: %#v", err.(*api.Error).Errs()[0])
 	}
 	// Update with bad LastUpdateTime
 	updated.Categories = ret2.Categories
@@ -149,7 +149,7 @@ func doCollectionsTests(t *testing.T, catP model.CategoryPersister, colP model.C
 	if assert.Error(t, err) {
 		assert.IsType(t, &api.Error{}, err)
 		assert.Len(t, err.(*api.Error).Errs(), 1)
-		assert.Equal(t, model.ErrConcurrentUpdate, err.(*api.Error).Errs()[0].Code, "err.(*api.Errors).Errs()[0]: %#v", err.(*api.Error).Errs()[0])
+		assert.Equal(t, model.ErrConcurrentUpdate, err.(*api.Error).Errs()[0].Code, "err.(*api.Error).Errs()[0]: %#v", err.(*api.Error).Errs()[0])
 	}
 
 	// DELETE
@@ -159,7 +159,7 @@ func doCollectionsTests(t *testing.T, catP model.CategoryPersister, colP model.C
 	assert.Error(t, err)
 	assert.IsType(t, &api.Error{}, err)
 	assert.Len(t, err.(*api.Error).Errs(), 1)
-	assert.Equal(t, model.ErrNotFound, err.(*api.Error).Errs()[0].Code, "err.(*api.Errors).Errs()[0]: %#v", err.(*api.Error).Errs()[0])
+	assert.Equal(t, model.ErrNotFound, err.(*api.Error).Errs()[0].Code, "err.(*api.Error).Errs()[0]: %#v", err.(*api.Error).Errs()[0])
 }
 
 func createTestCategory(t *testing.T, p model.CategoryPersister) *model.Category {

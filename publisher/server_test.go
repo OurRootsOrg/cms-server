@@ -107,7 +107,7 @@ func TestPublisher(t *testing.T) {
 		assert.Error(t, err)
 		assert.IsType(t, &api.Error{}, err)
 		assert.Len(t, err.(*api.Error).Errs(), 1)
-		assert.Equal(t, model.ErrNotFound, err.(*api.Error).Errs()[0].Code, "err.(*api.Errors).Errs()[0]: %#v", err.(*api.Error).Errs()[0])
+		assert.Equal(t, model.ErrNotFound, err.(*api.Error).Errs()[0].Code, "err.(*api.Error).Errs()[0]: %#v", err.(*api.Error).Errs()[0])
 	}
 
 	// delete post

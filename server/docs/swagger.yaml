@@ -5,6 +5,8 @@ definitions:
       contentType:
         type: string
     type: object
+  api.Error:
+    type: object
   model.Category:
     properties:
       id:
@@ -105,7 +107,16 @@ definitions:
       ixRole:
         type: string
     type: object
-  model.Errors:
+  model.Error:
+    properties:
+      code:
+        type: string
+      message:
+        type: string
+      params:
+        items:
+          type: string
+        type: array
     type: object
   model.Post:
     properties:
@@ -293,7 +304,7 @@ paths:
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/model.Errors'
+            $ref: '#/definitions/api.Error'
       security:
       - OAuth2Implicit:
         - cms
@@ -329,11 +340,11 @@ paths:
         "415":
           description: Bad Content-Type
           schema:
-            $ref: '#/definitions/model.Errors'
+            $ref: '#/definitions/api.Error'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/model.Errors'
+            $ref: '#/definitions/api.Error'
       security:
       - OAuth2Implicit:
         - cms
@@ -363,7 +374,7 @@ paths:
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/model.Errors'
+            $ref: '#/definitions/api.Error'
       security:
       - OAuth2Implicit:
         - cms
@@ -396,11 +407,11 @@ paths:
         "404":
           description: Not found
           schema:
-            $ref: '#/definitions/model.Errors'
+            $ref: '#/definitions/api.Error'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/model.Errors'
+            $ref: '#/definitions/api.Error'
       security:
       - OAuth2Implicit:
         - cms
@@ -441,11 +452,11 @@ paths:
         "415":
           description: Bad Content-Type
           schema:
-            $ref: '#/definitions/model.Errors'
+            $ref: '#/definitions/api.Error'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/model.Errors'
+            $ref: '#/definitions/api.Error'
       security:
       - OAuth2Implicit:
         - cms
@@ -475,7 +486,7 @@ paths:
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/model.Errors'
+            $ref: '#/definitions/api.Error'
       security:
       - OAuth2Implicit:
         - cms
@@ -511,11 +522,11 @@ paths:
         "415":
           description: Bad Content-Type
           schema:
-            $ref: '#/definitions/model.Errors'
+            $ref: '#/definitions/api.Error'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/model.Errors'
+            $ref: '#/definitions/api.Error'
       security:
       - OAuth2Implicit:
         - cms
@@ -547,7 +558,7 @@ paths:
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/model.Errors'
+            $ref: '#/definitions/api.Error'
       security:
       - OAuth2Implicit:
         - cms
@@ -580,11 +591,11 @@ paths:
         "404":
           description: Not found
           schema:
-            $ref: '#/definitions/model.Errors'
+            $ref: '#/definitions/api.Error'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/model.Errors'
+            $ref: '#/definitions/api.Error'
       security:
       - OAuth2Implicit:
         - cms
@@ -625,11 +636,11 @@ paths:
         "415":
           description: Bad Content-Type
           schema:
-            $ref: '#/definitions/model.Errors'
+            $ref: '#/definitions/api.Error'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/model.Errors'
+            $ref: '#/definitions/api.Error'
       security:
       - OAuth2Implicit:
         - cms
@@ -666,11 +677,11 @@ paths:
         "415":
           description: Bad Content-Type
           schema:
-            $ref: '#/definitions/model.Errors'
+            $ref: '#/definitions/api.Error'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/model.Errors'
+            $ref: '#/definitions/api.Error'
       security:
       - OAuth2Implicit:
         - cms
@@ -700,7 +711,7 @@ paths:
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/model.Errors'
+            $ref: '#/definitions/api.Error'
       security:
       - OAuth2Implicit:
         - cms
@@ -736,11 +747,11 @@ paths:
         "415":
           description: Bad Content-Type
           schema:
-            $ref: '#/definitions/model.Errors'
+            $ref: '#/definitions/api.Error'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/model.Errors'
+            $ref: '#/definitions/api.Error'
       security:
       - OAuth2Implicit:
         - cms
@@ -772,7 +783,7 @@ paths:
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/model.Errors'
+            $ref: '#/definitions/api.Error'
       security:
       - OAuth2Implicit:
         - cms
@@ -805,11 +816,11 @@ paths:
         "404":
           description: Not found
           schema:
-            $ref: '#/definitions/model.Errors'
+            $ref: '#/definitions/api.Error'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/model.Errors'
+            $ref: '#/definitions/api.Error'
       security:
       - OAuth2Implicit:
         - cms
@@ -850,11 +861,11 @@ paths:
         "415":
           description: Bad Content-Type
           schema:
-            $ref: '#/definitions/model.Errors'
+            $ref: '#/definitions/api.Error'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/model.Errors'
+            $ref: '#/definitions/api.Error'
       security:
       - OAuth2Implicit:
         - cms
@@ -884,7 +895,7 @@ paths:
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/model.Errors'
+            $ref: '#/definitions/api.Error'
       security:
       - OAuth2Implicit:
         - cms
@@ -914,7 +925,7 @@ paths:
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/model.Errors'
+            $ref: '#/definitions/api.Error'
       summary: returns search results
       tags:
       - search
@@ -937,11 +948,11 @@ paths:
         "404":
           description: Not found
           schema:
-            $ref: '#/definitions/model.Errors'
+            $ref: '#/definitions/api.Error'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/model.Errors'
+            $ref: '#/definitions/api.Error'
       summary: returns a single search result
       tags:
       - search
@@ -967,11 +978,11 @@ paths:
         "415":
           description: Bad Content-Type
           schema:
-            $ref: '#/definitions/model.Errors'
+            $ref: '#/definitions/api.Error'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/model.Errors'
+            $ref: '#/definitions/api.Error'
       security:
       - OAuth2Implicit:
         - cms

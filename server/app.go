@@ -192,15 +192,15 @@ func serverError(w http.ResponseWriter, err error) {
 
 // ErrorResponse returns an error response
 func ErrorResponse(w http.ResponseWriter, code int, message string) {
-	ErrorsResponse(w, api.NewError(errors.New(message)))
+	ErrorsResponse(w, api.NewHTTPError(errors.New(message), code))
 }
 
-// ErrorsResponse returns an HTTP response from a api.Errors
+// ErrorsResponse returns an HTTP response from a api.Error
 func ErrorsResponse(w http.ResponseWriter, err error) {
 	var errors *api.Error
 	var ok bool
 	if errors, ok = err.(*api.Error); !ok {
-		log.Printf("[INFO] Unexpectedly received an `error` instead of a `*api.Errors`: '%v'", err)
+		log.Printf("[INFO] Unexpectedly received an `error` instead of a `*api.Error`: '%v'", err)
 		errors = api.NewError(err)
 	}
 	w.Header().Set("Content-Type", contentType)

@@ -133,7 +133,7 @@ func (p Persister) InsertCategory(ctx context.Context, in model.CategoryIn) (*mo
 		Item:                avs,
 		ConditionExpression: aws.String("attribute_not_exists(pk)"), // Make duplicate insert fail
 	}
-	pio, err := p.svc.PutItem(pii)
+	_, err = p.svc.PutItem(pii)
 	if err != nil {
 		if compareToAWSError(err, dynamodb.ErrCodeConditionalCheckFailedException) {
 			return &cat, model.NewError(model.ErrOther, fmt.Sprintf("Insert failed. Category ID %d already exists", cat.ID))
@@ -141,10 +141,10 @@ func (p Persister) InsertCategory(ctx context.Context, in model.CategoryIn) (*mo
 		log.Printf("[ERROR] Failed to put category %#v. pii: %#v err: %v", cat, pii, err)
 		return nil, model.NewError(model.ErrOther, err.Error())
 	}
-	err = dynamodbattribute.UnmarshalMap(pio.Attributes, &cat)
-	if err != nil {
-		return nil, model.NewError(model.ErrOther, err.Error())
-	}
+	// err = dynamodbattribute.UnmarshalMap(pio.Attributes, &cat)
+	// if err != nil {
+	// 	return nil, model.NewError(model.ErrOther, err.Error())
+	// }
 	return &cat, nil
 }
 

@@ -16,7 +16,7 @@ import (
 // @id getCategories
 // @produce application/json
 // @success 200 {array} model.Category "OK"
-// @failure 500 {object} api.Errors "Server error"
+// @failure 500 {object} api.Error "Server error"
 // @Security OAuth2Implicit[cms,openid,profile,email]
 // @Security OAuth2AuthCode[cms,openid,profile,email]
 func (app App) GetAllCategories(w http.ResponseWriter, req *http.Request) {
@@ -42,8 +42,8 @@ func (app App) GetAllCategories(w http.ResponseWriter, req *http.Request) {
 // @Param id path integer true "Category ID"
 // @produce application/json
 // @success 200 {object} model.Category "OK"
-// @failure 404 {object} api.Errors "Not found"
-// @failure 500 {object} api.Errors "Server error"
+// @failure 404 {object} api.Error "Not found"
+// @failure 500 {object} api.Error "Server error"
 // @Security OAuth2Implicit[cms,openid,profile,email]
 // @Security OAuth2AuthCode[cms,openid,profile,email]
 func (app App) GetCategory(w http.ResponseWriter, req *http.Request) {
@@ -75,8 +75,8 @@ func (app App) GetCategory(w http.ResponseWriter, req *http.Request) {
 // @accept application/json
 // @produce application/json
 // @success 201 {object} model.Category "OK"
-// @failure 415 {object} api.Errors "Bad Content-Type"
-// @failure 500 {object} api.Errors "Server error"
+// @failure 415 {object} api.Error "Bad Content-Type"
+// @failure 500 {object} api.Error "Server error"
 // @Security OAuth2Implicit[cms,openid,profile,email]
 // @Security OAuth2AuthCode[cms,openid,profile,email]
 func (app App) PostCategory(w http.ResponseWriter, req *http.Request) {
@@ -118,8 +118,8 @@ func (app App) PostCategory(w http.ResponseWriter, req *http.Request) {
 // @accept application/json
 // @produce application/json
 // @success 200 {object} model.Category "OK"
-// @failure 415 {object} api.Errors "Bad Content-Type"
-// @failure 500 {object} api.Errors "Server error"
+// @failure 415 {object} api.Error "Bad Content-Type"
+// @failure 500 {object} api.Error "Server error"
 // @Security OAuth2Implicit[cms,openid,profile,email]
 // @Security OAuth2AuthCode[cms,openid,profile,email]
 func (app App) PutCategory(w http.ResponseWriter, req *http.Request) {
@@ -162,7 +162,7 @@ func (app App) PutCategory(w http.ResponseWriter, req *http.Request) {
 // @id deleteCategory
 // @Param id path integer true "Category ID"
 // @success 204 "OK"
-// @failure 500 {object} api.Errors "Server error"
+// @failure 500 {object} api.Error "Server error"
 // @Security OAuth2Implicit[cms,openid,profile,email]
 // @Security OAuth2AuthCode[cms,openid,profile,email]
 func (app App) DeleteCategory(w http.ResponseWriter, req *http.Request) {

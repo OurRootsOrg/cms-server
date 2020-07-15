@@ -24,6 +24,12 @@ const (
 	idSeparator = "#"
 )
 
+// Reserved non-sequential IDs
+const (
+	sequenceID = -1
+	settingsID = -2
+)
+
 // Persister persists the model objects to DynammoDB
 type Persister struct {
 	svc       *dynamodb.DynamoDB
@@ -55,7 +61,7 @@ func (p *Persister) GetMultipleSequenceValues(cnt int) ([]uint32, error) {
 	uii := &dynamodb.UpdateItemInput{
 		TableName: p.tableName,
 		Key: map[string]*dynamodb.AttributeValue{
-			pkName: {N: aws.String("1")},
+			pkName: {N: aws.String(strconv.FormatInt(sequenceID, 10))},
 			skName: {S: aws.String("sequence")},
 		},
 		UpdateExpression: aws.String("ADD sequenceValue :i"),

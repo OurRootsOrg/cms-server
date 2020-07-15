@@ -9,9 +9,13 @@ import (
 
 	"gocloud.dev/postgres"
 
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/credentials"
+	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/ourrootsorg/cms-server/api"
 	"github.com/ourrootsorg/cms-server/model"
 	"github.com/ourrootsorg/cms-server/persist"
+	"github.com/ourrootsorg/cms-server/persist/dynamo"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -19,30 +23,55 @@ func TestRecords(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping tests in short mode")
 	}
-	db, err := postgres.Open(context.TODO(), os.Getenv("DATABASE_URL"))
-	if err != nil {
-		log.Fatalf("Error opening database connection: %v\n  DATABASE_URL: %s",
-			err,
-			os.Getenv("DATABASE_URL"),
-		)
+	databaseURL := os.Getenv("DATABASE_URL")
+	if databaseURL != "" {
+		db, err := postgres.Open(context.TODO(), databaseURL)
+		if err != nil {
+			log.Fatalf("Error opening database connection: %v\n  DATABASE_URL: %s",
+				err,
+				databaseURL,
+			)
+		}
+		p := persist.NewPostgresPersister(db)
+		doRecordsTests(t, p, p, p, p)
 	}
-	p := persist.NewPostgresPersister(db)
+	dynamoDBTableName := os.Getenv("DYNAMODB_TEST_TABLE_NAME")
+	if dynamoDBTableName != "" {
+		config := aws.Config{
+			Region:      aws.String("us-east-1"),
+			Endpoint:    aws.String("http://localhost:18000"),
+			DisableSSL:  aws.Bool(true),
+			Credentials: credentials.NewStaticCredentials("ACCESS_KEY", "SECRET", ""),
+		}
+		sess, err := session.NewSession(&config)
+		assert.NoError(t, err)
+		p, err := dynamo.NewPersister(sess, dynamoDBTableName)
+		assert.NoError(t, err)
+		doRecordsTests(t, p, p, p, p)
+	}
+}
+func doRecordsTests(t *testing.T,
+	catP model.CategoryPersister,
+	colP model.CollectionPersister,
+	postP model.PostPersister,
+	recordP model.RecordPersister,
+) {
 	testApi, err := api.NewAPI()
 	assert.NoError(t, err)
 	defer testApi.Close()
 	testApi = testApi.
-		CategoryPersister(p).
-		CollectionPersister(p).
-		PostPersister(p).
-		RecordPersister(p)
+		CategoryPersister(catP).
+		CollectionPersister(colP).
+		PostPersister(postP).
+		RecordPersister(recordP)
 
 	// Add a test category and test collection and test post for referential integrity
-	testCategory := createTestCategory(t, p)
-	defer deleteTestCategory(t, p, testCategory)
-	testCollection := createTestCollection(t, p, testCategory.ID)
-	defer deleteTestCollection(t, p, testCollection)
-	testPost := createTestPost(t, p, testCollection.ID)
-	defer deleteTestPost(t, p, testPost)
+	testCategory := createTestCategory(t, catP)
+	defer deleteTestCategory(t, catP, testCategory)
+	testCollection := createTestCollection(t, colP, testCategory.ID)
+	defer deleteTestCollection(t, colP, testCollection)
+	testPost := createTestPost(t, postP, testCollection.ID)
+	defer deleteTestPost(t, postP, testPost)
 
 	empty, err := testApi.GetRecordsForPost(context.TODO(), testPost.ID)
 	assert.NoError(t, err)
@@ -65,7 +94,7 @@ func TestRecords(t *testing.T) {
 	in.Post = in.Post + 88
 	_, err = testApi.AddRecord(context.TODO(), in)
 	assert.Len(t, err.(*api.Error).Errs(), 1)
-	assert.Equal(t, model.ErrBadReference, err.(*api.Error).Errs()[0].Code, "err.(*api.Errors).Errs()[0]: %#v", err.(*api.Error).Errs()[0])
+	assert.Equal(t, model.ErrBadReference, err.(*api.Error).Errs()[0].Code, "err.(*api.Error).Errs()[0]: %#v", err.(*api.Error).Errs()[0])
 
 	// GET /records should now return the created Record
 	ret, err := testApi.GetRecordsForPost(context.TODO(), testPost.ID)
@@ -89,7 +118,7 @@ func TestRecords(t *testing.T) {
 	in.Post = 0
 	_, err = testApi.AddRecord(context.TODO(), in)
 	assert.IsType(t, &api.Error{}, err)
-	if assert.Len(t, err.(*api.Error).Errs(), 1, "err.(*api.Errors).Errs(): %#v", err.(*api.Error).Errs()) {
+	if assert.Len(t, err.(*api.Error).Errs(), 1, "err.(*api.Error).Errs(): %#v", err.(*api.Error).Errs()) {
 		assert.Equal(t, err.(*api.Error).Errs()[0].Code, model.ErrRequired)
 	}
 
@@ -98,7 +127,7 @@ func TestRecords(t *testing.T) {
 	assert.Error(t, err)
 	assert.IsType(t, &api.Error{}, err)
 	assert.Len(t, err.(*api.Error).Errs(), 1)
-	assert.Equal(t, model.ErrNotFound, err.(*api.Error).Errs()[0].Code, "err.(*api.Errors).Errs()[0]: %#v", err.(*api.Error).Errs()[0])
+	assert.Equal(t, model.ErrNotFound, err.(*api.Error).Errs()[0].Code, "err.(*api.Error).Errs()[0]: %#v", err.(*api.Error).Errs()[0])
 
 	// Update
 	ret2.Data = map[string]string{"foo": "baz"}
@@ -110,16 +139,18 @@ func TestRecords(t *testing.T) {
 
 	// Update non-existant
 	_, err = testApi.UpdateRecord(context.TODO(), updated.ID+99, *updated)
+	assert.Error(t, err)
 	assert.IsType(t, &api.Error{}, err)
 	assert.Len(t, err.(*api.Error).Errs(), 1)
-	assert.Equal(t, model.ErrNotFound, err.(*api.Error).Errs()[0].Code, "err.(*api.Errors).Errs()[0]: %#v", err.(*api.Error).Errs()[0])
+	assert.Equal(t, model.ErrNotFound, err.(*api.Error).Errs()[0].Code, "err.(*api.Error).Errs()[0]: %#v", err.(*api.Error).Errs()[0])
 
 	// Update with bad post
 	updated.Post = updated.Post + 99
 	_, err = testApi.UpdateRecord(context.TODO(), updated.ID, *updated)
+	assert.Error(t, err)
 	assert.IsType(t, &api.Error{}, err)
 	assert.Len(t, err.(*api.Error).Errs(), 1)
-	assert.Equal(t, model.ErrBadReference, err.(*api.Error).Errs()[0].Code, "err.(*api.Errors).Errs()[0]: %#v", err.(*api.Error).Errs()[0])
+	assert.Equal(t, model.ErrBadReference, err.(*api.Error).Errs()[0].Code, "err.(*api.Error).Errs()[0]: %#v", err.(*api.Error).Errs()[0])
 
 	// Update with bad LastUpdateTime
 	updated.Post = ret2.Post
@@ -128,7 +159,7 @@ func TestRecords(t *testing.T) {
 	if assert.Error(t, err) {
 		assert.IsType(t, &api.Error{}, err)
 		assert.Len(t, err.(*api.Error).Errs(), 1)
-		assert.Equal(t, model.ErrConcurrentUpdate, err.(*api.Error).Errs()[0].Code, "err.(*api.Errors).Errs()[0]: %#v", err.(*api.Error).Errs()[0])
+		assert.Equal(t, model.ErrConcurrentUpdate, err.(*api.Error).Errs()[0].Code, "err.(*api.Error).Errs()[0]: %#v", err.(*api.Error).Errs()[0])
 	}
 
 	// DELETE

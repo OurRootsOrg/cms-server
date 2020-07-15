@@ -73,7 +73,7 @@ var doc = `{
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/model.Errors"
+                            "$ref": "#/definitions/api.Error"
                         }
                     }
                 }
@@ -129,13 +129,13 @@ var doc = `{
                     "415": {
                         "description": "Bad Content-Type",
                         "schema": {
-                            "$ref": "#/definitions/model.Errors"
+                            "$ref": "#/definitions/api.Error"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/model.Errors"
+                            "$ref": "#/definitions/api.Error"
                         }
                     }
                 }
@@ -188,13 +188,13 @@ var doc = `{
                     "404": {
                         "description": "Not found",
                         "schema": {
-                            "$ref": "#/definitions/model.Errors"
+                            "$ref": "#/definitions/api.Error"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/model.Errors"
+                            "$ref": "#/definitions/api.Error"
                         }
                     }
                 }
@@ -257,13 +257,13 @@ var doc = `{
                     "415": {
                         "description": "Bad Content-Type",
                         "schema": {
-                            "$ref": "#/definitions/model.Errors"
+                            "$ref": "#/definitions/api.Error"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/model.Errors"
+                            "$ref": "#/definitions/api.Error"
                         }
                     }
                 }
@@ -308,7 +308,7 @@ var doc = `{
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/model.Errors"
+                            "$ref": "#/definitions/api.Error"
                         }
                     }
                 }
@@ -355,7 +355,7 @@ var doc = `{
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/model.Errors"
+                            "$ref": "#/definitions/api.Error"
                         }
                     }
                 }
@@ -411,13 +411,13 @@ var doc = `{
                     "415": {
                         "description": "Bad Content-Type",
                         "schema": {
-                            "$ref": "#/definitions/model.Errors"
+                            "$ref": "#/definitions/api.Error"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/model.Errors"
+                            "$ref": "#/definitions/api.Error"
                         }
                     }
                 }
@@ -470,13 +470,13 @@ var doc = `{
                     "404": {
                         "description": "Not found",
                         "schema": {
-                            "$ref": "#/definitions/model.Errors"
+                            "$ref": "#/definitions/api.Error"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/model.Errors"
+                            "$ref": "#/definitions/api.Error"
                         }
                     }
                 }
@@ -539,13 +539,13 @@ var doc = `{
                     "415": {
                         "description": "Bad Content-Type",
                         "schema": {
-                            "$ref": "#/definitions/model.Errors"
+                            "$ref": "#/definitions/api.Error"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/model.Errors"
+                            "$ref": "#/definitions/api.Error"
                         }
                     }
                 }
@@ -593,7 +593,7 @@ var doc = `{
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/model.Errors"
+                            "$ref": "#/definitions/api.Error"
                         }
                     }
                 }
@@ -651,13 +651,13 @@ var doc = `{
                     "415": {
                         "description": "Bad Content-Type",
                         "schema": {
-                            "$ref": "#/definitions/model.Errors"
+                            "$ref": "#/definitions/api.Error"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/model.Errors"
+                            "$ref": "#/definitions/api.Error"
                         }
                     }
                 }
@@ -704,7 +704,7 @@ var doc = `{
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/model.Errors"
+                            "$ref": "#/definitions/api.Error"
                         }
                     }
                 }
@@ -760,13 +760,13 @@ var doc = `{
                     "415": {
                         "description": "Bad Content-Type",
                         "schema": {
-                            "$ref": "#/definitions/model.Errors"
+                            "$ref": "#/definitions/api.Error"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/model.Errors"
+                            "$ref": "#/definitions/api.Error"
                         }
                     }
                 }
@@ -819,13 +819,13 @@ var doc = `{
                     "404": {
                         "description": "Not found",
                         "schema": {
-                            "$ref": "#/definitions/model.Errors"
+                            "$ref": "#/definitions/api.Error"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/model.Errors"
+                            "$ref": "#/definitions/api.Error"
                         }
                     }
                 }
@@ -888,13 +888,13 @@ var doc = `{
                     "415": {
                         "description": "Bad Content-Type",
                         "schema": {
-                            "$ref": "#/definitions/model.Errors"
+                            "$ref": "#/definitions/api.Error"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/model.Errors"
+                            "$ref": "#/definitions/api.Error"
                         }
                     }
                 }
@@ -942,7 +942,7 @@ var doc = `{
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/model.Errors"
+                            "$ref": "#/definitions/api.Error"
                         }
                     }
                 }
@@ -989,7 +989,7 @@ var doc = `{
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/model.Errors"
+                            "$ref": "#/definitions/api.Error"
                         }
                     }
                 }
@@ -1018,7 +1018,7 @@ var doc = `{
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/model.Errors"
+                            "$ref": "#/definitions/api.Error"
                         }
                     }
                 }
@@ -1053,13 +1053,13 @@ var doc = `{
                     "404": {
                         "description": "Not found",
                         "schema": {
-                            "$ref": "#/definitions/model.Errors"
+                            "$ref": "#/definitions/api.Error"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/model.Errors"
+                            "$ref": "#/definitions/api.Error"
                         }
                     }
                 }
@@ -1117,13 +1117,13 @@ var doc = `{
                     "415": {
                         "description": "Bad Content-Type",
                         "schema": {
-                            "$ref": "#/definitions/model.Errors"
+                            "$ref": "#/definitions/api.Error"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/model.Errors"
+                            "$ref": "#/definitions/api.Error"
                         }
                     }
                 }
@@ -1138,6 +1138,9 @@ var doc = `{
                     "type": "string"
                 }
             }
+        },
+        "api.Error": {
+            "type": "object"
         },
         "model.Category": {
             "type": "object",
@@ -1289,8 +1292,22 @@ var doc = `{
                 }
             }
         },
-        "model.Errors": {
-            "type": "object"
+        "model.Error": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "params": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
         },
         "model.Post": {
             "type": "object",

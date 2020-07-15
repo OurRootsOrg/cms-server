@@ -291,6 +291,13 @@ func fromError(e *model.Error) *Error {
 	}
 }
 
+// NewHTTPError allows overriding the HTTP status code inferred by `NewErrror`.
+func NewHTTPError(err error, httpStatus int) *Error {
+	e := NewError(err)
+	e.httpStatus = httpStatus
+	return e
+}
+
 // NewError builds an Error collection from an `error`, which may actually be a ValidationErrors collection
 // or a `model.Error`
 func NewError(err error) *Error {
