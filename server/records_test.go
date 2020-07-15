@@ -70,7 +70,7 @@ func TestGetRecordsForPost(t *testing.T) {
 
 	// error result
 	am.Result = (*api.RecordResult)(nil)
-	am.Errors = model.NewErrors(http.StatusInternalServerError, assert.AnError)
+	am.Errors = api.NewError(assert.AnError)
 	request, _ = http.NewRequest("GET", "/records?post=1", nil)
 	response = httptest.NewRecorder()
 	r.ServeHTTP(response, request)
@@ -85,7 +85,7 @@ func TestGetRecordsForPost(t *testing.T) {
 	}
 	assert.NotNil(t, errRet)
 	assert.Equal(t, 1, len(errRet))
-	assert.Equal(t, am.Errors.Errs(), errRet)
+	assert.Equal(t, am.Errors.(*api.Error).Errs(), errRet)
 }
 
 func makeRecordIn(t *testing.T) (model.RecordIn, *bytes.Buffer) {

@@ -13,7 +13,7 @@ import (
 func (p PostgresPersister) SelectRecordsForPost(ctx context.Context, postID uint32) ([]model.Record, error) {
 	rows, err := p.db.QueryContext(ctx, "SELECT id, post_id, body, ix_hash, insert_time, last_update_time FROM record WHERE post_id=$1", postID)
 	if err != nil {
-		return nil, translateError(err)
+		return nil, translateError(err, &postID, nil, "")
 	}
 	defer rows.Close()
 	records := make([]model.Record, 0)
@@ -21,7 +21,7 @@ func (p PostgresPersister) SelectRecordsForPost(ctx context.Context, postID uint
 		var record model.Record
 		err := rows.Scan(&record.ID, &record.Post, &record.RecordBody, &record.IxHash, &record.InsertTime, &record.LastUpdateTime)
 		if err != nil {
-			return nil, translateError(err)
+			return nil, translateError(err, &postID, nil, "")
 		}
 		records = append(records, record)
 	}
@@ -36,14 +36,14 @@ func (p PostgresPersister) SelectRecordsByID(ctx context.Context, ids []uint32) 
 	}
 	rows, err := p.db.QueryContext(ctx, "SELECT id, post_id, body, ix_hash, insert_time, last_update_time FROM record WHERE id = ANY($1)", pq.Array(ids))
 	if err != nil {
-		return nil, translateError(err)
+		return nil, translateError(err, nil, nil, "")
 	}
 	defer rows.Close()
 	for rows.Next() {
 		var record model.Record
 		err := rows.Scan(&record.ID, &record.Post, &record.RecordBody, &record.IxHash, &record.InsertTime, &record.LastUpdateTime)
 		if err != nil {
-			return nil, translateError(err)
+			return nil, translateError(err, nil, nil, "")
 		}
 		records = append(records, record)
 	}
@@ -62,7 +62,7 @@ func (p PostgresPersister) SelectOneRecord(ctx context.Context, id uint32) (*mod
 		&record.LastUpdateTime,
 	)
 	if err != nil {
-		return nil, translateError(err)
+		return nil, translateError(err, &id, nil, "")
 	}
 	return &record, nil
 }
@@ -83,7 +83,7 @@ func (p PostgresPersister) InsertRecord(ctx context.Context, in model.RecordIn) 
 			&record.InsertTime,
 			&record.LastUpdateTime,
 		)
-	return &record, translateError(err)
+	return &record, translateError(err, nil, &record.Post, "post")
 }
 
 // UpdateRecord updates a Record in the database and returns the updated Record
@@ -111,17 +111,17 @@ func (p PostgresPersister) UpdateRecord(ctx context.Context, id uint32, in model
 		}
 		return nil, model.NewError(model.ErrNotFound, strconv.Itoa(int(id)))
 	}
-	return &record, translateError(err)
+	return &record, translateError(err, &id, &record.Post, "post")
 }
 
 // DeleteRecord deletes a Record
 func (p PostgresPersister) DeleteRecord(ctx context.Context, id uint32) error {
 	_, err := p.db.ExecContext(ctx, "DELETE FROM record WHERE id = $1", id)
-	return translateError(err)
+	return translateError(err, &id, nil, "")
 }
 
 // DeleteRecordsForPost deletes all Records for a post
 func (p PostgresPersister) DeleteRecordsForPost(ctx context.Context, postID uint32) error {
 	_, err := p.db.ExecContext(ctx, "DELETE FROM record WHERE post_id = $1", postID)
-	return translateError(err)
+	return translateError(err, &postID, nil, "")
 }

@@ -12,7 +12,6 @@ import (
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 	"github.com/ourrootsorg/cms-server/model"
-	"github.com/ourrootsorg/cms-server/persist"
 )
 
 const (
@@ -41,12 +40,12 @@ func (p Persister) SelectCollections(ctx context.Context) ([]model.Collection, e
 	qo, err := p.svc.Query(qi)
 	if err != nil {
 		log.Printf("[ERROR] Failed to get collections. qi: %#v err: %v", qi, err)
-		return nil, translateError(err)
+		return nil, model.NewError(model.ErrOther, err.Error())
 	}
 	err = dynamodbattribute.UnmarshalListOfMaps(qo.Items, &colls)
 	if err != nil {
 		log.Printf("[ERROR] Failed to unmarshal collections. qo: %#v err: %v", qo, err)
-		return nil, translateError(err)
+		return nil, model.NewError(model.ErrOther, err.Error())
 	}
 	return colls, nil
 }
@@ -78,12 +77,12 @@ func (p Persister) SelectCollectionsByID(ctx context.Context, ids []uint32) ([]m
 	bgio, err := p.svc.BatchGetItem(bgii)
 	if err != nil {
 		log.Printf("[ERROR] Failed to get collections. bgii: %#v err: %v", bgii, err)
-		return nil, translateError(err)
+		return nil, model.NewError(model.ErrOther, err.Error())
 	}
 	err = dynamodbattribute.UnmarshalListOfMaps(bgio.Responses[*p.tableName], &colls)
 	if err != nil {
 		log.Printf("[ERROR] Failed to unmarshal. bgio: %#v err: %v", bgio, err)
-		return nil, translateError(err)
+		return nil, model.NewError(model.ErrOther, err.Error())
 	}
 	return colls, nil
 }
@@ -91,12 +90,13 @@ func (p Persister) SelectCollectionsByID(ctx context.Context, ids []uint32) ([]m
 // SelectOneCollection loads a single collection from the database
 func (p Persister) SelectOneCollection(ctx context.Context, id uint32) (*model.Collection, error) {
 	var coll model.Collection
+	sid := strconv.FormatInt(int64(id), 10)
 	qi := &dynamodb.QueryInput{
 		TableName:              p.tableName,
 		KeyConditionExpression: aws.String(pkName + "= :pk and begins_with(" + skName + ", :sk)"),
 		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
 			":pk": {
-				N: aws.String(strconv.FormatInt(int64(id), 10)),
+				N: aws.String(sid),
 			},
 			":sk": {
 				S: aws.String(collectionType),
@@ -106,7 +106,7 @@ func (p Persister) SelectOneCollection(ctx context.Context, id uint32) (*model.C
 	qo, err := p.svc.Query(qi)
 	if err != nil {
 		log.Printf("[ERROR] Failed to get collection. qi: %#v err: %v", qi, err)
-		return nil, translateError(err)
+		return nil, model.NewError(model.ErrOther, err.Error())
 	}
 	// log.Printf("[DEBUG] qo = %#v", qo)
 	found := false
@@ -116,12 +116,12 @@ func (p Persister) SelectOneCollection(ctx context.Context, id uint32) (*model.C
 			err = dynamodbattribute.UnmarshalMap(item, &coll)
 			if err != nil {
 				log.Printf("[ERROR] Failed to unmarshal collections. qo: %#v err: %v", qo, err)
-				return nil, translateError(err)
+				return nil, model.NewError(model.ErrOther, err.Error())
 			}
 		}
 	}
 	if !found {
-		return nil, persist.ErrNoRows
+		return nil, model.NewError(model.ErrNotFound, sid)
 	}
 	// The category IDs are stored in the main record, so we could do just a GetItem. They're
 	// stored redundantly so that we can query them. By using them here, we can test to make sure
@@ -134,7 +134,7 @@ func (p Persister) SelectOneCollection(ctx context.Context, id uint32) (*model.C
 			categoryID, err := strconv.ParseUint(id, 10, 32)
 			if err != nil {
 				log.Printf("[ERROR] Failed to unmarshal category ID %s: %v", id, err)
-				return nil, translateError(err)
+				return nil, model.NewError(model.ErrOther, err.Error())
 			}
 			// log.Printf("[DEBUG] Category ID %s", id)
 			coll.Categories = append(coll.Categories, uint32(categoryID))
@@ -142,8 +142,8 @@ func (p Persister) SelectOneCollection(ctx context.Context, id uint32) (*model.C
 	}
 	// Compare the category slices
 	if !compareIDs(itemCategories, coll.Categories) {
-		return nil, fmt.Errorf("Internal error: DynamoDB categories don't match for collection ID %d.\n %#v != %#v",
-			coll.ID, itemCategories, coll.Categories)
+		return nil, model.NewError(model.ErrOther, fmt.Sprintf("Internal error: DynamoDB categories don't match for collection ID %d.\n %#v != %#v",
+			coll.ID, itemCategories, coll.Categories))
 	}
 	// log.Printf("[DEBUG] Got collection %#v", coll)
 	return &coll, nil
@@ -172,7 +172,7 @@ func (p Persister) InsertCollection(ctx context.Context, in model.CollectionIn) 
 	var err error
 	coll.ID, err = p.GetSequenceValue()
 	if err != nil {
-		return nil, translateError(err)
+		return nil, model.NewError(model.ErrOther, err.Error())
 	}
 	coll.Type = collectionType
 	coll.CollectionIn = in
@@ -184,13 +184,13 @@ func (p Persister) InsertCollection(ctx context.Context, in model.CollectionIn) 
 	itemLen := 2*len(in.Categories) + 1
 	if itemLen > 25 {
 		// TODO: Consider relaxing this somehow
-		return nil, fmt.Errorf("Unable to insert a collection with more than 12 categories (%#v)", in)
+		return nil, model.NewError(model.ErrOther, fmt.Sprintf("Unable to insert a collection with more than 12 categories (%#v)", in))
 	}
 
 	avs, err := dynamodbattribute.MarshalMap(coll)
 	if err != nil {
 		log.Printf("[ERROR] Failed to marshal collection %#v: %v", coll, err)
-		return nil, translateError(err)
+		return nil, model.NewError(model.ErrOther, err.Error())
 	}
 
 	twi := make([]*dynamodb.TransactWriteItem, itemLen)
@@ -252,19 +252,19 @@ func (p Persister) InsertCollection(ctx context.Context, in model.CollectionIn) 
 					switch {
 					case i < len(in.Categories):
 						// Theese items are the Category ID reference checks
-						return nil, persist.ErrForeignKeyViolation
+						return nil, model.NewError(model.ErrBadReference, strconv.FormatInt(int64(in.Categories[i]), 10), categoryType)
 					case i == len(in.Categories):
 						return nil, model.NewError(model.ErrOther, fmt.Sprintf("Insert failed. Collection ID %d already exists", coll.ID))
 					default: // i > len(in.Categories)
 						// These are the collection_category puts.
 						log.Printf("[ERROR] Failed to put collection %#v. twii: %#v err: %v", coll, twii, err)
-						return nil, translateError(err)
+						return nil, model.NewError(model.ErrOther, err.Error())
 					}
 				}
 			}
 		default:
 			log.Printf("[ERROR] Failed to put collection %#v. twii: %#v err: %v", coll, twii, err)
-			return nil, translateError(err)
+			return nil, model.NewError(model.ErrOther, err.Error())
 		}
 	}
 	return &coll, nil
@@ -284,12 +284,9 @@ func (p Persister) UpdateCollection(ctx context.Context, id uint32, in model.Col
 	// This isn't transactional so there's the possibility of a race and the two lists of categories
 	// getting out of sync. The good news is that this operation is idempotent, so that it should
 	// "self-heal", i.e. the next update should re-sync the lists.
-	current, err := p.SelectOneCollection(ctx, id)
-	if err != nil {
-		if err == persist.ErrNoRows {
-			return nil, model.NewError(model.ErrNotFound, strconv.Itoa(int(id)))
-		}
-		return nil, translateError(err)
+	current, e := p.SelectOneCollection(ctx, id)
+	if e != nil {
+		return nil, e
 	}
 	currentCategories := map[uint32]bool{}
 	for _, c := range current.Categories {
@@ -318,13 +315,13 @@ func (p Persister) UpdateCollection(ctx context.Context, id uint32, in model.Col
 	itemLen := 2*len(toAdd) + len(toRemove) + 1
 	if itemLen > 25 {
 		// TODO: Consider relaxing this somehow
-		return nil, fmt.Errorf("Unable to update collection; too many category changes (%#v)", in)
+		return nil, model.NewError(model.ErrOther, fmt.Sprintf("Unable to update collection; too many category changes (%#v)", in))
 	}
 
 	avs, err := dynamodbattribute.MarshalMap(coll)
 	if err != nil {
 		log.Printf("[ERROR] Failed to marshal collection %#v: %v", coll, err)
-		return nil, translateError(err)
+		return nil, model.NewError(model.ErrOther, err.Error())
 	}
 
 	twi := make([]*dynamodb.TransactWriteItem, itemLen)
@@ -400,23 +397,23 @@ func (p Persister) UpdateCollection(ctx context.Context, id uint32, in model.Col
 					switch {
 					case i < len(toAdd):
 						// These are the category condition checks
-						return nil, persist.ErrForeignKeyViolation
+						return nil, model.NewError(model.ErrBadReference, strconv.FormatInt(int64(toAdd[i]), 10), categoryType)
 					case i == len(toAdd):
 						// This is the actual put, so an error here is due to lastUpdateTime not matching
 						return nil, model.NewError(model.ErrConcurrentUpdate, current.LastUpdateTime.Format(time.RFC3339Nano), lastUpdateTime)
 					default: // i > len(toAdd)
 						// These are the collection_category updates
 						log.Printf("[ERROR] Failed to put collection %#v. twii: %#v err: %v", coll, twii, err)
-						return nil, translateError(err)
+						return nil, model.NewError(model.ErrOther, err.Error())
 					}
 				}
 			}
 		default:
 			log.Printf("[ERROR] Failed to put collection %#v. twii: %#v err: %v", coll, twii, err)
-			return nil, translateError(err)
+			return nil, model.NewError(model.ErrOther, err.Error())
 		}
 	}
-	return &coll, nil //translateError(err)
+	return &coll, nil //model.NewError(model.ErrOther, err.Error())
 }
 
 // DeleteCollection deletes a Collection
@@ -424,10 +421,10 @@ func (p Persister) DeleteCollection(ctx context.Context, id uint32) error {
 	// Read to get the category list, so that we can delete them
 	current, err := p.SelectOneCollection(ctx, id)
 	if err != nil {
-		if err == persist.ErrNoRows {
+		if model.ErrNotFound.Matches(err) {
 			return nil
 		}
-		return translateError(err)
+		return err
 	}
 	twi := make([]*dynamodb.TransactWriteItem, len(current.Categories)+1)
 	item := 0
@@ -459,7 +456,7 @@ func (p Persister) DeleteCollection(ctx context.Context, id uint32) error {
 	// log.Printf("[DEBUG] Executing TransactWriteItems(%#v)", twii)
 	_, err = p.svc.TransactWriteItems(twii)
 	if err != nil {
-		return translateError(err)
+		return model.NewError(model.ErrOther, err.Error())
 	}
 	return nil
 }

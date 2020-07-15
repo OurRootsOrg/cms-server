@@ -70,7 +70,7 @@ func TestGetAllPosts(t *testing.T) {
 
 	// error result
 	am.Result = (*api.PostResult)(nil)
-	am.Errors = model.NewErrors(http.StatusInternalServerError, assert.AnError)
+	am.Errors = api.NewError(assert.AnError)
 	request, _ = http.NewRequest("GET", "/posts", nil)
 	response = httptest.NewRecorder()
 	r.ServeHTTP(response, request)
@@ -85,7 +85,7 @@ func TestGetAllPosts(t *testing.T) {
 	}
 	assert.NotNil(t, errRet)
 	assert.Equal(t, 1, len(errRet))
-	assert.Equal(t, am.Errors.Errs(), errRet)
+	assert.Equal(t, am.Errors.(*api.Error).Errs(), errRet)
 }
 func TestGetPost(t *testing.T) {
 	am := &api.ApiMock{}
@@ -114,7 +114,7 @@ func TestGetPost(t *testing.T) {
 
 	post = nil
 	am.Result = post
-	am.Errors = model.NewErrors(http.StatusNotFound, model.NewError(model.ErrNotFound, "/posts/1"))
+	am.Errors = api.NewError(model.NewError("1"))
 
 	request, _ = http.NewRequest("GET", "/posts/1", nil)
 	response = httptest.NewRecorder()
@@ -130,7 +130,7 @@ func TestGetPost(t *testing.T) {
 	}
 	assert.NotNil(t, errRet)
 	assert.Equal(t, 1, len(errRet))
-	assert.Equal(t, am.Errors.Errs(), errRet)
+	assert.Equal(t, am.Errors.(*api.Error).Errs(), errRet)
 }
 
 func TestPostPost(t *testing.T) {

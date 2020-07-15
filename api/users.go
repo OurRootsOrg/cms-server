@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"net/http"
 
 	"github.com/coreos/go-oidc"
 	"github.com/ourrootsorg/cms-server/model"
@@ -17,7 +16,7 @@ type OIDCProvider interface {
 }
 
 // RetrieveUser constructs or retrieves a User, either from the database or cache
-func (api API) RetrieveUser(ctx context.Context, provider OIDCProvider, token *oidc.IDToken, rawToken string) (*model.User, *model.Errors) {
+func (api API) RetrieveUser(ctx context.Context, provider OIDCProvider, token *oidc.IDToken, rawToken string) (*model.User, error) {
 	var user model.User
 	cacheKey := token.Issuer + "|" + token.Subject
 	u, ok := api.userCache.Get(cacheKey)
@@ -36,7 +35,7 @@ func (api API) RetrieveUser(ctx context.Context, provider OIDCProvider, token *o
 	}
 	userInfo, err := provider.UserInfo(ctx, oauth2.StaticTokenSource(oauth2Token))
 	if err != nil {
-		return nil, model.NewErrors(http.StatusUnauthorized, fmt.Errorf("Failed to get userinfo: %v", err))
+		return nil, NewError(fmt.Errorf("Failed to get userinfo: %v", err))
 	}
 	log.Print("[DEBUG] UserInfo:")
 	log.Printf("[DEBUG] Subject: %s", userInfo.Subject)
@@ -55,18 +54,18 @@ func (api API) RetrieveUser(ctx context.Context, provider OIDCProvider, token *o
 	}
 	ui, err := model.NewUserIn(name.(string), userInfo.Email, userInfo.EmailVerified, token.Issuer, token.Subject)
 	if err != nil {
-		return nil, model.NewErrors(http.StatusUnauthorized, fmt.Errorf("Failed to construct User: %v", err))
+		return nil, NewError(fmt.Errorf("Failed to construct User: %v", err))
 	}
 	err = api.validate.Struct(ui)
 	if err != nil {
 		log.Printf("[ERROR] Invalid user %v", err)
-		return nil, model.NewErrors(http.StatusUnauthorized, err)
+		return nil, NewError(err)
 	}
 
 	// RetrieveUser will create the user if it's not already in the DB
-	up, err := api.userPersister.RetrieveUser(ctx, ui)
-	if err != nil {
-		return nil, model.NewErrors(http.StatusUnauthorized, fmt.Errorf("Failed to retrieve user: %v", err))
+	up, e := api.userPersister.RetrieveUser(ctx, ui)
+	if e != nil {
+		return nil, NewError(fmt.Errorf("Failed to retrieve user: %v", e))
 	}
 	// TODO: RetrieveUser doesn't update an existing user if attributes change.
 	// We should probably compare `up.UserBody` to `ui.UserBody` and do an update if they're not equal.

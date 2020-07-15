@@ -31,12 +31,12 @@ func (p Persister) SelectCategories(ctx context.Context) ([]model.Category, erro
 	qo, err := p.svc.Query(qi)
 	if err != nil {
 		log.Printf("[ERROR] Failed to get categories. qi: %#v err: %v", qi, err)
-		return cats, translateError(err)
+		return cats, model.NewError(model.ErrOther, err.Error())
 	}
 	err = dynamodbattribute.UnmarshalListOfMaps(qo.Items, &cats)
 	if err != nil {
 		log.Printf("[ERROR] Failed to unmarshal categories. qo: %#v err: %v", qo, err)
-		return cats, translateError(err)
+		return cats, model.NewError(model.ErrOther, err.Error())
 	}
 	return cats, nil
 }
@@ -68,12 +68,12 @@ func (p Persister) SelectCategoriesByID(ctx context.Context, ids []uint32) ([]mo
 	bgio, err := p.svc.BatchGetItem(bgii)
 	if err != nil {
 		log.Printf("[ERROR] Failed to get categories. bgii: %#v err: %v", bgii, err)
-		return cats, translateError(err)
+		return cats, model.NewError(model.ErrOther, err.Error())
 	}
 	err = dynamodbattribute.UnmarshalListOfMaps(bgio.Responses[*p.tableName], &cats)
 	if err != nil {
 		log.Printf("[ERROR] Failed to unmarshal. bgio: %#v err: %v", bgio, err)
-		return cats, translateError(err)
+		return cats, model.NewError(model.ErrOther, err.Error())
 	}
 	return cats, nil
 }
@@ -95,7 +95,7 @@ func (p Persister) SelectOneCategory(ctx context.Context, id uint32) (*model.Cat
 	gio, err := p.svc.GetItem(gii)
 	if err != nil {
 		log.Printf("[ERROR] Failed to get category. qi: %#v err: %v", gio, err)
-		return nil, translateError(err)
+		return nil, model.NewError(model.ErrOther, err.Error())
 	}
 	if gio.Item == nil {
 		return nil, model.NewError(model.ErrNotFound, strconv.Itoa(int(id)))
@@ -103,7 +103,7 @@ func (p Persister) SelectOneCategory(ctx context.Context, id uint32) (*model.Cat
 	err = dynamodbattribute.UnmarshalMap(gio.Item, &cat)
 	if err != nil {
 		log.Printf("[ERROR] Failed to unmarshal. qo: %#v err: %v", gio, err)
-		return nil, translateError(err)
+		return nil, model.NewError(model.ErrOther, err.Error())
 	}
 	return &cat, nil
 }
@@ -114,7 +114,7 @@ func (p Persister) InsertCategory(ctx context.Context, in model.CategoryIn) (*mo
 	var err error
 	cat.ID, err = p.GetSequenceValue()
 	if err != nil {
-		return nil, translateError(err)
+		return nil, model.NewError(model.ErrOther, err.Error())
 	}
 	cat.Type = categoryType
 	cat.CategoryBody = in.CategoryBody
@@ -125,7 +125,7 @@ func (p Persister) InsertCategory(ctx context.Context, in model.CategoryIn) (*mo
 	avs, err := dynamodbattribute.MarshalMap(cat)
 	if err != nil {
 		log.Printf("[ERROR] Failed to marshal category %#v: %v", cat, err)
-		return nil, translateError(err)
+		return nil, model.NewError(model.ErrOther, err.Error())
 	}
 
 	pii := &dynamodb.PutItemInput{
@@ -139,11 +139,11 @@ func (p Persister) InsertCategory(ctx context.Context, in model.CategoryIn) (*mo
 			return &cat, model.NewError(model.ErrOther, fmt.Sprintf("Insert failed. Category ID %d already exists", cat.ID))
 		}
 		log.Printf("[ERROR] Failed to put category %#v. pii: %#v err: %v", cat, pii, err)
-		return nil, translateError(err)
+		return nil, model.NewError(model.ErrOther, err.Error())
 	}
 	err = dynamodbattribute.UnmarshalMap(pio.Attributes, &cat)
 	if err != nil {
-		return nil, translateError(err)
+		return nil, model.NewError(model.ErrOther, err.Error())
 	}
 	return &cat, nil
 }
@@ -161,7 +161,7 @@ func (p Persister) UpdateCategory(ctx context.Context, id uint32, in model.Categ
 	avs, err := dynamodbattribute.MarshalMap(cat)
 	if err != nil {
 		log.Printf("[ERROR] Failed to marshal category %#v: %v", cat, err)
-		return nil, translateError(err)
+		return nil, model.NewError(model.ErrOther, err.Error())
 	}
 	lastUpdateTime := in.LastUpdateTime.Format(time.RFC3339Nano)
 	pii := &dynamodb.PutItemInput{
@@ -184,11 +184,11 @@ func (p Persister) UpdateCategory(ctx context.Context, id uint32, in model.Categ
 			return nil, model.NewError(model.ErrConcurrentUpdate, c.LastUpdateTime.Format(time.RFC3339Nano), lastUpdateTime)
 		}
 		log.Printf("[ERROR] Failed to update category %#v. pii: %#v err: %v", cat, pii, err)
-		return nil, translateError(err)
+		return nil, model.NewError(model.ErrOther, err.Error())
 	}
 	err = dynamodbattribute.UnmarshalMap(pio.Attributes, &cat)
 	if err != nil {
-		return nil, translateError(err)
+		return nil, model.NewError(model.ErrOther, err.Error())
 	}
 	return &cat, nil
 }
@@ -204,7 +204,7 @@ func (p Persister) DeleteCategory(ctx context.Context, id uint32) error {
 	}
 	_, err := p.svc.DeleteItem(dii)
 	if err != nil {
-		return translateError(err)
+		return model.NewError(model.ErrOther, err.Error())
 	}
 	return nil
 }

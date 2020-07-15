@@ -29,7 +29,7 @@ import (
 
 const defaultURL = "http://localhost:3000"
 
-func indexPost(ctx context.Context, ap *api.API, msg model.PublisherMsg) *model.Errors {
+func indexPost(ctx context.Context, ap *api.API, msg model.PublisherMsg) error {
 	// read post
 	post, errs := ap.GetPost(ctx, msg.PostID)
 	if errs != nil {
@@ -44,7 +44,7 @@ func indexPost(ctx context.Context, ap *api.API, msg model.PublisherMsg) *model.
 	// index post
 	if err := ap.IndexPost(ctx, post); err != nil {
 		log.Printf("[ERROR] Error calling IndexPost on %d: %v", post.ID, err)
-		return model.NewErrors(http.StatusInternalServerError, err)
+		return api.NewError(err)
 	}
 
 	// update post.recordsStatus = Published
@@ -57,7 +57,7 @@ func indexPost(ctx context.Context, ap *api.API, msg model.PublisherMsg) *model.
 	return errs
 }
 
-func unindexPost(ctx context.Context, ap *api.API, msg model.PublisherMsg) *model.Errors {
+func unindexPost(ctx context.Context, ap *api.API, msg model.PublisherMsg) error {
 	// read post
 	post, errs := ap.GetPost(ctx, msg.PostID)
 	if errs != nil {
@@ -71,7 +71,7 @@ func unindexPost(ctx context.Context, ap *api.API, msg model.PublisherMsg) *mode
 
 	if err := ap.SearchDeleteByPost(ctx, msg.PostID); err != nil {
 		log.Printf("[ERROR] Error calling SearchDeleteByPost on %d: %v", msg.PostID, err)
-		return model.NewErrors(http.StatusInternalServerError, err)
+		return api.NewError(err)
 	}
 
 	// update post.recordsStatus = Draft
@@ -84,7 +84,7 @@ func unindexPost(ctx context.Context, ap *api.API, msg model.PublisherMsg) *mode
 	return errs
 }
 
-func processMessage(ctx context.Context, ap *api.API, rawMsg []byte) *model.Errors {
+func processMessage(ctx context.Context, ap *api.API, rawMsg []byte) error {
 	var msg model.PublisherMsg
 	err := json.Unmarshal(rawMsg, &msg)
 	if err != nil {
@@ -100,7 +100,7 @@ func processMessage(ctx context.Context, ap *api.API, rawMsg []byte) *model.Erro
 	case model.PublisherActionUnindex:
 		return unindexPost(ctx, ap, msg)
 	default:
-		return model.NewErrors(http.StatusInternalServerError, fmt.Errorf("Unknown action %s", msg.Action))
+		return api.NewError(fmt.Errorf("Unknown action %s", msg.Action))
 	}
 }
 

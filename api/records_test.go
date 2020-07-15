@@ -37,18 +37,15 @@ func TestRecords(t *testing.T) {
 		RecordPersister(p)
 
 	// Add a test category and test collection and test post for referential integrity
-	testCategory, err := createTestCategory(p)
-	assert.Nil(t, err, "Error creating test category")
-	defer deleteTestCategory(p, testCategory)
-	testCollection, err := createTestCollection(p, testCategory.ID)
-	assert.Nil(t, err, "Error creating test collection")
-	defer deleteTestCollection(p, testCollection)
-	testPost, err := createTestPost(p, testCollection.ID)
-	assert.Nil(t, err, "Error creating test post")
-	defer deleteTestPost(p, testPost)
+	testCategory := createTestCategory(t, p)
+	defer deleteTestCategory(t, p, testCategory)
+	testCollection := createTestCollection(t, p, testCategory.ID)
+	defer deleteTestCollection(t, p, testCollection)
+	testPost := createTestPost(t, p, testCollection.ID)
+	defer deleteTestPost(t, p, testPost)
 
-	empty, errors := testApi.GetRecordsForPost(context.TODO(), testPost.ID)
-	assert.Nil(t, errors)
+	empty, err := testApi.GetRecordsForPost(context.TODO(), testPost.ID)
+	assert.NoError(t, err)
 	assert.Equal(t, 0, len(empty.Records), "Expected empty slice, got %#v", empty)
 
 	// Add a Record
@@ -58,91 +55,95 @@ func TestRecords(t *testing.T) {
 		},
 		Post: testPost.ID,
 	}
-	created, errors := testApi.AddRecord(context.TODO(), in)
-	assert.Nil(t, errors)
+	created, err := testApi.AddRecord(context.TODO(), in)
+	assert.NoError(t, err)
 	assert.Equal(t, in.Data, created.Data, "Expected Name to match")
 	assert.NotEmpty(t, created.ID)
 	assert.Equal(t, in.Post, created.Post)
 
 	// Add with bad post reference
 	in.Post = in.Post + 88
-	_, errors = testApi.AddRecord(context.TODO(), in)
-	assert.Len(t, errors.Errs(), 1)
-	assert.Equal(t, model.ErrBadReference, errors.Errs()[0].Code, "errors.Errs()[0]: %#v", errors.Errs()[0])
+	_, err = testApi.AddRecord(context.TODO(), in)
+	assert.Len(t, err.(*api.Error).Errs(), 1)
+	assert.Equal(t, model.ErrBadReference, err.(*api.Error).Errs()[0].Code, "err.(*api.Errors).Errs()[0]: %#v", err.(*api.Error).Errs()[0])
 
 	// GET /records should now return the created Record
-	ret, errors := testApi.GetRecordsForPost(context.TODO(), testPost.ID)
-	assert.Nil(t, errors)
+	ret, err := testApi.GetRecordsForPost(context.TODO(), testPost.ID)
+	assert.NoError(t, err)
 	assert.Equal(t, 0, len(empty.Records), "Expected empty slice, got %#v", empty)
 	assert.Equal(t, 1, len(ret.Records))
 	assert.Equal(t, *created, ret.Records[0])
 
 	// GET many records should now return the created Record
-	records, errors := testApi.GetRecordsByID(context.TODO(), []uint32{created.ID})
-	assert.Nil(t, errors)
+	records, err := testApi.GetRecordsByID(context.TODO(), []uint32{created.ID})
+	assert.NoError(t, err)
 	assert.Equal(t, 1, len(records))
 	assert.Equal(t, *created, records[0])
 
 	// GET /records/{id} should now return the created Record
-	ret2, errors := testApi.GetRecord(context.TODO(), created.ID)
-	assert.Nil(t, errors)
+	ret2, err := testApi.GetRecord(context.TODO(), created.ID)
+	assert.NoError(t, err)
 	assert.Equal(t, created, ret2)
 
 	// Bad request - no post
 	in.Post = 0
-	_, errors = testApi.AddRecord(context.TODO(), in)
-	if assert.Len(t, errors.Errs(), 1, "errors.Errs(): %#v", errors.Errs()) {
-		assert.Equal(t, errors.Errs()[0].Code, model.ErrRequired)
+	_, err = testApi.AddRecord(context.TODO(), in)
+	assert.IsType(t, &api.Error{}, err)
+	if assert.Len(t, err.(*api.Error).Errs(), 1, "err.(*api.Errors).Errs(): %#v", err.(*api.Error).Errs()) {
+		assert.Equal(t, err.(*api.Error).Errs()[0].Code, model.ErrRequired)
 	}
 
 	// Record not found
-	_, errors = testApi.GetRecord(context.TODO(), created.ID+99)
-	assert.NotNil(t, errors)
-	assert.Len(t, errors.Errs(), 1)
-	assert.Equal(t, model.ErrNotFound, errors.Errs()[0].Code, "errors.Errs()[0]: %#v", errors.Errs()[0])
+	_, err = testApi.GetRecord(context.TODO(), created.ID+99)
+	assert.Error(t, err)
+	assert.IsType(t, &api.Error{}, err)
+	assert.Len(t, err.(*api.Error).Errs(), 1)
+	assert.Equal(t, model.ErrNotFound, err.(*api.Error).Errs()[0].Code, "err.(*api.Errors).Errs()[0]: %#v", err.(*api.Error).Errs()[0])
 
 	// Update
 	ret2.Data = map[string]string{"foo": "baz"}
-	updated, errors := testApi.UpdateRecord(context.TODO(), ret2.ID, *ret2)
-	assert.Nil(t, errors)
+	updated, err := testApi.UpdateRecord(context.TODO(), ret2.ID, *ret2)
+	assert.NoError(t, err)
 	assert.Equal(t, ret2.ID, updated.ID)
 	assert.Equal(t, ret2.Post, updated.Post)
 	assert.Equal(t, ret2.Data, updated.Data, "Expected Name to match")
 
 	// Update non-existant
-	_, errors = testApi.UpdateRecord(context.TODO(), updated.ID+99, *updated)
-	assert.Len(t, errors.Errs(), 1)
-	assert.Equal(t, model.ErrNotFound, errors.Errs()[0].Code, "errors.Errs()[0]: %#v", errors.Errs()[0])
+	_, err = testApi.UpdateRecord(context.TODO(), updated.ID+99, *updated)
+	assert.IsType(t, &api.Error{}, err)
+	assert.Len(t, err.(*api.Error).Errs(), 1)
+	assert.Equal(t, model.ErrNotFound, err.(*api.Error).Errs()[0].Code, "err.(*api.Errors).Errs()[0]: %#v", err.(*api.Error).Errs()[0])
 
 	// Update with bad post
 	updated.Post = updated.Post + 99
-	_, errors = testApi.UpdateRecord(context.TODO(), updated.ID, *updated)
-	assert.Len(t, errors.Errs(), 1)
-	assert.Equal(t, model.ErrBadReference, errors.Errs()[0].Code, "errors.Errs()[0]: %#v", errors.Errs()[0])
+	_, err = testApi.UpdateRecord(context.TODO(), updated.ID, *updated)
+	assert.IsType(t, &api.Error{}, err)
+	assert.Len(t, err.(*api.Error).Errs(), 1)
+	assert.Equal(t, model.ErrBadReference, err.(*api.Error).Errs()[0].Code, "err.(*api.Errors).Errs()[0]: %#v", err.(*api.Error).Errs()[0])
 
 	// Update with bad LastUpdateTime
 	updated.Post = ret2.Post
 	updated.LastUpdateTime = time.Now().Add(-time.Minute)
-	_, errors = testApi.UpdateRecord(context.TODO(), updated.ID, *updated)
-	if assert.NotNil(t, errors) {
-		assert.Len(t, errors.Errs(), 1)
-		assert.Equal(t, model.ErrConcurrentUpdate, errors.Errs()[0].Code, "errors.Errs()[0]: %#v", errors.Errs()[0])
+	_, err = testApi.UpdateRecord(context.TODO(), updated.ID, *updated)
+	if assert.Error(t, err) {
+		assert.IsType(t, &api.Error{}, err)
+		assert.Len(t, err.(*api.Error).Errs(), 1)
+		assert.Equal(t, model.ErrConcurrentUpdate, err.(*api.Error).Errs()[0].Code, "err.(*api.Errors).Errs()[0]: %#v", err.(*api.Error).Errs()[0])
 	}
 
 	// DELETE
-	errors = testApi.DeleteRecord(context.TODO(), updated.ID)
-	assert.Nil(t, errors)
+	err = testApi.DeleteRecord(context.TODO(), updated.ID)
+	assert.NoError(t, err)
 }
 
-func createTestPost(p model.PostPersister, collectionID uint32) (*model.Post, error) {
+func createTestPost(t *testing.T, p model.PostPersister, collectionID uint32) *model.Post {
 	in := model.NewPostIn("Test", collectionID, "")
-	created, err := p.InsertPost(context.TODO(), in)
-	if err != nil {
-		return nil, err
-	}
-	return created, err
+	created, e := p.InsertPost(context.TODO(), in)
+	assert.NoError(t, e)
+	return created
 }
 
-func deleteTestPost(p model.PostPersister, post *model.Post) error {
-	return p.DeletePost(context.TODO(), post.ID)
+func deleteTestPost(t *testing.T, p model.PostPersister, post *model.Post) {
+	e := p.DeletePost(context.TODO(), post.ID)
+	assert.NoError(t, e)
 }

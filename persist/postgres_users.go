@@ -3,7 +3,6 @@ package persist
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"fmt"
 	"log"
 
@@ -17,7 +16,7 @@ import (
 func (p PostgresPersister) RetrieveUser(ctx context.Context, in model.UserIn) (*model.User, error) {
 	var user model.User
 	log.Printf("[DEBUG] Looking up subject '%s' in database", in.Subject)
-	err := p.db.QueryRowContext(ctx, `SELECT id, body, insert_time, last_update_time 
+	err := p.db.QueryRowContext(ctx, `SELECT id, body, insert_time, last_update_time
 		FROM cms_user
 		WHERE body->>'iss'=$1 AND body->>'sub'=$2`, in.Issuer, in.Subject).
 		Scan(
@@ -28,14 +27,14 @@ func (p PostgresPersister) RetrieveUser(ctx context.Context, in model.UserIn) (*
 		)
 	if err != nil && err != sql.ErrNoRows {
 		log.Printf("[DEBUG] Error looking up subject '%s' in database", in.Subject)
-		return nil, translateError(err)
+		return nil, translateError(err, nil, nil, "")
 	}
 	if err == nil {
 		log.Printf("[DEBUG] Found subject '%s' in database", in.Subject)
 		if !user.Enabled {
 			msg := fmt.Sprintf("User '%d' is not enabled", user.ID)
 			log.Printf("[DEBUG] %s", msg)
-			return nil, errors.New(msg)
+			return nil, model.NewError(model.ErrOther, msg)
 		}
 		// We got a user
 		log.Printf("[DEBUG] Returning enabled user '%#v'", user)
@@ -43,8 +42,8 @@ func (p PostgresPersister) RetrieveUser(ctx context.Context, in model.UserIn) (*
 	}
 	log.Printf("[DEBUG] No user with subject '%s' found in database, so creating one", in.Subject)
 	err = p.db.QueryRowContext(ctx,
-		`INSERT INTO cms_user (body) 
-		 VALUES ($1) 
+		`INSERT INTO cms_user (body)
+		 VALUES ($1)
 		 RETURNING id, body, insert_time, last_update_time`,
 		in.UserBody).
 		Scan(
@@ -54,5 +53,5 @@ func (p PostgresPersister) RetrieveUser(ctx context.Context, in model.UserIn) (*
 			&user.LastUpdateTime,
 		)
 	log.Printf("[DEBUG] Created user '%d'", user.ID)
-	return &user, translateError(err)
+	return &user, translateError(err, nil, nil, "")
 }

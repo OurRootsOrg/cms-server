@@ -191,26 +191,3 @@ func compareToAWSError(err error, awsErrorCode string) bool {
 	}
 	return false
 }
-
-func translateError(err error) error {
-	if err == nil {
-		return err
-	}
-	if aerr, ok := err.(awserr.Error); ok {
-		switch aerr.Code() {
-		// case dynamodb.ErrCodeProvisionedThroughputExceededException:
-		// 	fmt.Println(dynamodb.ErrCodeProvisionedThroughputExceededException, aerr.Error())
-		// case dynamodb.ErrCodeResourceNotFoundException:
-		// 	fmt.Println(dynamodb.ErrCodeResourceNotFoundException, aerr.Error())
-		// case dynamodb.ErrCodeRequestLimitExceeded:
-		// 	fmt.Println(dynamodb.ErrCodeRequestLimitExceeded, aerr.Error())
-		// case dynamodb.ErrCodeInternalServerError:
-		// 	fmt.Println(dynamodb.ErrCodeInternalServerError, aerr.Error())
-		default:
-			log.Printf("[INFO] Untranslated DynamoDB error: %v", aerr)
-		}
-	} else {
-		log.Printf("[INFO] Untranslated DynamoDB error: %v", err)
-	}
-	return err
-}

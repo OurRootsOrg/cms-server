@@ -17,7 +17,8 @@ func (p PostgresPersister) SelectSettings(ctx context.Context) (*model.Settings,
 		&settings.InsertTime,
 		&settings.LastUpdateTime,
 	)
-	return &settings, translateError(err)
+	id := uint32(SettingsID)
+	return &settings, translateError(err, &id, nil, "")
 }
 
 // UpsertSettings updates or inserts a Settings object in the database and returns the updated Settings
@@ -39,9 +40,9 @@ func (p PostgresPersister) UpsertSettings(ctx context.Context, in model.Settings
 		if err == nil {
 			// Row exists, so it must be a non-matching update time
 			return nil, model.NewError(model.ErrConcurrentUpdate, s.LastUpdateTime.String(), in.LastUpdateTime.String())
-		} else if err == ErrNoRows {
+		} else if model.ErrNotFound.Matches(err) {
 			// row doesn't exist; need to insert
-			err = p.db.QueryRowContext(ctx,
+			err := p.db.QueryRowContext(ctx,
 				`INSERT INTO settings (id, body)
 				VALUES ($1, $2)
 		 		RETURNING body, insert_time, last_update_time`,
@@ -51,8 +52,10 @@ func (p PostgresPersister) UpsertSettings(ctx context.Context, in model.Settings
 					&settings.InsertTime,
 					&settings.LastUpdateTime,
 				)
-			return &settings, translateError(err)
+			id := uint32(SettingsID)
+			return &settings, translateError(err, &id, nil, "")
 		}
 	}
-	return &settings, translateError(err)
+	id := uint32(SettingsID)
+	return &settings, translateError(err, &id, nil, "")
 }

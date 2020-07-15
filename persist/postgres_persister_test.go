@@ -29,8 +29,8 @@ func TestSelectCategories(t *testing.T) {
 		WillReturnRows(sqlmock.NewRows([]string{"id", "body", "insert_time", "last_update_time"}).
 			AddRow(1, js, now, now).AddRow(2, js, now, now))
 
-	c, err := p.SelectCategories(context.TODO())
-	assert.NoError(t, err)
+	c, e := p.SelectCategories(context.TODO())
+	assert.Nil(t, e)
 	assert.Len(t, c, 2)
 	cc := model.NewCategory(1, in)
 	cc.InsertTime = now
@@ -57,8 +57,8 @@ func TestSelectOneCategory(t *testing.T) {
 		WillReturnRows(sqlmock.NewRows([]string{"id", "body", "insert_time", "last_update_time"}).
 			AddRow(int32(1), js, now, now))
 
-	c, err := p.SelectOneCategory(context.TODO(), 1)
-	assert.NoError(t, err)
+	c, e := p.SelectOneCategory(context.TODO(), 1)
+	assert.Nil(t, e)
 	assert.Equal(t, uint32(1), c.ID)
 	assert.Equal(t, cb.Name, c.Name)
 	assert.Equal(t, now, c.InsertTime)
@@ -79,8 +79,8 @@ func TestInsertCategory(t *testing.T) {
 		WithArgs([]byte(js)).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "body", "insert_time", "last_update_time"}).AddRow(1, js, now, now))
 
-	c, err := p.InsertCategory(context.TODO(), cb)
-	assert.NoError(t, err)
+	c, e := p.InsertCategory(context.TODO(), cb)
+	assert.Nil(t, e)
 	assert.Equal(t, uint32(1), c.ID)
 	assert.Equal(t, cb.Name, c.Name)
 	assert.Equal(t, now, c.InsertTime)
@@ -101,8 +101,8 @@ func TestUpdateCategory(t *testing.T) {
 		WithArgs([]byte(js), 1, in.LastUpdateTime).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "body", "insert_time", "last_update_time"}).AddRow(1, js, in.InsertTime, now))
 
-	c, err := p.UpdateCategory(context.TODO(), 1, in)
-	assert.NoError(t, err)
+	c, e := p.UpdateCategory(context.TODO(), 1, in)
+	assert.Nil(t, e)
 	assert.Equal(t, uint32(1), c.ID)
 	assert.Equal(t, in.Name, c.Name)
 	assert.Equal(t, in.InsertTime, c.InsertTime)
@@ -115,8 +115,8 @@ func TestDeleteCategory(t *testing.T) {
 	p := persist.NewPostgresPersister(db)
 	mock.ExpectExec("DELETE FROM category WHERE id = $1").
 		WithArgs(1).WillReturnResult(sqlmock.NewResult(0, 1))
-	err = p.DeleteCategory(context.TODO(), 1)
-	assert.NoError(t, err)
+	e := p.DeleteCategory(context.TODO(), 1)
+	assert.Nil(t, e)
 }
 
 // Collection tests
@@ -140,8 +140,8 @@ func TestSelectCollections(t *testing.T) {
 			AddRow(1, "{1}", js, now, now).
 			AddRow(2, "{1}", js, now, now))
 
-	c, err := p.SelectCollections(context.TODO())
-	assert.NoError(t, err)
+	c, e := p.SelectCollections(context.TODO())
+	assert.Nil(t, e)
 	assert.Len(t, c, 2)
 	cc := model.NewCollection(1, in)
 	cc.InsertTime = now
@@ -171,8 +171,8 @@ func TestSelectOneCollection(t *testing.T) {
 		WillReturnRows(sqlmock.NewRows([]string{"id", "category_id", "body", "insert_time", "last_update_time"}).
 			AddRow(1, "{1}", js, now, now))
 
-	c, err := p.SelectOneCollection(context.TODO(), 1)
-	assert.NoError(t, err)
+	c, e := p.SelectOneCollection(context.TODO(), 1)
+	assert.Nil(t, e)
 	assert.Equal(t, uint32(1), c.ID)
 	assert.Equal(t, cb.Name, c.Name)
 	assert.Equal(t, now, c.InsertTime)
@@ -201,8 +201,8 @@ func TestInsertCollection(t *testing.T) {
 		WithArgs(1, 1).WillReturnResult(sqlmock.NewResult(0, 1))
 	mock.ExpectCommit()
 
-	c, err := p.InsertCollection(context.TODO(), in)
-	assert.NoError(t, err)
+	c, e := p.InsertCollection(context.TODO(), in)
+	assert.Nil(t, e)
 	assert.Equal(t, uint32(1), c.ID)
 	assert.Equal(t, in.Name, c.Name)
 	assert.Equal(t, now, c.InsertTime)
@@ -233,8 +233,8 @@ func TestUpdateCollection(t *testing.T) {
 		WithArgs(1, 1).WillReturnResult(sqlmock.NewResult(0, 1))
 	mock.ExpectCommit()
 
-	c, err := p.UpdateCollection(context.TODO(), 1, in)
-	assert.NoError(t, err)
+	c, e := p.UpdateCollection(context.TODO(), 1, in)
+	assert.Nil(t, e)
 	assert.Equal(t, uint32(1), c.ID)
 	assert.Equal(t, in.Name, c.Name)
 	assert.Equal(t, now, c.InsertTime)
@@ -253,13 +253,13 @@ func TestDeleteCollection(t *testing.T) {
 		WithArgs(1).WillReturnResult(sqlmock.NewResult(0, 1))
 	mock.ExpectCommit()
 
-	err = p.DeleteCollection(context.TODO(), 1)
-	assert.NoError(t, err)
+	e := p.DeleteCollection(context.TODO(), 1)
+	assert.Nil(t, e)
 }
 
 func makeCategoryIn(t *testing.T) model.CategoryIn {
-	in, err := model.NewCategoryIn("Test Category")
-	assert.NoError(t, err)
+	in, e := model.NewCategoryIn("Test Category")
+	assert.Nil(t, e)
 	return in
 }
 func makeCategory(t *testing.T) model.Category {

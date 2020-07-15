@@ -11,7 +11,6 @@ import (
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 	"github.com/ourrootsorg/cms-server/model"
-	"github.com/ourrootsorg/cms-server/persist"
 )
 
 const postType = "post"
@@ -32,17 +31,17 @@ func (p Persister) SelectPosts(ctx context.Context) ([]model.Post, error) {
 	qo, err := p.svc.Query(qi)
 	if err != nil {
 		log.Printf("[ERROR] Failed to get posts. qi: %#v err: %v", qi, err)
-		return posts, translateError(err)
+		return posts, model.NewError(model.ErrOther, err.Error())
 	}
 	err = dynamodbattribute.UnmarshalListOfMaps(qo.Items, &posts)
 	if err != nil {
 		log.Printf("[ERROR] Failed to unmarshal posts. qo: %#v err: %v", qo, err)
-		return posts, translateError(err)
+		return posts, model.NewError(model.ErrOther, err.Error())
 	}
 	return posts, nil
 	// rows, err := p.db.QueryContext(ctx, "SELECT id, post_id, body, insert_time, last_update_time FROM post")
 	// if err != nil {
-	// 	return nil, translateError(err)
+	// 	return nil, model.NewError(model.ErrOther, err.Error())
 	// }
 	// defer rows.Close()
 	// posts := make([]model.Post, 0)
@@ -50,7 +49,7 @@ func (p Persister) SelectPosts(ctx context.Context) ([]model.Post, error) {
 	// 	var post model.Post
 	// 	err := rows.Scan(&post.ID, &post.Post, &post.PostBody, &post.InsertTime, &post.LastUpdateTime)
 	// 	if err != nil {
-	// 		return nil, translateError(err)
+	// 		return nil, model.NewError(model.ErrOther, err.Error())
 	// 	}
 	// 	posts = append(posts, post)
 	// }
@@ -73,7 +72,7 @@ func (p Persister) SelectOnePost(ctx context.Context, id uint32) (*model.Post, e
 	gio, err := p.svc.GetItem(gii)
 	if err != nil {
 		log.Printf("[ERROR] Failed to get post. qi: %#v err: %v", gio, err)
-		return nil, translateError(err)
+		return nil, model.NewError(model.ErrOther, err.Error())
 	}
 	if gio.Item == nil {
 		return nil, model.NewError(model.ErrNotFound, strconv.Itoa(int(id)))
@@ -81,7 +80,7 @@ func (p Persister) SelectOnePost(ctx context.Context, id uint32) (*model.Post, e
 	err = dynamodbattribute.UnmarshalMap(gio.Item, &post)
 	if err != nil {
 		log.Printf("[ERROR] Failed to unmarshal. qo: %#v err: %v", gio, err)
-		return nil, translateError(err)
+		return nil, model.NewError(model.ErrOther, err.Error())
 	}
 	return &post, nil
 	// err := p.db.QueryRowContext(ctx, "SELECT id, post_id, body, insert_time, last_update_time FROM post WHERE id=$1", id).Scan(
@@ -92,7 +91,7 @@ func (p Persister) SelectOnePost(ctx context.Context, id uint32) (*model.Post, e
 	// 	&post.LastUpdateTime,
 	// )
 	// if err != nil {
-	// 	return nil, translateError(err)
+	// 	return nil, model.NewError(model.ErrOther, err.Error())
 	// }
 }
 
@@ -102,7 +101,7 @@ func (p Persister) InsertPost(ctx context.Context, in model.PostIn) (*model.Post
 	var err error
 	post.ID, err = p.GetSequenceValue()
 	if err != nil {
-		return nil, translateError(err)
+		return nil, model.NewError(model.ErrOther, err.Error())
 	}
 	post.Type = postType
 	post.PostIn = in
@@ -113,7 +112,7 @@ func (p Persister) InsertPost(ctx context.Context, in model.PostIn) (*model.Post
 	avs, err := dynamodbattribute.MarshalMap(post)
 	if err != nil {
 		log.Printf("[ERROR] Failed to marshal post %#v: %v", post, err)
-		return nil, translateError(err)
+		return nil, model.NewError(model.ErrOther, err.Error())
 	}
 
 	twi := make([]*dynamodb.TransactWriteItem, 2)
@@ -152,19 +151,19 @@ func (p Persister) InsertPost(ctx context.Context, in model.PostIn) (*model.Post
 					switch i {
 					case 0:
 						// This is the Collection ID reference check
-						return nil, persist.ErrForeignKeyViolation
+						return nil, model.NewError(model.ErrBadReference, strconv.FormatInt(int64(post.Collection), 10), collectionType)
 					case 1:
 						return nil, model.NewError(model.ErrOther, fmt.Sprintf("Insert failed. Post ID %d already exists", post.ID))
 					default: // i >= 2
 						// Should never happen
 						log.Printf("[ERROR] Failed to put post %#v. twii: %#v err: %v", post, twii, err)
-						return nil, translateError(err)
+						return nil, model.NewError(model.ErrOther, err.Error())
 					}
 				}
 			}
 		default:
 			log.Printf("[ERROR] Failed to put post %#v. twii: %#v err: %v", post, twii, err)
-			return nil, translateError(err)
+			return nil, model.NewError(model.ErrOther, err.Error())
 		}
 	}
 	return &post, nil
@@ -193,7 +192,7 @@ func (p Persister) UpdatePost(ctx context.Context, id uint32, in model.Post) (*m
 	avs, err := dynamodbattribute.MarshalMap(post)
 	if err != nil {
 		log.Printf("[ERROR] Failed to marshal post %#v: %v", post, err)
-		return nil, translateError(err)
+		return nil, model.NewError(model.ErrOther, err.Error())
 	}
 
 	twi := make([]*dynamodb.TransactWriteItem, 2)
@@ -236,28 +235,25 @@ func (p Persister) UpdatePost(ctx context.Context, id uint32, in model.Post) (*m
 					switch i {
 					case 0:
 						// This is the Collection ID reference check
-						return nil, persist.ErrForeignKeyViolation
+						return nil, model.NewError(model.ErrBadReference, strconv.FormatInt(int64(post.Collection), 10), collectionType)
 					case 1:
 						// This is the actual put, so an error here is due to either lastUpdateTime not matching or the item not existing
 						// Do a select to distinguish the cases
-						current, err := p.SelectOnePost(ctx, id)
-						if err != nil {
-							if err == persist.ErrNoRows {
-								return nil, model.NewError(model.ErrNotFound, strconv.Itoa(int(id)))
-							}
-							return nil, translateError(err)
+						current, e := p.SelectOnePost(ctx, id)
+						if e != nil {
+							return nil, e
 						}
 						return nil, model.NewError(model.ErrConcurrentUpdate, current.LastUpdateTime.Format(time.RFC3339Nano), lastUpdateTime)
 					default: // i >= 2
 						// Should never happen
 						log.Printf("[ERROR] Failed to put post %#v. twii: %#v err: %v", post, twii, err)
-						return nil, translateError(err)
+						return nil, model.NewError(model.ErrOther, err.Error())
 					}
 				}
 			}
 		default:
 			log.Printf("[ERROR] Failed to put post %#v. twii: %#v err: %v", post, twii, err)
-			return nil, translateError(err)
+			return nil, model.NewError(model.ErrOther, err.Error())
 		}
 	}
 	return &post, nil
@@ -295,9 +291,9 @@ func (p Persister) DeletePost(ctx context.Context, id uint32) error {
 	}
 	_, err := p.svc.DeleteItem(dii)
 	if err != nil {
-		return translateError(err)
+		return model.NewError(model.ErrOther, err.Error())
 	}
 	// _, err := p.db.ExecContext(ctx, "DELETE FROM post WHERE id = $1", id)
-	// return translateError(err)
+	// return model.NewError(model.ErrOther, err.Error())
 	return nil
 }
