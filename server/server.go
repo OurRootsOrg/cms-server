@@ -184,6 +184,11 @@ func main() {
 		httpSwagger.DomID("#swagger-ui"),
 	))
 	r.NotFoundHandler = http.HandlerFunc(NotFound)
+	corsMiddleware := handlers.CORS(
+		handlers.AllowedHeaders([]string{"X-Requested-With", "Content-Type", "Authorization"}),
+		handlers.AllowedMethods([]string{"GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS"}),
+		handlers.AllowedOrigins([]string{"*"}))
+	r.Use(corsMiddleware)
 
 	if env.IsLambda {
 		// Lambda-specific setup
@@ -210,21 +215,10 @@ func main() {
 		if env.BaseURL.Scheme == "https" {
 			log.Fatal(http.ListenAndServeTLS(fmt.Sprintf(":%s", env.BaseURL.Port()),
 				"server.crt", "server.key",
-				handlers.LoggingHandler(
-					os.Stdout,
-					handlers.CORS(
-						handlers.AllowedHeaders([]string{"X-Requested-With", "Content-Type", "Authorization"}),
-						handlers.AllowedMethods([]string{"GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS"}),
-						handlers.AllowedOrigins([]string{"*"}))(r)),
-			))
+				handlers.LoggingHandler(os.Stdout, r)))
 		} else {
 			log.Fatal(http.ListenAndServe(fmt.Sprintf(":%s", env.BaseURL.Port()),
-				handlers.LoggingHandler(os.Stdout,
-					handlers.CORS(
-						handlers.AllowedHeaders([]string{"X-Requested-With", "Content-Type", "Authorization"}),
-						handlers.AllowedMethods([]string{"GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS"}),
-						handlers.AllowedOrigins([]string{"*"}))(r)),
-			))
+				handlers.LoggingHandler(os.Stdout, r)))
 		}
 	}
 }
