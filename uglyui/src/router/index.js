@@ -1,6 +1,7 @@
 import Vue from "vue";
 import VueRouter from "vue-router";
 import store from "@/store";
+import Auth from "@/services/Auth";
 import NProgress from "nprogress";
 import Home from "../views/Home.vue";
 import NotFound from "../views/NotFound.vue";
@@ -119,8 +120,9 @@ const router = new VueRouter({
   routes
 });
 
-router.beforeEach((routeTo, routeFrom, next) => {
+router.beforeEach(async (routeTo, routeFrom, next) => {
   NProgress.start();
+  await Auth.isLoaded();
   if (!store.getters.userIsLoggedIn && routeTo.matched.some(record => record.meta.requiresAuth)) {
     next("/");
   } else {
