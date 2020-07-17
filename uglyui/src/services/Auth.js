@@ -28,9 +28,21 @@ function authClient() {
 
   const concurrentActionHandler = new ConcurrentActionHandler();
 
-  mgr.getUser().then(user => {
-    store.dispatch("userSet", user ? provider.standardizeUser(user) : null);
+  let loading = new Promise(resolve => {
+    mgr.getUser().then(user => {
+      store.dispatch("userSet", user ? provider.standardizeUser(user) : null);
+      resolve(true);
+      loading = null;
+    });
   });
+
+  async function isLoaded() {
+    if (loading) {
+      return loading;
+    } else {
+      return true;
+    }
+  }
 
   function login() {
     return mgr.signinRedirect();
@@ -98,6 +110,7 @@ function authClient() {
 
   return {
     loginRequiredError,
+    isLoaded,
     login,
     logout,
     getAccessToken,

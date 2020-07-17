@@ -48,11 +48,11 @@ export default {
   postsGetOne(id) {
     return get(`/posts/${id}`);
   },
-  postsCreate(post) {
-    return post("/posts", post);
+  postsCreate(pst) {
+    return post("/posts", pst);
   },
-  postsUpdate(post) {
-    return put(`/posts/${post.id}`, post);
+  postsUpdate(pst) {
+    return put(`/posts/${pst.id}`, pst);
   },
   postsDelete(id) {
     return del(`/posts/${id}`);
