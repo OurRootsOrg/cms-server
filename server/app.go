@@ -83,6 +83,10 @@ func (app App) GetHealth(w http.ResponseWriter, req *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
+// we need a handler for options. This handler won't actually get invoked; it's just needed so the CORS middleware will get invoked
+func (app App) OptionsNoop(w http.ResponseWriter, req *http.Request) {
+}
+
 func (app App) verifyToken(next http.Handler) http.Handler {
 	if app.authDisabled {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -147,33 +151,48 @@ func (app App) NewRouter() *mux.Router {
 	r.HandleFunc(app.baseURL.Path+"/health", app.GetHealth).Methods("GET")
 	r.HandleFunc(app.baseURL.Path+"/index.html", app.GetIndex).Methods("GET")
 
+	r.Handle(app.baseURL.Path+"/categories", http.HandlerFunc(app.OptionsNoop)).Methods("OPTIONS")
 	r.Handle(app.baseURL.Path+"/categories", app.verifyToken(http.HandlerFunc(app.GetAllCategories))).Methods("GET")
 	r.Handle(app.baseURL.Path+"/categories", app.verifyToken(http.HandlerFunc(app.PostCategory))).Methods("POST")
+
+	r.Handle(app.baseURL.Path+"/categories/{id}", http.HandlerFunc(app.OptionsNoop)).Methods("OPTIONS")
 	r.Handle(app.baseURL.Path+"/categories/{id}", app.verifyToken(http.HandlerFunc(app.GetCategory))).Methods("GET")
 	r.Handle(app.baseURL.Path+"/categories/{id}", app.verifyToken(http.HandlerFunc(app.PutCategory))).Methods("PUT")
 	r.Handle(app.baseURL.Path+"/categories/{id}", app.verifyToken(http.HandlerFunc(app.DeleteCategory))).Methods("DELETE")
 
+	r.Handle(app.baseURL.Path+"/collections", http.HandlerFunc(app.OptionsNoop)).Methods("OPTIONS")
 	r.Handle(app.baseURL.Path+"/collections", app.verifyToken(http.HandlerFunc(app.GetCollections))).Methods("GET")
 	r.Handle(app.baseURL.Path+"/collections", app.verifyToken(http.HandlerFunc(app.PostCollection))).Methods("POST")
+
+	r.Handle(app.baseURL.Path+"/collections/{id}", http.HandlerFunc(app.OptionsNoop)).Methods("OPTIONS")
 	r.Handle(app.baseURL.Path+"/collections/{id}", app.verifyToken(http.HandlerFunc(app.GetCollection))).Methods("GET")
 	r.Handle(app.baseURL.Path+"/collections/{id}", app.verifyToken(http.HandlerFunc(app.PutCollection))).Methods("PUT")
 	r.Handle(app.baseURL.Path+"/collections/{id}", app.verifyToken(http.HandlerFunc(app.DeleteCollection))).Methods("DELETE")
 
+	r.Handle(app.baseURL.Path+"/content", http.HandlerFunc(app.OptionsNoop)).Methods("OPTIONS")
 	r.Handle(app.baseURL.Path+"/content", app.verifyToken(http.HandlerFunc(app.PostContentRequest))).Methods("POST")
 
+	r.Handle(app.baseURL.Path+"/posts", http.HandlerFunc(app.OptionsNoop)).Methods("OPTIONS")
 	r.Handle(app.baseURL.Path+"/posts", app.verifyToken(http.HandlerFunc(app.GetPosts))).Methods("GET")
 	r.Handle(app.baseURL.Path+"/posts", app.verifyToken(http.HandlerFunc(app.PostPost))).Methods("POST")
+
+	r.Handle(app.baseURL.Path+"/posts/{id}", http.HandlerFunc(app.OptionsNoop)).Methods("OPTIONS")
 	r.Handle(app.baseURL.Path+"/posts/{id}", app.verifyToken(http.HandlerFunc(app.GetPost))).Methods("GET")
 	r.Handle(app.baseURL.Path+"/posts/{id}", app.verifyToken(http.HandlerFunc(app.PutPost))).Methods("PUT")
 	r.Handle(app.baseURL.Path+"/posts/{id}", app.verifyToken(http.HandlerFunc(app.DeletePost))).Methods("DELETE")
 
+	r.Handle(app.baseURL.Path+"/records", http.HandlerFunc(app.OptionsNoop)).Methods("OPTIONS")
 	r.Handle(app.baseURL.Path+"/records", app.verifyToken(http.HandlerFunc(app.GetRecords))).Methods("GET")
 
+	r.Handle(app.baseURL.Path+"/settings", http.HandlerFunc(app.OptionsNoop)).Methods("OPTIONS")
 	r.Handle(app.baseURL.Path+"/settings", app.verifyToken(http.HandlerFunc(app.GetSettings))).Methods("GET")
 	r.Handle(app.baseURL.Path+"/settings", app.verifyToken(http.HandlerFunc(app.PutSettings))).Methods("PUT")
 
 	// search doesn't require a token for now
+	r.Handle(app.baseURL.Path+"/search", http.HandlerFunc(app.OptionsNoop)).Methods("OPTIONS")
 	r.HandleFunc(app.baseURL.Path+"/search", app.Search).Methods("GET")
+
+	r.Handle(app.baseURL.Path+"/search/{id}", http.HandlerFunc(app.OptionsNoop)).Methods("OPTIONS")
 	r.HandleFunc(app.baseURL.Path+"/search/{id}", app.SearchByID).Methods("GET")
 
 	return r
