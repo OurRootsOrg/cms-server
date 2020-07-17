@@ -48,6 +48,7 @@ export const actions = {
       })
       .catch(error => {
         const notification = {
+          error,
           type: "error",
           message: "There was a problem creating your collection: " + error.message
         };
@@ -68,10 +69,12 @@ export const actions = {
       })
       .catch(error => {
         const notification = {
+          error,
           type: "error",
           message: "There was a problem updating your collection: " + error.message
         };
         dispatch("notificationsAdd", notification, { root: true });
+        throw error;
       });
   },
   collectionsDelete({ commit, dispatch }, id) {
@@ -86,10 +89,12 @@ export const actions = {
       })
       .catch(error => {
         const notification = {
+          error,
           type: "error",
           message: "There was a problem deleting the collection: " + error.message
         };
         dispatch("notificationsAdd", notification, { root: true });
+        throw error;
       });
   },
   collectionsGetAll({ commit, dispatch }) {
@@ -100,16 +105,28 @@ export const actions = {
       })
       .catch(error => {
         const notification = {
+          error,
           type: "error",
-          message: "There was a problem fetching collections: " + error.message
+          message: "There was a problem reading collections: " + error.message
         };
         dispatch("notificationsAdd", notification, { root: true });
+        throw error;
       });
   },
-  collectionsGetOne({ commit }, id) {
-    return Server.collectionsGetOne(id).then(response => {
-      commit("COLLECTION_SET", response.data);
-      return response.data;
-    });
+  collectionsGetOne({ commit, dispatch }, id) {
+    return Server.collectionsGetOne(id)
+      .then(response => {
+        commit("COLLECTION_SET", response.data);
+        return response.data;
+      })
+      .catch(error => {
+        const notification = {
+          error,
+          type: "error",
+          message: "There was a problem reading collection: " + id + " " + error.message
+        };
+        dispatch("notificationsAdd", notification, { root: true });
+        throw error;
+      });
   }
 };

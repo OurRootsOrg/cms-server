@@ -6,8 +6,8 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/coreos/go-oidc"
 	"github.com/ourrootsorg/cms-server/model"
+	"github.com/ourrootsorg/go-oidc"
 	"golang.org/x/oauth2"
 )
 

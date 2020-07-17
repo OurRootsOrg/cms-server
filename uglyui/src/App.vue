@@ -64,7 +64,7 @@
         <v-icon>mdi-bell</v-icon>
       </v-btn>
       <v-btn icon>
-        <v-avatar v-if="$auth.user" size="28"><img :src="$auth.user.picture"/></v-avatar>
+        <v-avatar v-if="user.user && user.user.picture" size="28"><img :src="user.user.picture"/></v-avatar>
       </v-btn>
     </v-app-bar>
 
@@ -89,6 +89,8 @@
 <script>
 import Notifications from "@/components/Notifications.vue";
 import NProgress from "nprogress";
+import store from "@/store";
+import { mapState } from "vuex";
 
 export default {
   components: {
@@ -100,6 +102,7 @@ export default {
   props: {
     source: String
   },
+  computed: mapState(["user"]),
   data: () => ({
     dialog: false,
     drawer: true,
@@ -116,7 +119,7 @@ export default {
   }),
   methods: {
     itemAuthorized(item) {
-      return !item.authRequired || this.$auth.isAuthenticated;
+      return !item.authRequired || store.getters.userIsLoggedIn;
     }
   }
 };

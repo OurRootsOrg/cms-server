@@ -81,9 +81,13 @@ export default {
       routes.push(store.dispatch("collectionsGetAll"));
       routes.push(store.dispatch("postsGetAll"));
     }
-    Promise.all(routes).then(() => {
-      next();
-    });
+    Promise.all(routes)
+      .then(() => {
+        next();
+      })
+      .catch(() => {
+        next("/");
+      });
   },
   created() {
     if (this.$route.params && this.$route.params.cid) {

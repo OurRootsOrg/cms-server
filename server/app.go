@@ -11,9 +11,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/coreos/go-oidc"
 	"github.com/gorilla/mux"
 	"github.com/ourrootsorg/cms-server/api"
+	"github.com/ourrootsorg/go-oidc"
 )
 
 const contentType = "application/json"
@@ -60,7 +60,7 @@ func (app *App) OIDC(oidcAudience string, oidcDomain string) *App {
 	app.oidcAudience = oidcAudience
 	app.oidcDomain = oidcDomain
 	// Assumes that the OIDC provider supports discovery
-	app.oidcProvider, err = oidc.NewProvider(context.TODO(), "https://"+app.oidcDomain+"/")
+	app.oidcProvider, err = oidc.NewProvider(context.TODO(), app.oidcDomain)
 	if err != nil {
 		log.Fatalf("Unable to intialize OIDC verifier: %v", err)
 	}
@@ -120,6 +120,8 @@ func (app App) verifyToken(next http.Handler) http.Handler {
 		log.Printf("[DEBUG] Found valid token for subject '%s'", parsedToken.Subject)
 		user, errors := app.api.RetrieveUser(r.Context(), app.oidcProvider, parsedToken, accessJWT)
 		if errors != nil {
+			msg := fmt.Sprintf("RetrieveUser error %v", errors)
+			log.Print("[ERROR] " + msg)
 			ErrorsResponse(w, errors)
 			return
 		}

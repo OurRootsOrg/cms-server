@@ -1,18 +1,17 @@
 import Vue from "vue";
 import VueRouter from "vue-router";
+import store from "@/store";
 import NProgress from "nprogress";
 import Home from "../views/Home.vue";
 import NotFound from "../views/NotFound.vue";
 import NetworkIssue from "../views/NetworkIssue.vue";
-import Server from "@/services/Server.js";
-import { getAuth } from "../plugins/auth0";
 
 Vue.use(VueRouter);
 
 const routes = [
   {
     path: "/",
-    name: "Home",
+    name: "home",
     component: Home
   },
   {
@@ -120,28 +119,13 @@ const router = new VueRouter({
   routes
 });
 
-async function checkLogin() {
-  if (Server.isLoggedIn()) {
-    return true;
-  }
-  let auth0 = await getAuth();
-  if (!auth0.isAuthenticated) {
-    return false;
-  }
-  let token = await auth0.getTokenSilently();
-  Server.login(token);
-  return true;
-}
-
 router.beforeEach((routeTo, routeFrom, next) => {
   NProgress.start();
-  checkLogin().then(isLoggedIn => {
-    if (!isLoggedIn && routeTo.matched.some(record => record.meta.requiresAuth)) {
-      next("/");
-    } else {
-      next();
-    }
-  });
+  if (!store.getters.userIsLoggedIn && routeTo.matched.some(record => record.meta.requiresAuth)) {
+    next("/");
+  } else {
+    next();
+  }
 });
 
 router.afterEach(() => {
