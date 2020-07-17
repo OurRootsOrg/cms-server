@@ -986,6 +986,7 @@
         },
         "/search": {
             "get": {
+                "description": "* Names can include wildcards (* or ?). In that case name fuzziness is ignored\n* Date and place searching are not yet implemented. They will be implemented in August.\n* Name fuzziness flags (OR'd together): 0: exact only; 1: alternate spellings; 2: narrow sounds-like; 4: broad sounds-like; 8: fuzzy (levenshtein); 16: initials (applies only to given)\n* Date fuzziness: +/- number of years to generate a year range\n* Place fuzziness flags (OR'd together): 0: exact only; 1: include higher-level jurisdictions; 2: include nearby places\n* Date facets: to start set century faceting to true. If ht user selects a value from the returned list, set that value as the century filter and set decade faceting to true. If the user selects a decade, set that value as the decade filter\n* Place facets: to start, set level 1 faceting to true. If the user selects a value from the returned list, set that value as the level 1 filter and set level 2 faceting to true. Continue up to level 3",
                 "produces": [
                     "application/json"
                 ],
@@ -994,6 +995,578 @@
                 ],
                 "summary": "returns search results",
                 "operationId": "search",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "principal given and middle names",
+                        "name": "given",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "principal given name fuzziness flags",
+                        "name": "givenFuzziness",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "principal surname(s)",
+                        "name": "surname",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "principal surname fuzziness flags",
+                        "name": "surnameFuzziness",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "father given and middle names",
+                        "name": "fatherGiven",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "father given name fuzziness flags",
+                        "name": "fatherGivenFuzziness",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "father surname(s)",
+                        "name": "fatherSurname",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "father surname fuzziness flags",
+                        "name": "fatherFuzziness",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "mother given and middle names",
+                        "name": "motherGiven",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "mother given name fuzziness flags",
+                        "name": "motherGivenFuzziness",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "mother surname(s)",
+                        "name": "motherSurname",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "mother surname fuzziness flags",
+                        "name": "motherFuzziness",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "spouse given and middle names",
+                        "name": "spouseGiven",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "spouse given name fuzziness flags",
+                        "name": "spouseGivenFuzziness",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "spouse surname(s)",
+                        "name": "spouseSurname",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "spouse surname fuzziness flags",
+                        "name": "spouseFuzziness",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "other person given and middle names",
+                        "name": "otherGiven",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "other person given name fuzziness flags",
+                        "name": "otherGivenFuzziness",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "other person surname(s)",
+                        "name": "otherSurname",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "other person surname fuzziness flags",
+                        "name": "otherSurnameFuzziness",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "date",
+                        "name": "birthDate",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "+/- year range",
+                        "name": "birthDateFuzziness",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "place",
+                        "name": "birthPlace",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "fuzziness flags",
+                        "name": "birthPlaceFuzziness",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "date",
+                        "name": "marriageDate",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "+/- year range",
+                        "name": "marriageDateFuzziness",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "place",
+                        "name": "marriagePlace",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "fuzziness flags",
+                        "name": "marriagePlaceFuzziness",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "date",
+                        "name": "residenceDate",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "+/- year range",
+                        "name": "residenceDateFuzziness",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "place",
+                        "name": "residencePlace",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "fuzziness flags",
+                        "name": "residencePlaceFuzziness",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "date",
+                        "name": "deathDate",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "+/- year range",
+                        "name": "deathDateFuzziness",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "place",
+                        "name": "deathPlace",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "fuzziness flags",
+                        "name": "deathPlaceFuzziness",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "date",
+                        "name": "anyDate",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "+/- year range",
+                        "name": "anyDateFuzziness",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "place",
+                        "name": "anyPlace",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "fuzziness flags",
+                        "name": "anyPlaceFuzziness",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "text search on the keywords field",
+                        "name": "keywords",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "facet on century",
+                        "name": "birthCenturyFacet",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "filter on century",
+                        "name": "birthCentury",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "facet on decade",
+                        "name": "birthDecadeFacet",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "filter on decade",
+                        "name": "birthDecade",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "facet on place level 1",
+                        "name": "birthPlace1Facet",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "filter on place level 1",
+                        "name": "birthPlace1",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "facet on place level 2",
+                        "name": "birthPlace2Facet",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "filter on place level 2",
+                        "name": "birthPlace2",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "facet on place level 3",
+                        "name": "birthPlace3Facet",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "filter on place level 3",
+                        "name": "birthPlace3",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "facet on century",
+                        "name": "marriageCenturyFacet",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "filter on century",
+                        "name": "marriageCentury",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "facet on decade",
+                        "name": "marriageDecadeFacet",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "filter on decade",
+                        "name": "marriageDecade",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "facet on place level 1",
+                        "name": "marriagePlace1Facet",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "filter on place level 1",
+                        "name": "marriagePlace1",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "facet on place level 2",
+                        "name": "marriagePlace2Facet",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "filter on place level 2",
+                        "name": "marriagePlace2",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "facet on place level 3",
+                        "name": "marriagePlace3Facet",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "filter on place level 3",
+                        "name": "marriagePlace3",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "facet on century",
+                        "name": "residenceCenturyFacet",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "filter on century",
+                        "name": "residenceCentury",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "facet on decade",
+                        "name": "residenceDecadeFacet",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "filter on decade",
+                        "name": "residenceDecade",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "facet on place level 1",
+                        "name": "residencePlace1Facet",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "filter on place level 1",
+                        "name": "residencePlace1",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "facet on place level 2",
+                        "name": "residencePlace2Facet",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "filter on place level 2",
+                        "name": "residencePlace2",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "facet on place level 3",
+                        "name": "residencePlace3Facet",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "filter on place level 3",
+                        "name": "residencePlace3",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "facet on century",
+                        "name": "deathCenturyFacet",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "filter on century",
+                        "name": "deathCentury",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "facet on decade",
+                        "name": "deathDecadeFacet",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "filter on decade",
+                        "name": "deathDecade",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "facet on place level 1",
+                        "name": "deathPlace1Facet",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "filter on place level 1",
+                        "name": "deathPlace1",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "facet on place level 2",
+                        "name": "deathPlace2Facet",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "filter on place level 2",
+                        "name": "deathPlace2",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "facet on place level 3",
+                        "name": "deathPlace3Facet",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "filter on place level 3",
+                        "name": "deathPlace3",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "facet on century",
+                        "name": "otherCenturyFacet",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "filter on century",
+                        "name": "otherCentury",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "facet on decade",
+                        "name": "otherDecadeFacet",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "filter on decade",
+                        "name": "otherDecade",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "facet on place level 1",
+                        "name": "otherPlace1Facet",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "filter on place level 1",
+                        "name": "otherPlace1",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "facet on place level 2",
+                        "name": "otherPlace2Facet",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "filter on place level 2",
+                        "name": "otherPlace2",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "facet on place level 3",
+                        "name": "otherPlace3Facet",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "filter on place level 3",
+                        "name": "otherPlace3",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "facet on category",
+                        "name": "categoryFacet",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "filter on category",
+                        "name": "category",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "facet on collection",
+                        "name": "collectionFacet",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "filter on collection",
+                        "name": "collection",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
