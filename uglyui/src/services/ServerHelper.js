@@ -22,7 +22,7 @@ export function post(url, data, config) {
 
 export function put(url, data, config) {
   return request({
-    method: "POST",
+    method: "PUT",
     url: url,
     data: data,
     ...config
