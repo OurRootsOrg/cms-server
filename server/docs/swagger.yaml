@@ -899,7 +899,396 @@ paths:
       - records
   /search:
     get:
+      description: |-
+        * Names can include wildcards (* or ?). In that case name fuzziness is ignored
+        * Date and place searching are not yet implemented. They will be implemented in August.
+        * Name fuzziness flags (OR'd together): 0: exact only; 1: alternate spellings; 2: narrow sounds-like; 4: broad sounds-like; 8: fuzzy (levenshtein); 16: initials (applies only to given)
+        * Date fuzziness: +/- number of years to generate a year range
+        * Place fuzziness flags (OR'd together): 0: exact only; 1: include higher-level jurisdictions; 2: include nearby places
+        * Date facets: to start set century faceting to true. If ht user selects a value from the returned list, set that value as the century filter and set decade faceting to true. If the user selects a decade, set that value as the decade filter
+        * Place facets: to start, set level 1 faceting to true. If the user selects a value from the returned list, set that value as the level 1 filter and set level 2 faceting to true. Continue up to level 3
       operationId: search
+      parameters:
+      - description: principal given and middle names
+        in: query
+        name: given
+        type: string
+      - description: principal given name fuzziness flags
+        in: query
+        name: givenFuzziness
+        type: integer
+      - description: principal surname(s)
+        in: query
+        name: surname
+        type: string
+      - description: principal surname fuzziness flags
+        in: query
+        name: surnameFuzziness
+        type: integer
+      - description: father given and middle names
+        in: query
+        name: fatherGiven
+        type: string
+      - description: father given name fuzziness flags
+        in: query
+        name: fatherGivenFuzziness
+        type: integer
+      - description: father surname(s)
+        in: query
+        name: fatherSurname
+        type: string
+      - description: father surname fuzziness flags
+        in: query
+        name: fatherFuzziness
+        type: integer
+      - description: mother given and middle names
+        in: query
+        name: motherGiven
+        type: string
+      - description: mother given name fuzziness flags
+        in: query
+        name: motherGivenFuzziness
+        type: integer
+      - description: mother surname(s)
+        in: query
+        name: motherSurname
+        type: string
+      - description: mother surname fuzziness flags
+        in: query
+        name: motherFuzziness
+        type: integer
+      - description: spouse given and middle names
+        in: query
+        name: spouseGiven
+        type: string
+      - description: spouse given name fuzziness flags
+        in: query
+        name: spouseGivenFuzziness
+        type: integer
+      - description: spouse surname(s)
+        in: query
+        name: spouseSurname
+        type: string
+      - description: spouse surname fuzziness flags
+        in: query
+        name: spouseFuzziness
+        type: integer
+      - description: other person given and middle names
+        in: query
+        name: otherGiven
+        type: string
+      - description: other person given name fuzziness flags
+        in: query
+        name: otherGivenFuzziness
+        type: integer
+      - description: other person surname(s)
+        in: query
+        name: otherSurname
+        type: string
+      - description: other person surname fuzziness flags
+        in: query
+        name: otherSurnameFuzziness
+        type: integer
+      - description: date
+        in: query
+        name: birthDate
+        type: string
+      - description: +/- year range
+        in: query
+        name: birthDateFuzziness
+        type: integer
+      - description: place
+        in: query
+        name: birthPlace
+        type: string
+      - description: fuzziness flags
+        in: query
+        name: birthPlaceFuzziness
+        type: integer
+      - description: date
+        in: query
+        name: marriageDate
+        type: string
+      - description: +/- year range
+        in: query
+        name: marriageDateFuzziness
+        type: integer
+      - description: place
+        in: query
+        name: marriagePlace
+        type: string
+      - description: fuzziness flags
+        in: query
+        name: marriagePlaceFuzziness
+        type: integer
+      - description: date
+        in: query
+        name: residenceDate
+        type: string
+      - description: +/- year range
+        in: query
+        name: residenceDateFuzziness
+        type: integer
+      - description: place
+        in: query
+        name: residencePlace
+        type: string
+      - description: fuzziness flags
+        in: query
+        name: residencePlaceFuzziness
+        type: integer
+      - description: date
+        in: query
+        name: deathDate
+        type: string
+      - description: +/- year range
+        in: query
+        name: deathDateFuzziness
+        type: integer
+      - description: place
+        in: query
+        name: deathPlace
+        type: string
+      - description: fuzziness flags
+        in: query
+        name: deathPlaceFuzziness
+        type: integer
+      - description: date
+        in: query
+        name: anyDate
+        type: string
+      - description: +/- year range
+        in: query
+        name: anyDateFuzziness
+        type: integer
+      - description: place
+        in: query
+        name: anyPlace
+        type: string
+      - description: fuzziness flags
+        in: query
+        name: anyPlaceFuzziness
+        type: integer
+      - description: text search on the keywords field
+        in: query
+        name: keywords
+        type: string
+      - description: facet on century
+        in: query
+        name: birthCenturyFacet
+        type: boolean
+      - description: filter on century
+        in: query
+        name: birthCentury
+        type: string
+      - description: facet on decade
+        in: query
+        name: birthDecadeFacet
+        type: boolean
+      - description: filter on decade
+        in: query
+        name: birthDecade
+        type: string
+      - description: facet on place level 1
+        in: query
+        name: birthPlace1Facet
+        type: boolean
+      - description: filter on place level 1
+        in: query
+        name: birthPlace1
+        type: string
+      - description: facet on place level 2
+        in: query
+        name: birthPlace2Facet
+        type: boolean
+      - description: filter on place level 2
+        in: query
+        name: birthPlace2
+        type: string
+      - description: facet on place level 3
+        in: query
+        name: birthPlace3Facet
+        type: boolean
+      - description: filter on place level 3
+        in: query
+        name: birthPlace3
+        type: string
+      - description: facet on century
+        in: query
+        name: marriageCenturyFacet
+        type: boolean
+      - description: filter on century
+        in: query
+        name: marriageCentury
+        type: string
+      - description: facet on decade
+        in: query
+        name: marriageDecadeFacet
+        type: boolean
+      - description: filter on decade
+        in: query
+        name: marriageDecade
+        type: string
+      - description: facet on place level 1
+        in: query
+        name: marriagePlace1Facet
+        type: boolean
+      - description: filter on place level 1
+        in: query
+        name: marriagePlace1
+        type: string
+      - description: facet on place level 2
+        in: query
+        name: marriagePlace2Facet
+        type: boolean
+      - description: filter on place level 2
+        in: query
+        name: marriagePlace2
+        type: string
+      - description: facet on place level 3
+        in: query
+        name: marriagePlace3Facet
+        type: boolean
+      - description: filter on place level 3
+        in: query
+        name: marriagePlace3
+        type: string
+      - description: facet on century
+        in: query
+        name: residenceCenturyFacet
+        type: boolean
+      - description: filter on century
+        in: query
+        name: residenceCentury
+        type: string
+      - description: facet on decade
+        in: query
+        name: residenceDecadeFacet
+        type: boolean
+      - description: filter on decade
+        in: query
+        name: residenceDecade
+        type: string
+      - description: facet on place level 1
+        in: query
+        name: residencePlace1Facet
+        type: boolean
+      - description: filter on place level 1
+        in: query
+        name: residencePlace1
+        type: string
+      - description: facet on place level 2
+        in: query
+        name: residencePlace2Facet
+        type: boolean
+      - description: filter on place level 2
+        in: query
+        name: residencePlace2
+        type: string
+      - description: facet on place level 3
+        in: query
+        name: residencePlace3Facet
+        type: boolean
+      - description: filter on place level 3
+        in: query
+        name: residencePlace3
+        type: string
+      - description: facet on century
+        in: query
+        name: deathCenturyFacet
+        type: boolean
+      - description: filter on century
+        in: query
+        name: deathCentury
+        type: string
+      - description: facet on decade
+        in: query
+        name: deathDecadeFacet
+        type: boolean
+      - description: filter on decade
+        in: query
+        name: deathDecade
+        type: string
+      - description: facet on place level 1
+        in: query
+        name: deathPlace1Facet
+        type: boolean
+      - description: filter on place level 1
+        in: query
+        name: deathPlace1
+        type: string
+      - description: facet on place level 2
+        in: query
+        name: deathPlace2Facet
+        type: boolean
+      - description: filter on place level 2
+        in: query
+        name: deathPlace2
+        type: string
+      - description: facet on place level 3
+        in: query
+        name: deathPlace3Facet
+        type: boolean
+      - description: filter on place level 3
+        in: query
+        name: deathPlace3
+        type: string
+      - description: facet on century
+        in: query
+        name: otherCenturyFacet
+        type: boolean
+      - description: filter on century
+        in: query
+        name: otherCentury
+        type: string
+      - description: facet on decade
+        in: query
+        name: otherDecadeFacet
+        type: boolean
+      - description: filter on decade
+        in: query
+        name: otherDecade
+        type: string
+      - description: facet on place level 1
+        in: query
+        name: otherPlace1Facet
+        type: boolean
+      - description: filter on place level 1
+        in: query
+        name: otherPlace1
+        type: string
+      - description: facet on place level 2
+        in: query
+        name: otherPlace2Facet
+        type: boolean
+      - description: filter on place level 2
+        in: query
+        name: otherPlace2
+        type: string
+      - description: facet on place level 3
+        in: query
+        name: otherPlace3Facet
+        type: boolean
+      - description: filter on place level 3
+        in: query
+        name: otherPlace3
+        type: string
+      - description: facet on category
+        in: query
+        name: categoryFacet
+        type: boolean
+      - description: filter on category
+        in: query
+        name: category
+        type: string
+      - description: facet on collection
+        in: query
+        name: collectionFacet
+        type: boolean
+      - description: filter on collection
+        in: query
+        name: collection
+        type: string
       produces:
       - application/json
       responses:
