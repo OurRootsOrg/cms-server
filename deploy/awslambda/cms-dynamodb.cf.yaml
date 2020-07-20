@@ -167,6 +167,27 @@ Resources:
       IntegrationMethod: GET
       PayloadFormatVersion: "1.0"
 
+  CallbackRoute:
+    Type: "AWS::ApiGatewayV2::Route"
+    Properties:
+      ApiId: !Ref OurRootsCMSApi
+      RouteKey: "GET /callback.html"
+      AuthorizationType: NONE
+      Target: !Join
+        - /
+        - - integrations
+          - !Ref CallbackIntegration
+
+  CallbackIntegration:
+    Type: "AWS::ApiGatewayV2::Integration"
+    Properties:
+      ApiId: !Ref OurRootsCMSApi
+      Description: Site Bucket callback.html Integration
+      IntegrationType: HTTP_PROXY
+      IntegrationUri: !Join [ '/', [ !Ref CMSSiteBucketURL , 'callback.html' ] ]
+      IntegrationMethod: GET
+      PayloadFormatVersion: "1.0"
+
   # GETs to /* go to index.html in the bucket root
   UIRoute:
     Type: "AWS::ApiGatewayV2::Route"
@@ -283,7 +304,7 @@ Resources:
           DYNAMODB_TABLE_NAME: !Sub "${EnvironmentName}-cms"
           PUB_SUB_RECORDSWRITER_URL: !Ref "CMSRecordsWriterQueueURL"
           PUB_SUB_PUBLISHER_URL: !Ref "CMSPublisherQueueURL"
-          OIDC_DOMAIN: 'ourroots.auth0.com'
+          OIDC_DOMAIN: 'https://ourroots.auth0.com/'
           OIDC_AUDIENCE: 'https://api.ourroots.org/preprod'
           ELASTICSEARCH_URL: !Join
             - ''

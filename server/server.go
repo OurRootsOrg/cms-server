@@ -185,9 +185,9 @@ func main() {
 		ap.
 			CategoryPersister(p).
 			CollectionPersister(p).
-			// PostPersister(p).
-			// RecordPersister(p).
-			// SettingsPersister(p).
+			PostPersister(p).
+			RecordPersister(p).
+			SettingsPersister(p).
 			UserPersister(p)
 		log.Print("[INFO] Using DynamoDBPersister")
 	}
