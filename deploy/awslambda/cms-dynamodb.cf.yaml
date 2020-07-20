@@ -283,6 +283,7 @@ Resources:
             - Effect: "Allow"
               Action:
                 - dynamodb:BatchGetItem
+                - dynamodb:BatchWriteItem
                 - dynamodb:CreateTable
                 - dynamodb:DeleteItem
                 - dynamodb:Describe*
@@ -362,6 +363,7 @@ Resources:
             - Effect: "Allow"
               Action:
                 - dynamodb:BatchGetItem
+                - dynamodb:BatchWriteItem
                 - dynamodb:CreateTable
                 - dynamodb:DeleteItem
                 - dynamodb:Describe*
@@ -438,6 +440,7 @@ Resources:
             - Effect: "Allow"
               Action:
                 - dynamodb:BatchGetItem
+                - dynamodb:BatchWriteItem
                 - dynamodb:CreateTable
                 - dynamodb:DeleteItem
                 - dynamodb:Describe*
