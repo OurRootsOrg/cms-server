@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log"
 	"math"
 	"net/http"
@@ -33,32 +34,32 @@ const TokenProperty TokenKey = "token"
 const UserProperty TokenKey = "user"
 
 type LocalAPI interface {
-	GetCategories(context.Context) (*CategoryResult, *model.Errors)
-	GetCategoriesByID(ctx context.Context, ids []uint32) ([]model.Category, *model.Errors)
-	GetCategory(ctx context.Context, id uint32) (*model.Category, *model.Errors)
-	AddCategory(ctx context.Context, in model.CategoryIn) (*model.Category, *model.Errors)
-	UpdateCategory(ctx context.Context, id uint32, in model.Category) (*model.Category, *model.Errors)
-	DeleteCategory(ctx context.Context, id uint32) *model.Errors
-	GetCollections(ctx context.Context /* filter/search criteria */) (*CollectionResult, *model.Errors)
-	GetCollectionsByID(ctx context.Context, ids []uint32) ([]model.Collection, *model.Errors)
-	GetCollection(ctx context.Context, id uint32) (*model.Collection, *model.Errors)
-	AddCollection(ctx context.Context, in model.CollectionIn) (*model.Collection, *model.Errors)
-	UpdateCollection(ctx context.Context, id uint32, in model.Collection) (*model.Collection, *model.Errors)
-	DeleteCollection(ctx context.Context, id uint32) *model.Errors
-	GetPosts(ctx context.Context /* filter/search criteria */) (*PostResult, *model.Errors)
-	GetPost(ctx context.Context, id uint32) (*model.Post, *model.Errors)
-	AddPost(ctx context.Context, in model.PostIn) (*model.Post, *model.Errors)
-	UpdatePost(ctx context.Context, id uint32, in model.Post) (*model.Post, *model.Errors)
-	DeletePost(ctx context.Context, id uint32) *model.Errors
-	PostContentRequest(ctx context.Context, contentRequest ContentRequest) (*ContentResult, *model.Errors)
-	GetContent(ctx context.Context, key string) ([]byte, *model.Errors)
-	RetrieveUser(ctx context.Context, provider OIDCProvider, token *oidc.IDToken, rawToken string) (*model.User, *model.Errors)
-	GetRecordsForPost(ctx context.Context, postid uint32) (*RecordResult, *model.Errors)
-	Search(ctx context.Context, req *SearchRequest) (*model.SearchResult, *model.Errors)
-	SearchByID(ctx context.Context, id string) (*model.SearchHit, *model.Errors)
-	SearchDeleteByID(ctx context.Context, id string) *model.Errors
-	GetSettings(ctx context.Context) (*model.Settings, *model.Errors)
-	UpdateSettings(ctx context.Context, in model.Settings) (*model.Settings, *model.Errors)
+	GetCategories(context.Context) (*CategoryResult, error)
+	GetCategoriesByID(ctx context.Context, ids []uint32) ([]model.Category, error)
+	GetCategory(ctx context.Context, id uint32) (*model.Category, error)
+	AddCategory(ctx context.Context, in model.CategoryIn) (*model.Category, error)
+	UpdateCategory(ctx context.Context, id uint32, in model.Category) (*model.Category, error)
+	DeleteCategory(ctx context.Context, id uint32) error
+	GetCollections(ctx context.Context /* filter/search criteria */) (*CollectionResult, error)
+	GetCollectionsByID(ctx context.Context, ids []uint32) ([]model.Collection, error)
+	GetCollection(ctx context.Context, id uint32) (*model.Collection, error)
+	AddCollection(ctx context.Context, in model.CollectionIn) (*model.Collection, error)
+	UpdateCollection(ctx context.Context, id uint32, in model.Collection) (*model.Collection, error)
+	DeleteCollection(ctx context.Context, id uint32) error
+	GetPosts(ctx context.Context /* filter/search criteria */) (*PostResult, error)
+	GetPost(ctx context.Context, id uint32) (*model.Post, error)
+	AddPost(ctx context.Context, in model.PostIn) (*model.Post, error)
+	UpdatePost(ctx context.Context, id uint32, in model.Post) (*model.Post, error)
+	DeletePost(ctx context.Context, id uint32) error
+	PostContentRequest(ctx context.Context, contentRequest ContentRequest) (*ContentResult, error)
+	GetContent(ctx context.Context, key string) ([]byte, error)
+	RetrieveUser(ctx context.Context, provider OIDCProvider, token *oidc.IDToken, rawToken string) (*model.User, error)
+	GetRecordsForPost(ctx context.Context, postid uint32) (*RecordResult, error)
+	Search(ctx context.Context, req *SearchRequest) (*model.SearchResult, error)
+	SearchByID(ctx context.Context, id string) (*model.SearchHit, error)
+	SearchDeleteByID(ctx context.Context, id string) error
+	GetSettings(ctx context.Context) (*model.Settings, error)
+	UpdateSettings(ctx context.Context, in model.Settings) (*model.Settings, error)
 }
 
 // API is the container for the apilication
@@ -257,4 +258,105 @@ func pingElasticsearch(es *elasticsearch.Client) error {
 	log.Printf("[DEBUG] Elasticsearch client: %s", elasticsearch.Version)
 	log.Printf("[DEBUG] Elasticsearch server: %s", r["version"].(map[string]interface{})["number"])
 	return nil
+}
+
+// Error is an ordered collection of errors
+type Error struct {
+	errs       []model.Error
+	httpStatus int
+}
+
+// fromError builds an Errors collection from a `*model.Error`
+func fromError(e *model.Error) *Error {
+	var httpStatus int
+	switch e.Code {
+	case model.ErrBadReference:
+		httpStatus = http.StatusBadRequest
+	case model.ErrConcurrentUpdate:
+		httpStatus = http.StatusConflict
+	case model.ErrNotFound:
+		httpStatus = http.StatusNotFound
+	case model.ErrRequired:
+		httpStatus = http.StatusBadRequest
+	case model.ErrOther:
+		httpStatus = http.StatusInternalServerError
+	default: // Shouldn't hit this unless someone adds a new code
+		log.Printf("[INFO] Encountered unexpected error code: %s", e.Code)
+		httpStatus = http.StatusInternalServerError
+	}
+
+	return &Error{
+		errs:       []model.Error{*e},
+		httpStatus: httpStatus,
+	}
+}
+
+// NewHTTPError allows overriding the HTTP status code inferred by `NewErrror`.
+func NewHTTPError(err error, httpStatus int) *Error {
+	e := NewError(err)
+	e.httpStatus = httpStatus
+	return e
+}
+
+// NewError builds an Error collection from an `error`, which may actually be a ValidationErrors collection
+// or a `model.Error`
+func NewError(err error) *Error {
+	var e *model.Error
+	var isModelError bool
+	e, isModelError = err.(*model.Error)
+	if !isModelError {
+		e1, ok := err.(model.Error)
+		if ok {
+			e = &e1
+			isModelError = true
+		}
+	}
+	// if httpStatus <= 0 && !isModelError {
+	// 	log.Printf("[INFO] Warning httpStatus = %d and err is not a model.Error: %#v", httpStatus, err)
+	// 	httpStatus = http.StatusInternalServerError
+	// }
+	if isModelError {
+		// Note that this ignores `httpStatus`
+		return fromError(e)
+	}
+
+	errors := Error{
+		errs: make([]model.Error, 0),
+		// httpStatus: httpStatus,
+	}
+
+	if ves, ok := err.(validator.ValidationErrors); ok {
+		errors.httpStatus = http.StatusBadRequest
+		for _, fe := range ves {
+			if fe.Tag() == "required" {
+				name := strings.SplitN(fe.Namespace(), ".", 2)
+				// log.Printf("name: %v", name)
+				errors.errs = append(errors.errs, *model.NewError(model.ErrRequired, name[1]))
+			} else {
+				errors.errs = append(errors.errs, *model.NewError(model.ErrOther, fmt.Sprintf("Key: '%s' Error: Field validation for '%s' failed on the '%s' tag", fe.Namespace(), fe.Field(), fe.Tag())))
+			}
+		}
+	} else {
+		errors.httpStatus = http.StatusInternalServerError
+		errors.errs = append(errors.errs, *model.NewError(model.ErrOther, err.Error()))
+	}
+	return &errors
+}
+
+// HTTPStatus returns the HTTP status code
+func (e Error) HTTPStatus() int {
+	return e.httpStatus
+}
+
+// Errs returns the slice of model.Error structs
+func (e Error) Errs() []model.Error {
+	return e.errs
+}
+
+func (e Error) Error() string {
+	s := "Errors:"
+	for _, er := range e.Errs() {
+		s += "\n  " + er.Error()
+	}
+	return s
 }

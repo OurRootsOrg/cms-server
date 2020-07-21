@@ -28,8 +28,8 @@ type UserBody struct {
 	Name           string `json:"name,omitempty" validate:"required"`
 	Email          string `json:"email,omitempty" validate:"required,email"`
 	EmailConfirmed bool   `json:"email_confirmed,omitempty"`
-	Issuer         string `json:"iss" validate:"required,url"`
-	Subject        string `json:"sub" validate:"required"`
+	Issuer         string `json:"iss" validate:"required,url" dynamodbav:"-"`
+	Subject        string `json:"sub" validate:"required" dynamodbav:"-"`
 	Enabled        bool   `json:"enabled"`
 }
 
@@ -71,8 +71,10 @@ func (cb *UserBody) Scan(value interface{}) error {
 
 // User represents a set of collections that all contain the same fields
 type User struct {
-	ID uint32 `json:"id,omitempty" example:"999" validate:"required,omitempty"`
-	UserIn
+	ID      uint32 `json:"id,omitempty" example:"999" validate:"required,omitempty" dynamodbav:"pk"`
+	Type    string `json:"-" dynamodbav:"sk"`
+	SortKey string `json:"-" dynamodbav:"altSort"`
+	UserBody
 	InsertTime     time.Time `json:"insert_time,omitempty"`
 	LastUpdateTime time.Time `json:"last_update_time,omitempty"`
 }
@@ -80,9 +82,7 @@ type User struct {
 // NewUser constructs a User from an id and body
 func NewUser(id uint32, in UserIn) User {
 	return User{
-		ID: id,
-		UserIn: UserIn{
-			UserBody: in.UserBody,
-		},
+		ID:       id,
+		UserBody: in.UserBody,
 	}
 }

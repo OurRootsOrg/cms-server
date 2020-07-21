@@ -70,6 +70,22 @@ func TestParseEnv(t *testing.T) {
 	assert.Nil(t, env)
 	os.Setenv("DATABASE_URL", "postgres://ourroots:password@localhost:5432/ourroots?sslmode=disable")
 
+	// Missing DATABASE_URL with DYNAMODB_TABLE_NAME
+	os.Unsetenv("DATABASE_URL")
+	os.Setenv("DYNAMODB_TABLE_NAME", "something_cms")
+	env, err = ParseEnv()
+	assert.NoError(t, err)
+	assert.NotNil(t, env)
+	assert.Equal(t, "something_cms", env.DynamoDBTableName)
+
+	// Both DATABASE_URL and DYNAMODB_TABLE_NAME
+	os.Setenv("DATABASE_URL", "postgres://ourroots:password@localhost:5432/ourroots?sslmode=disable")
+	env, err = ParseEnv()
+	assert.Error(t, err)
+	log.Printf("Error: %v", err)
+	assert.Nil(t, env)
+	os.Unsetenv("DYNAMODB_TABLE_NAME")
+
 	// Bad MIGRATION_DATABASE_URL
 	os.Setenv("MIGRATION_DATABASE_URL", "baddb")
 	env, err = ParseEnv()

@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -12,7 +13,6 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/ourrootsorg/cms-server/api"
-	"github.com/ourrootsorg/cms-server/model"
 	"github.com/ourrootsorg/go-oidc"
 )
 
@@ -213,26 +213,32 @@ func serverError(w http.ResponseWriter, err error) {
 
 // ErrorResponse returns an error response
 func ErrorResponse(w http.ResponseWriter, code int, message string) {
-	ErrorsResponse(w, model.NewErrors(code, model.NewError(model.ErrOther, message)))
+	ErrorsResponse(w, api.NewHTTPError(errors.New(message), code))
 }
 
-// ErrorsResponse returns an HTTP response from a model.Errors
-func ErrorsResponse(w http.ResponseWriter, errors *model.Errors) {
+// ErrorsResponse returns an HTTP response from a api.Error
+func ErrorsResponse(w http.ResponseWriter, err error) {
+	var errors *api.Error
+	var ok bool
+	if errors, ok = err.(*api.Error); !ok {
+		log.Printf("[INFO] Unexpectedly received an `error` instead of a `*api.Error`: '%v'", err)
+		errors = api.NewError(err)
+	}
 	w.Header().Set("Content-Type", contentType)
 	w.WriteHeader(errors.HTTPStatus())
 	enc := json.NewEncoder(w)
-	err := enc.Encode(errors.Errs())
+	err = enc.Encode(errors.Errs())
 	if err != nil {
 		log.Printf("[ERROR] Failure encoding error response: '%v'", err)
 	}
 }
 
 // get a "id" variable from the request and validate > 0
-func getIDFromRequest(req *http.Request) (uint32, *model.Errors) {
+func getIDFromRequest(req *http.Request) (uint32, error) {
 	vars := mux.Vars(req)
 	catID, err := strconv.Atoi(vars["id"])
 	if err != nil || catID <= 0 {
-		return 0, model.NewErrors(http.StatusBadRequest, err, fmt.Sprintf("Bad id '%s'", vars["id"]))
+		return 0, api.NewError(fmt.Errorf("Bad id '%s': %v", vars["id"], err))
 	}
 	return uint32(catID), nil
 }

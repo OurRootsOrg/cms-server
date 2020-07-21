@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"log"
 	"math"
-	"net/http"
 	"net/url"
 	"os"
 	"reflect"
@@ -15,7 +14,9 @@ import (
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
+	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/ourrootsorg/cms-server/model"
+	"github.com/ourrootsorg/cms-server/persist/dynamo"
 
 	"github.com/ourrootsorg/cms-server/persist"
 	"gocloud.dev/postgres"
@@ -32,7 +33,7 @@ const (
 
 const numWorkers = 10
 
-func processMessage(ctx context.Context, ap *api.API, rawMsg []byte) *model.Errors {
+func processMessage(ctx context.Context, ap *api.API, rawMsg []byte) error {
 	var msg model.RecordsWriterMsg
 	err := json.Unmarshal(rawMsg, &msg)
 	if err != nil {
@@ -64,7 +65,7 @@ func processMessage(ctx context.Context, ap *api.API, rawMsg []byte) *model.Erro
 	bucket, err := ap.OpenBucket(ctx)
 	if err != nil {
 		log.Printf("[ERROR] OpenBucket %v\n", err)
-		return model.NewErrors(http.StatusInternalServerError, err)
+		return api.NewError(err)
 	}
 	defer bucket.Close()
 
@@ -72,20 +73,20 @@ func processMessage(ctx context.Context, ap *api.API, rawMsg []byte) *model.Erro
 	bs, err := bucket.ReadAll(ctx, post.RecordsKey)
 	if err != nil {
 		log.Printf("[ERROR] ReadAll %v\n", err)
-		return model.NewErrors(http.StatusInternalServerError, err)
+		return api.NewError(err)
 	}
 	var datas []map[string]string
 	err = json.Unmarshal(bs, &datas)
 	if err != nil {
 		log.Printf("[ERROR] Unmarshal datas %v\n", err)
-		return model.NewErrors(http.StatusInternalServerError, err)
+		return api.NewError(err)
 	}
 
 	// set up workers
 	in := make(chan map[string]string)
-	out := make(chan *model.Errors)
+	out := make(chan error)
 	for i := 0; i < numWorkers; i++ {
-		go func(in chan map[string]string, out chan *model.Errors) {
+		go func(in chan map[string]string, out chan error) {
 			for data := range in {
 				_, errs := ap.AddRecord(ctx, model.RecordIn{
 					RecordBody: model.RecordBody{
@@ -172,37 +173,58 @@ func main() {
 		BlobStoreConfig(env.Region, env.BlobStoreEndpoint, env.BlobStoreAccessKey, env.BlobStoreSecretKey, env.BlobStoreBucket, env.BlobStoreDisableSSL).
 		QueueConfig("recordswriter", env.PubSubRecordsWriterURL)
 
-	db, err := postgres.Open(ctx, env.DatabaseURL)
-	if err != nil {
-		log.Fatalf("[FATAL] Error opening database connection: %v\n  DATABASE_URL: %s",
-			err,
-			env.DatabaseURL,
-		)
-	}
-
-	// ping the database to make sure we can connect
-	cnt := 0
-	err = errors.New("unknown error")
-	for err != nil && cnt <= 3 {
-		if cnt > 0 {
-			time.Sleep(time.Duration(math.Pow(2.0, float64(cnt))) * time.Second)
+	if env.DatabaseURL != "" {
+		// Don't leak credentials from URL
+		dbURL, err := url.Parse(env.DatabaseURL)
+		if err != nil {
+			log.Fatalf("[FATAL] Bad database URL: %v", err)
 		}
-		err = db.Ping()
-		cnt++
-	}
-	if err != nil {
-		log.Fatalf("[FATAL] Error connecting to database: %v\n DATABASE_URL: %s\n",
-			err,
-			env.DatabaseURL,
-		)
-	}
-	log.Printf("Connected to %s\n", env.DatabaseURL)
+		log.Printf("[INFO] Connecting to %s\n", dbURL.Host)
+		db, err := postgres.Open(context.TODO(), env.DatabaseURL)
+		defer db.Close()
+		if err != nil {
+			log.Fatalf("[FATAL] Error opening database connection: %v\n  DATABASE_URL: %s",
+				err,
+				env.DatabaseURL,
+			)
+		}
 
-	p := persist.NewPostgresPersister(db)
-	ap.
-		PostPersister(p).
-		RecordPersister(p)
-	log.Print("[INFO] Using PostgresPersister")
+		// ping the database to make sure we can connect
+		cnt := 0
+		err = errors.New("unknown error")
+		for err != nil && cnt <= 3 {
+			if cnt > 0 {
+				time.Sleep(time.Duration(math.Pow(2.0, float64(cnt))) * time.Second)
+			}
+			err = db.Ping()
+			cnt++
+		}
+		if err != nil {
+			log.Fatalf("[FATAL] Error connecting to database: %v\n DATABASE_URL: %s\n",
+				err,
+				env.DatabaseURL,
+			)
+		}
+		log.Printf("[INFO] Connected to %s\n", dbURL.Host)
+		p := persist.NewPostgresPersister(db)
+		ap.
+			PostPersister(p).
+			RecordPersister(p)
+		log.Print("[INFO] Using PostgresPersister")
+	} else {
+		sess, err := session.NewSession()
+		if err != nil {
+			log.Fatalf("[FATAL] Error creating AWS session: %v", err)
+		}
+		p, err := dynamo.NewPersister(sess, env.DynamoDBTableName)
+		if err != nil {
+			log.Fatalf("[FATAL] Error creating DynamoDB persister: %v", err)
+		}
+		ap.
+			PostPersister(p).
+			RecordPersister(p)
+		log.Print("[INFO] Using DynamoDBPersister")
+	}
 
 	if env.IsLambda {
 		h := lambdaHandler{ap: ap}
@@ -238,7 +260,8 @@ type Env struct {
 	IsLambda               bool
 	MinLogLevel            string `env:"MIN_LOG_LEVEL" validate:"omitempty,eq=DEBUG|eq=INFO|eq=ERROR"`
 	BaseURLString          string `env:"BASE_URL" validate:"omitempty,url"`
-	DatabaseURL            string `env:"DATABASE_URL" validate:"required,url"`
+	DatabaseURL            string `env:"DATABASE_URL" validate:"required_without=DynamoDBTableName,omitempty,url"`
+	DynamoDBTableName      string `env:"DYNAMODB_TABLE_NAME" validate:"required_without=DatabaseURL"`
 	BaseURL                *url.URL
 	Region                 string `env:"AWS_REGION"`
 	BlobStoreEndpoint      string `env:"BLOB_STORE_ENDPOINT"`
@@ -275,6 +298,9 @@ func ParseEnv() (*Env, error) {
 			}
 		}
 		return nil, errors.New(errs)
+	}
+	if config.DatabaseURL != "" && config.DynamoDBTableName != "" {
+		return nil, errors.New("Must only set one of DATABASE_URL or DYNAMODB_TABLE_NAME")
 	}
 	config.IsLambda = config.LambdaTaskRoot != ""
 	if config.MinLogLevel == "" {

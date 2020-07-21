@@ -10,8 +10,8 @@ import (
 
 // SettingsPersister defines methods needed to persist settings
 type SettingsPersister interface {
-	SelectSettings(ctx context.Context) (Settings, error)
-	UpsertSettings(ctx context.Context, in Settings) (Settings, error)
+	SelectSettings(ctx context.Context) (*Settings, error)
+	UpsertSettings(ctx context.Context, in Settings) (*Settings, error)
 }
 
 // SettingsBody is the JSON body of a Settings object
@@ -19,7 +19,7 @@ type SettingsBody struct {
 	PostMetadata []SettingsPostMetadata `json:"postMetadata"`
 }
 type SettingsPostMetadata struct {
-	Name    string `json:"name"`
+	Name    string `json:"name"  dynamodbav:"altSort"`
 	Type    string `json:"type" validate:"eq=string|eq=number|eq=date|eq=boolean"`
 	Tooltip string `json:"tooltip"`
 }
@@ -45,6 +45,8 @@ type SettingsIn struct {
 
 // Settings represents global settings
 type Settings struct {
+	ID int    `json:"-" dynamodbav:"pk"`
+	Sk string `json:"-" dynamodbav:"sk"`
 	SettingsIn
 	InsertTime     time.Time `json:"insert_time,omitempty"`
 	LastUpdateTime time.Time `json:"last_update_time,omitempty"`

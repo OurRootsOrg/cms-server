@@ -8,7 +8,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/credentials"
+	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/ourrootsorg/cms-server/model"
+	"github.com/ourrootsorg/cms-server/persist/dynamo"
 	"gocloud.dev/postgres"
 
 	"github.com/ourrootsorg/cms-server/api"
@@ -20,41 +24,59 @@ func TestSearch(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping tests in short mode")
 	}
-	ctx := context.TODO()
-
-	// create test api
-	db, err := postgres.Open(context.TODO(), os.Getenv("DATABASE_URL"))
-	if err != nil {
-		log.Fatalf("Error opening database connection: %v\n  DATABASE_URL: %s",
-			err,
-			os.Getenv("DATABASE_URL"),
-		)
+	databaseURL := os.Getenv("DATABASE_URL")
+	if databaseURL != "" {
+		db, err := postgres.Open(context.TODO(), databaseURL)
+		if err != nil {
+			log.Fatalf("Error opening database connection: %v\n  DATABASE_URL: %s",
+				err,
+				databaseURL,
+			)
+		}
+		p := persist.NewPostgresPersister(db)
+		doSearchTests(t, p, p, p, p)
 	}
-	p := persist.NewPostgresPersister(db)
-	assert.NoError(t, err)
+	dynamoDBTableName := os.Getenv("DYNAMODB_TEST_TABLE_NAME")
+	if dynamoDBTableName != "" {
+		config := aws.Config{
+			Region:      aws.String("us-east-1"),
+			Endpoint:    aws.String("http://localhost:18000"),
+			DisableSSL:  aws.Bool(true),
+			Credentials: credentials.NewStaticCredentials("ACCESS_KEY", "SECRET", ""),
+		}
+		sess, err := session.NewSession(&config)
+		assert.NoError(t, err)
+		p, err := dynamo.NewPersister(sess, dynamoDBTableName)
+		assert.NoError(t, err)
+		doSearchTests(t, p, p, p, p)
+	}
+}
+func doSearchTests(t *testing.T,
+	catP model.CategoryPersister,
+	colP model.CollectionPersister,
+	postP model.PostPersister,
+	recordP model.RecordPersister,
+) {
+	ctx := context.TODO()
 	testApi, err := api.NewAPI()
 	assert.NoError(t, err)
 	defer testApi.Close()
 	testApi = testApi.
-		CategoryPersister(p).
-		CollectionPersister(p).
-		PostPersister(p).
-		RecordPersister(p).
+		CategoryPersister(catP).
+		CollectionPersister(colP).
+		PostPersister(postP).
+		RecordPersister(recordP).
 		ElasticsearchConfig("http://localhost:19200", nil)
 
 	// Add a test category and test collection and test post and test records
-	testCategory, err := createTestCategory(p)
-	assert.Nil(t, err, "Error creating test category")
-	defer deleteTestCategory(p, testCategory)
-	testCollection, err := createTestCollection(p, testCategory.ID)
-	assert.Nil(t, err, "Error creating test collection")
-	defer deleteTestCollection(p, testCollection)
-	testPost, err := createTestPost(p, testCollection.ID)
-	assert.Nil(t, err, "Error creating test post")
-	defer deleteTestPost(p, testPost)
-	records, err := createTestRecords(p, testPost.ID)
-	assert.Nil(t, err, "Error creating test records")
-	defer deleteTestRecords(p, records)
+	testCategory := createTestCategory(t, catP)
+	defer deleteTestCategory(t, catP, testCategory)
+	testCollection := createTestCollection(t, colP, testCategory.ID)
+	defer deleteTestCollection(t, colP, testCollection)
+	testPost := createTestPost(t, postP, testCollection.ID)
+	defer deleteTestPost(t, postP, testPost)
+	records := createTestRecords(t, recordP, testPost.ID)
+	defer deleteTestRecords(t, recordP, records)
 
 	// index post
 	err = testApi.IndexPost(ctx, testPost)
@@ -101,25 +123,20 @@ var recordData = []map[string]string{
 	},
 }
 
-func createTestRecords(p model.RecordPersister, postID uint32) ([]model.Record, error) {
+func createTestRecords(t *testing.T, p model.RecordPersister, postID uint32) []model.Record {
 	var records []model.Record
 	for _, data := range recordData {
 		in := model.NewRecordIn(data, postID)
-		record, err := p.InsertRecord(context.TODO(), in)
-		if err != nil {
-			return records, err
-		}
-		records = append(records, record)
+		record, e := p.InsertRecord(context.TODO(), in)
+		assert.Nil(t, e)
+		records = append(records, *record)
 	}
-	return records, nil
+	return records
 }
 
-func deleteTestRecords(p model.RecordPersister, records []model.Record) error {
-	var err error
+func deleteTestRecords(t *testing.T, p model.RecordPersister, records []model.Record) {
 	for _, record := range records {
-		if e := p.DeleteRecord(context.TODO(), record.ID); e != nil {
-			err = e
-		}
+		e := p.DeleteRecord(context.TODO(), record.ID)
+		assert.Nil(t, e)
 	}
-	return err
 }

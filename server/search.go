@@ -123,7 +123,8 @@ var decoder = schema.NewDecoder()
 // @param collectionFacet query bool false "facet on collection"
 // @param collection query string false "filter on collection"
 // @success 200 {array} model.SearchResult "OK"
-// @failure 500 {object} model.Errors "Server error"
+// @failure 500 {object} api.Error "Server error"
+// TODO need to specify possible query parameters
 func (app App) Search(w http.ResponseWriter, req *http.Request) {
 	var searchRequest api.SearchRequest
 	err := decoder.Decode(&searchRequest, req.URL.Query())
@@ -156,8 +157,8 @@ func (app App) Search(w http.ResponseWriter, req *http.Request) {
 // @Param id path string true "Search Result ID"
 // @produce application/json
 // @success 200 {object} model.SearchHit "OK"
-// @failure 404 {object} model.Errors "Not found"
-// @failure 500 {object} model.Errors "Server error"
+// @failure 404 {object} api.Error "Not found"
+// @failure 500 {object} api.Error "Server error"
 func (app App) SearchByID(w http.ResponseWriter, req *http.Request) {
 	vars := mux.Vars(req)
 

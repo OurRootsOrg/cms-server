@@ -17,7 +17,7 @@ import (
 // @id getCollections
 // @produce application/json
 // @success 200 {array} model.Collection "OK"
-// @failure 500 {object} model.Errors "Server error"
+// @failure 500 {object} api.Error "Server error"
 // @Security OAuth2Implicit[cms,openid,profile,email]
 // @Security OAuth2AuthCode[cms,openid,profile,email]
 func (app App) GetCollections(w http.ResponseWriter, req *http.Request) {
@@ -43,8 +43,8 @@ func (app App) GetCollections(w http.ResponseWriter, req *http.Request) {
 // @Param id path integer true "Collection ID"
 // @produce application/json
 // @success 200 {object} model.Collection "OK"
-// @failure 404 {object} model.Errors "Not found"
-// @failure 500 {object} model.Errors "Server error"
+// @failure 404 {object} api.Error "Not found"
+// @failure 500 {object} api.Error "Server error"
 // @Security OAuth2Implicit[cms,openid,profile,email]
 // @Security OAuth2AuthCode[cms,openid,profile,email]
 func (app App) GetCollection(w http.ResponseWriter, req *http.Request) {
@@ -76,8 +76,8 @@ func (app App) GetCollection(w http.ResponseWriter, req *http.Request) {
 // @accept application/json
 // @produce application/json
 // @success 201 {object} model.Collection "OK"
-// @failure 415 {object} model.Errors "Bad Content-Type"
-// @failure 500 {object} model.Errors "Server error"
+// @failure 415 {object} api.Error "Bad Content-Type"
+// @failure 500 {object} api.Error "Server error"
 // @Security OAuth2Implicit[cms,openid,profile,email]
 // @Security OAuth2AuthCode[cms,openid,profile,email]
 func (app App) PostCollection(w http.ResponseWriter, req *http.Request) {
@@ -120,8 +120,8 @@ func (app App) PostCollection(w http.ResponseWriter, req *http.Request) {
 // @accept application/json
 // @produce application/json
 // @success 200 {object} model.Collection "OK"
-// @failure 415 {object} model.Errors "Bad Content-Type"
-// @failure 500 {object} model.Errors "Server error"
+// @failure 415 {object} api.Error "Bad Content-Type"
+// @failure 500 {object} api.Error "Server error"
 // @Security OAuth2Implicit[cms,openid,profile,email]
 // @Security OAuth2AuthCode[cms,openid,profile,email]
 func (app App) PutCollection(w http.ResponseWriter, req *http.Request) {
@@ -164,7 +164,7 @@ func (app App) PutCollection(w http.ResponseWriter, req *http.Request) {
 // @id deleteCollection
 // @Param id path integer true "Collection ID"
 // @success 204 {object} model.Collection "OK"
-// @failure 500 {object} model.Errors "Server error"
+// @failure 500 {object} api.Error "Server error"
 // @Security OAuth2Implicit[cms,openid,profile,email]
 // @Security OAuth2AuthCode[cms,openid,profile,email]
 func (app App) DeleteCollection(w http.ResponseWriter, req *http.Request) {

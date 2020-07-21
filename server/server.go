@@ -17,14 +17,15 @@ import (
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go/aws/credentials"
+	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/awslabs/aws-lambda-go-api-proxy/gorillamux"
 	"github.com/codingconcepts/env"
 	"github.com/go-playground/validator/v10"
 	"github.com/gorilla/handlers"
 	"github.com/hashicorp/logutils"
 	"github.com/ourrootsorg/cms-server/api"
-	"github.com/ourrootsorg/cms-server/model"
 	"github.com/ourrootsorg/cms-server/persist"
+	"github.com/ourrootsorg/cms-server/persist/dynamo"
 	"github.com/ourrootsorg/cms-server/server/docs"
 	"gocloud.dev/postgres"
 
@@ -81,7 +82,6 @@ func main() {
 	log.SetOutput(filter)
 	log.Printf("[INFO] env.BaseURLString: %s, env.BaseURL.Path: %s", env.BaseURLString, env.BaseURL.Path)
 
-	model.Initialize(env.BaseURL.Path)
 	ap, err := api.NewAPI()
 	if err != nil {
 		log.Fatalf("Error calling NewAPI: %v", err)
@@ -130,47 +130,67 @@ func main() {
 			}
 		}()
 	}
-	// Don't leak credentials from URL
-	dbURL, err := url.Parse(env.DatabaseURL)
-	if err != nil {
-		log.Fatalf("[FATAL] Bad database URL: %v", err)
-	}
-	log.Printf("[INFO] Connecting to %s\n", dbURL.Host)
-	db, err := postgres.Open(context.TODO(), env.DatabaseURL)
-	defer db.Close()
-	if err != nil {
-		log.Fatalf("[FATAL] Error opening database connection: %v\n  DATABASE_URL: %s",
-			err,
-			env.DatabaseURL,
-		)
-	}
-
-	// ping the database to make sure we can connect
-	cnt := 0
-	err = errors.New("unknown error")
-	for err != nil && cnt <= 3 {
-		if cnt > 0 {
-			time.Sleep(time.Duration(math.Pow(2.0, float64(cnt))) * time.Second)
+	if env.DatabaseURL != "" {
+		// Don't leak credentials from URL
+		dbURL, err := url.Parse(env.DatabaseURL)
+		if err != nil {
+			log.Fatalf("[FATAL] Bad database URL: %v", err)
 		}
-		err = db.Ping()
-		cnt++
+		log.Printf("[INFO] Connecting to %s\n", dbURL.Host)
+		db, err := postgres.Open(context.TODO(), env.DatabaseURL)
+		defer db.Close()
+		if err != nil {
+			log.Fatalf("[FATAL] Error opening database connection: %v\n  DATABASE_URL: %s",
+				err,
+				env.DatabaseURL,
+			)
+		}
+
+		// ping the database to make sure we can connect
+		cnt := 0
+		err = errors.New("unknown error")
+		for err != nil && cnt <= 3 {
+			if cnt > 0 {
+				time.Sleep(time.Duration(math.Pow(2.0, float64(cnt))) * time.Second)
+			}
+			err = db.Ping()
+			cnt++
+		}
+		if err != nil {
+			log.Fatalf("[FATAL] Error connecting to database: %v\n DATABASE_URL: %s\n",
+				err,
+				env.DatabaseURL,
+			)
+		}
+		log.Printf("[INFO] Connected to %s\n", dbURL.Host)
+		p := persist.NewPostgresPersister(db)
+		ap.
+			CategoryPersister(p).
+			CollectionPersister(p).
+			PostPersister(p).
+			RecordPersister(p).
+			UserPersister(p).
+			SettingsPersister(p)
+		log.Print("[INFO] Using PostgresPersister")
+
+	} else {
+		sess, err := session.NewSession()
+		if err != nil {
+			log.Fatalf("[FATAL] Error creating AWS session: %v", err)
+		}
+		p, err := dynamo.NewPersister(sess, env.DynamoDBTableName)
+		if err != nil {
+			log.Fatalf("[FATAL] Error creating DynamoDB persister: %v", err)
+		}
+		ap.
+			CategoryPersister(p).
+			CollectionPersister(p).
+			PostPersister(p).
+			RecordPersister(p).
+			SettingsPersister(p).
+			UserPersister(p)
+		log.Print("[INFO] Using DynamoDBPersister")
 	}
-	if err != nil {
-		log.Fatalf("[FATAL] Error connecting to database: %v\n DATABASE_URL: %s\n",
-			err,
-			env.DatabaseURL,
-		)
-	}
-	log.Printf("[INFO] Connected to %s\n", dbURL.Host)
-	p := persist.NewPostgresPersister(db)
-	ap.
-		CategoryPersister(p).
-		CollectionPersister(p).
-		PostPersister(p).
-		RecordPersister(p).
-		UserPersister(p).
-		SettingsPersister(p)
-	log.Print("[INFO] Using PostgresPersister")
 	r := app.NewRouter()
 	docs.SwaggerInfo.Host = env.BaseURL.Hostname()
 	if env.BaseURL.Port() != "" {
@@ -229,8 +249,9 @@ type Env struct {
 	IsLambda               bool
 	MinLogLevel            string `env:"MIN_LOG_LEVEL" validate:"omitempty,eq=DEBUG|eq=INFO|eq=ERROR"`
 	BaseURLString          string `env:"BASE_URL" validate:"omitempty,url"`
-	DatabaseURL            string `env:"DATABASE_URL" validate:"required,url"`
+	DatabaseURL            string `env:"DATABASE_URL" validate:"required_without=DynamoDBTableName,omitempty,url"`
 	MigrationDatabaseURL   string `env:"MIGRATION_DATABASE_URL" validate:"omitempty,url"`
+	DynamoDBTableName      string `env:"DYNAMODB_TABLE_NAME" validate:"required_without=DatabaseURL"`
 	BaseURL                *url.URL
 	Region                 string `env:"AWS_REGION"`
 	BlobStoreEndpoint      string `env:"BLOB_STORE_ENDPOINT"`
@@ -277,6 +298,9 @@ func ParseEnv() (*Env, error) {
 			}
 		}
 		return nil, errors.New(errs)
+	}
+	if config.DatabaseURL != "" && config.DynamoDBTableName != "" {
+		return nil, errors.New("Must only set one of DATABASE_URL or DYNAMODB_TABLE_NAME")
 	}
 	config.IsLambda = config.LambdaTaskRoot != ""
 	if config.MinLogLevel == "" {

@@ -11,9 +11,9 @@ import (
 // PostPersister defines methods needed to persist categories
 type PostPersister interface {
 	SelectPosts(ctx context.Context) ([]Post, error)
-	SelectOnePost(ctx context.Context, id uint32) (Post, error)
-	InsertPost(ctx context.Context, in PostIn) (Post, error)
-	UpdatePost(ctx context.Context, id uint32, in Post) (Post, error)
+	SelectOnePost(ctx context.Context, id uint32) (*Post, error)
+	InsertPost(ctx context.Context, in PostIn) (*Post, error)
+	UpdatePost(ctx context.Context, id uint32, in Post) (*Post, error)
 	DeletePost(ctx context.Context, id uint32) error
 }
 
@@ -75,12 +75,13 @@ func (cb *PostBody) Scan(value interface{}) error {
 // PostIn is the payload to create or update a Post
 type PostIn struct {
 	PostBody
-	Collection uint32 `json:"collection" example:"999" validate:"required"`
+	Collection uint32 `json:"collection" example:"999" validate:"required" dynamodbav:"altSort,string"`
 }
 
 // Post represents a set of related Records
 type Post struct {
-	ID uint32 `json:"id,omitempty" example:"999" validate:"required"`
+	ID   uint32 `json:"id,omitempty" example:"999" validate:"required" dynamodbav:"pk"`
+	Type string `json:"-" dynamodbav:"sk"`
 	PostIn
 	InsertTime     time.Time `json:"insert_time,omitempty"`
 	LastUpdateTime time.Time `json:"last_update_time,omitempty"`

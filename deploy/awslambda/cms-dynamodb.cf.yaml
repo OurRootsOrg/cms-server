@@ -1,0 +1,473 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: OurRoots CMS Server
+Transform: AWS::Serverless-2016-10-31
+Parameters:
+  EnvironmentName:
+    Description: Name of this CMS deployment
+    Type: String
+  DomainName:
+    Type: String
+    Description: FQDN the app will be hosted at
+    # This assumes that the DNS for this domain is configured elsewhere
+    # TODO: Allow for various delegation and Route 53 scenarios
+  CertificateArn:
+    Type: String
+    Description: ARN of the Certificate Manager cert to use for the domain
+    # TODO: Optionally create the certificate
+
+  CMSSiteBucketURL:
+    Type: AWS::SSM::Parameter::Value<String>
+    Description: CMS Site Bucket Website URL
+  CMSBlobStoreBucketName:
+    Type: AWS::SSM::Parameter::Value<String>
+  CMSRecordsWriterQueueURL:
+    Type: AWS::SSM::Parameter::Value<String>
+  CMSRecordsWriterQueueARN:
+    Type: AWS::SSM::Parameter::Value<String>
+  CMSPublisherQueueURL:
+    Type: AWS::SSM::Parameter::Value<String>
+  CMSPublisherQueueARN:
+    Type: AWS::SSM::Parameter::Value<String>
+  ElasticsearchDomainARN:
+    Type: AWS::SSM::Parameter::Value<String>
+  ElasticsearchDomainEndpoint:
+    Type: AWS::SSM::Parameter::Value<String>
+
+Resources:
+  OurRootsCMSApi:
+    Type: "AWS::ApiGatewayV2::Api"
+    Properties:
+      Name: !Ref EnvironmentName
+      ProtocolType: HTTP
+      Version: "0.1"
+
+  ApiStage:
+    Type: "AWS::ApiGatewayV2::Stage"
+    Properties:
+      StageName: "$default"
+      AutoDeploy: true
+      ApiId: !Ref OurRootsCMSApi
+      AccessLogSettings:
+        DestinationArn:
+          Fn::GetAtt: [ ApiLogGroup , Arn ]
+        Format: '$context.identity.sourceIp - - [$context.requestTime] "$context.httpMethod $context.path $context.protocol" $context.status $context.responseLength - "$context.identity.userAgent" $context.requestId' # Common Log Format plus a couple extra fields
+      # DefaultRouteSettings:
+      #   DetailedMetricsEnabled: true
+      #   ThrottlingBurstLimit: 10
+      #   ThrottlingRateLimit: 10
+
+  ApiLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "${EnvironmentName}/API-Gateway/access-logs"
+      RetentionInDays: 7
+
+  ApiRoute:
+    Type: "AWS::ApiGatewayV2::Route"
+    Properties:
+      ApiId: !Ref OurRootsCMSApi
+      RouteKey: "ANY /api/{proxy+}"
+      # RouteKey: "$default"
+      AuthorizationType: NONE
+      Target: !Join
+        - /
+        - - integrations
+          - !Ref APIIntegration
+
+  APIIntegration:
+    Type: "AWS::ApiGatewayV2::Integration"
+    Properties:
+      ApiId: !Ref OurRootsCMSApi
+      Description: Lambda Integration
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !Sub "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${OurRootsCMSFunction.Arn}/invocations"
+      PayloadFormatVersion: "1.0"
+
+  CSSRoute:
+    Type: "AWS::ApiGatewayV2::Route"
+    Properties:
+      ApiId: !Ref OurRootsCMSApi
+      RouteKey: "GET /css/{proxy+}"
+      AuthorizationType: NONE
+      Target: !Join
+        - /
+        - - integrations
+          - !Ref CSSIntegration
+
+  CSSIntegration:
+    Type: "AWS::ApiGatewayV2::Integration"
+    Properties:
+      ApiId: !Ref OurRootsCMSApi
+      Description: Site Bucket CSS Integration
+      IntegrationType: HTTP_PROXY
+      IntegrationUri: !Join [ '/', [ !Ref CMSSiteBucketURL , 'css', '{proxy}' ] ]
+      IntegrationMethod: GET
+      PayloadFormatVersion: "1.0"
+
+  IMGRoute:
+    Type: "AWS::ApiGatewayV2::Route"
+    Properties:
+      ApiId: !Ref OurRootsCMSApi
+      RouteKey: "GET /img/{proxy+}"
+      AuthorizationType: NONE
+      Target: !Join
+        - /
+        - - integrations
+          - !Ref IMGIntegration
+
+  IMGIntegration:
+    Type: "AWS::ApiGatewayV2::Integration"
+    Properties:
+      ApiId: !Ref OurRootsCMSApi
+      Description: Site Bucket IMG Integration
+      IntegrationType: HTTP_PROXY
+      IntegrationUri: !Join [ '/', [ !Ref CMSSiteBucketURL , 'img', '{proxy}' ] ]
+      IntegrationMethod: GET
+      PayloadFormatVersion: "1.0"
+
+  JSRoute:
+    Type: "AWS::ApiGatewayV2::Route"
+    Properties:
+      ApiId: !Ref OurRootsCMSApi
+      RouteKey: "GET /js/{proxy+}"
+      AuthorizationType: NONE
+      Target: !Join
+        - /
+        - - integrations
+          - !Ref JSIntegration
+
+  JSIntegration:
+    Type: "AWS::ApiGatewayV2::Integration"
+    Properties:
+      ApiId: !Ref OurRootsCMSApi
+      Description: Site Bucket JS Integration
+      IntegrationType: HTTP_PROXY
+      IntegrationUri: !Join [ '/', [ !Ref CMSSiteBucketURL , 'js', '{proxy}' ] ]
+      IntegrationMethod: GET
+      PayloadFormatVersion: "1.0"
+
+  FaviconRoute:
+    Type: "AWS::ApiGatewayV2::Route"
+    Properties:
+      ApiId: !Ref OurRootsCMSApi
+      RouteKey: "GET /favicon.ico"
+      AuthorizationType: NONE
+      Target: !Join
+        - /
+        - - integrations
+          - !Ref FaviconIntegration
+
+  FaviconIntegration:
+    Type: "AWS::ApiGatewayV2::Integration"
+    Properties:
+      ApiId: !Ref OurRootsCMSApi
+      Description: Site Bucket favicon.ico Integration
+      IntegrationType: HTTP_PROXY
+      IntegrationUri: !Join [ '/', [ !Ref CMSSiteBucketURL , 'favicon.ico' ] ]
+      IntegrationMethod: GET
+      PayloadFormatVersion: "1.0"
+
+  CallbackRoute:
+    Type: "AWS::ApiGatewayV2::Route"
+    Properties:
+      ApiId: !Ref OurRootsCMSApi
+      RouteKey: "GET /callback.html"
+      AuthorizationType: NONE
+      Target: !Join
+        - /
+        - - integrations
+          - !Ref CallbackIntegration
+
+  CallbackIntegration:
+    Type: "AWS::ApiGatewayV2::Integration"
+    Properties:
+      ApiId: !Ref OurRootsCMSApi
+      Description: Site Bucket callback.html Integration
+      IntegrationType: HTTP_PROXY
+      IntegrationUri: !Join [ '/', [ !Ref CMSSiteBucketURL , 'callback.html' ] ]
+      IntegrationMethod: GET
+      PayloadFormatVersion: "1.0"
+
+  # GETs to /* go to index.html in the bucket root
+  UIRoute:
+    Type: "AWS::ApiGatewayV2::Route"
+    Properties:
+      ApiId: !Ref OurRootsCMSApi
+      RouteKey: "GET /{proxy+}"
+      AuthorizationType: NONE
+      Target: !Join
+        - /
+        - - integrations
+          - !Ref UIIntegration
+
+  UIIntegration:
+    Type: "AWS::ApiGatewayV2::Integration"
+    Properties:
+      ApiId: !Ref OurRootsCMSApi
+      Description: Site Bucket Integration
+      IntegrationType: HTTP_PROXY
+      IntegrationUri: !Join [ '/', [ !Ref CMSSiteBucketURL , 'index.html' ] ]
+      IntegrationMethod: GET
+      PayloadFormatVersion: "1.0"
+
+  # Map the domain name passed as a parameter to the API Gateway API
+  OurRootsCMSDomainName:
+    Type: "AWS::ApiGatewayV2::DomainName"
+    Properties:
+      DomainName: !Ref DomainName
+      DomainNameConfigurations:
+        - EndpointType: REGIONAL
+          CertificateArn: !Ref CertificateArn
+
+  OurRootsCMSApiMapping:
+    Type: "AWS::ApiGatewayV2::ApiMapping"
+    Properties:
+      DomainName: !Ref OurRootsCMSDomainName
+      ApiId: !Ref OurRootsCMSApi
+      Stage: !Ref ApiStage
+
+  # Define the API Lambda function
+  OurRootsCMSFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: server/main.lambda
+      CodeUri: main.lambda.zip
+      Runtime: go1.x
+      MemorySize: 128
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        # S3 CMSBlobStoreBucket
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - s3:GetObject
+                - s3:GetObjectACL
+                - s3:PutObject
+                - s3:PutObjectACL
+              Resource:
+                Fn::Join:
+                  - ''
+                  -
+                    - 'arn:aws:s3:::'
+                    - !Ref CMSBlobStoreBucketName
+                    - '/*'
+        # SQS Queue
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - sqs:*
+              Resource:
+                !Ref "CMSRecordsWriterQueueARN"
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - sqs:*
+              Resource:
+                !Ref "CMSPublisherQueueARN"
+        # Elasticsearch Domain
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: "Allow"
+              Action: 'es:ESHttp*'
+              Resource: !Join
+                - ''
+                -
+                  - !Ref "ElasticsearchDomainARN"
+                  - '/*'
+        # DynamoDB Table
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: "Allow"
+              Action:
+                - dynamodb:BatchGetItem
+                - dynamodb:BatchWriteItem
+                - dynamodb:CreateTable
+                - dynamodb:DeleteItem
+                - dynamodb:Describe*
+                - dynamodb:GetItem
+                - dynamodb:PutItem
+                - dynamodb:Query
+                - dynamodb:Scan
+                - dynamodb:UpdateItem
+                - dynamodb:ConditionCheckItem
+              Resource: !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${EnvironmentName}*"
+      Timeout: 50
+      Environment:
+        Variables:
+          # This variable tells our server code what domain name and path prefix is in use
+          BASE_URL: !Sub "https://${DomainName}/api"
+          # This variable tells aws-lambda-go-api-proxy what domain name is in use
+          GO_API_HOST: !Sub "https://${DomainName}"
+          BLOB_STORE_BUCKET: !Ref "CMSBlobStoreBucketName"
+          DYNAMODB_TABLE_NAME: !Sub "${EnvironmentName}-cms"
+          PUB_SUB_RECORDSWRITER_URL: !Ref "CMSRecordsWriterQueueURL"
+          PUB_SUB_PUBLISHER_URL: !Ref "CMSPublisherQueueURL"
+          OIDC_DOMAIN: 'https://ourroots.auth0.com/'
+          OIDC_AUDIENCE: 'https://api.ourroots.org/preprod'
+          ELASTICSEARCH_URL: !Join
+            - ''
+            -
+              - 'https://'
+              - !Ref "ElasticsearchDomainEndpoint"
+              - '/'
+
+  # Give the API permission to call the Lambda
+  OurRootsCMSFunctionPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: 'lambda:InvokeFunction'
+      FunctionName: !Ref OurRootsCMSFunction
+      Principal: 'apigateway.amazonaws.com'
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${OurRootsCMSApi}/*/*"
+
+  # Define the Records Writer Lambda function
+  RecordsWriterFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: recordswriter/recordswriter.lambda
+      CodeUri: recordswriter.lambda.zip
+      Runtime: go1.x
+      MemorySize: 128
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        # S3 CMSBlobStoreBucket
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - s3:GetObject
+                - s3:GetObjectACL
+                - s3:PutObject
+                - s3:PutObjectACL
+              Resource:
+                Fn::Join:
+                  - ''
+                  -
+                    - 'arn:aws:s3:::'
+                    - !Ref "CMSBlobStoreBucketName"
+                    - '/*'
+        # SQS Queue
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - sqs:*
+              Resource:
+                !Ref "CMSRecordsWriterQueueARN"
+        # DynamoDB Table
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: "Allow"
+              Action:
+                - dynamodb:BatchGetItem
+                - dynamodb:BatchWriteItem
+                - dynamodb:CreateTable
+                - dynamodb:DeleteItem
+                - dynamodb:Describe*
+                - dynamodb:GetItem
+                - dynamodb:PutItem
+                - dynamodb:Query
+                - dynamodb:Scan
+                - dynamodb:UpdateItem
+                - dynamodb:ConditionCheckItem
+              Resource: !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${EnvironmentName}*"
+      Timeout: 60
+      Environment:
+        Variables:
+          # This variable tells our server code what domain name and path prefix is in use
+          BASE_URL: !Sub "https://${DomainName}/api"
+          DYNAMODB_TABLE_NAME: !Sub "${EnvironmentName}-cms"
+          BLOB_STORE_BUCKET: !Ref "CMSBlobStoreBucketName"
+          PUB_SUB_RECORDSWRITER_URL: !Ref "CMSRecordsWriterQueueURL"
+      Events:
+        MySQSEvent:
+          Type: SQS
+          Properties:
+            Queue:
+              !Ref "CMSRecordsWriterQueueARN"
+            BatchSize: 1
+
+  # Define the Publisher Lambda function
+  PublisherFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: publisher/publisher.lambda
+      CodeUri: publisher.lambda.zip
+      Runtime: go1.x
+      MemorySize: 128
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        # S3 CMSBlobStoreBucket
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - s3:GetObject
+                - s3:GetObjectACL
+                - s3:PutObject
+                - s3:PutObjectACL
+              Resource:
+                Fn::Join:
+                  - ''
+                  -
+                    - 'arn:aws:s3:::'
+                    - !Ref "CMSBlobStoreBucketName"
+                    - '/*'
+        # SQS Queue
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - sqs:*
+              Resource:
+                !Ref "CMSPublisherQueueARN"
+        # Elasticsearch Domain
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: "Allow"
+              Action: 'es:ESHttp*'
+              Resource: !Join
+                - ''
+                -
+                  - !Ref "ElasticsearchDomainARN"
+                  - '/*'
+        # DynamoDB Table
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: "Allow"
+              Action:
+                - dynamodb:BatchGetItem
+                - dynamodb:BatchWriteItem
+                - dynamodb:CreateTable
+                - dynamodb:DeleteItem
+                - dynamodb:Describe*
+                - dynamodb:GetItem
+                - dynamodb:PutItem
+                - dynamodb:Query
+                - dynamodb:Scan
+                - dynamodb:UpdateItem
+                - dynamodb:ConditionCheckItem
+              Resource: !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${EnvironmentName}*"
+      Timeout: 60
+      Environment:
+        Variables:
+          # This variable tells our server code what domain name and path prefix is in use
+          BASE_URL: !Sub "https://${DomainName}/api"
+          DYNAMODB_TABLE_NAME: !Sub "${EnvironmentName}-cms"
+          PUB_SUB_PUBLISHER_URL: !Ref "CMSPublisherQueueURL"
+          ELASTICSEARCH_URL: !Join
+            - ''
+            -
+              - 'https://'
+              - !Ref "ElasticsearchDomainEndpoint"
+              - '/'
+      Events:
+        MySQSEvent:
+          Type: SQS
+          Properties:
+            Queue:
+              !Ref "CMSPublisherQueueARN"
+            BatchSize: 1
