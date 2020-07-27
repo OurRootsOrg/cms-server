@@ -51,7 +51,7 @@
       :resizable-columns="true"
       @rowClicked="collectionRowClicked"
     />
-    <v-btn outlined color="primary" class="mt-4" to="/collections/create">
+    <v-btn v-if="category.id" outlined color="primary" class="mt-4" to="/collections/create">
       Create a new collection
     </v-btn>
   </v-container>

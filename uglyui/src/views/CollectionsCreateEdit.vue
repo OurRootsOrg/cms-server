@@ -117,7 +117,7 @@
       :resizable-columns="true"
       @rowClicked="postRowClicked"
     />
-    <v-btn outlined color="primary" class="mt-4" to="/posts/create">
+    <v-btn v-if="collection.id" outlined color="primary" class="mt-4" to="/posts/create">
       Create a new post
     </v-btn>
   </v-container>
@@ -418,7 +418,7 @@ export default {
             }
           });
         } else {
-          this.collection.mappings.push({ header: newValue, ixRole: "na", ixField: "na" });
+          this.collection.mappings.push({ header: newValue, dbField: newValue, ixRole: "na", ixField: "na" });
         }
       } else {
         this.collection.mappings = this.collection.mappings.filter(m => m.header !== oldValue);
