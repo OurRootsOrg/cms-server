@@ -260,6 +260,7 @@ Resources:
                 - s3:GetObjectACL
                 - s3:PutObject
                 - s3:PutObjectACL
+                - s3:DeleteObject
               Resource:
                 Fn::Join:
                   - ''
@@ -385,6 +386,7 @@ Resources:
                 - s3:GetObjectACL
                 - s3:PutObject
                 - s3:PutObjectACL
+                - s3:DeleteObject
               Resource:
                 Fn::Join:
                   - ''
@@ -466,6 +468,7 @@ Resources:
                 - s3:GetObjectACL
                 - s3:PutObject
                 - s3:PutObjectACL
+                - s3:DeleteObject
               Resource:
                 Fn::Join:
                   - ''
