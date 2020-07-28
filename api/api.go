@@ -274,6 +274,8 @@ func fromError(e *model.Error) *Error {
 		httpStatus = http.StatusBadRequest
 	case model.ErrConcurrentUpdate:
 		httpStatus = http.StatusConflict
+	case model.ErrConflict:
+		httpStatus = http.StatusConflict
 	case model.ErrNotFound:
 		httpStatus = http.StatusNotFound
 	case model.ErrRequired:

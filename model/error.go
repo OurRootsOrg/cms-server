@@ -12,6 +12,8 @@ type ErrorCode string
 func (code ErrorCode) Matches(err error) bool {
 	if e, ok := err.(*Error); ok {
 		return e.Code == code
+	} else if e, ok := err.(Error); ok {
+		return e.Code == code
 	}
 	return false
 }
@@ -22,6 +24,7 @@ const (
 	ErrNotFound         ErrorCode = "NOT_FOUND"
 	ErrBadReference     ErrorCode = "BAD_REFERENCE"
 	ErrConcurrentUpdate ErrorCode = "CONCURRENT_UPDATE"
+	ErrConflict         ErrorCode = "CONFICT"
 	ErrOther            ErrorCode = "OTHER"
 )
 
@@ -30,6 +33,7 @@ var errorMessages = map[ErrorCode]string{
 	ErrNotFound:         "'%s' was not found",
 	ErrBadReference:     "Non-existent reference. ID: '%s', Type: '%s'",
 	ErrConcurrentUpdate: "Database LastUpdateTime (%s) doesn't match provided value (%s).",
+	ErrConflict:         "Transaction conflict.",
 	ErrOther:            "Unknown error: %s",
 }
 

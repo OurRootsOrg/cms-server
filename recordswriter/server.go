@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"math"
+	"net/http"
 	"net/url"
 	"os"
 	"reflect"
@@ -41,7 +42,7 @@ func processMessage(ctx context.Context, ap *api.API, rawMsg []byte) error {
 		return nil // Don't return an error, because parsing will never succeed
 	}
 
-	log.Printf("[DEBUG] processing %d", msg.PostID)
+	log.Printf("[DEBUG] Processing PostID: %d", msg.PostID)
 
 	// read post
 	post, errs := ap.GetPost(ctx, msg.PostID)
@@ -81,6 +82,7 @@ func processMessage(ctx context.Context, ap *api.API, rawMsg []byte) error {
 		log.Printf("[ERROR] Unmarshal datas %v\n", err)
 		return api.NewError(err)
 	}
+	log.Printf("[DEBUG] datas: %#v", datas)
 
 	// set up workers
 	in := make(chan map[string]string)
@@ -88,12 +90,30 @@ func processMessage(ctx context.Context, ap *api.API, rawMsg []byte) error {
 	for i := 0; i < numWorkers; i++ {
 		go func(in chan map[string]string, out chan error) {
 			for data := range in {
+				log.Printf("[DEBUG] Processing data: %#v", data)
 				_, errs := ap.AddRecord(ctx, model.RecordIn{
 					RecordBody: model.RecordBody{
 						Data: data,
 					},
 					Post: post.ID,
 				})
+				if errs != nil {
+					if er, ok := errs.(*api.Error); ok && er.HTTPStatus() == http.StatusConflict {
+						// Retry once
+						log.Printf("[DEBUG] Error %#v, retrying %#v", errs, data)
+						_, errs = ap.AddRecord(ctx, model.RecordIn{
+							RecordBody: model.RecordBody{
+								Data: data,
+							},
+							Post: post.ID,
+						})
+						if errs != nil {
+							log.Printf("[DEBUG] Retry failed: %#v", errs)
+						}
+					} else {
+						log.Printf("[DEBUG] Error %#v is non-retryable", errs)
+					}
+				}
 				out <- errs
 			}
 		}(in, out)
@@ -111,13 +131,14 @@ func processMessage(ctx context.Context, ap *api.API, rawMsg []byte) error {
 	errs = nil
 	for i := 0; i < len(datas); i++ {
 		if e := <-out; e != nil {
-			log.Printf("[ERROR] AddRecord %v\n", e)
+			log.Printf("[ERROR] AddRecord received error: %#v", e)
 			errs = e
 		}
 	}
 	if errs != nil {
 		return errs
 	}
+	close(out)
 
 	// update post.recordsStatus = load complete
 	post.RecordsStatus = model.PostLoadComplete
