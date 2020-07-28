@@ -443,6 +443,8 @@ func indexRecord(record *model.Record, post *model.Post, collection *model.Colle
 		_, givenFound := data["given"]
 		_, surnameFound := data["surname"]
 		if !givenFound && !surnameFound {
+			log.Printf("[DEBUG] No given name or surname found for record %#v, mappings %#v, role %s",
+				record, collection.Mappings, role)
 			continue
 		}
 

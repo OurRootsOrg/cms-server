@@ -160,6 +160,9 @@ func (p Persister) InsertPost(ctx context.Context, in model.PostIn) (*model.Post
 							log.Printf("[ERROR] Failed to put post %#v. twii: %#v err: %v", post, twii, err)
 							return nil, model.NewError(model.ErrOther, err.Error())
 						}
+					} else if *r.Code == "TransactionConflict" {
+						log.Printf("[ERROR] TransactionConflict when putting post %#v. twii: %#v err: %v", post, twii, err)
+						return nil, model.NewError(model.ErrConflict)
 					} else {
 						log.Printf("[ERROR] Failed to put post %#v. twii: %#v err: %v", post, twii, err)
 						return nil, model.NewError(model.ErrOther, err.Error())
@@ -255,6 +258,9 @@ func (p Persister) UpdatePost(ctx context.Context, id uint32, in model.Post) (*m
 							log.Printf("[ERROR] Failed to put post %#v. twii: %#v err: %v", post, twii, err)
 							return nil, model.NewError(model.ErrOther, err.Error())
 						}
+					} else if *r.Code == "TransactionConflict" {
+						log.Printf("[ERROR] TransactionConflict when putting post %#v. twii: %#v err: %v", post, twii, err)
+						return nil, model.NewError(model.ErrConflict)
 					} else {
 						log.Printf("[ERROR] Failed to put post %#v. twii: %#v err: %v", post, twii, err)
 						return nil, model.NewError(model.ErrOther, err.Error())

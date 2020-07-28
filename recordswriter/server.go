@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"math"
+	"net/http"
 	"net/url"
 	"os"
 	"reflect"
@@ -41,7 +42,7 @@ func processMessage(ctx context.Context, ap *api.API, rawMsg []byte) error {
 		return nil // Don't return an error, because parsing will never succeed
 	}
 
-	log.Printf("[DEBUG] processing %d", msg.PostID)
+	log.Printf("[DEBUG] Processing PostID: %d", msg.PostID)
 
 	// read post
 	post, errs := ap.GetPost(ctx, msg.PostID)
@@ -81,6 +82,7 @@ func processMessage(ctx context.Context, ap *api.API, rawMsg []byte) error {
 		log.Printf("[ERROR] Unmarshal datas %v\n", err)
 		return api.NewError(err)
 	}
+	log.Printf("[DEBUG] datas: %#v", datas)
 
 	// set up workers
 	in := make(chan map[string]string)
@@ -88,12 +90,31 @@ func processMessage(ctx context.Context, ap *api.API, rawMsg []byte) error {
 	for i := 0; i < numWorkers; i++ {
 		go func(in chan map[string]string, out chan error) {
 			for data := range in {
+				log.Printf("[DEBUG] Processing data: %#v", data)
 				_, errs := ap.AddRecord(ctx, model.RecordIn{
 					RecordBody: model.RecordBody{
 						Data: data,
 					},
 					Post: post.ID,
 				})
+				// Retry up to three times with exponential backoff of 1, 10 and 100ms
+				for i, wait := 0, 1*time.Millisecond; errs != nil && i < 3; i, wait = i+1, wait*10 {
+					if !isRetryable(errs) {
+						log.Printf("[DEBUG] Error %#v is non-retryable", errs)
+						break
+					}
+					time.Sleep(wait)
+					log.Printf("[DEBUG] Error %#v, retry #%d %#v", errs, i+1, data)
+					_, errs = ap.AddRecord(ctx, model.RecordIn{
+						RecordBody: model.RecordBody{
+							Data: data,
+						},
+						Post: post.ID,
+					})
+					if errs != nil {
+						log.Printf("[DEBUG] Retry #%d failed: %#v", i+1, errs)
+					}
+				}
 				out <- errs
 			}
 		}(in, out)
@@ -111,22 +132,29 @@ func processMessage(ctx context.Context, ap *api.API, rawMsg []byte) error {
 	errs = nil
 	for i := 0; i < len(datas); i++ {
 		if e := <-out; e != nil {
-			log.Printf("[ERROR] AddRecord %v\n", e)
+			log.Printf("[ERROR] AddRecord received error: %#v", e)
 			errs = e
 		}
 	}
-	if errs != nil {
-		return errs
-	}
+	close(out)
 
-	// update post.recordsStatus = load complete
-	post.RecordsStatus = model.PostLoadComplete
-	_, errs = ap.UpdatePost(ctx, post.ID, *post)
 	if errs != nil {
-		log.Printf("[ERROR] UpdatePost %v\n", errs)
+		post.RecordsStatus = model.PostDraft
+	} else {
+		post.RecordsStatus = model.PostLoadComplete
+	}
+	_, err = ap.UpdatePost(ctx, post.ID, *post)
+	if err != nil {
+		log.Printf("[ERROR] UpdatePost %v\n", err)
+		return err
 	}
 
 	return errs
+}
+
+func isRetryable(err error) bool {
+	er, ok := err.(*api.Error)
+	return ok && er.HTTPStatus() == http.StatusConflict
 }
 
 type lambdaHandler struct {
