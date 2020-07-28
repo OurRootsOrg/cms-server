@@ -136,16 +136,17 @@ func processMessage(ctx context.Context, ap *api.API, rawMsg []byte) error {
 			errs = e
 		}
 	}
-	if errs != nil {
-		return errs
-	}
 	close(out)
 
-	// update post.recordsStatus = load complete
-	post.RecordsStatus = model.PostLoadComplete
-	_, errs = ap.UpdatePost(ctx, post.ID, *post)
 	if errs != nil {
-		log.Printf("[ERROR] UpdatePost %v\n", errs)
+		post.RecordsStatus = model.PostDraft
+	} else {
+		post.RecordsStatus = model.PostLoadComplete
+	}
+	_, err = ap.UpdatePost(ctx, post.ID, *post)
+	if err != nil {
+		log.Printf("[ERROR] UpdatePost %v\n", err)
+		return err
 	}
 
 	return errs
