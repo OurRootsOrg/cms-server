@@ -97,21 +97,22 @@ func processMessage(ctx context.Context, ap *api.API, rawMsg []byte) error {
 					},
 					Post: post.ID,
 				})
-				if errs != nil {
-					if er, ok := errs.(*api.Error); ok && er.HTTPStatus() == http.StatusConflict {
-						// Retry once
-						log.Printf("[DEBUG] Error %#v, retrying %#v", errs, data)
-						_, errs = ap.AddRecord(ctx, model.RecordIn{
-							RecordBody: model.RecordBody{
-								Data: data,
-							},
-							Post: post.ID,
-						})
-						if errs != nil {
-							log.Printf("[DEBUG] Retry failed: %#v", errs)
-						}
-					} else {
+				// Retry up to three times with exponential backoff of 1, 10 and 100ms
+				for i, wait := 0, 1*time.Millisecond; errs != nil && i < 3; i, wait = i+1, wait*10 {
+					if !isRetryable(errs) {
 						log.Printf("[DEBUG] Error %#v is non-retryable", errs)
+						break
+					}
+					time.Sleep(wait)
+					log.Printf("[DEBUG] Error %#v, retry #%d %#v", errs, i+1, data)
+					_, errs = ap.AddRecord(ctx, model.RecordIn{
+						RecordBody: model.RecordBody{
+							Data: data,
+						},
+						Post: post.ID,
+					})
+					if errs != nil {
+						log.Printf("[DEBUG] Retry #%d failed: %#v", i+1, errs)
 					}
 				}
 				out <- errs
@@ -148,6 +149,11 @@ func processMessage(ctx context.Context, ap *api.API, rawMsg []byte) error {
 	}
 
 	return errs
+}
+
+func isRetryable(err error) bool {
+	er, ok := err.(*api.Error)
+	return ok && er.HTTPStatus() == http.StatusConflict
 }
 
 type lambdaHandler struct {
