@@ -81,7 +81,6 @@ Resources:
     Properties:
       ApiId: !Ref OurRootsCMSApi
       RouteKey: "ANY /api/{proxy+}"
-      # RouteKey: "$default"
       AuthorizationType: NONE
       Target: !Join
         - /
@@ -205,6 +204,14 @@ Resources:
   # GETs to /* go to index.html in the bucket root
   UIRoute:
     Type: "AWS::ApiGatewayV2::Route"
+    # Attempt to workaround case where most-specfic matching didn't seem to work on initial deploy
+    DependsOn:
+      - ApiRoute
+      - CSSRoute
+      - IMGRoute
+      - JSRoute
+      - FaviconRoute
+      - CallbackRoute
     Properties:
       ApiId: !Ref OurRootsCMSApi
       RouteKey: "GET /{proxy+}"
