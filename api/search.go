@@ -13,38 +13,46 @@ import (
 	"strings"
 	"sync/atomic"
 	"time"
-	"unicode"
-	"unicode/utf8"
+
+	"github.com/ourrootsorg/cms-server/stddate"
+
+	"github.com/ourrootsorg/cms-server/stdtext"
 
 	"github.com/elastic/go-elasticsearch/v7/esutil"
-
-	"golang.org/x/text/runes"
-	"golang.org/x/text/transform"
-	"golang.org/x/text/unicode/norm"
 
 	"github.com/ourrootsorg/cms-server/model"
 )
 
 // given and surname fuzziness constants are flags that can be OR'd together
-// names can also contain wildcards (*, ?) but in that case fuzziness is ignored
+// names can also contain wildcards (*, ?) but in that case fuzziness above Exact is ignored
+const FuzzyNameDefault = 0
 const (
-	FuzzyNameAlternate        = 1 << iota // 1 - alternate spellings - not yet implemented
-	FuzzyNameSoundsLikeNarrow = 1 << iota // 2 - sounds-like (narrow) - high-precision, low-recall
-	FuzzyNameSoundsLikeBroad  = 1 << iota // 4 - sounds-like (broad) - low-precision, high-recall
-	FuzzyNameLevenshtein      = 1 << iota // 8 - fuzzy (levenshtein)
-	FuzzyNameInitials         = 1 << iota // 16 - initials (applies only to given)
+	FuzzyNameExact            = 1 << iota // 1 - exact match
+	FuzzyNameAlternate        = 1 << iota // 2 - alternate spellings - not yet implemented
+	FuzzyNameSoundsLikeNarrow = 1 << iota // 4 - sounds-like (narrow) - high-precision, low-recall
+	FuzzyNameSoundsLikeBroad  = 1 << iota // 8 - sounds-like (broad) - low-precision, high-recall
+	FuzzyNameLevenshtein      = 1 << iota // 16 - fuzzy (levenshtein)
+	FuzzyNameInitials         = 1 << iota // 32 - initials (applies only to given)
 )
 
+// date fuzziness constants cannot by OR'd together
+const (
+	FuzzyDateDefault = iota // 0 - default
+	FuzzyDateExact   = iota // 1 - exact year
+	FuzzyDateOne     = iota // 2 - +/- 1 year
+	FuzzyDateTwo     = iota // 3 - +/- 2 years
+	FuzzyDateFive    = iota // 4 - +/- 5 years
+	FuzzyDateTen     = iota // 5 - +/- 10 years
+)
+
+// place search is not yet implemented
 // place fuzziness constants can also be OR'd together
+const FuzzyPlaceDefault = 0
 const (
-	FuzzyPlaceHigherJurisdictions = 1 << iota // 1 - searches for City, County, State, Country also match County, State, Country or State, Country - not yet implemented
-	FuzzyPlaceNearby              = 1 << iota // 2 - not yet implemented
+	FuzzyPlaceExact               = 1 << iota // 1 - search this place only
+	FuzzyPlaceHigherJurisdictions = 1 << iota // 2 - searches for City, County, State, Country also match County, State, Country or State, Country
+	FuzzyPlaceNearby              = 1 << iota // 4 - search nearby places
 )
-
-// date and place searches are not yet implemented
-
-// date fuzziness is simply a +/- number of years to generate a year range
-// e.g., a birthDate of 1880 and a birthDateFuzziness of 5 would result in a year range 1875..1885
 
 // SearchRequest contains the possible search request parameters
 type SearchRequest struct {
@@ -134,16 +142,6 @@ type SearchRequest struct {
 	DeathCentury          string `schema:"deathCentury"`
 	DeathDecadeFacet      bool   `schema:"deathDecadeFacet"`
 	DeathDecade           string `schema:"deathDecade"`
-	OtherPlace1Facet      bool   `schema:"otherPlace1Facet"`
-	OtherPlace1           string `schema:"otherPlace1"`
-	OtherPlace2Facet      bool   `schema:"otherPlace2Facet"`
-	OtherPlace2           string `schema:"otherPlace2"`
-	OtherPlace3Facet      bool   `schema:"otherPlace3Facet"`
-	OtherPlace3           string `schema:"otherPlace3"`
-	OtherCenturyFacet     bool   `schema:"otherCenturyFacet"`
-	OtherCentury          string `schema:"otherCentury"`
-	OtherDecadeFacet      bool   `schema:"otherDecadeFacet"`
-	OtherDecade           string `schema:"otherDecade"`
 	// other facets and filters
 	CategoryFacet   bool   `schema:"categoryFacet"`
 	Category        string `schema:"category"`
@@ -292,6 +290,8 @@ func reverseMap(m map[string]string) map[string]string {
 	return result
 }
 
+var EventTypes = []string{"birth", "marriage", "residence", "death", "other"}
+
 var Relatives = []string{"father", "mother", "spouse", "other"}
 
 var RelativeRoles = map[string]map[string][]string{
@@ -439,10 +439,12 @@ func indexRecord(record *model.Record, post *model.Post, collection *model.Colle
 		}
 		// get data for role
 		data := getDataForRole(collection.Mappings, record, role)
-		//log.Printf("!!! role=%s record=%v data=%v\n", role, record, data)
-		_, givenFound := data["given"]
-		_, surnameFound := data["surname"]
-		if !givenFound && !surnameFound {
+
+		// populate the record to index
+		ixRecord := map[string]interface{}{}
+		ixRecord["given"] = data["given"]
+		ixRecord["surname"] = data["surname"]
+		if ixRecord["given"] == "" && ixRecord["surname"] == "" {
 			continue
 		}
 
@@ -452,26 +454,41 @@ func indexRecord(record *model.Record, post *model.Post, collection *model.Colle
 			givens := getNameParts(names, func(name GivenSurname) string { return name.given })
 			surnames := getNameParts(names, func(name GivenSurname) string { return name.surname })
 			if len(givens) > 0 {
-				data[relative+"Given"] = strings.Join(givens, " ")
+				ixRecord[relative+"Given"] = strings.Join(givens, " ")
 			}
 			if len(surnames) > 0 {
-				data[relative+"Surname"] = strings.Join(surnames, " ")
+				ixRecord[relative+"Surname"] = strings.Join(surnames, " ")
 			}
 		}
+
+		// get events
+		for _, eventType := range EventTypes {
+			if data[eventType+"Date"] != "" {
+				years, decades, valid := getStdDate(data[eventType+"Date"])
+				if valid {
+					ixRecord[eventType+"Year"] = years
+					ixRecord[eventType+"Decade"] = decades
+				}
+				// TODO handle places
+			}
+		}
+
+		// keywords
+		ixRecord["keywords"] = data["keywords"]
 
 		// get other data
 		var catNames []string
 		for _, cat := range categories {
 			catNames = append(catNames, cat.Name)
 		}
-		data["post"] = post.ID
-		data["collection"] = collection.Name
-		data["collectionId"] = collection.ID
-		data["category"] = catNames
-		data["lastModified"] = lastModified
+		ixRecord["post"] = post.ID
+		ixRecord["collection"] = collection.Name
+		ixRecord["collectionId"] = collection.ID
+		ixRecord["category"] = catNames
+		ixRecord["lastModified"] = lastModified
 
 		// add to BulkIndexer
-		bs, err := json.Marshal(data)
+		bs, err := json.Marshal(ixRecord)
 		if err != nil {
 			log.Printf("[ERROR] encoding record %d: %v", record.ID, err)
 			return err
@@ -738,59 +755,147 @@ func (api API) Search(ctx context.Context, req *SearchRequest) (*model.SearchRes
 }
 
 func constructSearchQuery(req *SearchRequest) *Search {
-	mustQueries := []Query{}
-	shouldQueries := []Query{}
-	filterQueries := []Query{}
+	var mustQueries []Query
+	var shouldQueries []Query
+	var filterQueries []Query
 	aggs := map[string]Agg{}
 
 	// name
-	givenQueries := constructNameQueries("given", req.Given, req.GivenFuzziness, true)
-	surnameQueries := constructNameQueries("surname", req.Surname, req.SurnameFuzziness, false)
-	if len(givenQueries) > 0 || len(surnameQueries) > 0 {
+	shouldGivenQueries, mustGivenQueries := constructNameQueries("given", req.Given, req.GivenFuzziness, true)
+	shouldSurnameQueries, mustSurnameQueries := constructNameQueries("surname", req.Surname, req.SurnameFuzziness, false)
+	if len(shouldGivenQueries) > 0 || len(shouldSurnameQueries) > 0 || len(mustGivenQueries) > 0 || len(mustSurnameQueries) > 0 {
 		mustQueries = append(mustQueries, Query{
 			Bool: &BoolQuery{
-				Should: append(givenQueries, surnameQueries...),
+				Must:   append(mustGivenQueries, mustSurnameQueries...),
+				Should: append(shouldGivenQueries, shouldSurnameQueries...),
 			},
 		})
 	}
 
 	// relative names
-	shouldQueries = append(shouldQueries, constructNameQueries("fatherGiven", req.FatherGiven, req.FatherGivenFuzziness, true)...)
-	shouldQueries = append(shouldQueries, constructNameQueries("fatherSurname", req.FatherSurname, req.FatherSurnameFuzziness, false)...)
-	shouldQueries = append(shouldQueries, constructNameQueries("motherGiven", req.MotherGiven, req.MotherGivenFuzziness, true)...)
-	shouldQueries = append(shouldQueries, constructNameQueries("motherSurname", req.MotherSurname, req.MotherSurnameFuzziness, false)...)
-	shouldQueries = append(shouldQueries, constructNameQueries("spouseGiven", req.SpouseGiven, req.SpouseGivenFuzziness, true)...)
-	shouldQueries = append(shouldQueries, constructNameQueries("spouseSurname", req.SpouseSurname, req.SpouseSurnameFuzziness, false)...)
-	shouldQueries = append(shouldQueries, constructNameQueries("otherGiven", req.OtherGiven, req.OtherGivenFuzziness, true)...)
-	shouldQueries = append(shouldQueries, constructNameQueries("otherSurname", req.OtherSurname, req.OtherSurnameFuzziness, false)...)
+	shouldSubqueries, mustSubqueries := constructNameQueries("fatherGiven", req.FatherGiven, req.FatherGivenFuzziness, true)
+	shouldQueries = append(shouldQueries, shouldSubqueries...)
+	mustQueries = append(mustQueries, mustSubqueries...)
+	shouldSubqueries, mustSubqueries = constructNameQueries("fatherSurname", req.FatherSurname, req.FatherSurnameFuzziness, false)
+	shouldQueries = append(shouldQueries, shouldSubqueries...)
+	mustQueries = append(mustQueries, mustSubqueries...)
+	shouldSubqueries, mustSubqueries = constructNameQueries("motherGiven", req.MotherGiven, req.MotherGivenFuzziness, true)
+	shouldQueries = append(shouldQueries, shouldSubqueries...)
+	mustQueries = append(mustQueries, mustSubqueries...)
+	shouldSubqueries, mustSubqueries = constructNameQueries("motherSurname", req.MotherSurname, req.MotherSurnameFuzziness, false)
+	shouldQueries = append(shouldQueries, shouldSubqueries...)
+	mustQueries = append(mustQueries, mustSubqueries...)
+	shouldSubqueries, mustSubqueries = constructNameQueries("spouseGiven", req.SpouseGiven, req.SpouseGivenFuzziness, true)
+	shouldQueries = append(shouldQueries, shouldSubqueries...)
+	mustQueries = append(mustQueries, mustSubqueries...)
+	shouldSubqueries, mustSubqueries = constructNameQueries("spouseSurname", req.SpouseSurname, req.SpouseSurnameFuzziness, false)
+	shouldQueries = append(shouldQueries, shouldSubqueries...)
+	mustQueries = append(mustQueries, mustSubqueries...)
+	shouldSubqueries, mustSubqueries = constructNameQueries("otherGiven", req.OtherGiven, req.OtherGivenFuzziness, true)
+	shouldQueries = append(shouldQueries, shouldSubqueries...)
+	mustQueries = append(mustQueries, mustSubqueries...)
+	shouldSubqueries, mustSubqueries = constructNameQueries("otherSurname", req.OtherSurname, req.OtherSurnameFuzziness, false)
+	shouldQueries = append(shouldQueries, shouldSubqueries...)
+	mustQueries = append(mustQueries, mustSubqueries...)
 
 	// events
-	shouldQueries = append(shouldQueries, constructDateQueries("birthYear", "birthDate", req.BirthDate, req.BirthDateFuzziness)...)
-	shouldQueries = append(shouldQueries, constructPlaceQueries("birthPlace", req.BirthPlace, req.BirthPlaceFuzziness)...)
-	shouldQueries = append(shouldQueries, constructDateQueries("marriageYear", "marriageDate", req.MarriageDate, req.MarriageDateFuzziness)...)
-	shouldQueries = append(shouldQueries, constructPlaceQueries("marriagePlace", req.MarriagePlace, req.MarriagePlaceFuzziness)...)
-	shouldQueries = append(shouldQueries, constructDateQueries("residenceYear", "residenceDate", req.ResidenceDate, req.ResidenceDateFuzziness)...)
-	shouldQueries = append(shouldQueries, constructPlaceQueries("residencePlace", req.ResidencePlace, req.ResidencePlaceFuzziness)...)
-	shouldQueries = append(shouldQueries, constructDateQueries("deathYear", "deathDate", req.DeathDate, req.DeathDateFuzziness)...)
-	shouldQueries = append(shouldQueries, constructPlaceQueries("deathPlace", req.DeathPlace, req.DeathPlaceFuzziness)...)
+	shouldSubqueries, mustSubqueries = constructDateQueries("birthYear", "birthDateStd", req.BirthDate, req.BirthDateFuzziness)
+	shouldQueries = append(shouldQueries, shouldSubqueries...)
+	mustQueries = append(mustQueries, mustSubqueries...)
+	shouldSubqueries, mustSubqueries = constructPlaceQueries("birthPlace", req.BirthPlace, req.BirthPlaceFuzziness)
+	shouldQueries = append(shouldQueries, shouldSubqueries...)
+	mustQueries = append(mustQueries, mustSubqueries...)
+	shouldSubqueries, mustSubqueries = constructDateQueries("marriageYear", "marriageDateStd", req.MarriageDate, req.MarriageDateFuzziness)
+	shouldQueries = append(shouldQueries, shouldSubqueries...)
+	mustQueries = append(mustQueries, mustSubqueries...)
+	shouldSubqueries, mustSubqueries = constructPlaceQueries("marriagePlace", req.MarriagePlace, req.MarriagePlaceFuzziness)
+	shouldQueries = append(shouldQueries, shouldSubqueries...)
+	mustQueries = append(mustQueries, mustSubqueries...)
+	shouldSubqueries, mustSubqueries = constructDateQueries("residenceYear", "residenceDateStd", req.ResidenceDate, req.ResidenceDateFuzziness)
+	shouldQueries = append(shouldQueries, shouldSubqueries...)
+	mustQueries = append(mustQueries, mustSubqueries...)
+	shouldSubqueries, mustSubqueries = constructPlaceQueries("residencePlace", req.ResidencePlace, req.ResidencePlaceFuzziness)
+	shouldQueries = append(shouldQueries, shouldSubqueries...)
+	mustQueries = append(mustQueries, mustSubqueries...)
+	shouldSubqueries, mustSubqueries = constructDateQueries("deathYear", "deathDateStd", req.DeathDate, req.DeathDateFuzziness)
+	shouldQueries = append(shouldQueries, shouldSubqueries...)
+	mustQueries = append(mustQueries, mustSubqueries...)
+	shouldSubqueries, mustSubqueries = constructPlaceQueries("deathPlace", req.DeathPlace, req.DeathPlaceFuzziness)
+	shouldQueries = append(shouldQueries, shouldSubqueries...)
+	mustQueries = append(mustQueries, mustSubqueries...)
+
+	// any date
+	if len(req.AnyDate) > 0 {
+		var anyShouldQueries []Query
+		var anyMustQueries []Query
+		shouldSubqueries, mustSubqueries = constructDateQueries("birthYear", "birthDateStd", req.AnyDate, req.AnyDateFuzziness)
+		anyShouldQueries = append(anyShouldQueries, shouldSubqueries...)
+		anyMustQueries = append(anyMustQueries, mustSubqueries...)
+		shouldSubqueries, mustSubqueries = constructDateQueries("marriageYear", "marriageDateStd", req.AnyDate, req.AnyDateFuzziness)
+		anyShouldQueries = append(anyShouldQueries, shouldSubqueries...)
+		anyMustQueries = append(anyMustQueries, mustSubqueries...)
+		shouldSubqueries, mustSubqueries = constructDateQueries("residenceYear", "residenceDateStd", req.AnyDate, req.AnyDateFuzziness)
+		anyShouldQueries = append(anyShouldQueries, shouldSubqueries...)
+		anyMustQueries = append(anyMustQueries, mustSubqueries...)
+		shouldSubqueries, mustSubqueries = constructDateQueries("deathYear", "deathDateStd", req.AnyDate, req.AnyDateFuzziness)
+		anyShouldQueries = append(anyShouldQueries, shouldSubqueries...)
+		anyMustQueries = append(anyMustQueries, mustSubqueries...)
+		shouldSubqueries, mustSubqueries = constructDateQueries("otherYear", "otherDateStd", req.AnyDate, req.AnyDateFuzziness)
+		anyShouldQueries = append(anyShouldQueries, shouldSubqueries...)
+		anyMustQueries = append(anyMustQueries, mustSubqueries...)
+		if len(anyShouldQueries) > 0 {
+			shouldQueries = append(shouldQueries, Query{
+				DisMax: &DisMaxQuery{
+					Queries: anyShouldQueries,
+				},
+			})
+		}
+		if len(anyMustQueries) > 0 {
+			mustQueries = append(mustQueries, Query{
+				DisMax: &DisMaxQuery{
+					Queries: anyMustQueries,
+				},
+			})
+		}
+	}
 
 	// any place
 	if len(req.AnyPlace) > 0 {
-		var anyPlaceQueries []Query
-		anyPlaceQueries = append(anyPlaceQueries, constructPlaceQueries("birthPlace", req.AnyPlace, req.AnyPlaceFuzziness)...)
-		anyPlaceQueries = append(anyPlaceQueries, constructPlaceQueries("marriagePlace", req.AnyPlace, req.AnyPlaceFuzziness)...)
-		anyPlaceQueries = append(anyPlaceQueries, constructPlaceQueries("residencePlace", req.AnyPlace, req.AnyPlaceFuzziness)...)
-		anyPlaceQueries = append(anyPlaceQueries, constructPlaceQueries("deathPlace", req.AnyPlace, req.AnyPlaceFuzziness)...)
-		anyPlaceQueries = append(anyPlaceQueries, constructPlaceQueries("otherPlace", req.AnyPlace, req.AnyPlaceFuzziness)...)
-		shouldQueries = append(shouldQueries, Query{
-			DisMax: &DisMaxQuery{
-				Queries: anyPlaceQueries,
-			},
-		})
+		var anyShouldQueries []Query
+		var anyMustQueries []Query
+		shouldSubqueries, mustSubqueries = constructPlaceQueries("birthPlace", req.AnyPlace, req.AnyPlaceFuzziness)
+		anyShouldQueries = append(anyShouldQueries, shouldSubqueries...)
+		anyMustQueries = append(anyMustQueries, mustSubqueries...)
+		shouldSubqueries, mustSubqueries = constructPlaceQueries("marriagePlace", req.AnyPlace, req.AnyPlaceFuzziness)
+		anyShouldQueries = append(anyShouldQueries, shouldSubqueries...)
+		anyMustQueries = append(anyMustQueries, mustSubqueries...)
+		shouldSubqueries, mustSubqueries = constructPlaceQueries("residencePlace", req.AnyPlace, req.AnyPlaceFuzziness)
+		anyShouldQueries = append(anyShouldQueries, shouldSubqueries...)
+		anyMustQueries = append(anyMustQueries, mustSubqueries...)
+		shouldSubqueries, mustSubqueries = constructPlaceQueries("deathPlace", req.AnyPlace, req.AnyPlaceFuzziness)
+		anyShouldQueries = append(anyShouldQueries, shouldSubqueries...)
+		anyMustQueries = append(anyMustQueries, mustSubqueries...)
+		shouldSubqueries, mustSubqueries = constructPlaceQueries("otherPlace", req.AnyPlace, req.AnyPlaceFuzziness)
+		anyShouldQueries = append(anyShouldQueries, shouldSubqueries...)
+		anyMustQueries = append(anyMustQueries, mustSubqueries...)
+		if len(anyShouldQueries) > 0 {
+			shouldQueries = append(shouldQueries, Query{
+				DisMax: &DisMaxQuery{
+					Queries: anyShouldQueries,
+				},
+			})
+		}
+		if len(anyMustQueries) > 0 {
+			mustQueries = append(mustQueries, Query{
+				DisMax: &DisMaxQuery{
+					Queries: anyMustQueries,
+				},
+			})
+		}
 	}
 
 	// other
-	shouldQueries = append(shouldQueries, constructTextQueries("keywords", req.Keywords)...)
+	mustQueries = append(mustQueries, constructTextQueries("keywords", req.Keywords)...)
 
 	// filters
 	filterQueries = append(filterQueries, constructFilterQueries("category", req.Category)...)
@@ -815,11 +920,6 @@ func constructSearchQuery(req *SearchRequest) *Search {
 	filterQueries = append(filterQueries, constructFilterQueries("deathPlace3", req.DeathPlace3)...)
 	filterQueries = append(filterQueries, constructCenturyFilterQueries("deathDecade", req.DeathCentury)...)
 	filterQueries = append(filterQueries, constructFilterQueries("deathDecade", req.DeathDecade)...)
-	filterQueries = append(filterQueries, constructFilterQueries("otherPlace1", req.OtherPlace1)...)
-	filterQueries = append(filterQueries, constructFilterQueries("otherPlace2", req.OtherPlace2)...)
-	filterQueries = append(filterQueries, constructFilterQueries("otherPlace3", req.OtherPlace3)...)
-	filterQueries = append(filterQueries, constructCenturyFilterQueries("otherDecade", req.OtherCentury)...)
-	filterQueries = append(filterQueries, constructFilterQueries("otherDecade", req.OtherDecade)...)
 
 	// facets
 	addTermsAgg(aggs, "category", req.CategoryFacet)
@@ -844,11 +944,9 @@ func constructSearchQuery(req *SearchRequest) *Search {
 	addTermsAgg(aggs, "deathPlace3", len(req.DeathPlace1) > 0 && len(req.DeathPlace2) > 0 && req.DeathPlace3Facet)
 	addCenturyAgg(aggs, "deathCentury", "deathDecade", req.DeathCenturyFacet)
 	addTermsAgg(aggs, "deathDecade", len(req.DeathCentury) > 0 && req.DeathDecadeFacet)
-	addTermsAgg(aggs, "otherPlace1", req.OtherPlace1Facet)
-	addTermsAgg(aggs, "otherPlace2", len(req.OtherPlace1) > 0 && req.OtherPlace2Facet)
-	addTermsAgg(aggs, "otherPlace3", len(req.OtherPlace1) > 0 && len(req.OtherPlace2) > 0 && req.OtherPlace3Facet)
-	addCenturyAgg(aggs, "otherCentury", "otherDecade", req.OtherCenturyFacet)
-	addTermsAgg(aggs, "otherDecade", len(req.OtherCentury) > 0 && req.OtherDecadeFacet)
+	if len(aggs) == 0 {
+		aggs = nil
+	}
 
 	return &Search{
 		Query: Query{
@@ -870,19 +968,15 @@ const broadNameBoost = 0.6
 const initialNameBoost = 0.4
 const fuzzyNameBoost = 0.2
 
-func constructNameQueries(label, value string, fuzziness int, isGiven bool) []Query {
+func constructNameQueries(label, value string, fuzziness int, isGiven bool) ([]Query, []Query) {
 	if len(value) == 0 {
-		return nil
+		return nil, nil
 	}
 	var queries []Query
 
 	for _, v := range splitWord(value) {
 		if strings.ContainsAny(v, "*?") {
-			v, err := asciifold(strings.ToLower(v))
-			if err != nil {
-				log.Printf("[INFO] unable to fold %s\n", v)
-				v = strings.ToLower(v)
-			}
+			v := stdtext.AsciiFold(strings.ToLower(v))
 
 			// TODO disallow wildcards within the first 3 characters?
 			if strings.HasPrefix(v, "*") || strings.HasPrefix(v, "?") {
@@ -908,18 +1002,18 @@ func constructNameQueries(label, value string, fuzziness int, isGiven bool) []Qu
 			},
 		}
 
-		if fuzziness == 0 {
+		if fuzziness == FuzzyNameExact {
 			queries = append(queries, exactQuery)
 			continue
 		}
 
 		subqueries := []Query{exactQuery}
 
-		if fuzziness&FuzzyNameAlternate > 0 {
+		if fuzziness == FuzzyNameDefault || fuzziness&FuzzyNameAlternate > 0 {
 			// TODO alternate spellings
 		}
 		// TODO choose the best coders for broad and narrow
-		if fuzziness&FuzzyNameSoundsLikeNarrow > 0 {
+		if fuzziness == FuzzyNameDefault || fuzziness&FuzzyNameSoundsLikeNarrow > 0 {
 			subqueries = append(subqueries, Query{
 				Match: map[string]MatchQuery{
 					label + ".narrow": {
@@ -929,7 +1023,7 @@ func constructNameQueries(label, value string, fuzziness int, isGiven bool) []Qu
 				},
 			})
 		}
-		if fuzziness&FuzzyNameSoundsLikeBroad > 0 {
+		if fuzziness == FuzzyNameDefault || fuzziness&FuzzyNameSoundsLikeBroad > 0 {
 			subqueries = append(subqueries, Query{
 				Match: map[string]MatchQuery{
 					label + ".broad": {
@@ -939,12 +1033,8 @@ func constructNameQueries(label, value string, fuzziness int, isGiven bool) []Qu
 				},
 			})
 		}
-		if fuzziness&FuzzyNameLevenshtein > 0 {
-			std, err := asciifold(strings.ToLower(v))
-			if err != nil {
-				log.Printf("[INFO] unable to fold %s\n", v)
-				std = strings.ToLower(v)
-			}
+		if fuzziness == FuzzyNameDefault || fuzziness&FuzzyNameLevenshtein > 0 {
+			std := stdtext.AsciiFold(strings.ToLower(v))
 			subqueries = append(subqueries, Query{
 				Fuzzy: map[string]FuzzyQuery{
 					label: {
@@ -956,7 +1046,7 @@ func constructNameQueries(label, value string, fuzziness int, isGiven bool) []Qu
 				},
 			})
 		}
-		if fuzziness&FuzzyNameInitials > 0 && isGiven {
+		if fuzziness == FuzzyNameDefault || fuzziness&FuzzyNameInitials > 0 && isGiven {
 			subqueries = append(subqueries, Query{
 				Match: map[string]MatchQuery{
 					label: {
@@ -973,45 +1063,70 @@ func constructNameQueries(label, value string, fuzziness int, isGiven bool) []Qu
 			},
 		})
 	}
-	return queries
+
+	if fuzziness == FuzzyNameDefault {
+		return queries, nil
+	} else {
+		return nil, queries
+	}
 }
 
 const exactYearBoost = 0.7
 const rangeYearBoost = 0.3
 
-func constructDateQueries(yearLabel, dateLabel, value string, fuzziness int) []Query {
-	if len(value) < 4 {
-		return nil
+func constructDateQueries(yearLabel, dateLabel, value string, fuzziness int) ([]Query, []Query) {
+	if len(value) != 4 {
+		return nil, nil
 	}
-	var q Query
 
-	// just accept years for now
-	if len(value) > 4 {
-		value = value[0:4]
-	}
 	year, err := strconv.Atoi(value)
+	if err != nil {
+		return nil, nil
+	}
 
-	if err != nil || fuzziness <= 0 || fuzziness > 10 {
-		q = Query{
-			Term: map[string]TermQuery{
-				yearLabel: {
-					Value: value,
-					Boost: exactYearBoost,
-				},
+	query := Query{
+		Term: map[string]TermQuery{
+			yearLabel: {
+				Value: value,
+				Boost: exactYearBoost,
 			},
+		},
+	}
+
+	if fuzziness == FuzzyDateDefault || fuzziness > FuzzyDateExact {
+		var yrRange int
+		switch fuzziness {
+		case FuzzyDateDefault:
+			yrRange = 5
+		case FuzzyDateOne:
+			yrRange = 1
+		case FuzzyDateTwo:
+			yrRange = 2
+		case FuzzyDateFive:
+			yrRange = 5
+		case FuzzyDateTen:
+			yrRange = 10
 		}
-	} else {
-		q = Query{
-			Range: map[string]RangeQuery{
-				yearLabel: {
-					GTE:   year - fuzziness,
-					LTE:   year + fuzziness,
-					Boost: rangeYearBoost,
-				},
+		query = Query{
+			DisMax: &DisMaxQuery{
+				Queries: []Query{query, {
+					Range: map[string]RangeQuery{
+						yearLabel: {
+							GTE:   year - yrRange,
+							LTE:   year + yrRange,
+							Boost: rangeYearBoost,
+						},
+					},
+				}},
 			},
 		}
 	}
-	return []Query{q}
+
+	if fuzziness == FuzzyDateDefault {
+		return []Query{query}, nil
+	} else {
+		return nil, []Query{query}
+	}
 }
 
 const exactPlaceBoost = 1.0
@@ -1019,18 +1134,15 @@ const wildcardPlaceBoost = 0.7
 const fuzzyPlaceBoost = 0.2
 const levelPlaceBoost = 0.2
 
-func constructPlaceQueries(label, value string, fuzziness int) []Query {
+func constructPlaceQueries(label, value string, fuzziness int) ([]Query, []Query) {
 	if len(value) == 0 {
-		return nil
+		return nil, nil
 	}
 
 	if strings.ContainsAny(value, "~*?") {
 		var queries []Query
 		for _, v := range splitWord(value) {
-			v, err := asciifold(strings.ToLower(v))
-			if err != nil {
-				log.Printf("[INFO] unable to fold %s\n", v)
-			}
+			v := stdtext.AsciiFold(strings.ToLower(v))
 			if strings.HasPrefix(v, "~") && !strings.ContainsAny(v, "*?") {
 				queries = append(queries, Query{
 					Fuzzy: map[string]FuzzyQuery{
@@ -1072,7 +1184,11 @@ func constructPlaceQueries(label, value string, fuzziness int) []Query {
 			})
 		}
 
-		return queries
+		if fuzziness == FuzzyPlaceDefault {
+			return queries, nil
+		} else {
+			return nil, queries
+		}
 	}
 
 	levels := splitPlace(value)
@@ -1093,7 +1209,7 @@ func constructPlaceQueries(label, value string, fuzziness int) []Query {
 		},
 	}
 
-	if fuzziness&FuzzyPlaceHigherJurisdictions > 0 {
+	if fuzziness == FuzzyPlaceDefault || fuzziness&FuzzyPlaceHigherJurisdictions > 0 {
 		for i := 1; i < len(levels); i++ {
 			// don't match on just "United States"
 			if i == 1 && levels[0] == "United States" {
@@ -1111,11 +1227,25 @@ func constructPlaceQueries(label, value string, fuzziness int) []Query {
 	}
 
 	// TODO include nearby places (lat and lon)
-	if fuzziness&FuzzyPlaceNearby > 0 {
+	if fuzziness == FuzzyPlaceDefault || fuzziness&FuzzyPlaceNearby > 0 {
 
 	}
 
-	return queries
+	if len(queries) > 1 {
+		queries = []Query{
+			{
+				DisMax: &DisMaxQuery{
+					Queries: queries,
+				},
+			},
+		}
+	}
+
+	if fuzziness == FuzzyPlaceDefault {
+		return queries, nil
+	} else {
+		return nil, queries
+	}
 }
 
 func constructTextQueries(label, value string) []Query {
@@ -1242,64 +1372,6 @@ func reverse(s []string) {
 	}
 }
 
-// try to match lucene's asciifolding
-var transliterations = map[rune]string{
-	'Æ': "AE",
-	'Ð': "D",
-	'Ł': "L",
-	'Ø': "O",
-	'Þ': "Th",
-	'ß': "ss",
-	'ẞ': "SS",
-	'æ': "ae",
-	'ð': "d",
-	'ł': "l",
-	'ø': "o",
-	'þ': "th",
-	'Œ': "OE",
-	'œ': "oe",
-}
-
-type Transliterator struct {
-}
-
-func (t Transliterator) Transform(dst, src []byte, atEOF bool) (int, int, error) {
-	var err error
-	total := 0
-	for i, w := 0, 0; i < len(src) && err == nil; i += w {
-		var n int
-		r, width := utf8.DecodeRune(src[i:])
-		if d, ok := transliterations[r]; ok {
-			n = copy(dst[total:], d)
-			if n < len(d) {
-				err = transform.ErrShortDst
-			}
-		} else {
-			n = copy(dst[total:], src[i:i+width])
-			if n < width {
-				err = transform.ErrShortDst
-			}
-		}
-		total += n
-		w = width
-	}
-
-	return total, len(src), err
-}
-
-func (t Transliterator) Reset() {
-}
-
-func asciifold(s string) (string, error) {
-	var tl Transliterator
-	t := transform.Chain(norm.NFD, runes.Remove(runes.In(unicode.Mn)), tl, norm.NFC)
-	result, _, err := transform.String(t, s)
-	if err != nil {
-		result = s // return as-is
-	}
-	return result, err
-}
-
 func getHitData(r ESSearchHit) (*HitData, error) {
 	idParts := strings.Split(r.ID, "_")
 	role := "principal"
@@ -1326,8 +1398,20 @@ func getHitData(r ESSearchHit) (*HitData, error) {
 
 func constructSearchPerson(mappings []model.CollectionMapping, role string, record *model.Record) model.SearchPerson {
 	data := getDataForRole(mappings, record, role)
-	// TODO populate events
+
+	// populate events
 	events := []model.SearchEvent{}
+	for _, eventType := range EventTypes {
+		if data[eventType+"Date"] != "" || data[eventType+"Place"] != "" {
+			events = append(events, model.SearchEvent{
+				Type:  eventType,
+				Date:  data[eventType+"Date"],
+				Place: data[eventType+"Place"],
+			})
+		}
+	}
+
+	// populate relationships
 	relationships := []model.SearchRelationship{}
 	for _, relative := range Relatives {
 		names := getNames(mappings, record, RelativeRoles[role][relative])
@@ -1338,6 +1422,7 @@ func constructSearchPerson(mappings []model.CollectionMapping, role string, reco
 			})
 		}
 	}
+
 	return model.SearchPerson{
 		Name:          fmt.Sprintf("%s %s", data["given"], data["surname"]),
 		Role:          role,
@@ -1360,16 +1445,47 @@ func constructSearchRecord(mappings []model.CollectionMapping, record *model.Rec
 	return lvs
 }
 
-func getDataForRole(mappings []model.CollectionMapping, record *model.Record, role string) map[string]interface{} {
-	data := map[string]interface{}{}
+func getDataForRole(mappings []model.CollectionMapping, record *model.Record, role string) map[string]string {
+	data := map[string]string{}
 
-	// TODO get marriage data for spouse too
 	for _, mapping := range mappings {
-		if mapping.IxRole == role && record.Data[mapping.Header] != "" {
+		// get marriage data for spouse too
+		if record.Data[mapping.Header] != "" &&
+			(mapping.IxRole == role || (isSpouseRole(mapping.IxRole, role) && isMarriageField(mapping.IxField))) {
 			data[mapping.IxField] = record.Data[mapping.Header]
 		}
 	}
 	return data
+}
+
+func isMarriageField(field string) bool {
+	return field == "marriageDate" || field == "marriagePlace"
+}
+
+func isSpouseRole(role1, role2 string) bool {
+	switch role1 {
+	case "principal":
+		return role2 == "spouse"
+	case "spouse":
+		return role2 == "principal"
+	case "father":
+		return role2 == "mother"
+	case "mother":
+		return role2 == "father"
+	case "bride":
+		return role2 == "groom"
+	case "groom":
+		return role2 == "bride"
+	case "brideFather":
+		return role2 == "brideMother"
+	case "brideMother":
+		return role2 == "brideFather"
+	case "groomFather":
+		return role2 == "groomMother"
+	case "groomMother":
+		return role2 == "groomFather"
+	}
+	return false
 }
 
 func getNames(mappings []model.CollectionMapping, record *model.Record, roles []string) []GivenSurname {
@@ -1406,4 +1522,77 @@ func getNameParts(names []GivenSurname, extractor nameExtractor) []string {
 		}
 	}
 	return parts
+}
+
+func getYears(sd *stddate.CompoundDate) []int {
+	years := []int{}
+	switch {
+	case sd.Type == stddate.CompoundTwo:
+		if sd.First.Year != 0 {
+			years = append(years, sd.First.Year)
+		}
+		if sd.Second.Year != 0 && sd.Second.Year != sd.First.Year {
+			years = append(years, sd.Second.Year)
+		}
+	case sd.Type == stddate.CompoundRange:
+		if sd.First.StartYear() != 0 {
+			years = append(years, sd.First.StartYear())
+		}
+		if sd.Second.EndYear() > sd.First.StartYear() {
+			years = append(years, sd.Second.EndYear())
+		}
+		if len(years) == 2 {
+			for y := sd.First.StartYear() + 1; y < sd.Second.EndYear(); y++ {
+				years = append(years, y)
+			}
+		}
+	case sd.First.Modifier != stddate.ModifierNone || sd.First.Quality == stddate.QualityEstimated:
+		if sd.First.StartYear() != 0 {
+			years = append(years, sd.First.StartYear())
+		}
+		if sd.First.EndYear() > sd.First.StartYear() {
+			years = append(years, sd.First.EndYear())
+		}
+		if len(years) == 2 {
+			for y := sd.First.StartYear() + 1; y < sd.First.EndYear(); y++ {
+				years = append(years, y)
+			}
+		}
+	case sd.First.Double == stddate.DoubleDate:
+		if sd.First.Year != 0 {
+			years = append(years, sd.First.Year, sd.First.Year+1)
+		}
+	default:
+		if sd.First.Year != 0 {
+			years = append(years, sd.First.Year)
+		}
+	}
+	return years
+
+}
+
+func getStdDate(date string) ([]int, []int, bool) {
+	sd := stddate.Standardize(date)
+	if sd == nil {
+		return nil, nil, false
+	}
+	// get years
+	years := getYears(sd)
+	// get decades
+	decades := []int{}
+	for _, year := range years {
+		var dec int = year / 10
+		found := false
+		for _, decade := range decades {
+			if decade == dec {
+				found = true
+				break
+			}
+		}
+		if !found {
+			decades = append(decades, dec)
+		}
+	}
+
+	return years, decades, true
 }

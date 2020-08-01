@@ -3,526 +3,361 @@
     <h1>Search</h1>
     <v-form @submit.prevent="go">
       <v-row>
-        <v-col cols="1">
+        <v-col cols="2">
           <h4>Primary</h4>
         </v-col>
         <v-col>
           <v-row class="pa-0 ma-0">
-            <v-text-field
-              outlined
-              dense
-              v-model="query.given"
-              type="text"
-              placeholder="Given name"
-              class="ma-0 mb-n2"
-            ></v-text-field>
-          </v-row>
-          <v-row class="pa-0 ma-0 pl-1 mt-n5">
-            <v-checkbox
-              class="mt-0"
-              type="checkbox"
-              id="principalGivenAlt"
-              v-model="fuzziness.principalGiven"
-              value="1"
-              label="Alternate spellings"
-            ></v-checkbox>
-            <!--input & label-->
-            <v-checkbox
-              class="mt-0 ml-3"
-              type="checkbox"
-              id="principalGivenSoundsLikeNarrow"
-              v-model="fuzziness.principalGiven"
-              value="2"
-              label="Sounds like (narrow)"
-            ></v-checkbox>
-            <!--input & label-->
-            <v-checkbox
-              class="mt-0 ml-3"
-              type="checkbox"
-              id="principalGivenSoundsLikeBroad"
-              v-model="fuzziness.principalGiven"
-              value="4"
-              label="Sounds like (broad)"
-            ></v-checkbox>
-            <v-checkbox
-              class="mt-0 ml-3"
-              type="checkbox"
-              id="principalGivenFuzzy"
-              v-model="fuzziness.principalGiven"
-              value="8"
-              label="Fuzzy"
-            ></v-checkbox>
-            <v-checkbox
-              class="mt-0 ml-3"
-              type="checkbox"
-              id="principalGivenInitials"
-              v-model="fuzziness.principalGiven"
-              value="16"
-              label="Initials"
-            ></v-checkbox>
+            <v-col>
+              <v-text-field
+                outlined
+                dense
+                v-model="query.given"
+                type="text"
+                placeholder="Given name"
+                class="ma-0 mb-n2"
+              ></v-text-field>
+            </v-col>
+            <v-col>
+              <v-select
+                outlined
+                :multiple="true"
+                :items="givenFuzzinessLevels"
+                v-model="fuzziness.principalGiven"
+                :change="nameFuzzinessChanged('principalGiven')"
+                label="Exactness"
+              ></v-select>
+            </v-col>
           </v-row>
           <v-row class="pa-0 ma-0">
-            <v-text-field
-              dense
-              outlined
-              v-model="query.surname"
-              type="text"
-              placeholder="Surname"
-              class="ma-0 mb-n2"
-            ></v-text-field>
-          </v-row>
-          <v-row class="pa-0 ma-0 pl-1 mt-n5">
-            <v-checkbox
-              class="mt-0"
-              type="checkbox"
-              id="principalSurnameAlt"
-              v-model="fuzziness.principalSurname"
-              value="1"
-              label="Alternate spellings"
-            ></v-checkbox>
-            <v-checkbox
-              class="mt-0 ml-3"
-              type="checkbox"
-              id="principalSurnameSoundsLikeNarrow"
-              v-model="fuzziness.principalSurname"
-              value="2"
-              label="Sounds like (narrow)"
-            ></v-checkbox>
-            <v-checkbox
-              class="mt-0 ml-3"
-              type="checkbox"
-              id="principalSurnameSoundsLikeBroad"
-              v-model="fuzziness.principalSurname"
-              value="4"
-              label="Sounds like (broad)"
-            ></v-checkbox>
-            <v-checkbox
-              class="mt-0 ml-3"
-              type="checkbox"
-              id="principalSurnameFuzzy"
-              v-model="fuzziness.principalSurname"
-              value="8"
-              label="Fuzzy"
-            ></v-checkbox>
+            <v-col>
+              <v-text-field
+                dense
+                outlined
+                v-model="query.surname"
+                type="text"
+                placeholder="Surname"
+                class="ma-0 mb-n2"
+              ></v-text-field>
+            </v-col>
+            <v-col>
+              <v-select
+                outlined
+                :multiple="true"
+                :items="surnameFuzzinessLevels"
+                v-model="fuzziness.principalSurname"
+                :change="nameFuzzinessChanged('principalSurname')"
+                label="Exactness"
+              ></v-select>
+            </v-col>
           </v-row>
         </v-col>
       </v-row>
       <!--Father-->
       <v-row>
-        <v-col cols="1">
+        <v-col cols="2">
           <h4 class="mb-1">Father</h4>
         </v-col>
         <v-col>
           <v-row class="pa-0 ma-0">
-            <v-text-field
-              outlined
-              dense
-              v-model="query.fatherGiven"
-              type="text"
-              placeholder="Father's given name"
-              class="ma-0 mb-n2"
-            ></v-text-field>
-          </v-row>
-          <v-row class="pa-0 ma-0 pl-1 mt-n5">
-            <v-checkbox
-              class="mt-0"
-              type="checkbox"
-              id="fatherGivenAlt"
-              v-model="fuzziness.fatherGiven"
-              value="1"
-              label="Alternate spellings"
-            ></v-checkbox>
-            <v-checkbox
-              class="mt-0 ml-3"
-              type="checkbox"
-              id="fatherGivenSoundsLikeNarrow"
-              v-model="fuzziness.fatherGiven"
-              value="2"
-              label="Sounds like (narrow)"
-            ></v-checkbox>
-            <v-checkbox
-              class="mt-0 ml-3"
-              type="checkbox"
-              id="fatherGivenSoundsLikeBroad"
-              v-model="fuzziness.fatherGiven"
-              value="4"
-              label="Sounds like (broad)"
-            ></v-checkbox>
-            <v-checkbox
-              class="mt-0 ml-3"
-              type="checkbox"
-              id="fatherGivenFuzzy"
-              v-model="fuzziness.fatherGiven"
-              value="8"
-              label="Fuzzy"
-            ></v-checkbox>
-            <v-checkbox
-              class="mt-0 ml-3"
-              type="checkbox"
-              id="fatherGivenInitials"
-              v-model="fuzziness.fatherGiven"
-              value="16"
-              label="Initials"
-            ></v-checkbox>
+            <v-col>
+              <v-text-field
+                outlined
+                dense
+                v-model="query.fatherGiven"
+                type="text"
+                placeholder="Father's given name"
+                class="ma-0 mb-n2"
+              ></v-text-field>
+            </v-col>
+            <v-col>
+              <v-select
+                outlined
+                :multiple="true"
+                :items="givenFuzzinessLevels"
+                v-model="fuzziness.fatherGiven"
+                :change="nameFuzzinessChanged('fatherGiven')"
+                label="Exactness"
+              ></v-select>
+            </v-col>
           </v-row>
           <v-row class="pa-0 ma-0">
-            <v-text-field
-              outlined
-              dense
-              v-model="query.fatherSurname"
-              type="text"
-              placeholder="Father's surname"
-              class="ma-0 mb-n2"
-            ></v-text-field>
-          </v-row>
-          <v-row class="pa-0 ma-0 pl-1 mt-n5">
-            <v-checkbox
-              class="mt-0"
-              type="checkbox"
-              id="fatherSurnameAlt"
-              v-model="fuzziness.fatherSurname"
-              value="1"
-              label="Alternate spellings"
-            ></v-checkbox>
-            <v-checkbox
-              class="mt-0 ml-3"
-              type="checkbox"
-              id="fatherSurnameSoundsLikeNarrow"
-              v-model="fuzziness.fatherSurname"
-              value="2"
-              label="Sounds like (narrow)"
-            ></v-checkbox>
-            <v-checkbox
-              class="mt-0 ml-3"
-              type="checkbox"
-              id="fatherSurnameSoundsLikeBroad"
-              v-model="fuzziness.fatherSurname"
-              value="4"
-              label="Sounds like (broad)"
-            ></v-checkbox>
-            <v-checkbox
-              class="mt-0 ml-3"
-              type="checkbox"
-              id="fatherSurnameFuzzy"
-              v-model="fuzziness.fatherSurname"
-              value="8"
-              label="Fuzzy"
-            />
+            <v-col>
+              <v-text-field
+                outlined
+                dense
+                v-model="query.fatherSurname"
+                type="text"
+                placeholder="Father's surname"
+                class="ma-0 mb-n2"
+              ></v-text-field>
+            </v-col>
+            <v-col>
+              <v-select
+                outlined
+                :multiple="true"
+                :items="surnameFuzzinessLevels"
+                v-model="fuzziness.fatherSurname"
+                :change="nameFuzzinessChanged('fatherSurname')"
+                label="Exactness"
+              ></v-select>
+            </v-col>
           </v-row>
         </v-col>
       </v-row>
       <!--Mother-->
       <v-row>
-        <v-col cols="1">
-          <h4>Mother</h4>
+        <v-col cols="2">
+          <h4 class="mb-1">Mother</h4>
         </v-col>
         <v-col>
           <v-row class="pa-0 ma-0">
-            <v-text-field
-              outlined
-              dense
-              v-model="query.motherGiven"
-              type="text"
-              placeholder="Mother's given name"
-              class="ma-0 mb-n2"
-            ></v-text-field>
-          </v-row>
-          <v-row class="pa-0 ma-0 pl-1 mt-n5">
-            <v-checkbox
-              class="mt-0"
-              type="checkbox"
-              id="motherGivenAlt"
-              v-model="fuzziness.motherGiven"
-              value="1"
-              label="Alternate spellings"
-            ></v-checkbox>
-            <v-checkbox
-              class="mt-0 ml-3"
-              type="checkbox"
-              id="motherGivenSoundsLikeNarrow"
-              v-model="fuzziness.motherGiven"
-              value="2"
-              label="Sounds like (narrow)"
-            ></v-checkbox>
-            <v-checkbox
-              class="mt-0 ml-3"
-              type="checkbox"
-              id="motherGivenSoundsLikeBroad"
-              v-model="fuzziness.motherGiven"
-              value="4"
-              label="Sounds like (broad)"
-            ></v-checkbox>
-            <v-checkbox
-              class="mt-0 ml-3"
-              type="checkbox"
-              id="motherGivenFuzzy"
-              v-model="fuzziness.motherGiven"
-              value="8"
-              label="Fuzzy"
-            ></v-checkbox>
-            <v-checkbox
-              class="mt-0 ml-3"
-              type="checkbox"
-              id="motherGivenInitials"
-              v-model="fuzziness.motherGiven"
-              value="16"
-              label="Initials"
-            ></v-checkbox>
+            <v-col>
+              <v-text-field
+                outlined
+                dense
+                v-model="query.motherGiven"
+                type="text"
+                placeholder="Mother's given name"
+                class="ma-0 mb-n2"
+              ></v-text-field>
+            </v-col>
+            <v-col>
+              <v-select
+                outlined
+                :multiple="true"
+                :items="givenFuzzinessLevels"
+                v-model="fuzziness.motherGiven"
+                :change="nameFuzzinessChanged('motherGiven')"
+                label="Exactness"
+              ></v-select>
+            </v-col>
           </v-row>
           <v-row class="pa-0 ma-0">
-            <v-text-field
-              outlined
-              dense
-              v-model="query.motherSurname"
-              type="text"
-              placeholder="Mother's surname"
-              class="ma-0 mb-n2"
-            ></v-text-field>
-          </v-row>
-          <v-row class="pa-0 ma-0 pl-1 mt-n5">
-            <v-checkbox
-              class="mt-0"
-              type="checkbox"
-              id="motherSurnameAlt"
-              v-model="fuzziness.motherSurname"
-              value="1"
-              label="Alternate spellings"
-            ></v-checkbox>
-            <v-checkbox
-              class="mt-0 ml-3"
-              type="checkbox"
-              id="motherSurnameSoundsLikeNarrow"
-              v-model="fuzziness.motherSurname"
-              value="2"
-              label="Sounds like (narrow)"
-            ></v-checkbox>
-            <v-checkbox
-              class="mt-0 ml-3"
-              type="checkbox"
-              id="motherSurnameSoundsLikeBroad"
-              v-model="fuzziness.motherSurname"
-              value="4"
-              label="Sounds like (broad)"
-            ></v-checkbox>
-            <v-checkbox
-              class="mt-0 ml-3"
-              type="checkbox"
-              id="motherSurnameFuzzy"
-              v-model="fuzziness.motherSurname"
-              value="8"
-              label="Fuzzy"
-            ></v-checkbox>
+            <v-col>
+              <v-text-field
+                outlined
+                dense
+                v-model="query.motherSurname"
+                type="text"
+                placeholder="Mother's surname"
+                class="ma-0 mb-n2"
+              ></v-text-field>
+            </v-col>
+            <v-col>
+              <v-select
+                outlined
+                :multiple="true"
+                :items="surnameFuzzinessLevels"
+                v-model="fuzziness.motherSurname"
+                :change="nameFuzzinessChanged('motherSurname')"
+                label="Exactness"
+              ></v-select>
+            </v-col>
           </v-row>
         </v-col>
       </v-row>
       <!--Spouse-->
       <v-row>
-        <v-col cols="1">
-          <h4>Spouse</h4>
+        <v-col cols="2">
+          <h4 class="mb-1">Spouse</h4>
         </v-col>
         <v-col>
           <v-row class="pa-0 ma-0">
-            <v-text-field
-              outlined
-              dense
-              v-model="query.spouseGiven"
-              type="text"
-              placeholder="Spouse's given name"
-              class="ma-0 mb-n2"
-            ></v-text-field>
-          </v-row>
-          <v-row class="pa-0 ma-0 pl-1 mt-n5">
-            <v-checkbox
-              class="mt-0"
-              type="checkbox"
-              id="spouseGivenAlt"
-              v-model="fuzziness.spouseGiven"
-              value="1"
-              label="Alternate spellings"
-            ></v-checkbox>
-            <v-checkbox
-              class="mt-0 ml-3"
-              type="checkbox"
-              id="spouseGivenSoundsLikeNarrow"
-              v-model="fuzziness.spouseGiven"
-              value="2"
-              label="Sounds like (narrow)"
-            ></v-checkbox>
-            <v-checkbox
-              class="mt-0 ml-3"
-              type="checkbox"
-              id="spouseGivenSoundsLikeBroad"
-              v-model="fuzziness.spouseGiven"
-              value="4"
-              label="Sounds like (broad)"
-            ></v-checkbox>
-            <v-checkbox
-              class="mt-0 ml-3"
-              type="checkbox"
-              id="spouseGivenFuzzy"
-              v-model="fuzziness.spouseGiven"
-              value="8"
-              label="Fuzzy"
-            ></v-checkbox>
-            <v-checkbox
-              class="mt-0 ml-3"
-              type="checkbox"
-              id="spouseGivenInitials"
-              v-model="fuzziness.spouseGiven"
-              value="16"
-              label="Initials"
-            ></v-checkbox>
+            <v-col>
+              <v-text-field
+                outlined
+                dense
+                v-model="query.spouseGiven"
+                type="text"
+                placeholder="Spouse's given name"
+                class="ma-0 mb-n2"
+              ></v-text-field>
+            </v-col>
+            <v-col>
+              <v-select
+                outlined
+                :multiple="true"
+                :items="givenFuzzinessLevels"
+                v-model="fuzziness.spouseGiven"
+                :change="nameFuzzinessChanged('spouseGiven')"
+                label="Exactness"
+              ></v-select>
+            </v-col>
           </v-row>
           <v-row class="pa-0 ma-0">
-            <v-text-field
-              outlined
-              dense
-              v-model="query.spouseSurname"
-              type="text"
-              placeholder="Spouse's surname"
-              class="ma-0 mb-n2"
-            ></v-text-field>
-          </v-row>
-          <v-row class="pa-0 ma-0 pl-1 mt-n5">
-            <v-checkbox
-              class="mt-0"
-              type="checkbox"
-              id="spouseSurnameAlt"
-              v-model="fuzziness.spouseSurname"
-              value="1"
-              label="Alternate spellings"
-            ></v-checkbox>
-            <v-checkbox
-              class="mt-0 ml-3"
-              type="checkbox"
-              id="spouseSurnameSoundsLikeNarrow"
-              v-model="fuzziness.spouseSurname"
-              value="2"
-              label="Sounds like (narrow)"
-            ></v-checkbox>
-            <v-checkbox
-              class="mt-0 ml-3"
-              type="checkbox"
-              id="spouseSurnameSoundsLikeBroad"
-              v-model="fuzziness.spouseSurname"
-              value="4"
-              label="Sounds like (broad)"
-            ></v-checkbox>
-            <v-checkbox
-              class="mt-0 ml-3"
-              type="checkbox"
-              id="spouseSurnameFuzzy"
-              v-model="fuzziness.spouseSurname"
-              value="8"
-              label="Fuzzy"
-            ></v-checkbox>
+            <v-col>
+              <v-text-field
+                outlined
+                dense
+                v-model="query.spouseSurname"
+                type="text"
+                placeholder="Spouse's surname"
+                class="ma-0 mb-n2"
+              ></v-text-field>
+            </v-col>
+            <v-col>
+              <v-select
+                outlined
+                :multiple="true"
+                :items="surnameFuzzinessLevels"
+                v-model="fuzziness.spouseSurname"
+                :change="nameFuzzinessChanged('spouseSurname')"
+                label="Exactness"
+              ></v-select>
+            </v-col>
           </v-row>
         </v-col>
       </v-row>
       <!--Other-->
       <v-row>
-        <v-col cols="1">
-          <h4>Other person</h4>
+        <v-col cols="2">
+          <h4 class="mb-1">Other person</h4>
         </v-col>
         <v-col>
           <v-row class="pa-0 ma-0">
-            <v-text-field
-              outlined
-              dense
-              v-model="query.otherGiven"
-              type="text"
-              placeholder="Other person's given name"
-              class="ma-0 mb-n2"
-            ></v-text-field>
-          </v-row>
-          <v-row class="pa-0 ma-0 pl-1 mt-n5">
-            <v-checkbox
-              class="mt-0"
-              type="checkbox"
-              id="otherGivenAlt"
-              v-model="fuzziness.otherGiven"
-              value="1"
-              label="Alternate spellings"
-            ></v-checkbox>
-            <v-checkbox
-              class="mt-0 ml-3"
-              type="checkbox"
-              id="otherGivenSoundsLikeNarrow"
-              v-model="fuzziness.otherGiven"
-              value="2"
-              label="Sounds like (narrow)"
-            ></v-checkbox>
-            <v-checkbox
-              class="mt-0 ml-3"
-              type="checkbox"
-              id="otherGivenSoundsLikeBroad"
-              v-model="fuzziness.otherGiven"
-              value="4"
-              label="Sounds like (broad)"
-            ></v-checkbox>
-            <v-checkbox
-              class="mt-0 ml-3"
-              type="checkbox"
-              id="otherGivenFuzzy"
-              v-model="fuzziness.otherGiven"
-              value="8"
-              label="Fuzzy"
-            ></v-checkbox>
-            <v-checkbox
-              class="mt-0 ml-3"
-              type="checkbox"
-              id="otherGivenInitials"
-              v-model="fuzziness.otherGiven"
-              value="16"
-              label="Initials"
-            ></v-checkbox>
+            <v-col>
+              <v-text-field
+                outlined
+                dense
+                v-model="query.otherGiven"
+                type="text"
+                placeholder="Other person's given name"
+                class="ma-0 mb-n2"
+              ></v-text-field>
+            </v-col>
+            <v-col>
+              <v-select
+                outlined
+                :multiple="true"
+                :items="givenFuzzinessLevels"
+                v-model="fuzziness.otherGiven"
+                :change="nameFuzzinessChanged('otherGiven')"
+                label="Exactness"
+              ></v-select>
+            </v-col>
           </v-row>
           <v-row class="pa-0 ma-0">
-            <v-text-field
-              outlined
-              dense
-              v-model="query.otherSurname"
-              type="text"
-              placeholder="Other person's surname"
-              class="ma-0 mb-n2"
-            ></v-text-field>
-          </v-row>
-          <v-row class="pa-0 ma-0 pl-1 mt-n5">
-            <v-checkbox
-              class="mt-0"
-              type="checkbox"
-              id="otherSurnameAlt"
-              v-model="fuzziness.otherSurname"
-              value="1"
-              label="Alternate spellings"
-            ></v-checkbox>
-            <v-checkbox
-              class="mt-0 ml-3"
-              type="checkbox"
-              id="otherSurnameSoundsLikeNarrow"
-              v-model="fuzziness.otherSurname"
-              value="2"
-              label="Sounds like (narrow)"
-            ></v-checkbox>
-            <v-checkbox
-              class="mt-0 ml-3"
-              type="checkbox"
-              id="otherSurnameSoundsLikeBroad"
-              v-model="fuzziness.otherSurname"
-              value="4"
-              label="Sounds like (broad)"
-            ></v-checkbox>
-            <v-checkbox
-              class="mt-0 ml-3"
-              type="checkbox"
-              id="otherSurnameFuzzy"
-              v-model="fuzziness.otherSurname"
-              value="8"
-              label="Fuzzy"
-            ></v-checkbox>
+            <v-col>
+              <v-text-field
+                outlined
+                dense
+                v-model="query.otherSurname"
+                type="text"
+                placeholder="Other person's surname"
+                class="ma-0 mb-n2"
+              ></v-text-field>
+            </v-col>
+            <v-col>
+              <v-select
+                outlined
+                :multiple="true"
+                :items="surnameFuzzinessLevels"
+                v-model="fuzziness.otherSurname"
+                :change="nameFuzzinessChanged('otherSurname')"
+                label="Exactness"
+              ></v-select>
+            </v-col>
           </v-row>
         </v-col>
       </v-row>
+
+      <!--Birth-->
+      <v-row>
+        <v-col cols="2">
+          <h4>Birth</h4>
+        </v-col>
+        <v-col>
+          <v-text-field
+            outlined
+            dense
+            v-model="query.birthDate"
+            type="text"
+            placeholder="Birth year"
+            class="ma-0 mb-n2"
+          ></v-text-field>
+        </v-col>
+        <v-col>
+          <v-select outlined :items="dateRanges" v-model="query.birthDateFuzziness" label="Exactness"></v-select>
+        </v-col>
+      </v-row>
+      <!--Residence-->
+      <v-row>
+        <v-col cols="2">
+          <h4>Residence</h4>
+        </v-col>
+        <v-col>
+          <v-text-field
+            outlined
+            dense
+            v-model="query.residenceDate"
+            type="text"
+            placeholder="Residence year"
+            class="ma-0 mb-n2"
+          ></v-text-field>
+        </v-col>
+        <v-col>
+          <v-select outlined :items="dateRanges" v-model="query.residenceDateFuzziness" label="Exactness"></v-select>
+        </v-col>
+      </v-row>
+      <!--Marriage-->
+      <v-row>
+        <v-col cols="2">
+          <h4>Marriage</h4>
+        </v-col>
+        <v-col>
+          <v-text-field
+            outlined
+            dense
+            v-model="query.marriageDate"
+            type="text"
+            placeholder="Marriage year"
+            class="ma-0 mb-n2"
+          ></v-text-field>
+        </v-col>
+        <v-col>
+          <v-select outlined :items="dateRanges" v-model="query.marriageDateFuzziness" label="Exactness"></v-select>
+        </v-col>
+      </v-row>
+      <!--Death-->
+      <v-row>
+        <v-col cols="2">
+          <h4>Death</h4>
+        </v-col>
+        <v-col>
+          <v-text-field
+            outlined
+            dense
+            v-model="query.deathDate"
+            type="text"
+            placeholder="Death year"
+            class="ma-0 mb-n2"
+          ></v-text-field>
+        </v-col>
+        <v-col>
+          <v-select outlined :items="dateRanges" v-model="query.deathDateFuzziness" label="Exactness"></v-select>
+        </v-col>
+      </v-row>
+      <!--Any-->
+      <v-row>
+        <v-col cols="2">
+          <h4>Any</h4>
+        </v-col>
+        <v-col>
+          <v-text-field
+            outlined
+            dense
+            v-model="query.anyDate"
+            type="text"
+            placeholder="Any year"
+            class="ma-0 mb-n2"
+          ></v-text-field>
+        </v-col>
+        <v-col>
+          <v-select outlined :items="dateRanges" v-model="query.anyDateFuzziness" label="Exactness"></v-select>
+        </v-col>
+      </v-row>
+
       <v-btn class="mt-2 mb-4" type="submit" color="primary">Go</v-btn>
     </v-form>
 
@@ -531,7 +366,9 @@
     </v-row>
     <v-row v-if="searchPerformed && search.searchTotal > 0">
       <p>Showing 1 - {{ search.searchList.length }} of {{ search.searchTotal }}</p>
-      <SearchResult v-for="(result, $ix) in search.searchList" :key="$ix" :result="result" />
+    </v-row>
+    <v-row v-for="(result, $ix) in search.searchList" :key="$ix">
+      <SearchResult :result="result" />
     </v-row>
   </div>
 </template>
@@ -548,24 +385,68 @@ export default {
   data() {
     return {
       searchPerformed: false,
-      query: {},
+      query: {
+        birthDateFuzziness: 0,
+        marriageDateFuzziness: 0,
+        residenceDateFuzziness: 0,
+        deathDateFuzziness: 0,
+        anyDateFuzziness: 0
+      },
       fuzziness: {
-        principalGiven: [],
-        principalSurname: [],
-        fatherGiven: [],
-        fatherSurname: [],
-        motherGiven: [],
-        motherSurname: [],
-        spouseGiven: [],
-        spouseSurname: [],
-        otherGiven: [],
-        otherSurname: []
-      }
+        principalGiven: [0],
+        principalSurname: [0],
+        fatherGiven: [0],
+        fatherSurname: [0],
+        motherGiven: [0],
+        motherSurname: [0],
+        spouseGiven: [0],
+        spouseSurname: [0],
+        otherGiven: [0],
+        otherSurname: [0]
+      },
+      dateRanges: [
+        { value: 0, text: "Default" },
+        { value: 1, text: "Exact to this year" },
+        { value: 2, text: "+/- 1 years" },
+        { value: 3, text: "+/- 2 years" },
+        { value: 4, text: "+/- 5 years" },
+        { value: 5, text: "+/- 10 years" }
+      ],
+      givenFuzzinessLevels: [
+        { value: 0, text: "Default" },
+        { value: 1, text: "Exact" },
+        { value: 2, text: "Alternate spellings" },
+        { value: 4, text: "Sounds like (narrow)" },
+        { value: 8, text: "Sounds like (broad)" },
+        { value: 16, text: "Fuzzy" },
+        { value: 32, text: "Initials" }
+      ],
+      surnameFuzzinessLevels: [
+        { value: 0, text: "Default" },
+        { value: 1, text: "Exact" },
+        { value: 2, text: "Alternate spellings" },
+        { value: 4, text: "Sounds like (narrow)" },
+        { value: 8, text: "Sounds like (broad)" },
+        { value: 16, text: "Fuzzy" }
+      ]
     };
   },
   computed: mapState(["search"]),
   methods: {
+    nameFuzzinessChanged(fuzziness) {
+      if (this.fuzziness[fuzziness].length === 0) {
+        this.fuzziness[fuzziness] = [0];
+      } else if (
+        this.fuzziness[fuzziness].length > 1 &&
+        this.fuzziness[fuzziness].indexOf(0) === this.fuzziness[fuzziness].length - 1
+      ) {
+        this.fuzziness[fuzziness] = [0];
+      } else if (this.fuzziness[fuzziness].length > 1 && this.fuzziness[fuzziness].indexOf(0) >= 0) {
+        this.fuzziness[fuzziness].splice(this.fuzziness[fuzziness].indexOf(0), 1);
+      }
+    },
     go() {
+      console.log("this.fuzziness", this.fuzziness);
       this.query.givenFuzziness = this.fuzziness.principalGiven.reduce((acc, val) => acc + +val, 0);
       this.query.surnameFuzziness = this.fuzziness.principalSurname.reduce((acc, val) => acc + +val, 0);
       this.query.fatherGivenFuzziness = this.fuzziness.fatherGiven.reduce((acc, val) => acc + +val, 0);

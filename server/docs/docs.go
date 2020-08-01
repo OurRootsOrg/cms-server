@@ -994,7 +994,7 @@ var doc = `{
         },
         "/search": {
             "get": {
-                "description": "* Names can include wildcards (* or ?). In that case name fuzziness is ignored\n* Date and place searching are not yet implemented. They will be implemented in August.\n* Name fuzziness flags (OR'd together): 0: exact only; 1: alternate spellings; 2: narrow sounds-like; 4: broad sounds-like; 8: fuzzy (levenshtein); 16: initials (applies only to given)\n* Date fuzziness: +/- number of years to generate a year range\n* Place fuzziness flags (OR'd together): 0: exact only; 1: include higher-level jurisdictions; 2: include nearby places\n* Date facets: to start set century faceting to true. If ht user selects a value from the returned list, set that value as the century filter and set decade faceting to true. If the user selects a decade, set that value as the decade filter\n* Place facets: to start, set level 1 faceting to true. If the user selects a value from the returned list, set that value as the level 1 filter and set level 2 faceting to true. Continue up to level 3",
+                "description": "* Names can include wildcards (* or ?). In that case name fuzziness above Exact is ignored\n* Date searching is limited to passing in a single year; use fuzziness for ranges\n* Place searching is not yet implemented. It will be implemented in August.\n* Name fuzziness flags (OR'd together): 0: default; 1: exact; 2: alternate spellings; 4: narrow sounds-like; 8: broad sounds-like; 16: fuzzy (levenshtein); 32: initials (applies only to given)\n* Date fuzziness: 0: default; 1: exact to this year; 2: +/- 1 year; 3: +/- 2 years; 4: +/- 5 years; 5: +/- 10 years\n* Place fuzziness flags (OR'd together): 0: default; 1: exact only; 2: include higher-level jurisdictions; 4: include nearby places\n* Category and collection facets: to start set categoryFacet true. If the user selects a value from the returned list, set that value as the category filter and set collectionFacet true\n* Date and place faceting are in a state of flux currently and may not be supported in the future depending upon user interest; do not use\n* Date facets: to start set century faceting to true. If the user selects a value from the returned list, set that value as the century filter and set decade faceting to true. If the user selects a decade, set that value as the decade filter\n* Place facets: to start, set level 1 faceting to true. If the user selects a value from the returned list, set that value as the level 1 filter and set level 2 faceting to true. Continue up to level 3",
                 "produces": [
                     "application/json"
                 ],
@@ -1488,66 +1488,6 @@ var doc = `{
                         "type": "string",
                         "description": "filter on place level 3",
                         "name": "deathPlace3",
-                        "in": "query"
-                    },
-                    {
-                        "type": "boolean",
-                        "description": "facet on century",
-                        "name": "otherCenturyFacet",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "filter on century",
-                        "name": "otherCentury",
-                        "in": "query"
-                    },
-                    {
-                        "type": "boolean",
-                        "description": "facet on decade",
-                        "name": "otherDecadeFacet",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "filter on decade",
-                        "name": "otherDecade",
-                        "in": "query"
-                    },
-                    {
-                        "type": "boolean",
-                        "description": "facet on place level 1",
-                        "name": "otherPlace1Facet",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "filter on place level 1",
-                        "name": "otherPlace1",
-                        "in": "query"
-                    },
-                    {
-                        "type": "boolean",
-                        "description": "facet on place level 2",
-                        "name": "otherPlace2Facet",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "filter on place level 2",
-                        "name": "otherPlace2",
-                        "in": "query"
-                    },
-                    {
-                        "type": "boolean",
-                        "description": "facet on place level 3",
-                        "name": "otherPlace3Facet",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "filter on place level 3",
-                        "name": "otherPlace3",
                         "in": "query"
                     },
                     {

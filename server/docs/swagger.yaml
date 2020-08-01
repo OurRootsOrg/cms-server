@@ -911,12 +911,15 @@ paths:
   /search:
     get:
       description: |-
-        * Names can include wildcards (* or ?). In that case name fuzziness is ignored
-        * Date and place searching are not yet implemented. They will be implemented in August.
-        * Name fuzziness flags (OR'd together): 0: exact only; 1: alternate spellings; 2: narrow sounds-like; 4: broad sounds-like; 8: fuzzy (levenshtein); 16: initials (applies only to given)
-        * Date fuzziness: +/- number of years to generate a year range
-        * Place fuzziness flags (OR'd together): 0: exact only; 1: include higher-level jurisdictions; 2: include nearby places
-        * Date facets: to start set century faceting to true. If ht user selects a value from the returned list, set that value as the century filter and set decade faceting to true. If the user selects a decade, set that value as the decade filter
+        * Names can include wildcards (* or ?). In that case name fuzziness above Exact is ignored
+        * Date searching is limited to passing in a single year; use fuzziness for ranges
+        * Place searching is not yet implemented. It will be implemented in August.
+        * Name fuzziness flags (OR'd together): 0: default; 1: exact; 2: alternate spellings; 4: narrow sounds-like; 8: broad sounds-like; 16: fuzzy (levenshtein); 32: initials (applies only to given)
+        * Date fuzziness: 0: default; 1: exact to this year; 2: +/- 1 year; 3: +/- 2 years; 4: +/- 5 years; 5: +/- 10 years
+        * Place fuzziness flags (OR'd together): 0: default; 1: exact only; 2: include higher-level jurisdictions; 4: include nearby places
+        * Category and collection facets: to start set categoryFacet true. If the user selects a value from the returned list, set that value as the category filter and set collectionFacet true
+        * Date and place faceting are in a state of flux currently and may not be supported in the future depending upon user interest; do not use
+        * Date facets: to start set century faceting to true. If the user selects a value from the returned list, set that value as the century filter and set decade faceting to true. If the user selects a decade, set that value as the decade filter
         * Place facets: to start, set level 1 faceting to true. If the user selects a value from the returned list, set that value as the level 1 filter and set level 2 faceting to true. Continue up to level 3
       operationId: search
       parameters:
@@ -1243,46 +1246,6 @@ paths:
       - description: filter on place level 3
         in: query
         name: deathPlace3
-        type: string
-      - description: facet on century
-        in: query
-        name: otherCenturyFacet
-        type: boolean
-      - description: filter on century
-        in: query
-        name: otherCentury
-        type: string
-      - description: facet on decade
-        in: query
-        name: otherDecadeFacet
-        type: boolean
-      - description: filter on decade
-        in: query
-        name: otherDecade
-        type: string
-      - description: facet on place level 1
-        in: query
-        name: otherPlace1Facet
-        type: boolean
-      - description: filter on place level 1
-        in: query
-        name: otherPlace1
-        type: string
-      - description: facet on place level 2
-        in: query
-        name: otherPlace2Facet
-        type: boolean
-      - description: filter on place level 2
-        in: query
-        name: otherPlace2
-        type: string
-      - description: facet on place level 3
-        in: query
-        name: otherPlace3Facet
-        type: boolean
-      - description: filter on place level 3
-        in: query
-        name: otherPlace3
         type: string
       - description: facet on category
         in: query
