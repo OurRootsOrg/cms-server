@@ -21,8 +21,9 @@ function authClient() {
       throw new Error("Invalid process.env.VUE_APP_AUTH_PROVIDER: " + process.env.VUE_APP_AUTH_PROVIDER);
   }
 
+  const storageManager = window.localStorage;
   const mgr = new UserManager({
-    userStore: new WebStorageStateStore({ store: window.sessionStorage }),
+    userStore: new WebStorageStateStore({ store: storageManager }),
     ...provider.config()
   });
 
@@ -49,7 +50,7 @@ function authClient() {
   }
 
   function logout() {
-    sessionStorage.removeItem(authCanRefreshKey);
+    storageManager.removeItem(authCanRefreshKey);
     return mgr.signoutRedirect();
   }
 
@@ -81,7 +82,7 @@ function authClient() {
 
   async function refreshAccessToken() {
     let user = await mgr.getUser();
-    if ((user && user.refresh_token) || (provider.canSilentlyRefresh() && sessionStorage.getItem(authCanRefreshKey))) {
+    if ((user && user.refresh_token) || (provider.canSilentlyRefresh() && storageManager.getItem(authCanRefreshKey))) {
       // Refresh the access token
       // The concurrency handler will only do the refresh work for the first UI view that requests it
       await concurrentActionHandler.execute(performTokenRefresh);
@@ -91,7 +92,7 @@ function authClient() {
       }
     }
     await mgr.removeUser();
-    sessionStorage.removeItem(authCanRefreshKey);
+    storageManager.removeItem(authCanRefreshKey);
     store.dispatch("userSet", null);
     throw loginRequiredError;
   }
@@ -103,7 +104,7 @@ function authClient() {
     } catch (e) {
       // clear token data and return success, to force a login redirect
       await mgr.removeUser();
-      sessionStorage.removeItem(authCanRefreshKey);
+      storageManager.removeItem(authCanRefreshKey);
       store.dispatch("userSet", null);
     }
   }

@@ -8,13 +8,15 @@
 <script src="js/oidc-client.min.js"></script>
 <script>
   const authCanRefreshKey = "authCanRefreshKey";
+  const storageManager = window.localStorage;
+
   let mgr = new Oidc.UserManager({
     response_mode: window.location.search && window.location.search.startsWith("?") ? "query" : undefined,
-    userStore: new Oidc.WebStorageStateStore({ store: window.sessionStorage })
+    userStore: new Oidc.WebStorageStateStore({ store: storageManager })
   });
 
   mgr.signinRedirectCallback().then(function (user) {
-    sessionStorage.setItem(authCanRefreshKey, 'true');
+    storageManager.setItem(authCanRefreshKey, 'true');
     window.location.href = "/";
   }).catch(function (err) {
     console.log("callback error", err);
