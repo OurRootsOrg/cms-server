@@ -2,6 +2,7 @@
 set -e
 ENVIRONMENT_NAME="${ENVIRONMENT_NAME:?}"
 USE_POSTGRES="${USE_POSTGRES:-true}"
+ES_ADMIN_CIDR="${ES_ADMIN_CIDR:-0.0.0.0/0}"
 # DOMAIN_NAME="${DOMAIN_NAME:?}"
 # set -x
 s3_bucket_name="${ENVIRONMENT_NAME}-deploy"
@@ -18,7 +19,7 @@ else
 fi
 echo Processing CloudFormation...
 aws cloudformation package --template-file "${template_file}" --output-template-file output-cms-infra.cf.yaml --s3-bucket $s3_bucket_name
-aws cloudformation deploy --template-file output-cms-infra.cf.yaml --stack-name "${ENVIRONMENT_NAME}-infra" --parameter-overrides "EnvironmentName=${ENVIRONMENT_NAME}" --capabilities CAPABILITY_IAM
+aws cloudformation deploy --template-file output-cms-infra.cf.yaml --stack-name "${ENVIRONMENT_NAME}-infra" --parameter-overrides "EnvironmentName=${ENVIRONMENT_NAME}" "ESAdminCIDR=${ES_ADMIN_CIDR}" --capabilities CAPABILITY_IAM
 
 if [ "${USE_POSTGRES}" == "true" ]
 then

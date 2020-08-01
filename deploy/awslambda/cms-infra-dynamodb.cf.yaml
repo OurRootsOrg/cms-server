@@ -5,6 +5,14 @@ Parameters:
   EnvironmentName:
     Description: Name of this CMS deployment
     Type: String
+  ESAdminCIDR:
+    Description: CIDR block to be granted access to Elasticsearch
+    Type: String
+    Default: '0.0.0.0/0'
+    AllowedPattern: '((\d{1,3})\.){3}\d{1,3}/\d{1,2}'
+
+Conditions:
+  ESGrantIPAccess: !Not [ !Equals [ !Ref ESAdminCIDR , '0.0.0.0/0' ] ]
 
 Resources:
   SiteBucket:
@@ -106,6 +114,18 @@ Resources:
               AWS: !Ref AWS::AccountId
             Action: 'es:ESHttp*'
             Resource: !Sub 'arn:aws:es:${AWS::Region}:${AWS::AccountId}:domain/${EnvironmentName}-es/*'
+          - Fn::If:
+            - ESGrantIPAccess
+            - Effect: Allow
+              Principal:
+                AWS: '*'
+              Action: 'es:ESHttp*'
+              Resource: !Sub 'arn:aws:es:${AWS::Region}:${AWS::AccountId}:domain/${EnvironmentName}-es/*'
+              Condition:
+                IpAddress:
+                  aws:SourceIp: !Ref ESAdminCIDR
+            - Ref: AWS::NoValue
+
       # LogPublishingOptions:
       #   SEARCH_SLOW_LOGS:
       #     CloudWatchLogsLogGroupArn: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:${EnvironmentName}/ElasticSearch/search-slow-logs'

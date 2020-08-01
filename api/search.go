@@ -445,6 +445,8 @@ func indexRecord(record *model.Record, post *model.Post, collection *model.Colle
 		ixRecord["given"] = data["given"]
 		ixRecord["surname"] = data["surname"]
 		if ixRecord["given"] == "" && ixRecord["surname"] == "" {
+			log.Printf("[DEBUG] No given name or surname found for record %#v, mappings %#v, role %s",
+				record, collection.Mappings, role)
 			continue
 		}
 

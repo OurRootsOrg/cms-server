@@ -53,6 +53,7 @@ func (api API) AddRecord(ctx context.Context, in model.RecordIn) (*model.Record,
 	if e != nil {
 		return nil, NewError(e)
 	}
+	log.Printf("[DEBUG] Added record ID %d", record.ID)
 	return record, nil
 }
 

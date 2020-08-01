@@ -183,7 +183,6 @@ func (p Persister) InsertRecord(ctx context.Context, in model.RecordIn) (*model.
 			ConditionExpression: aws.String("attribute_exists(" + pkName + ") AND attribute_exists(" + skName + ")"),
 		},
 	}
-	// log.Printf("[DEBUG] Creating record")
 	twi[1] = &dynamodb.TransactWriteItem{
 		Put: &dynamodb.Put{
 			TableName:           p.tableName,
@@ -213,6 +212,9 @@ func (p Persister) InsertRecord(ctx context.Context, in model.RecordIn) (*model.
 							log.Printf("[ERROR] Failed to put record %#v. twii: %#v err: %v", record, twii, err)
 							return nil, model.NewError(model.ErrOther, err.Error())
 						}
+					} else if *r.Code == "TransactionConflict" {
+						log.Printf("[ERROR] TransactionConflict when putting record %#v. twii: %#v err: %v", record, twii, err)
+						return nil, model.NewError(model.ErrConflict)
 					} else {
 						log.Printf("[ERROR] Failed to put record %#v. twii: %#v err: %v", record, twii, err)
 						return nil, model.NewError(model.ErrOther, err.Error())
@@ -297,6 +299,9 @@ func (p Persister) UpdateRecord(ctx context.Context, id uint32, in model.Record)
 							log.Printf("[ERROR] Failed to put record %#v. twii: %#v err: %v", record, twii, err)
 							return nil, model.NewError(model.ErrOther, err.Error())
 						}
+					} else if *r.Code == "TransactionConflict" {
+						log.Printf("[ERROR] TransactionConflict when putting record %#v. twii: %#v err: %v", record, twii, err)
+						return nil, model.NewError(model.ErrConflict)
 					} else {
 						log.Printf("[ERROR] Failed to put record %#v. twii: %#v err: %v", record, twii, err)
 						return nil, model.NewError(model.ErrOther, err.Error())
