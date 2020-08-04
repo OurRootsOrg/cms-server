@@ -16,12 +16,15 @@ var decoder = schema.NewDecoder()
 
 // Search returns search results matching a query
 // @summary returns search results
-// @description * Names can include wildcards (* or ?). In that case name fuzziness is ignored
-// @description * Date and place searching are not yet implemented. They will be implemented in August.
-// @description * Name fuzziness flags (OR'd together): 0: exact only; 1: alternate spellings; 2: narrow sounds-like; 4: broad sounds-like; 8: fuzzy (levenshtein); 16: initials (applies only to given)
-// @description * Date fuzziness: +/- number of years to generate a year range
-// @description * Place fuzziness flags (OR'd together): 0: exact only; 1: include higher-level jurisdictions; 2: include nearby places
-// @description * Date facets: to start set century faceting to true. If ht user selects a value from the returned list, set that value as the century filter and set decade faceting to true. If the user selects a decade, set that value as the decade filter
+// @description * Names can include wildcards (* or ?). In that case name fuzziness above Exact is ignored
+// @description * Date searching is limited to passing in a single year; use fuzziness for ranges
+// @description * Place searching is not yet implemented. It will be implemented in August.
+// @description * Name fuzziness flags (OR'd together): 0: default; 1: exact; 2: alternate spellings; 4: narrow sounds-like; 8: broad sounds-like; 16: fuzzy (levenshtein); 32: initials (applies only to given)
+// @description * Date fuzziness: 0: default; 1: exact to this year; 2: +/- 1 year; 3: +/- 2 years; 4: +/- 5 years; 5: +/- 10 years
+// @description * Place fuzziness flags (OR'd together): 0: default; 1: exact only; 2: include higher-level jurisdictions; 4: include nearby places
+// @description * Category and collection facets: to start set categoryFacet true. If the user selects a value from the returned list, set that value as the category filter and set collectionFacet true
+// @description * Date and place faceting are in a state of flux currently and may not be supported in the future depending upon user interest; do not use
+// @description * Date facets: to start set century faceting to true. If the user selects a value from the returned list, set that value as the century filter and set decade faceting to true. If the user selects a decade, set that value as the decade filter
 // @description * Place facets: to start, set level 1 faceting to true. If the user selects a value from the returned list, set that value as the level 1 filter and set level 2 faceting to true. Continue up to level 3
 // @router /search [get]
 // @tags search
@@ -108,16 +111,6 @@ var decoder = schema.NewDecoder()
 // @param deathPlace2 query string false "filter on place level 2"
 // @param deathPlace3Facet query bool false "facet on place level 3"
 // @param deathPlace3 query string false "filter on place level 3"
-// @param otherCenturyFacet query bool false "facet on century"
-// @param otherCentury query string false "filter on century"
-// @param otherDecadeFacet query bool false "facet on decade"
-// @param otherDecade query string false "filter on decade"
-// @param otherPlace1Facet query bool false "facet on place level 1"
-// @param otherPlace1 query string false "filter on place level 1"
-// @param otherPlace2Facet query bool false "facet on place level 2"
-// @param otherPlace2 query string false "filter on place level 2"
-// @param otherPlace3Facet query bool false "facet on place level 3"
-// @param otherPlace3 query string false "filter on place level 3"
 // @param categoryFacet query bool false "facet on category"
 // @param category query string false "filter on category"
 // @param collectionFacet query bool false "facet on collection"
