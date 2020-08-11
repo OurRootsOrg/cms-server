@@ -115,6 +115,8 @@ var decoder = schema.NewDecoder()
 // @param category query string false "filter on category"
 // @param collectionFacet query bool false "facet on collection"
 // @param collection query string false "filter on collection"
+// @param from query int false "starting result to return (default 0, max 1000)"
+// @param size query int false "number of results to return (default 10, max 100)"
 // @success 200 {array} model.SearchResult "OK"
 // @failure 500 {object} api.Error "Server error"
 // TODO need to specify possible query parameters

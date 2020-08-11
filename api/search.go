@@ -54,6 +54,10 @@ const (
 	FuzzyPlaceNearby              = 1 << iota // 4 - search nearby places
 )
 
+const MaxFrom = 1000
+const MaxSize = 100
+const DefaultSize = 10
+
 // SearchRequest contains the possible search request parameters
 type SearchRequest struct {
 	// name
@@ -955,6 +959,17 @@ func constructSearchQuery(req *SearchRequest) *Search {
 		aggs = nil
 	}
 
+	from := req.From
+	if from > MaxFrom {
+		from = MaxFrom
+	}
+	size := req.Size
+	if size > MaxSize {
+		size = MaxSize
+	} else if size <= 0 {
+		size = DefaultSize
+	}
+
 	return &Search{
 		Query: Query{
 			Bool: &BoolQuery{
@@ -964,8 +979,8 @@ func constructSearchQuery(req *SearchRequest) *Search {
 			},
 		},
 		Aggs: aggs,
-		From: req.From,
-		Size: req.Size,
+		From: from,
+		Size: size,
 	}
 }
 
