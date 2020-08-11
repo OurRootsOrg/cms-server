@@ -687,15 +687,18 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "settings"
+                    "posts"
                 ],
-                "summary": "returns goobal settings",
-                "operationId": "getSettings",
+                "summary": "returns all posts",
+                "operationId": "getPosts",
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/model.Settings"
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.Post"
+                            }
                         }
                     },
                     "500": {
@@ -1512,6 +1515,18 @@ var doc = `{
                         "type": "string",
                         "description": "filter on collection",
                         "name": "collection",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "starting result to return (default 0, max 1000)",
+                        "name": "from",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "number of results to return (default 10, max 100)",
+                        "name": "size",
                         "in": "query"
                     }
                 ],

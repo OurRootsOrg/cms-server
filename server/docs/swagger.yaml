@@ -698,14 +698,16 @@ paths:
       - content
   /posts:
     get:
-      operationId: getSettings
+      operationId: getPosts
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/model.Settings'
+            items:
+              $ref: '#/definitions/model.Post'
+            type: array
         "500":
           description: Server error
           schema:
@@ -721,9 +723,9 @@ paths:
         - openid
         - profile
         - email
-      summary: returns goobal settings
+      summary: returns all posts
       tags:
-      - settings
+      - posts
     post:
       consumes:
       - application/json
@@ -1263,6 +1265,14 @@ paths:
         in: query
         name: collection
         type: string
+      - description: starting result to return (default 0, max 1000)
+        in: query
+        name: from
+        type: integer
+      - description: number of results to return (default 10, max 100)
+        in: query
+        name: size
+        type: integer
       produces:
       - application/json
       responses:
