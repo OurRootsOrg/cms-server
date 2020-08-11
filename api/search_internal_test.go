@@ -31,7 +31,7 @@ func TestSearchQuery(t *testing.T) {
                       	  {"match":{"given":{"query":"F","boost":0.4}}}
                     	]}}
 					  ]}}
-					]}}}`,
+					]}},"from":0,"size":10}`,
 		},
 		{
 			req: SearchRequest{
@@ -48,7 +48,7 @@ func TestSearchQuery(t *testing.T) {
                     	]}},
 						{"match":{"surname":{"query":"Flintstone","boost":1}}}
 					  ]}}
-					]}}}`,
+					]}},"from":0,"size":10}`,
 		},
 		{
 			req: SearchRequest{
@@ -71,7 +71,7 @@ func TestSearchQuery(t *testing.T) {
 						{"term":{"deathYear":{"value":"1995","boost":0.7}}},
 						{"range":{"deathYear":{"gte":1990,"lte":2000,"boost":0.3}}}
 					  ]}}
-					]}}}`,
+					]}},"from":0,"size":10}`,
 		},
 		{
 			req: SearchRequest{
@@ -94,7 +94,7 @@ func TestSearchQuery(t *testing.T) {
 						{"term":{"deathYear":{"value":"1995","boost":0.7}}},
 						{"range":{"deathYear":{"gte":1990,"lte":2000,"boost":0.3}}}
 					  ]}}
-					]}}}`,
+					]}},"from":0,"size":10}`,
 		},
 	}
 

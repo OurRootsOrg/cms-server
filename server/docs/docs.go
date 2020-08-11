@@ -1516,6 +1516,18 @@ var doc = `{
                         "description": "filter on collection",
                         "name": "collection",
                         "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "starting result to return (default 0, max 1000)",
+                        "name": "from",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "number of results to return (default 10, max 100)",
+                        "name": "size",
+                        "in": "query"
                     }
                 ],
                 "responses": {

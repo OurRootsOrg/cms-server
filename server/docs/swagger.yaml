@@ -1265,6 +1265,14 @@ paths:
         in: query
         name: collection
         type: string
+      - description: starting result to return (default 0, max 1000)
+        in: query
+        name: from
+        type: integer
+      - description: number of results to return (default 10, max 100)
+        in: query
+        name: size
+        type: integer
       produces:
       - application/json
       responses:

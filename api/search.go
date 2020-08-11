@@ -54,6 +54,10 @@ const (
 	FuzzyPlaceNearby              = 1 << iota // 4 - search nearby places
 )
 
+const MaxFrom = 1000
+const MaxSize = 100
+const DefaultSize = 10
+
 // SearchRequest contains the possible search request parameters
 type SearchRequest struct {
 	// name
@@ -147,6 +151,9 @@ type SearchRequest struct {
 	Category        string `schema:"category"`
 	CollectionFacet bool   `schema:"collectionFacet"`
 	Collection      string `schema:"collection"`
+	// from and size
+	From int `schema:"from"`
+	Size int `schema:"size"`
 }
 
 // int
@@ -154,6 +161,8 @@ type Search struct {
 	Query  Query          `json:"query,omitempty"`
 	Aggs   map[string]Agg `json:"aggs,omitempty"`
 	Source []string       `json:"_source,omitempty"`
+	From   int            `json:"from,omitempty"`
+	Size   int            `json:"size,omitempty"`
 }
 type Query struct {
 	Bool     *BoolQuery            `json:"bool,omitempty"`
@@ -950,6 +959,17 @@ func constructSearchQuery(req *SearchRequest) *Search {
 		aggs = nil
 	}
 
+	from := req.From
+	if from > MaxFrom {
+		from = MaxFrom
+	}
+	size := req.Size
+	if size > MaxSize {
+		size = MaxSize
+	} else if size <= 0 {
+		size = DefaultSize
+	}
+
 	return &Search{
 		Query: Query{
 			Bool: &BoolQuery{
@@ -959,6 +979,8 @@ func constructSearchQuery(req *SearchRequest) *Search {
 			},
 		},
 		Aggs: aggs,
+		From: from,
+		Size: size,
 	}
 }
 
