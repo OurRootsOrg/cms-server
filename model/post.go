@@ -17,6 +17,7 @@ type PostPersister interface {
 	DeletePost(ctx context.Context, id uint32) error
 }
 
+// Post statuses
 const (
 	PostLoading           = "Loading"
 	PostLoadComplete      = "LoadComplete"
@@ -27,11 +28,14 @@ const (
 	PostUnpublishing      = "Unpublishing"
 	PostUnpublishComplete = "UnpublishComplete" // set only by publisher
 )
+
+// Publisher actions
 const (
 	PublisherActionIndex   = "index"
 	PublisherActionUnindex = "unindex"
 )
 
+// UserAcceptedPostRecordsStatus returns true if its argument is a valid post status
 func UserAcceptedPostRecordsStatus(status string) bool {
 	for _, s := range []string{PostLoading, PostDraft, PostPublishing, PostPublished, PostUnpublishing} {
 		if s == status {
@@ -41,10 +45,17 @@ func UserAcceptedPostRecordsStatus(status string) bool {
 	return false
 }
 
+// ImagesWriterMsg represents a message to initiate processing of an image upload
+type ImagesWriterMsg struct {
+	PostID uint32 `json:"postId"`
+}
+
+// RecordsWriterMsg represents a message to initiate processing of an uploaded recods CSV
 type RecordsWriterMsg struct {
 	PostID uint32 `json:"postId"`
 }
 
+// PublisherMsg represents a message to initiate pulishing of a post
 type PublisherMsg struct {
 	Action string `json:"action"`
 	PostID uint32 `json:"postId"`
@@ -56,6 +67,8 @@ type PostBody struct {
 	Metadata      map[string]interface{} `json:"metadata"`
 	RecordsKey    string                 `json:"recordsKey"`
 	RecordsStatus string                 `json:"recordsStatus"`
+	ImagesKey     string                 `json:"imagesKey"`
+	ImagesStatus  string                 `json:"imagesStatus"`
 }
 
 // Value makes PostBody implement the driver.Valuer interface.
