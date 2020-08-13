@@ -67,6 +67,7 @@ services:
       - AWS_REGION=us-east-1
       - PUB_SUB_RECORDSWRITER_URL=amqp://guest:guest@rabbitmq:5672/
       - PUB_SUB_PUBLISHER_URL=amqp://guest:guest@rabbitmq:5672/
+      - PUB_SUB_IMAGESWRITER_URL=amqp://guest:guest@rabbitmq_test:5672/
       - ELASTICSEARCH_URL=http://elasticsearch:9200
     networks:
       - mynetwork
@@ -92,6 +93,32 @@ services:
       - BLOB_STORE_DISABLE_SSL=true
       - PUB_SUB_RECORDSWRITER_URL=amqp://guest:guest@rabbitmq:5672/
       - PUB_SUB_PUBLISHER_URL=amqp://guest:guest@rabbitmq:5672/
+      - PUB_SUB_IMAGESWRITER_URL=amqp://guest:guest@rabbitmq_test:5672/
+    networks:
+      - mynetwork
+
+  imageswriter:
+    build:
+      context: .
+      dockerfile: Dockerfile.imageswriter
+    image: imageswriter
+    depends_on:
+      - postgres
+      - minio
+      - rabbitmq
+    environment:
+      - BASE_URL=http://localhost:8000
+      - DATABASE_URL=postgres://ourroots:password@postgres:5432/cms?sslmode=disable
+      - AWS_REGION=us-east-1
+      - BLOB_STORE_BUCKET=cmsbucket
+      # this configures minio; to use S3, omit these settings and set the bucket to a bucket you own
+      - BLOB_STORE_ENDPOINT=minio:9000
+      - BLOB_STORE_ACCESS_KEY=minioaccess
+      - BLOB_STORE_SECRET_KEY=miniosecret
+      - BLOB_STORE_DISABLE_SSL=true
+      - PUB_SUB_RECORDSWRITER_URL=amqp://guest:guest@rabbitmq:5672/
+      - PUB_SUB_PUBLISHER_URL=amqp://guest:guest@rabbitmq:5672/
+      - PUB_SUB_IMAGESWRITER_URL=amqp://guest:guest@rabbitmq:5672/
     networks:
       - mynetwork
 
@@ -117,6 +144,7 @@ services:
       - BLOB_STORE_SECRET_KEY=miniosecret
       - BLOB_STORE_DISABLE_SSL=true
       - PUB_SUB_RECORDSWRITER_URL=amqp://guest:guest@rabbitmq:5672/
+      - PUB_SUB_IMAGESWRITER_URL=amqp://guest:guest@rabbitmq:5672/
       - PUB_SUB_PUBLISHER_URL=amqp://guest:guest@rabbitmq:5672/
       - OIDC_DOMAIN=https://ourroots.auth0.com/
       - OIDC_AUDIENCE=https://api.ourroots.org/preprod

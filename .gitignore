@@ -2,6 +2,7 @@
 server/server
 publisher/publisher
 recordswriter/recordswriter
+imageswriter/imageswriter
 *.lambda
 deploy/awslambda/*.lambda.zip
 *.exe

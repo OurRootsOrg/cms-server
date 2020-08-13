@@ -62,6 +62,7 @@ func doPostsTests(t *testing.T,
 	defer testApi.Close()
 	testApi = testApi.
 		QueueConfig("recordswriter", "amqp://guest:guest@localhost:35672/").
+		QueueConfig("imageswriter", "amqp://guest:guest@localhost:35672/").
 		QueueConfig("publisher", "amqp://guest:guest@localhost:35672/").
 		CollectionPersister(colP).
 		PostPersister(postP).
