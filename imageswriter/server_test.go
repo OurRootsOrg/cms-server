@@ -1,22 +1,27 @@
 package main
 
 import (
+	"archive/zip"
+	"bytes"
 	"context"
-	"fmt"
+	"io"
+	"io/ioutil"
 	"log"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/ourrootsorg/cms-server/model"
 	"github.com/ourrootsorg/cms-server/persist"
+	"gocloud.dev/blob"
 	"gocloud.dev/postgres"
 
 	"github.com/ourrootsorg/cms-server/api"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestRecordsWriter(t *testing.T) {
+func TestImagesWriter(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping tests in short mode")
 	}
@@ -43,17 +48,29 @@ func TestRecordsWriter(t *testing.T) {
 		PostPersister(p).
 		RecordPersister(p)
 
-	// write an object to a bucket
+	// write a zip file to a bucket
 	bucket, err := testAPI.OpenBucket(ctx)
 	assert.NoError(t, err)
 	defer bucket.Close()
 
-	// write an object
-	content := `[{"given":"fred","surname":"flintstone"},{"given":"wilma","surname":"Slaghoople"}]`
-	recordsKey := "/2020-05-30/2020-05-30T00:00:00.000000000Z"
-	w, err := bucket.NewWriter(ctx, recordsKey, nil)
+	zipBytes, err := ioutil.ReadFile("testdata/test.zip")
 	assert.NoError(t, err)
-	_, err = fmt.Fprint(w, content)
+	t.Logf("len(zipBytes): %d\n", len(zipBytes))
+	ra := bytes.NewReader(zipBytes)
+	assert.NoError(t, err)
+	zr, err := zip.NewReader(ra, int64(len(zipBytes)))
+	assert.NoError(t, err)
+	zipNames := make(map[string]bool)
+	for _, f := range zr.File {
+		t.Logf("file name: %s\n", f.Name)
+		zipNames[f.Name] = true
+	}
+
+	// write an object
+	imagesKey := "/2020-08-10/2020-08-10T00:00:00.000000000Z"
+	w, err := bucket.NewWriter(ctx, imagesKey+".zip", nil)
+	assert.NoError(t, err)
+	_, err = io.Copy(w, bytes.NewBuffer(zipBytes))
 	assert.NoError(t, err)
 	err = w.Close()
 	assert.NoError(t, err)
@@ -67,11 +84,12 @@ func TestRecordsWriter(t *testing.T) {
 	// Add a Post
 	in := model.PostIn{
 		PostBody: model.PostBody{
-			Name:       "Test Post",
-			RecordsKey: recordsKey,
+			Name:      "Test Post",
+			ImagesKey: imagesKey,
 		},
 		Collection: testCollection.ID,
 	}
+	log.Printf("[DEBUG] Adding post %#v", in)
 	testPost, errors := testAPI.AddPost(ctx, in)
 	assert.Nil(t, errors)
 
@@ -81,27 +99,38 @@ func TestRecordsWriter(t *testing.T) {
 		// read post and look for Draft
 		post, errors = testAPI.GetPost(ctx, testPost.ID)
 		assert.Nil(t, errors)
-		if post.RecordsStatus == model.PostDraft {
+		if post.ImagesStatus == model.PostDraft {
 			break
 		}
-		log.Printf("Waiting for recordswriter %d\n", i)
+		log.Printf("Waiting for imageswriter %d\n", i)
 		time.Sleep(1 * time.Second)
 	}
-	assert.Equal(t, model.PostDraft, post.RecordsStatus, "Expected post to be Draft, got %s", post.RecordsStatus)
+	assert.Equal(t, model.PostDraft, post.ImagesStatus, "Expected post to be Draft, got %s", post.ImagesStatus)
 
-	// read records for post
-	records, errors := testAPI.GetRecordsForPost(ctx, testPost.ID)
-	assert.Nil(t, errors)
-	assert.Equal(t, 2, len(records.Records), "Expected two records, got %#v", records)
+	prefix := imagesKey + "/"
+	// read images for post
+	li := bucket.List(&blob.ListOptions{
+		Prefix: prefix,
+	})
+	for {
+		obj, err := li.Next(ctx)
+		if err == io.EOF {
+			break
+		}
+		assert.NoError(t, err)
+		assert.True(t, strings.HasPrefix(obj.Key, prefix))
+		suffix := strings.TrimPrefix(obj.Key, prefix)
+		assert.True(t, zipNames[suffix])
+	}
 
 	// delete post
 	errors = testAPI.DeletePost(ctx, testPost.ID)
 	assert.Nil(t, errors)
 
-	// records should be removed
-	records, errors = testAPI.GetRecordsForPost(ctx, testPost.ID)
-	assert.Nil(t, errors)
-	assert.Equal(t, 0, len(records.Records), "Expected empty slice, got %#v", records)
+	// images should be removed
+	// images, errors = testAPI.GetImagesForPost(ctx, testPost.ID)
+	// assert.Nil(t, errors)
+	// assert.Equal(t, 0, len(images.Images), "Expected empty slice, got %#v", images)
 }
 
 func createTestCategory(t *testing.T, p model.CategoryPersister) *model.Category {

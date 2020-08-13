@@ -419,13 +419,20 @@ Resources:
       RedrivePolicy:
         deadLetterTargetArn: !GetAtt CMSRecordsWriterDLQ.Arn
         maxReceiveCount: 3
-      # ContentBasedDeduplication: Boolean
-      # DelaySeconds: Integer
-      # FifoQueue: Boolean
-      # KmsDataKeyReusePeriodSeconds: Integer
-      # KmsMasterKeyId: String
-      # MaximumMessageSize: Integer
-      # MessageRetentionPeriod: Integer
+
+  CMSImagesWriterDLQ:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub "${EnvironmentName}-imageswriterDLQ"
+
+  CMSImagesWriterQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub "${EnvironmentName}-imageswriter"
+      VisibilityTimeout: 180
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt CMSImagesWriterDLQ.Arn
+        maxReceiveCount: 3
 
   CMSPublisherDLQ:
     Type: AWS::SQS::Queue
@@ -535,6 +542,18 @@ Resources:
       Name: !Sub "${EnvironmentName}-CMSRecordsWriterQueueARN"
       Type: String
       Value: !GetAtt CMSRecordsWriterQueue.Arn
+  CMSImagesWriterQueueURLParam:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub "${EnvironmentName}-CMSImagesWriterQueueURL"
+      Type: String
+      Value: !Ref CMSImagesWriterQueue
+  CMSImagesWriterQueueARNParam:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub "${EnvironmentName}-CMSImagesWriterQueueARN"
+      Type: String
+      Value: !GetAtt CMSImagesWriterQueue.Arn
   CMSPublisherQueueURLParam:
     Type: AWS::SSM::Parameter
     Properties:
@@ -583,74 +602,4 @@ Resources:
       Name: !Sub "${EnvironmentName}-AuroraDBClusterID"
       Type: String
       Value: !Ref AuroraDBCluster
-
-# Outputs:
-#   CMSPostgresAddress:
-#     Value: !GetAtt AuroraDBCluster.Endpoint.Address
-#     Export:
-#       Name: !Sub "${EnvironmentName}-CMSPostgresAddress"
-#   CMSPostgresPort:
-#     Value: !GetAtt AuroraDBCluster.Endpoint.Port
-#     Export:
-#       Name: !Sub "${EnvironmentName}-CMSPostgresPort"
-#   AuroraMasterSecretARN:
-#     Value: !Ref AuroraMasterSecret
-#     Export:
-#       Name: !Sub "${EnvironmentName}-AuroraMasterSecretARN"
-#   AuroraAppSecretARN:
-#     Value: !Ref AuroraAppSecret
-#     Export:
-#       Name: !Sub "${EnvironmentName}-AuroraAppSecretARN"
-#   CMSBlobStoreBucketName:
-#     Value: !Ref CMSBlobStoreBucket
-#     Export:
-#       Name: !Sub "${EnvironmentName}-CMSBlobStoreBucketName"
-#   CMSRecordsWriterQueueURL:
-#     Value: !Ref CMSRecordsWriterQueue
-#     Export:
-#       Name: !Sub "${EnvironmentName}-CMSRecordsWriterQueueURL"
-#   CMSRecordsWriterQueueARN:
-#     Value: !GetAtt CMSRecordsWriterQueue.Arn
-#     Export:
-#       Name: !Sub "${EnvironmentName}-CMSRecordsWriterQueueARN"
-#   CMSPublisherQueueURL:
-#     Value: !Ref CMSPublisherQueue
-#     Export:
-#       Name: !Sub "${EnvironmentName}-CMSPublisherQueueURL"
-#   CMSPublisherQueueARN:
-#     Value: !GetAtt CMSPublisherQueue.Arn
-#     Export:
-#       Name: !Sub "${EnvironmentName}-CMSPublisherQueueARN"
-#   PublicSubnet1:
-#     Value: !Ref PublicSubnet1
-#     Export:
-#       Name: !Sub "${EnvironmentName}-PublicSubnet1"
-#   PublicSubnet2:
-#     Value: !Ref PublicSubnet2
-#     Export:
-#       Name: !Sub "${EnvironmentName}-PublicSubnet2"
-#   PrivateSubnet1:
-#     Value: !Ref PrivateSubnet1
-#     Export:
-#       Name: !Sub "${EnvironmentName}-PrivateSubnet1"
-#   PrivateSubnet2:
-#     Value: !Ref PrivateSubnet2
-#     Export:
-#       Name: !Sub "${EnvironmentName}-PrivateSubnet2"
-#   LambdaFunctionSecurityGroup:
-#     Value: !Ref LambdaFunctionSecurityGroup
-#     Export:
-#       Name: !Sub "${EnvironmentName}-LambdaFunctionSecurityGroup"
-#   AuroraDBClusterID:
-#     Value: !Ref AuroraDBCluster
-#     Export:
-#       Name: !Sub "${EnvironmentName}-AuroraDBClusterID"
-#   ElasticsearchDomainARN:
-#     Value: !GetAtt ElasticsearchDomain.DomainArn
-#     Export:
-#       Name: !Sub "${EnvironmentName}-ElasticsearchDomainARN"
-#   ElasticsearchDomainEndpoint:
-#     Value: !GetAtt ElasticsearchDomain.DomainEndpoint
-#     Export:
-#       Name: !Sub "${EnvironmentName}-ElasticsearchDomainEndpoint"
 

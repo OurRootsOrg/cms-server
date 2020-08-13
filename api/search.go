@@ -558,7 +558,7 @@ func (api API) SearchByID(ctx context.Context, id string) (*model.SearchHit, err
 		} else {
 			// Print the response status and error information.
 			msg := fmt.Sprintf("[%s] %s: %s id=%s", res.Status(), e.Error.Type, e.Error.Reason, id)
-			log.Println(msg)
+			log.Printf("[DEBUG] ES error: %s", msg)
 			if res.StatusCode == http.StatusNotFound {
 				return nil, NewError(model.NewError(model.ErrNotFound, id))
 			}
