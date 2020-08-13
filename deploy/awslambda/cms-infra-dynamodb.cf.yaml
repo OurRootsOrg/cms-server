@@ -68,13 +68,20 @@ Resources:
       RedrivePolicy:
         deadLetterTargetArn: !GetAtt CMSRecordsWriterDLQ.Arn
         maxReceiveCount: 3
-      # ContentBasedDeduplication: Boolean
-      # DelaySeconds: Integer
-      # FifoQueue: Boolean
-      # KmsDataKeyReusePeriodSeconds: Integer
-      # KmsMasterKeyId: String
-      # MaximumMessageSize: Integer
-      # MessageRetentionPeriod: Integer
+
+  CMSImagesWriterDLQ:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub "${EnvironmentName}-imageswriterDLQ"
+
+  CMSImagesWriterQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub "${EnvironmentName}-imageswriter"
+      VisibilityTimeout: 180
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt CMSImagesWriterDLQ.Arn
+        maxReceiveCount: 3
 
   CMSPublisherDLQ:
     Type: AWS::SQS::Queue
@@ -161,6 +168,18 @@ Resources:
       Name: !Sub "${EnvironmentName}-CMSRecordsWriterQueueARN"
       Type: String
       Value: !GetAtt CMSRecordsWriterQueue.Arn
+  CMSImagesWriterQueueURLParam:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub "${EnvironmentName}-CMSImagesWriterQueueURL"
+      Type: String
+      Value: !Ref CMSImagesWriterQueue
+  CMSImagesWriterQueueARNParam:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub "${EnvironmentName}-CMSImagesWriterQueueARN"
+      Type: String
+      Value: !GetAtt CMSImagesWriterQueue.Arn
   CMSPublisherQueueURLParam:
     Type: AWS::SSM::Parameter
     Properties:

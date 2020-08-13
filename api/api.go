@@ -181,7 +181,7 @@ func (api *API) BlobStoreConfig(region, endpoint, accessKeyID, secretAccessKey, 
 	return api
 }
 
-// QueueConfig configures the recordswriter queue
+// QueueConfig configures queues
 func (api *API) QueueConfig(queueName, queueURL string) *API {
 	api.pubSubConfig.queueURL[queueName] = queueURL
 	return api

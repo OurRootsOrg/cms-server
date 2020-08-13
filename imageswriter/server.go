@@ -1,16 +1,20 @@
 package main
 
 import (
+	"archive/zip"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"log"
 	"math"
 	"net/http"
 	"net/url"
 	"os"
 	"reflect"
+	"strings"
 	"time"
 
 	"github.com/aws/aws-lambda-go/events"
@@ -35,7 +39,7 @@ const (
 const numWorkers = 10
 
 func processMessage(ctx context.Context, ap *api.API, rawMsg []byte) error {
-	var msg model.RecordsWriterMsg
+	var msg model.ImagesWriterMsg
 	err := json.Unmarshal(rawMsg, &msg)
 	if err != nil {
 		log.Printf("[ERROR] Discarding unparsable message '%s': %v", string(rawMsg), err)
@@ -50,16 +54,9 @@ func processMessage(ctx context.Context, ap *api.API, rawMsg []byte) error {
 		log.Printf("[ERROR] Error calling GetPost on %d: %v", msg.PostID, errs)
 		return errs
 	}
-	if post.RecordsStatus != model.PostLoading {
-		log.Printf("[ERROR] post %d not Loading, is %s\n", post.ID, post.RecordsStatus)
+	if post.ImagesStatus != model.PostLoading {
+		log.Printf("[ERROR] post %d not Loading, is %s\n", post.ID, post.ImagesStatus)
 		return nil
-	}
-
-	// delete any previous records for post
-	errs = ap.DeleteRecordsForPost(ctx, post.ID)
-	if errs != nil {
-		log.Printf("[ERROR] DeleteRecordsForPost on %d: %v\n", post.ID, errs)
-		return errs
 	}
 
 	// open bucket
@@ -69,79 +66,80 @@ func processMessage(ctx context.Context, ap *api.API, rawMsg []byte) error {
 		return api.NewError(err)
 	}
 	defer bucket.Close()
-
-	// read datas
-	bs, err := bucket.ReadAll(ctx, post.RecordsKey)
+	// Read zip file data
+	zipName := post.ImagesKey + ".zip"
+	ra, err := NewBucketReaderAt(ctx, bucket, zipName)
 	if err != nil {
-		log.Printf("[ERROR] ReadAll %v\n", err)
+		log.Printf("[ERROR] Error opening zip file %s: %v\n", zipName, err)
 		return api.NewError(err)
 	}
-	var datas []map[string]string
-	err = json.Unmarshal(bs, &datas)
+	zr, err := zip.NewReader(ra, ra.Size)
 	if err != nil {
-		log.Printf("[ERROR] Unmarshal datas %v\n", err)
+		log.Printf("[ERROR] Error reading zip file %s: %v\n", zipName, err)
 		return api.NewError(err)
 	}
-	log.Printf("[DEBUG] datas: %#v", datas)
 
 	// set up workers
-	in := make(chan map[string]string)
+	in := make(chan *zip.File)
 	out := make(chan error)
 	for i := 0; i < numWorkers; i++ {
-		go func(in chan map[string]string, out chan error) {
-			for data := range in {
-				log.Printf("[DEBUG] Processing data: %#v", data)
-				_, errs := ap.AddRecord(ctx, model.RecordIn{
-					RecordBody: model.RecordBody{
-						Data: data,
-					},
-					Post: post.ID,
-				})
-				// Retry up to three times with exponential backoff of 1, 10 and 100ms
-				for i, wait := 0, 1*time.Millisecond; errs != nil && i < 3; i, wait = i+1, wait*10 {
-					if !isRetryable(errs) {
-						log.Printf("[DEBUG] Error %#v is non-retryable", errs)
-						break
-					}
-					time.Sleep(wait)
-					log.Printf("[DEBUG] Error %#v, retry #%d %#v", errs, i+1, data)
-					_, errs = ap.AddRecord(ctx, model.RecordIn{
-						RecordBody: model.RecordBody{
-							Data: data,
-						},
-						Post: post.ID,
-					})
-					if errs != nil {
-						log.Printf("[DEBUG] Retry #%d failed: %#v", i+1, errs)
-					}
+		go func(in chan *zip.File, out chan error) {
+			for f := range in {
+				errs = nil
+				if f.UncompressedSize == 0 {
+					// skip directories and empty files
+					out <- errs
+					continue
 				}
+				log.Printf("[DEBUG] Processing file: %s", f.Name)
+				rc, errs := f.Open()
+				if errs != nil {
+					log.Printf("[ERROR] Error opening %s: %v", f.Name, errs)
+					out <- errs
+					continue
+				}
+				defer rc.Close()
+				fileBytes, errs := ioutil.ReadAll(rc)
+				if errs != nil && errs != io.EOF {
+					log.Printf("[ERROR] Error reading contents of %s: %v", f.Name, errs)
+					out <- errs
+					continue
+				}
+				contentType := http.DetectContentType(fileBytes)
+				if !strings.HasPrefix(contentType, "image") {
+					log.Printf("[INFO] Skipping file %s, content type %s, because it's not an image.", f.Name, contentType)
+					out <- errs
+					continue
+				}
+				name := post.ImagesKey + "/" + f.Name
+				errs = bucket.WriteAll(ctx, name, fileBytes, nil)
 				out <- errs
 			}
 		}(in, out)
 	}
 
-	// send datas to workers
-	go func(in chan map[string]string, datas []map[string]string) {
-		for _, data := range datas {
-			in <- data
+	// send files to workers
+	go func(in chan *zip.File, files []*zip.File) {
+		for _, f := range files {
+			in <- f
 		}
 		close(in)
-	}(in, datas)
+	}(in, zr.File)
 
-	// wait for workers to complete
+	// // wait for workers to complete
 	errs = nil
-	for i := 0; i < len(datas); i++ {
+	for i := 0; i < len(zr.File); i++ {
 		if e := <-out; e != nil {
-			log.Printf("[ERROR] AddRecord received error: %#v", e)
+			log.Printf("[ERROR] Error saving image file: %#v", e)
 			errs = e
 		}
 	}
 	close(out)
 
 	if errs != nil {
-		post.RecordsStatus = model.PostDraft
+		post.ImagesStatus = model.PostDraft
 	} else {
-		post.RecordsStatus = model.PostLoadComplete
+		post.ImagesStatus = model.PostLoadComplete
 	}
 	_, err = ap.UpdatePost(ctx, post.ID, *post)
 	if err != nil {
@@ -237,8 +235,8 @@ func main() {
 		log.Printf("[INFO] Connected to %s\n", dbURL.Host)
 		p := persist.NewPostgresPersister(db)
 		ap.
-			PostPersister(p).
-			RecordPersister(p)
+			PostPersister(p)
+			// ImagePersister(p)
 		log.Print("[INFO] Using PostgresPersister")
 	} else {
 		sess, err := session.NewSession()
@@ -250,8 +248,8 @@ func main() {
 			log.Fatalf("[FATAL] Error creating DynamoDB persister: %v", err)
 		}
 		ap.
-			PostPersister(p).
-			RecordPersister(p)
+			PostPersister(p)
+			// ImagePersister(p)
 		log.Print("[INFO] Using DynamoDBPersister")
 	}
 
@@ -259,8 +257,8 @@ func main() {
 		h := lambdaHandler{ap: ap}
 		lambda.Start(h.handler)
 	} else {
-		// subscribe to recordswriter queue
-		sub, err := ap.OpenSubscription(ctx, "recordswriter")
+		// subscribe to imageswriter queue
+		sub, err := ap.OpenSubscription(ctx, "imageswriter")
 		if err != nil {
 			log.Fatalf("[FATAL] Can't open subscription %v\n", err)
 		}
@@ -272,12 +270,14 @@ func main() {
 				log.Printf("[ERROR] Receiving message %v\n", err)
 				continue
 			}
+			log.Printf("[DEBUG] Received message '%s'", string(msg.Body))
 			// process message
 			errs := processMessage(ctx, ap, msg.Body)
 			if errs != nil {
 				log.Printf("[ERROR] Processing message %v\n", errs)
 				continue
 			}
+			log.Printf("[DEBUG] Processed message '%s'", string(msg.Body))
 			msg.Ack()
 		}
 	}

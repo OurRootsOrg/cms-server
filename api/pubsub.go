@@ -20,11 +20,12 @@ import (
 // Shutdown(ctx) the topic when you're done with it
 func (api *API) OpenTopic(ctx context.Context, topicName string) (*pubsub.Topic, error) {
 	cnt := 0
-	err := errors.New("unknown error")
 	urlStr := api.pubSubConfig.QueueURL(topicName)
+	log.Printf("[DEBUG] QueueURL(%s): %s", topicName, urlStr)
 	conn := api.rabbitmqTopicConn
 	var topic *pubsub.Topic
-	for err != nil && cnt <= 5 {
+	var err error
+	for topic == nil && cnt <= 5 {
 		if cnt > 0 {
 			time.Sleep(time.Duration(math.Pow(2.0, float64(cnt))) * time.Second)
 		}
