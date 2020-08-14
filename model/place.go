@@ -11,6 +11,35 @@ import (
 // PlacePersister defines methods needed to persist places
 type PlacePersister interface {
 	SelectPlaceMetadata(ctx context.Context) (*PlaceMetadata, error)
+	SelectPlace(ctx context.Context, id uint32) (*Place, error)
+	SelectPlacesByID(ctx context.Context, ids []uint32) ([]Place, error)
+	SelectPlaceWord(ctx context.Context, word string) (*PlaceWord, error)
+	SelectPlaceWordsByWord(ctx context.Context, words []string) ([]PlaceWord, error)
+}
+
+// Place holds information about a place
+type Place struct {
+	ID               uint32    `json:"id" dynamodbav:"pk"`
+	Name             string    `json:"name"`
+	AltNames         string    `json:"altNames"`
+	Types            string    `json:"types"`
+	LocatedInID      int       `json:"locatedInId"`
+	AlsoLocatedInIDs string    `json:"alsoLocatedInIds"`
+	Level            int       `json:"level"`
+	CountryID        int       `json:"countryId"`
+	Latitude         float32   `json:"latitude"`
+	Longitude        float32   `json:"longitude"`
+	Count            int       `json:"count"`
+	InsertTime       time.Time `json:"insert_time,omitempty"`
+	LastUpdateTime   time.Time `json:"last_update_time,omitempty"`
+}
+
+// PlaceWord holds the IDs of all places that have that word in their name or alt name
+type PlaceWord struct {
+	Word           string    `json:"word" dynamodbav:"pk"`
+	IDs            string    `json:"ids"`
+	InsertTime     time.Time `json:"insert_time,omitempty"`
+	LastUpdateTime time.Time `json:"last_update_time,omitempty"`
 }
 
 // PlaceMetadataBody is the JSON body of a PlaceMetadata object
