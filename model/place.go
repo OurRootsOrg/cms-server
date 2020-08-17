@@ -10,58 +10,63 @@ import (
 
 // PlacePersister defines methods needed to persist places
 type PlacePersister interface {
-	SelectPlaceMetadata(ctx context.Context) (*PlaceMetadata, error)
+	SelectPlaceSettings(ctx context.Context) (*PlaceSettings, error)
 	SelectPlace(ctx context.Context, id uint32) (*Place, error)
 	SelectPlacesByID(ctx context.Context, ids []uint32) ([]Place, error)
 	SelectPlaceWord(ctx context.Context, word string) (*PlaceWord, error)
 	SelectPlaceWordsByWord(ctx context.Context, words []string) ([]PlaceWord, error)
 }
 
+type StringSlice []string
+type Uint32Slice []uint32
+
 // Place holds information about a place
 type Place struct {
-	ID               uint32    `json:"id" dynamodbav:"pk"`
-	Name             string    `json:"name"`
-	AltNames         string    `json:"altNames"`
-	Types            string    `json:"types"`
-	LocatedInID      int       `json:"locatedInId"`
-	AlsoLocatedInIDs string    `json:"alsoLocatedInIds"`
-	Level            int       `json:"level"`
-	CountryID        int       `json:"countryId"`
-	Latitude         float32   `json:"latitude"`
-	Longitude        float32   `json:"longitude"`
-	Count            int       `json:"count"`
-	InsertTime       time.Time `json:"insert_time,omitempty"`
-	LastUpdateTime   time.Time `json:"last_update_time,omitempty"`
+	ID               uint32      `json:"id" dynamodbav:"pk"`
+	Name             string      `json:"name"`
+	FullName         string      `json:"fullName"`
+	AltNames         StringSlice `json:"altNames"`
+	Types            StringSlice `json:"types"`
+	LocatedInID      uint32      `json:"locatedInId"`
+	AlsoLocatedInIDs Uint32Slice `json:"alsoLocatedInIds"`
+	Level            int         `json:"level"`
+	CountryID        uint32      `json:"countryId"`
+	Latitude         float32     `json:"latitude"`
+	Longitude        float32     `json:"longitude"`
+	Count            int         `json:"count"`
+	InsertTime       time.Time   `json:"insert_time,omitempty"`
+	LastUpdateTime   time.Time   `json:"last_update_time,omitempty"`
 }
 
 // PlaceWord holds the IDs of all places that have that word in their name or alt name
 type PlaceWord struct {
-	Word           string    `json:"word" dynamodbav:"pk"`
-	IDs            string    `json:"ids"`
-	InsertTime     time.Time `json:"insert_time,omitempty"`
-	LastUpdateTime time.Time `json:"last_update_time,omitempty"`
+	Word           string      `json:"word" dynamodbav:"pk"`
+	IDs            Uint32Slice `json:"ids"`
+	InsertTime     time.Time   `json:"insert_time,omitempty"`
+	LastUpdateTime time.Time   `json:"last_update_time,omitempty"`
 }
 
-// PlaceMetadataBody is the JSON body of a PlaceMetadata object
-type PlaceMetadataBody struct {
+// PlaceSettingsBody is the JSON body of a PlaceSettings object
+type PlaceSettingsBody struct {
 	Abbreviations             map[string]string `json:"abbreviations"`
 	TypeWords                 []string          `json:"typeWords"`
 	NoiseWords                []string          `json:"noiseWords"`
-	LargeCountries            []int             `json:"largeCountries"`
-	MediumCountries           []int             `json:"mediumCountries"`
+	LargeCountries            []uint32          `json:"largeCountries"`
+	MediumCountries           []uint32          `json:"mediumCountries"`
 	LargeCountryLevelWeights  []int             `json:"largeCountryLevelWeights"`
 	MediumCountryLevelWeights []int             `json:"mediumCountryLevelWeights"`
 	SmallCountryLevelWeights  []int             `json:"smallCountryLevelWeights"`
 	PrimaryMatchWeight        int               `json:"primaryMatchWeight"`
+	USCountryID               uint32            `json:"USCountryId"`
 }
 
-// Value makes PlaceMetadataBody implement the driver.Valuer interface.
-func (cb PlaceMetadataBody) Value() (driver.Value, error) {
+// Value makes PlaceSettingsBody implement the driver.Valuer interface.
+func (cb PlaceSettingsBody) Value() (driver.Value, error) {
 	return json.Marshal(cb)
 }
 
-// Scan makes PlaceMetadataBody implement the sql.Scanner interface.
-func (cb *PlaceMetadataBody) Scan(value interface{}) error {
+// Scan makes PlaceSettingsBody implement the sql.Scanner interface.
+func (cb *PlaceSettingsBody) Scan(value interface{}) error {
 	b, ok := value.([]byte)
 	if !ok {
 		return errors.New("type assertion to []byte failed")
@@ -69,42 +74,72 @@ func (cb *PlaceMetadataBody) Scan(value interface{}) error {
 	return json.Unmarshal(b, &cb)
 }
 
-// PlaceMetadataIn is the payload to create or update a PlaceMetadata object
-type PlaceMetadataIn struct {
-	PlaceMetadataBody
+// Value makes StringSlice implement the driver.Valuer interface.
+func (cb StringSlice) Value() (driver.Value, error) {
+	return json.Marshal(cb)
 }
 
-// PlaceMetadata represents global placeMetadata
-type PlaceMetadata struct {
+// Scan makes StringSlice implement the sql.Scanner interface.
+func (cb *StringSlice) Scan(value interface{}) error {
+	b, ok := value.([]byte)
+	if !ok {
+		return errors.New("type assertion to []byte failed")
+	}
+	return json.Unmarshal(b, &cb)
+}
+
+// Value makes Uint32Slice implement the driver.Valuer interface.
+func (cb Uint32Slice) Value() (driver.Value, error) {
+	return json.Marshal(cb)
+}
+
+// Scan makes Uint32Slice implement the sql.Scanner interface.
+func (cb *Uint32Slice) Scan(value interface{}) error {
+	b, ok := value.([]byte)
+	if !ok {
+		return errors.New("type assertion to []byte failed")
+	}
+	return json.Unmarshal(b, &cb)
+}
+
+// PlaceSettingsIn is the payload to create or update a PlaceSettings object
+type PlaceSettingsIn struct {
+	PlaceSettingsBody
+}
+
+// PlaceSettings represents global placeSettings
+type PlaceSettings struct {
 	ID int    `json:"-" dynamodbav:"pk"`
 	Sk string `json:"-" dynamodbav:"sk"`
-	PlaceMetadataIn
+	PlaceSettingsIn
 	InsertTime     time.Time `json:"insert_time,omitempty"`
 	LastUpdateTime time.Time `json:"last_update_time,omitempty"`
 }
 
-// NewPlaceMetadataIn constructs a PlaceMetadataIn
-func NewPlaceMetadataIn(abbreviations map[string]string, typeWords, noiseWords []string, largeCountries, mediumCountries []int, largeCountryLevelWeights, mediumCountryLevelWeights, smallCountryLevelWeights []int, primaryMatchWeight int) PlaceMetadataIn {
-	obj := PlaceMetadataIn{
-		PlaceMetadataBody: PlaceMetadataBody{
+// NewPlaceSettingsIn constructs a PlaceSettingsIn
+func NewPlaceSettingsIn(abbreviations map[string]string, typeWords, noiseWords []string, largeCountries, mediumCountries []uint32, largeCountryLevelWeights, mediumCountryLevelWeights, smallCountryLevelWeights []int, primaryMatchWeight int, USCountryID uint32) PlaceSettingsIn {
+	obj := PlaceSettingsIn{
+		PlaceSettingsBody: PlaceSettingsBody{
 			Abbreviations:             abbreviations,
 			TypeWords:                 typeWords,
+			NoiseWords:                noiseWords,
 			LargeCountries:            largeCountries,
 			MediumCountries:           mediumCountries,
 			LargeCountryLevelWeights:  largeCountryLevelWeights,
 			MediumCountryLevelWeights: mediumCountryLevelWeights,
 			SmallCountryLevelWeights:  smallCountryLevelWeights,
 			PrimaryMatchWeight:        primaryMatchWeight,
+			USCountryID:               USCountryID,
 		},
 	}
 	return obj
 }
 
-// NewPlaceMetadata constructs a PlaceMetadata object from a PlaceMetadataIn
-func NewPlaceMetadata(obj PlaceMetadataIn) PlaceMetadata {
+// NewPlaceSettings constructs a PlaceSettings object from a PlaceSettingsIn
+func NewPlaceSettings(obj PlaceSettingsIn) PlaceSettings {
 	now := time.Now()
-	c := PlaceMetadata{
-		PlaceMetadataIn: obj,
+	c := PlaceSettings{
+		PlaceSettingsIn: obj,
 		InsertTime:      now,
 		LastUpdateTime:  now,
 	}

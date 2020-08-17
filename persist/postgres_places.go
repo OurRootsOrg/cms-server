@@ -8,26 +8,27 @@ import (
 	"github.com/ourrootsorg/cms-server/model"
 )
 
-const PlaceMetadataID = 1
+const PlaceSettingsID = 1
 
-// SelectPlaceMetadata selects the PlaceMetadata object if it exists or returns ErrNoRows
-func (p PostgresPersister) SelectPlaceMetadata(ctx context.Context) (*model.PlaceMetadata, error) {
-	var placeMetadata model.PlaceMetadata
-	err := p.db.QueryRowContext(ctx, "SELECT body, insert_time, last_update_time FROM place_metadata WHERE id=$1", PlaceMetadataID).Scan(
-		&placeMetadata.PlaceMetadataBody,
-		&placeMetadata.InsertTime,
-		&placeMetadata.LastUpdateTime,
+// SelectPlaceSettings selects the PlaceSettings object if it exists or returns ErrNoRows
+func (p PostgresPersister) SelectPlaceSettings(ctx context.Context) (*model.PlaceSettings, error) {
+	var placeSettings model.PlaceSettings
+	err := p.db.QueryRowContext(ctx, "SELECT body, insert_time, last_update_time FROM place_settings WHERE id=$1", PlaceSettingsID).Scan(
+		&placeSettings.PlaceSettingsBody,
+		&placeSettings.InsertTime,
+		&placeSettings.LastUpdateTime,
 	)
-	id := uint32(PlaceMetadataID)
-	return &placeMetadata, translateError(err, &id, nil, "")
+	id := uint32(PlaceSettingsID)
+	return &placeSettings, translateError(err, &id, nil, "")
 }
 
 // SelectPlace selects the Place object if it exists or returns ErrNoRows
 func (p PostgresPersister) SelectPlace(ctx context.Context, id uint32) (*model.Place, error) {
 	var place model.Place
-	err := p.db.QueryRowContext(ctx, "SELECT id, name, alt_names, types, located_in_id, also_located_in_ids, level, country_id, latitude, longitude, count, insert_time, last_update_time FROM place WHERE id=$1", id).Scan(
+	err := p.db.QueryRowContext(ctx, "SELECT id, name, full_name, alt_names, types, located_in_id, also_located_in_ids, level, country_id, latitude, longitude, count, insert_time, last_update_time FROM place WHERE id=$1", id).Scan(
 		&place.ID,
 		&place.Name,
+		&place.FullName,
 		&place.AltNames,
 		&place.Types,
 		&place.LocatedInID,
@@ -49,7 +50,7 @@ func (p PostgresPersister) SelectPlacesByID(ctx context.Context, ids []uint32) (
 	if len(ids) == 0 {
 		return places, nil
 	}
-	rows, err := p.db.QueryContext(ctx, "SELECT id, name, alt_names, types, located_in_id, also_located_in_ids, level, country_id, latitude, longitude, count, insert_time, last_update_time FROM place WHERE id = ANY($1)", pq.Array(ids))
+	rows, err := p.db.QueryContext(ctx, "SELECT id, name, full_name, alt_names, types, located_in_id, also_located_in_ids, level, country_id, latitude, longitude, count, insert_time, last_update_time FROM place WHERE id = ANY($1)", pq.Array(ids))
 	if err != nil {
 		return nil, translateError(err, nil, nil, "")
 	}
@@ -59,6 +60,7 @@ func (p PostgresPersister) SelectPlacesByID(ctx context.Context, ids []uint32) (
 		err := rows.Scan(
 			&place.ID,
 			&place.Name,
+			&place.FullName,
 			&place.AltNames,
 			&place.Types,
 			&place.LocatedInID,

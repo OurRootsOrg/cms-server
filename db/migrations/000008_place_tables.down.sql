@@ -1,3 +1,3 @@
 DROP TABLE IF EXISTS place;
 DROP TABLE IF EXISTS place_word;
-DROP TABLE IF EXISTS place_metadata;
+DROP TABLE IF EXISTS place_settings;
