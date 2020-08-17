@@ -2,28 +2,30 @@ import moment from "moment";
 
 export { getMetadataColumn, getMetadataColumnForEditing };
 
+//Tabulator:v-data-table translation is title:text and field:value (rename "title" as "text" and "field" as "value")
+
 function getMetadataColumn(pf) {
   switch (pf.type) {
     case "string":
       return {
-        title: pf.name,
-        field: pf.name,
+        text: pf.name,
+        value: pf.name,
         tooltip: pf.tooltip,
         headerFilter: "input",
         sorter: "string"
       };
     case "number":
       return {
-        title: pf.name,
-        field: pf.name,
+        text: pf.name,
+        value: pf.name,
         tooltip: pf.tooltip,
         headerFilter: "number",
         sorter: "number"
       };
     case "date":
       return {
-        title: pf.name,
-        field: pf.name,
+        text: pf.name,
+        value: pf.name,
         hozAlign: "center",
         tooltip: pf.tooltip,
         headerFilter: "input",
@@ -35,8 +37,8 @@ function getMetadataColumn(pf) {
       };
     case "boolean":
       return {
-        title: pf.name,
-        field: pf.name,
+        text: pf.name,
+        value: pf.name,
         tooltip: pf.tooltip,
         hozAlign: "center",
         formatter: "tickCross",
@@ -50,7 +52,8 @@ function getMetadataColumnForEditing(pf) {
   switch (pf.type) {
     case "string":
       return {
-        title: pf.name,
+        text: pf.name,
+        value: pf.name,
         minWidth: 200,
         widthGrow: 2,
         field: pf.name,
@@ -59,7 +62,8 @@ function getMetadataColumnForEditing(pf) {
       };
     case "number":
       return {
-        title: pf.name,
+        text: pf.name,
+        value: pf.name,
         minWidth: 75,
         widthGrow: 1,
         field: pf.name,
@@ -68,7 +72,8 @@ function getMetadataColumnForEditing(pf) {
       };
     case "date":
       return {
-        title: pf.name,
+        text: pf.name,
+        value: pf.name,
         minWidth: 140,
         widthGrow: 1,
         field: pf.name,
@@ -78,7 +83,8 @@ function getMetadataColumnForEditing(pf) {
       };
     case "boolean":
       return {
-        title: pf.name,
+        text: pf.name,
+        value: pf.name,
         minWidth: 75,
         widthGrow: 1,
         field: pf.name,

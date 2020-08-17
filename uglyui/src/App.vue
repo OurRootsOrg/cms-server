@@ -124,3 +124,10 @@ export default {
   }
 };
 </script>
+
+<style>
+.rowHover {
+  cursor: pointer;
+}
+
+</style>

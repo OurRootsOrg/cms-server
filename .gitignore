@@ -28,3 +28,5 @@ uglyui/node_modules/
 uglyui/.idea/
 .vscode/
 
+#ignore local env
+uglyui/.env.development.local

@@ -1,66 +1,86 @@
 <template>
   <v-container class="categories-create">
-    <h1>{{ category.id ? "Edit" : "Create" }} Category</h1>
-    <v-form @submit.prevent="save">
-      <h3 class="mb-4">Give your category a name</h3>
-      <v-text-field
-        label="Category Name"
-        v-model="category.name"
-        type="text"
-        placeholder="Name"
-        class="field"
-        :class="{ error: $v.category.name.$error }"
-        @blur="touch('name')"
-      >
-      </v-text-field>
+        <h1>{{ category.id ? "Edit" : "Create" }} Category</h1>
+        <v-form @submit.prevent="save">
+          <v-row>
+            <v-col>
+              <h3 class="mb-4">Give your category a name</h3>
+              <v-text-field
+                label="Category Name"
+                v-model="category.name"
+                type="text"
+                placeholder="Name"
+                class="field"
+                :class="{ error: $v.category.name.$error }"
+                @blur="touch('name')"
+              >
+              </v-text-field>
 
-      <template v-if="$v.category.name.$error">
-        <p v-if="!$v.category.name.required" class="errorMessage">
-          Name is required.
-        </p>
-      </template>
-
-      <v-layout row>
-        <v-flex justify-center>
-          <v-btn class="ml-2 mb-4" color="primary" type="submit" :disabled="$v.$anyError || !$v.$anyDirty">Save</v-btn>
-          <span v-if="$v.$anyError" class="red--text">
+              <template v-if="$v.category.name.$error">
+                <p v-if="!$v.category.name.required" class="errorMessage">
+                  Name is required.
+                </p>
+              </template>
+            </v-col>
+          </v-row>
+          <div class="d-flex justify-space-between">
+              <v-btn color="primary" type="submit" :disabled="$v.$anyError || !$v.$anyDirty">Save</v-btn>
+              <v-btn
+                v-if="category.id"
+                color="warning"
+                @click="del()"
+                :title="collectionsForCategory.length > 0 ? 'Categories with collections cannot be deleted' : 'Cannot be undone!'"
+                :disabled="collectionsForCategory.length > 0"
+                >Delete Category
+              </v-btn>              
+          </div>
+          <p v-if="$v.$anyError" class="red--text">
             Please fill out the required field(s).
-          </span>
-        </v-flex>
-      </v-layout>
-    </v-form>
+          </p>
+        </v-form>
 
-    <v-btn
-      class="mt-2 mb-4"
-      v-if="category.id"
-      color="warning"
-      @click="del()"
-      :title="collectionsForCategory.length > 0 ? 'Categories with collections cannot be deleted' : 'Cannot be undone!'"
-      :disabled="collectionsForCategory.length > 0"
-      >Delete Category
-    </v-btn>
+        <v-row class="pt-5">
+          <v-col>
+            <h3 v-if="category.id">Collections</h3>
+            <!-- <Tabulator
+              v-if="category.id"
+              :data="collectionsForCategory"
+              :columns="collectionColumns"
+              layout="fitColumns"
+              :header-sort="true"
+              :selectable="true"
+              :resizable-columns="true"
+              @rowClicked="collectionRowClicked"
+            /> -->
 
-    <h3 v-if="category.id">Collections</h3>
-    <Tabulator
-      v-if="category.id"
-      :data="collectionsForCategory"
-      :columns="collectionColumns"
-      layout="fitColumns"
-      :header-sort="true"
-      :selectable="true"
-      :resizable-columns="true"
-      @rowClicked="collectionRowClicked"
-    />
-    <v-btn v-if="category.id" outlined color="primary" class="mt-4" to="/collections/create">
-      Create a new collection
-    </v-btn>
+            <v-data-table
+              :items="collectionsForCategory"
+              :headers="headers" 
+              sortable
+              sort-by='name'      
+              @click:row="collectionRowClicked"
+              dense
+              class="rowHover"
+            >
+            <template v-slot:item.icon="{ item }">
+              <v-btn icon small :to="{ name: 'collection-edit', params: { cid: item.id } }">
+                <v-icon right>mdi-chevron-right</v-icon>
+              </v-btn>
+            </template>         
+            </v-data-table>
+          </v-col>
+        </v-row>
+        <v-btn v-if="category.id" outlined color="primary" class="mt-4" to="/collections/create">
+          Create a new collection
+        </v-btn>    
+
   </v-container>
 </template>
 
 <script>
 import store from "@/store";
 import { mapState } from "vuex";
-import Tabulator from "../components/Tabulator";
+// import Tabulator from "../components/Tabulator";
 import NProgress from "nprogress";
 import { required } from "vuelidate/lib/validators";
 import lodash from "lodash";
@@ -72,7 +92,7 @@ function setup() {
 }
 
 export default {
-  components: { Tabulator },
+  // components: { Tabulator },
   beforeRouteEnter: function(routeTo, routeFrom, next) {
     let routes = [];
     if (routeTo.params && routeTo.params.cid) {
@@ -117,7 +137,14 @@ export default {
           headerFilter: "input",
           sorter: "string"
         }
-      ]
+      ],
+      headers: [
+        { text: "Name", value: "name" },
+        { text: "# Posts", value: "postsCount"},
+        { text: "Categories", value: "categoryNames"},
+        { text: "", value: "icon", align:"right" }
+      ],
+      search: '',
     };
   },
   computed: {

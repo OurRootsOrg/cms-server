@@ -1,110 +1,218 @@
 <template>
-  <div class="posts-create">
-    <h1>{{ post.id ? "Edit" : "Create" }} Post</h1>
-    <v-form @submit.prevent="save">
-      <h3>Give your post a name</h3>
-      <v-text-field
-        label="Post Name"
-        v-model="post.name"
-        type="text"
-        placeholder="Name"
-        class="field"
-        :class="{ error: $v.post.name.$error }"
-        @blur="touch('name')"
-      ></v-text-field>
+  <v-container class="posts-create">
+        <h1>{{ post.id ? "Edit" : "Create" }} Post</h1>
+        <v-form @submit.prevent="save">
+          <h3>Give your post a name</h3>
+          <v-text-field
+            label="Post Name"
+            v-model="post.name"
+            type="text"
+            placeholder="Name"
+            class="field"
+            :class="{ error: $v.post.name.$error }"
+            @blur="touch('name')"
+          ></v-text-field>
 
-      <template v-if="$v.post.name.$error">
-        <p v-if="!$v.post.name.required" class="errorMessage">
-          Name is required.
-        </p>
-      </template>
+          <template v-if="$v.post.name.$error">
+            <p v-if="!$v.post.name.required" class="errorMessage">
+              Name is required.
+            </p>
+          </template>
 
-      <div v-if="post.id">
-        <h3>Collection</h3>
-        <p>
-          <router-link :to="{ name: 'collection-edit', params: { cid: collections.collection.id } }">{{
-            collections.collection.name
-          }}</router-link>
-        </p>
-      </div>
-      <div v-else>
-        <h3>Select a collection</h3>
-        <v-select
-          label="Collection"
-          :items="collections.collectionsList"
-          item-text="name"
-          item-value="id"
-          v-model="post.collection"
-          :class="{ error: $v.post.collection.$error }"
-          @input="touch('collection')"
-        ></v-select>
-        <template v-if="$v.post.collection.$error">
-          <p v-if="!$v.post.collection.required" class="errorMessage">
-            Collection is required.
+          <div v-if="post.id">
+            <h3>Collection</h3>
+            <p>
+              <router-link :to="{ name: 'collection-edit', params: { cid: collections.collection.id } }">{{
+                collections.collection.name
+              }}</router-link>
+            </p>
+          </div>
+          <div v-else>
+            <h3>Select a collection</h3>
+            <v-select
+              label="Collection"
+              :items="collections.collectionsList"
+              item-text="name"
+              item-value="id"
+              v-model="post.collection"
+              :class="{ error: $v.post.collection.$error }"
+              @input="touch('collection')"
+            ></v-select>
+            <template v-if="$v.post.collection.$error">
+              <p v-if="!$v.post.collection.required" class="errorMessage">
+                Collection is required.
+              </p>
+            </template>
+          </div>
+
+          <div v-if="post.id">
+            <h3>Post status</h3>
+            <p>{{ post.recordsStatus }}</p>
+          </div>
+
+          <div v-if="settings.settings.postMetadata.length > 0">
+            <h3>Custom fields (metadata) for this post 
+                <v-tooltip bottom>
+                  <template v-slot:activator="{ on, attrs }">
+                    <v-icon
+                      small
+                      v-bind="attrs"
+                      v-on="on"
+                    >mdi-information</v-icon>
+                  </template>
+                  <span>Information about/specific to <em>this particular post</em> such as the transcription date, translator, etc. which might be different from other posts in this collection</span>
+                </v-tooltip>
+            </h3>
+            <!-- <Tabulator
+              :data="metadata"
+              :columns="getMetadataColumns()"
+              layout="fitColumns"
+              :resizable-columns="true"
+              @cellEdited="metadataEdited"
+            /> -->
+
+            <v-data-table
+              :items="metadata"
+              :headers="getMetadataColumns()"
+              dense
+            >
+            </v-data-table>            
+          </div>
+
+<!-- the new crud table-->
+<v-row style="background:#f1f1f1">
+  <v-col>
+<v-data-table
+    :headers="getMetadataColumns()"
+    :items="metadata"
+  >
+    <template v-slot:footer>
+      <v-toolbar flat color="white">
+        <v-dialog v-model="dialog" max-width="500px">
+          <template v-slot:activator="{ on, attrs }">
+            <v-btn
+              color="primary"
+              dark
+              class="mb-2"
+              v-bind="attrs"
+              v-on="on"
+            >New Item</v-btn>
+          </template>
+          <v-card>
+            <v-card-title>
+              <span class="headline">{{ formTitle }}</span>
+            </v-card-title>
+
+            <v-card-text>
+              <v-container>
+                <v-row>
+                  <v-col cols="12" md="6">
+                    <v-text-field v-model="editedItem.name" label="Custom field title"></v-text-field>
+                  </v-col>
+                  <v-col cols="12" md="6">
+                    <v-text-field v-model="editedItem.metadata" label="Custom field data"></v-text-field>
+                  </v-col>
+                </v-row>
+              </v-container>
+            </v-card-text>
+
+            <v-card-actions>
+              <v-spacer></v-spacer>
+              <v-btn color="blue darken-1" text @click="closeCustomField">Cancel</v-btn>
+              <v-btn color="blue darken-1" text @click="saveCustomField">Save</v-btn>
+            </v-card-actions>
+          </v-card>
+        </v-dialog>
+      </v-toolbar>
+    </template>
+    <template v-slot:item.actions="{ item }">
+      <v-icon
+        small
+        class="mr-2"
+        @click="editCustomFieldItem(item)"
+      >
+        mdi-pencil
+      </v-icon>
+      <v-icon
+        small
+        @click="deleteCustomFieldItem(item)"
+      >
+        mdi-delete
+      </v-icon>
+    </template>
+  </v-data-table>    
+  </v-col>
+</v-row>
+
+<!-- end the new crud table-->
+
+          <p v-if="$v.$anyError" class="errorMessage">
+            Please fill out the required field(s).
           </p>
-        </template>
-      </div>
 
-      <div v-if="post.id">
-        <h3>Post status</h3>
-        <p>{{ post.recordsStatus }}</p>
-      </div>
+          <v-row>
+            <v-col class="d-flex justify-space-between">
+              <v-btn
+               type="submit" 
+               color="primary" 
+               :disabled="$v.$anyError || !$v.$anyDirty"
+              >
+                Save
+              </v-btn>
+              <v-btn
+                v-if="isPublishable"
+                @click="publish"
+                color="primary"
+                title="Publish the post to make it searchable"
+              >
+                Publish Post
+              </v-btn>
+              <v-btn
+                v-if="isUnpublishable"
+                @click="unpublish"
+                color="primary"
+                title="Unpublish the post to remove it from the index"
+              >
+                Unpublish Post
+              </v-btn>
+              <v-btn
+                v-if="isImportable"
+                id="importData"
+                @click="importData"
+                color="primary"
+                title="Upload or replace records"
+              >
+                {{ post.recordsKey ? "Replace data" : "Import data" }}
+              </v-btn>
+              <v-btn :disabled="!isDeletable" @click="del" class="warning">Delete Post</v-btn>
+            </v-col>
+          </v-row>
+        </v-form>
 
-      <div v-if="settings.settings.postMetadata.length > 0">
-        <h3>Custom fields</h3>
-        <Tabulator
-          :data="metadata"
-          :columns="getMetadataColumns()"
+        <!-- <Tabulator
+          v-if="post.id && post.recordsKey && post.recordsStatus !== 'Loading'"
           layout="fitColumns"
-          :resizable-columns="true"
-          @cellEdited="metadataEdited"
-        />
-      </div>
-
-      <p v-if="$v.$anyError" class="errorMessage">
-        Please fill out the required field(s).
-      </p>
-
-      <v-row>
-        <v-btn type="submit" color="primary" class="btn mt-4" :disabled="$v.$anyError || !$v.$anyDirty">Save </v-btn>
-        <v-btn
-          v-if="isPublishable"
-          @click="publish"
-          color="primary"
-          class="btn mt-4"
-          title="Publish the post to make it searchable"
-          >Publish Post</v-btn
-        >
-        <v-btn
-          v-if="isUnpublishable"
-          @click="unpublish"
-          color="primary"
-          class="btn mt-4"
-          title="Unpublish the post to remove it from the index"
-          >Unpublish Post</v-btn
-        >
-        <v-btn
-          v-if="isImportable"
-          id="importData"
-          @click="importData"
-          color="primary"
-          class="btn mt-4"
-          title="Upload or replace records"
-        >
-          {{ post.recordsKey ? "Replace data" : "Import data" }}
-        </v-btn>
+          :data="records.recordsList.map(r => r.data)"
+          :columns="getRecordColumns()"
+        /> -->
+      <v-row class="pt-5">
+        <v-col>
+          <h3 v-if="post.id && post.recordsKey && post.recordsStatus !== 'Loading'" class="pl-1">Post data</h3>
+          <v-data-table
+            v-if="post.id && post.recordsKey && post.recordsStatus !== 'Loading'"
+            :items="records.recordsList.map(r => r.data)"
+            :headers="getRecordColumns()"
+            dense
+            sortable
+            :footer-props="{
+              'items-per-page-options': [10, 25, 50]
+            }"
+            :items-per-page="25"
+          >
+          </v-data-table>
+        </v-col>
       </v-row>
-    </v-form>
-
-    <v-btn :disabled="!isDeletable" @click="del" class="warning mt-2 mb-4">Delete Post </v-btn>
-
-    <Tabulator
-      v-if="post.id && post.recordsKey && post.recordsStatus !== 'Loading'"
-      layout="fitColumns"
-      :data="records.recordsList.map(r => r.data)"
-      :columns="getRecordColumns()"
-    />
-  </div>
+  </v-container>
 </template>
 
 <script>
@@ -112,7 +220,7 @@ import store from "@/store";
 import { mapState } from "vuex";
 import { required } from "vuelidate/lib/validators";
 import { getMetadataColumnForEditing } from "../utils/metadata";
-import Tabulator from "../components/Tabulator";
+// import Tabulator from "../components/Tabulator";
 import FlatfileImporter from "flatfile-csv-importer";
 import config from "../utils/flatfileConfig.js";
 import Server from "@/services/Server.js";
@@ -137,7 +245,7 @@ async function uploadData(store, post, contentType, data) {
 }
 
 export default {
-  components: { Tabulator },
+  // components: { Tabulator },
   beforeRouteEnter: function(routeTo, routeFrom, next) {
     let routes = [store.dispatch("settingsGet")];
     if (routeTo.params && routeTo.params.pid) {
@@ -165,10 +273,21 @@ export default {
       setup.bind(this)();
     }
   },
+  //added this watch for the crud metadata table
+  watch: {
+    dialog (val) {
+      val || this.close()
+    },
+  },  
   data() {
     return {
+      //for the crud table: dialog, edited index, edited item, default item
+      dialog: false,
+      editedIndex: -1,
+      editedItem: {},
+      defaultItem: {},
       post: { id: null, name: null, collection: null, recordsStatus: null, recordsKey: null },
-      metadata: [{}]
+      metadata: [{}],
     };
   },
   computed: {
@@ -184,6 +303,10 @@ export default {
     isUnpublishable() {
       return this.post.id && this.post.recordsStatus === "Published";
     },
+    //crud metadata table add or edit
+    formTitle () {
+      return this.editedIndex === -1 ? 'New Item' : 'Edit Item'
+    },    
     ...mapState(["collections", "posts", "records", "settings"])
   },
   validations: {
@@ -207,8 +330,9 @@ export default {
       this.touch("metadata");
     },
     getRecordColumns() {
+      //Tabulator:v-data-table translation is title:text and field:value (rename "title" as "text" and "field" as "value")
       return this.collections.collection.fields.map(f => {
-        return { title: f.header, field: f.header };
+        return { text: f.header, value: f.header };
       });
     },
     getMetadataColumns() {
@@ -317,7 +441,36 @@ export default {
           };
         })
       };
-    }
+    },
+    //methods for the custom fields table
+      editCustomFieldItem (item) {
+        this.editedIndex = this.metadata.indexOf(item)
+        this.editedItem = Object.assign({}, item)
+        this.dialog = true
+      },
+
+      deleteCustomFieldItem (item) {
+        const index = this.metadata.indexOf(item)
+        confirm('Are you sure you want to delete this item?') && this.metadata.splice(index, 1)
+      },
+
+      close () {
+        this.dialog = false
+        this.$nextTick(() => {
+          this.editedItem = Object.assign({}, this.defaultItem)
+          this.editedIndex = -1
+        })
+      },
+
+      saveCustomField () {
+        if (this.editedIndex > -1) {
+          Object.assign(this.metadata[this.editedIndex], this.editedItem)
+        } else {
+          this.metadata.push(this.editedItem)
+        }
+        this.close()
+      },
+
   }
 };
 </script>
