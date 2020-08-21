@@ -126,8 +126,9 @@ definitions:
       id:
         example: 999
         type: integer
-      imagesKey:
-        type: string
+      imagesKeys:
+        $ref: '#/definitions/model.StringSet'
+        type: object
       imagesStatus:
         type: string
       insert_time:
@@ -153,8 +154,9 @@ definitions:
       collection:
         example: 999
         type: integer
-      imagesKey:
-        type: string
+      imagesKeys:
+        $ref: '#/definitions/model.StringSet'
+        type: object
       imagesStatus:
         type: string
       metadata:
@@ -284,6 +286,10 @@ definitions:
       type:
         type: string
     type: object
+  model.StringSet:
+    items:
+      type: string
+    type: array
 host: api.ourroots.org
 info:
   contact:
@@ -706,14 +712,16 @@ paths:
       - content
   /posts:
     get:
-      operationId: getSettings
+      operationId: getPosts
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/model.Settings'
+            items:
+              $ref: '#/definitions/model.Post'
+            type: array
         "500":
           description: Server error
           schema:
@@ -729,9 +737,9 @@ paths:
         - openid
         - profile
         - email
-      summary: returns goobal settings
+      summary: returns all posts
       tags:
-      - settings
+      - posts
     post:
       consumes:
       - application/json

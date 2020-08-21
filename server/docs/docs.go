@@ -687,15 +687,18 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "settings"
+                    "posts"
                 ],
-                "summary": "returns goobal settings",
-                "operationId": "getSettings",
+                "summary": "returns all posts",
+                "operationId": "getPosts",
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/model.Settings"
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.Post"
+                            }
                         }
                     },
                     "500": {
@@ -1847,8 +1850,9 @@ var doc = `{
                     "type": "integer",
                     "example": 999
                 },
-                "imagesKey": {
-                    "type": "string"
+                "imagesKeys": {
+                    "type": "object",
+                    "$ref": "#/definitions/model.StringSet"
                 },
                 "imagesStatus": {
                     "type": "string"
@@ -1885,8 +1889,9 @@ var doc = `{
                     "type": "integer",
                     "example": 999
                 },
-                "imagesKey": {
-                    "type": "string"
+                "imagesKeys": {
+                    "type": "object",
+                    "$ref": "#/definitions/model.StringSet"
                 },
                 "imagesStatus": {
                     "type": "string"
@@ -2076,6 +2081,12 @@ var doc = `{
                 "type": {
                     "type": "string"
                 }
+            }
+        },
+        "model.StringSet": {
+            "type": "array",
+            "items": {
+                "type": "string"
             }
         }
     },

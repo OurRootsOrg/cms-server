@@ -4,6 +4,7 @@ import (
 	"archive/zip"
 	"bytes"
 	"context"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
@@ -68,12 +69,23 @@ func TestImagesWriter(t *testing.T) {
 
 	// write an object
 	imagesKey := "/2020-08-10/2020-08-10T00:00:00.000000000Z"
-	w, err := bucket.NewWriter(ctx, imagesKey+".zip", nil)
+	w, err := bucket.NewWriter(ctx, imagesKey, nil)
 	assert.NoError(t, err)
 	_, err = io.Copy(w, bytes.NewBuffer(zipBytes))
 	assert.NoError(t, err)
 	err = w.Close()
 	assert.NoError(t, err)
+	log.Printf("[DEBUG] Wrote object %s", imagesKey)
+
+	// write a second object
+	imagesKey2 := "/2020-08-11/2020-08-11T00:00:00.000000000Z"
+	w, err = bucket.NewWriter(ctx, imagesKey2, nil)
+	assert.NoError(t, err)
+	_, err = io.Copy(w, bytes.NewBuffer(zipBytes))
+	assert.NoError(t, err)
+	err = w.Close()
+	assert.NoError(t, err)
+	log.Printf("[DEBUG] Wrote object %s", imagesKey2)
 
 	// Add a test category and test collection and test post for referential integrity
 	testCategory := createTestCategory(t, p)
@@ -84,8 +96,8 @@ func TestImagesWriter(t *testing.T) {
 	// Add a Post
 	in := model.PostIn{
 		PostBody: model.PostBody{
-			Name:      "Test Post",
-			ImagesKey: imagesKey,
+			Name:       "Test Post",
+			ImagesKeys: model.StringSet{imagesKey},
 		},
 		Collection: testCollection.ID,
 	}
@@ -107,7 +119,7 @@ func TestImagesWriter(t *testing.T) {
 	}
 	assert.Equal(t, model.PostDraft, post.ImagesStatus, "Expected post to be Draft, got %s", post.ImagesStatus)
 
-	prefix := imagesKey + "/"
+	prefix := fmt.Sprintf(api.ImagesPrefix, post.ID)
 	// read images for post
 	li := bucket.List(&blob.ListOptions{
 		Prefix: prefix,
@@ -123,14 +135,35 @@ func TestImagesWriter(t *testing.T) {
 		assert.True(t, zipNames[suffix])
 	}
 
-	// delete post
-	errors = testAPI.DeletePost(ctx, testPost.ID)
+	in = model.PostIn{
+		PostBody: model.PostBody{
+			Name:       "Test Post 2",
+			ImagesKeys: model.StringSet{imagesKey, imagesKey2},
+		},
+		Collection: testCollection.ID,
+	}
+	log.Printf("[DEBUG] Adding post %#v", in)
+	testPost2, errors := testAPI.AddPost(ctx, in)
 	assert.Nil(t, errors)
 
-	// images should be removed
-	// images, errors = testAPI.GetImagesForPost(ctx, testPost.ID)
-	// assert.Nil(t, errors)
-	// assert.Equal(t, 0, len(images.Images), "Expected empty slice, got %#v", images)
+	// wait up to 10 seconds
+	for i := 0; i < 10; i++ {
+		// read post and look for Draft
+		post, errors = testAPI.GetPost(ctx, testPost2.ID)
+		assert.Nil(t, errors)
+		if post.ImagesStatus == model.PostDraft {
+			break
+		}
+		log.Printf("Waiting for imageswriter %d\n", i)
+		time.Sleep(1 * time.Second)
+	}
+	assert.Equal(t, model.PostDraft, post.ImagesStatus, "Expected post to be Draft, got %s", post.ImagesStatus)
+
+	// delete posts
+	errors = testAPI.DeletePost(ctx, testPost.ID)
+	assert.Nil(t, errors)
+	errors = testAPI.DeletePost(ctx, testPost2.ID)
+	assert.Nil(t, errors)
 }
 
 func createTestCategory(t *testing.T, p model.CategoryPersister) *model.Category {
