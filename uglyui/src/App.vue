@@ -129,5 +129,6 @@ export default {
 .rowHover {
   cursor: pointer;
 }
+/* heather TODO copy the colunm width css here */
 
 </style>

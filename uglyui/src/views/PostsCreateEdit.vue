@@ -76,75 +76,10 @@
               :headers="getMetadataColumns()"
               dense
             >
-            </v-data-table>            
+            </v-data-table>   
+
           </div>
 
-<!-- the new crud table-->
-<v-row style="background:#f1f1f1">
-  <v-col>
-<v-data-table
-    :headers="getMetadataColumns()"
-    :items="metadata"
-  >
-    <template v-slot:footer>
-      <v-toolbar flat color="white">
-        <v-dialog v-model="dialog" max-width="500px">
-          <template v-slot:activator="{ on, attrs }">
-            <v-btn
-              color="primary"
-              dark
-              class="mb-2"
-              v-bind="attrs"
-              v-on="on"
-            >New Item</v-btn>
-          </template>
-          <v-card>
-            <v-card-title>
-              <span class="headline">{{ formTitle }}</span>
-            </v-card-title>
-
-            <v-card-text>
-              <v-container>
-                <v-row>
-                  <v-col cols="12" md="6">
-                    <v-text-field v-model="editedItem.name" label="Custom field title"></v-text-field>
-                  </v-col>
-                  <v-col cols="12" md="6">
-                    <v-text-field v-model="editedItem.metadata" label="Custom field data"></v-text-field>
-                  </v-col>
-                </v-row>
-              </v-container>
-            </v-card-text>
-
-            <v-card-actions>
-              <v-spacer></v-spacer>
-              <v-btn color="blue darken-1" text @click="closeCustomField">Cancel</v-btn>
-              <v-btn color="blue darken-1" text @click="saveCustomField">Save</v-btn>
-            </v-card-actions>
-          </v-card>
-        </v-dialog>
-      </v-toolbar>
-    </template>
-    <template v-slot:item.actions="{ item }">
-      <v-icon
-        small
-        class="mr-2"
-        @click="editCustomFieldItem(item)"
-      >
-        mdi-pencil
-      </v-icon>
-      <v-icon
-        small
-        @click="deleteCustomFieldItem(item)"
-      >
-        mdi-delete
-      </v-icon>
-    </template>
-  </v-data-table>    
-  </v-col>
-</v-row>
-
-<!-- end the new crud table-->
 
           <p v-if="$v.$anyError" class="errorMessage">
             Please fill out the required field(s).
@@ -302,11 +237,7 @@ export default {
     },
     isUnpublishable() {
       return this.post.id && this.post.recordsStatus === "Published";
-    },
-    //crud metadata table add or edit
-    formTitle () {
-      return this.editedIndex === -1 ? 'New Item' : 'Edit Item'
-    },    
+    },  
     ...mapState(["collections", "posts", "records", "settings"])
   },
   validations: {
@@ -448,12 +379,6 @@ export default {
         this.editedItem = Object.assign({}, item)
         this.dialog = true
       },
-
-      deleteCustomFieldItem (item) {
-        const index = this.metadata.indexOf(item)
-        confirm('Are you sure you want to delete this item?') && this.metadata.splice(index, 1)
-      },
-
       close () {
         this.dialog = false
         this.$nextTick(() => {
@@ -461,7 +386,6 @@ export default {
           this.editedIndex = -1
         })
       },
-
       saveCustomField () {
         if (this.editedIndex > -1) {
           Object.assign(this.metadata[this.editedIndex], this.editedItem)
@@ -470,14 +394,7 @@ export default {
         }
         this.close()
       },
-
   }
 };
 </script>
 
-<!-- Add "scoped" attribute to limit CSS to this component only -->
-<style scoped>
-.btn {
-  margin: 16px;
-}
-</style>

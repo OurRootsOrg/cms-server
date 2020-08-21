@@ -75,8 +75,8 @@
        -->
       <!-- <v-btn small color="primary" class="mt-2" href="" @click.prevent="addField">Add a row</v-btn> -->
 
-      <v-row class="mt-5">
-        <v-col>
+      <v-row no-gutters class="mt-5">
+        <v-col class="mb-0">
           <h3>Define spreadsheet columns
             <v-tooltip bottom maxWidth="600px">
               <template v-slot:activator="{ on, attrs }">
@@ -98,6 +98,7 @@
             }"
             :items-per-page="25"      
             dense
+            v-columns-resizable
           >
             <template v-slot:footer>
               <v-toolbar flat class="ml-n3">
@@ -160,9 +161,9 @@
               mdi-delete
             </v-icon>
           </template>
-          <template v-slot:no-data>
-            <!-- <v-btn color="primary" @click="initialize">Reset</v-btn> -->
-          </template>
+          <!-- <template v-slot:no-data>
+             <v-btn color="primary" @click="initialize">Reset</v-btn> 
+          </template> -->
             <template v-slot:item.handle>
               <v-btn icon small>
                 <v-icon left>mdi-drag-horizontal-variant</v-icon>
@@ -212,9 +213,9 @@
         (you need at least one)
       </span> -->
 
-      <v-row class="mt-5">
-        <v-col>
-          <h3 class="mt-4">Define how spreadsheet data is displayed and indexed
+      <v-row no-gutters>
+        <v-col class="mt-0">
+          <h3>Define how spreadsheet data is displayed and indexed
             <v-tooltip bottom maxWidth="600px">
               <template v-slot:activator="{ on, attrs }">
                 <v-icon
@@ -254,17 +255,35 @@
                       <v-container class="pl-0">
                         <v-row>
                           <v-col cols="12" sm="6">
-                            <v-text-field dense v-model="editedMappingItem.header"  label="Spreadsheet header" placeholder="Column title in your spreadsheet"></v-text-field>
+                            <!-- <v-text-field dense v-model="editedMappingItem.header"  label="Spreadsheet header" placeholder="Column title in your spreadsheet"></v-text-field> -->
+                            <v-select 
+                               v-model="editedMappingItem.header" 
+                               label="Spreadsheet header"      
+                               :items="spreadsheetColumnHeaders"                          
+                               dense
+                            >
+                            </v-select>
                           </v-col>
                           <v-col cols="12" sm="6">
-                            <v-text-field dense v-model="editedMappingItem.dbField"  label="Record detail field" placeholder="Title as you want it shown in search results"></v-text-field>                   
+                            <v-text-field dense v-model="editedMappingItem.dbField"  label="Search results title" placeholder="Title for search results"></v-text-field>                   
                           </v-col>
                           <v-col cols="12">
                             <v-select
                              v-model="editedMappingItem.ixRole" 
-                             label="Role" 
+                             label="Relationship of this information to the primary search person" 
                              :items="ixRoleMapOptions" 
-                            ></v-select>
+                            >
+                              <v-tooltip slot="append" maxWidth="600px">
+                                <template v-slot:activator="{ on, attrs }">
+                                  <v-icon
+                                    v-bind="attrs"
+                                    v-on="on"
+                                    small
+                                  >mdi-information</v-icon>
+                                </template>
+                                <span>Select the role/relationtip to the primary person (principal) the information plays in the evidence. This affects how the information will be displayed in search results.</span>
+                              </v-tooltip>                            
+                            </v-select>
                           </v-col>
                           <v-col cols="12">
                             <v-select
@@ -286,23 +305,9 @@
               </v-toolbar>
             </template>
             <template v-slot:item.actions="{ item }">
-            <v-icon
-              small
-              class="mr-2"
-              @click="editMapping(item)"
-            >
-              mdi-pencil
-            </v-icon>
-            <v-icon
-              small
-              @click="deleteMapping(item)"
-            >
-              mdi-delete
-            </v-icon>
-          </template>
-          <template v-slot:no-data>
-            <!-- <v-btn color="primary" @click="initialize">Reset</v-btn> -->
-          </template>
+              <v-icon small class="mr-2" @click="editMapping(item)">mdi-pencil</v-icon>
+              <v-icon small @click="deleteMapping(item)">mdi-delete</v-icon>
+            </template>
             <template v-slot:item.handle>
               <v-btn icon small>
                 <v-icon left>mdi-drag-horizontal-variant</v-icon>
@@ -537,6 +542,9 @@ export default {
         {value: "otherDate", text: "Other Date"},
         {value: "otherPlace", text: "Other Place"}             
       ],
+      spreadsheetColumnOptions: [
+        {value: "get this from the columns", text: "Spreadsheet column"}
+      ],
       //end of data for experimental table; keep everything after this
       collection: { id: null, name: null, categories: [], fields: [], mappings: [] },
       fieldColumns: [
@@ -698,6 +706,9 @@ export default {
           };
         });
     },
+    spreadsheetColumnHeaders() {
+      return this.collection.fields.map(f => f.header);
+    },
     formTitle () {
       return this.editedIndex === -1 ? 'New Spreadsheet Item' : 'Edit Spreadsheet Item'
     },
@@ -731,25 +742,18 @@ export default {
     //   this.collection.fields = data;
     //   this.touch("fields");
     // },
-
-    //QUESTION: Should fieldsDelete now cover the item? (this SHOULD be the same as the crud delete)
     // fieldsDelete(ix) {
     //   let header = this.collection.fields[ix].header;
     //   this.collection.fields.splice(ix, 1);
     //   this.syncFieldsMappings(null, header);
     //   this.touch("fields");
-    // },
-
-    //QUESTION should fieldsEdited(cell) now be fieldsEdited(item) and do we need the item index or id? And how to differentiate
-    //is it a spreadsheet header field which needs to go into the mapping section
+    // }, 
     // fieldsEdited(cell) {
     //   if (cell.getField() === "header") {
     //     this.syncFieldsMappings(cell.getValue(), cell.getOldValue());
     //   }
     //   this.touch("fields");
-    // },
-
-    //when i do the first table edit, the save function needs to have lines if...through touch fields
+    // }, 
     // fieldsEdited(item) {
     //   if (item.getField() === "header") {
     //     this.syncFieldsMappings(item.getValue(), item.getOldValue());
@@ -757,7 +761,6 @@ export default {
     //   this.touch("fields");
     // },    
 
-    //when I create the edited index -1 set the ixRole and ixField to na
     addMapping() {
       this.collection.mappings.push({ ixRole: "na", ixField: "na" });
     },
@@ -792,8 +795,6 @@ export default {
       }
       this.touch("mappings");
     },    
-
-    //make sure syncFieldsMappings gets called with delete fired like this.syncFieldsMappings(null, item.header);
     syncFieldsMappings(newValue, oldValue) {
       if (newValue) {
         if (oldValue) {
@@ -960,21 +961,21 @@ export default {
       closeMapping () {
         this.dialogMapping = false
         this.$nextTick(() => {
-          this.editedMappingItem = Object.assign({}, this.defaultItem)
+          this.editedMappingItem = Object.assign({}, this.defaultMappingItem)
           this.editedIndex = -1
         })
       },
 
       saveMapping () {
         if (this.editedIndex > -1) {
-          if (this.editedMappingItem.header !== this.collection.mappings[this.editedIndex].header) {
-            this.syncFieldsMappings(this.editedMappingItem.header, this.collection.mappings[this.editedIndex].header);
-          }
+          // if (this.editedMappingItem.header !== this.collection.mappings[this.editedIndex].header) {
+          //   this.syncFieldsMappings(this.editedMappingItem.header, this.collection.mappings[this.editedIndex].header);
+          // }
           Object.assign(this.collection.mappings[this.editedIndex], this.editedMappingItem);
           this.touch("fields");
         } else {
-          this.collection.fields.push(this.editedMappingItem)
-          this.syncFieldsMappings(this.editedMappingItem.header, null);
+          this.collection.mappings.push(this.editedMappingItem)
+          // this.syncFieldsMappings(this.editedMappingItem.header, null);
         }
         this.closeMapping()
       }
