@@ -2,11 +2,77 @@ package api
 
 import (
 	"encoding/json"
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
+
+func TestGetDatesYearsDecades(t *testing.T) {
+	tests := []struct {
+		encodedDate string
+		dates       []int
+		years       []int
+		decades     []int
+	}{
+		{
+			encodedDate: "19010319",
+			dates:       []int{19010319},
+			years:       []int{1901},
+			decades:     []int{1900},
+		},
+		{
+			encodedDate: "19010319,19010419",
+			dates:       []int{19010319, 19010419},
+			years:       []int{1901},
+			decades:     []int{1900},
+		},
+		{
+			encodedDate: "19010319,19020419",
+			dates:       []int{19010319, 19020419},
+			years:       []int{1901, 1902},
+			decades:     []int{1900},
+		},
+		{
+			encodedDate: "19010319,18990101-19011231",
+			dates:       []int{19010319},
+			years:       []int{1899, 1900, 1901},
+			decades:     []int{1890, 1900},
+		},
+	}
+
+	for i, test := range tests {
+		dates, years, decades, valid := getDatesYearsDecades(test.encodedDate)
+		assert.True(t, valid, i)
+		assert.Equal(t, test.dates, dates, i)
+		assert.Equal(t, test.years, years, i)
+		assert.Equal(t, test.decades, decades, i)
+	}
+}
+
+func TestGetPlaceLevels(t *testing.T) {
+	tests := []struct {
+		place  string
+		levels []string
+	}{
+		{
+			place:  "United States",
+			levels: []string{"United States"},
+		},
+		{
+			place:  "Alabama, United States",
+			levels: []string{"United States,", "United States,Alabama"},
+		},
+		{
+			place:  "Autauga, Alabama, United States",
+			levels: []string{"United States,", "United States,Alabama,", "United States,Alabama,Autauga"},
+		},
+	}
+
+	for _, test := range tests {
+		levels := getPlaceLevels(test.place)
+		assert.Equal(t, test.levels, levels)
+	}
+}
 
 func TestSearchQuery(t *testing.T) {
 	tests := []struct {
@@ -96,14 +162,50 @@ func TestSearchQuery(t *testing.T) {
 					  ]}}
 					]}},"from":0,"size":10}`,
 		},
+		{
+			req: SearchRequest{
+				Surname:          "Flintstone",
+				SurnameFuzziness: FuzzyNameExact,
+				BirthPlace:       "Autauga, Alabama, United States",
+			},
+			query: `{"query":{"bool":{"must":[
+					  {"bool":{"must":[
+						{"match":{"surname":{"query":"Flintstone","boost":1}}}
+					  ]}}
+					],"should":[
+					  {"dis_max":{"queries":[
+						{"term":{"birthPlace3":{"value":"United States,Alabama,Autauga","boost":1.0}}},
+						{"term":{"birthPlace3":{"value":"United States,Alabama,Autauga,","boost":1.0}}},
+						{"term":{"birthPlace2":{"value":"United States,Alabama","boost":0.4}}}
+					  ]}}
+					]}},"from":0,"size":10}`,
+		},
+		{
+			req: SearchRequest{
+				Surname:             "Flintstone",
+				SurnameFuzziness:    FuzzyNameExact,
+				BirthPlace:          "Autauga, Alabama, United States",
+				BirthPlaceFuzziness: FuzzyPlaceExact,
+			},
+			query: `{"query":{"bool":{"must":[
+					  {"bool":{"must":[
+						{"match":{"surname":{"query":"Flintstone","boost":1}}}
+					  ]}},
+					  {"dis_max":{"queries":[
+						{"term":{"birthPlace3":{"value":"United States,Alabama,Autauga","boost":1.0}}},
+						{"term":{"birthPlace3":{"value":"United States,Alabama,Autauga,","boost":1.0}}}
+					  ]}}
+					]}},"from":0,"size":10}`,
+		},
 	}
 
-	for _, test := range tests {
+	for i, test := range tests {
 		var search Search
 		json.Unmarshal([]byte(test.query), &search)
 		result := constructSearchQuery(&test.req)
-		bs, _ := json.Marshal(result)
-		fmt.Println(string(bs))
-		assert.EqualValues(t, search, *result)
+		//bs, _ := json.Marshal(result)
+		//fmt.Printf("%d expected=%s\n", i, test.query)
+		//fmt.Printf("%d actual  =%s\n", i, string(bs))
+		assert.EqualValues(t, search, *result, i)
 	}
 }

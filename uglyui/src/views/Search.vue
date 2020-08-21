@@ -268,17 +268,49 @@
           <h4>Birth</h4>
         </v-col>
         <v-col>
-          <v-text-field
-            outlined
-            dense
-            v-model="query.birthDate"
-            type="text"
-            placeholder="Birth year"
-            class="ma-0 mb-n2"
-          ></v-text-field>
-        </v-col>
-        <v-col>
-          <v-select outlined :items="dateRanges" v-model="query.birthDateFuzziness" label="Exactness"></v-select>
+          <v-row>
+            <v-col>
+              <v-text-field
+                outlined
+                dense
+                v-model="query.birthDate"
+                type="text"
+                placeholder="Birth year"
+                class="ma-0 mb-n2"
+              ></v-text-field>
+            </v-col>
+            <v-col>
+              <v-select outlined :items="dateRanges" v-model="query.birthDateFuzziness" label="Exactness"></v-select>
+            </v-col>
+          </v-row>
+          <v-row>
+            <v-col>
+              <v-autocomplete
+                outlined
+                dense
+                v-model="query.birthPlace"
+                :loading="birthPlaceLoading"
+                :items="placeItems"
+                :search-input.sync="birthPlaceSearch"
+                no-filter
+                auto-select-first
+                flat
+                hide-no-data
+                hide-details
+                solo
+                placeholder="Birth place"
+                class="ma-0 mb-n2"
+              ></v-autocomplete>
+            </v-col>
+            <v-col>
+              <v-select
+                outlined
+                :items="placeFuzzinessLevels"
+                v-model="query.birthPlaceFuzziness"
+                label="Exactness"
+              ></v-select>
+            </v-col>
+          </v-row>
         </v-col>
       </v-row>
       <!--Residence-->
@@ -287,17 +319,54 @@
           <h4>Residence</h4>
         </v-col>
         <v-col>
-          <v-text-field
-            outlined
-            dense
-            v-model="query.residenceDate"
-            type="text"
-            placeholder="Residence year"
-            class="ma-0 mb-n2"
-          ></v-text-field>
-        </v-col>
-        <v-col>
-          <v-select outlined :items="dateRanges" v-model="query.residenceDateFuzziness" label="Exactness"></v-select>
+          <v-row>
+            <v-col>
+              <v-text-field
+                outlined
+                dense
+                v-model="query.residenceDate"
+                type="text"
+                placeholder="Residence year"
+                class="ma-0 mb-n2"
+              ></v-text-field>
+            </v-col>
+            <v-col>
+              <v-select
+                outlined
+                :items="dateRanges"
+                v-model="query.residenceDateFuzziness"
+                label="Exactness"
+              ></v-select>
+            </v-col>
+          </v-row>
+          <v-row>
+            <v-col>
+              <v-autocomplete
+                outlined
+                dense
+                v-model="query.residencePlace"
+                :loading="residencePlaceLoading"
+                :items="placeItems"
+                :search-input.sync="residencePlaceSearch"
+                no-filter
+                auto-select-first
+                flat
+                hide-no-data
+                hide-details
+                solo
+                placeholder="Residence place"
+                class="ma-0 mb-n2"
+              ></v-autocomplete>
+            </v-col>
+            <v-col>
+              <v-select
+                outlined
+                :items="placeFuzzinessLevels"
+                v-model="query.residencePlaceFuzziness"
+                label="Exactness"
+              ></v-select>
+            </v-col>
+          </v-row>
         </v-col>
       </v-row>
       <!--Marriage-->
@@ -306,17 +375,49 @@
           <h4>Marriage</h4>
         </v-col>
         <v-col>
-          <v-text-field
-            outlined
-            dense
-            v-model="query.marriageDate"
-            type="text"
-            placeholder="Marriage year"
-            class="ma-0 mb-n2"
-          ></v-text-field>
-        </v-col>
-        <v-col>
-          <v-select outlined :items="dateRanges" v-model="query.marriageDateFuzziness" label="Exactness"></v-select>
+          <v-row>
+            <v-col>
+              <v-text-field
+                outlined
+                dense
+                v-model="query.marriageDate"
+                type="text"
+                placeholder="Marriage year"
+                class="ma-0 mb-n2"
+              ></v-text-field>
+            </v-col>
+            <v-col>
+              <v-select outlined :items="dateRanges" v-model="query.marriageDateFuzziness" label="Exactness"></v-select>
+            </v-col>
+          </v-row>
+          <v-row>
+            <v-col>
+              <v-autocomplete
+                outlined
+                dense
+                v-model="query.marriagePlace"
+                :loading="marriagePlaceLoading"
+                :items="placeItems"
+                :search-input.sync="marriagePlaceSearch"
+                no-filter
+                auto-select-first
+                flat
+                hide-no-data
+                hide-details
+                solo
+                placeholder="Marriage place"
+                class="ma-0 mb-n2"
+              ></v-autocomplete>
+            </v-col>
+            <v-col>
+              <v-select
+                outlined
+                :items="placeFuzzinessLevels"
+                v-model="query.marriagePlaceFuzziness"
+                label="Exactness"
+              ></v-select>
+            </v-col>
+          </v-row>
         </v-col>
       </v-row>
       <!--Death-->
@@ -325,17 +426,49 @@
           <h4>Death</h4>
         </v-col>
         <v-col>
-          <v-text-field
-            outlined
-            dense
-            v-model="query.deathDate"
-            type="text"
-            placeholder="Death year"
-            class="ma-0 mb-n2"
-          ></v-text-field>
-        </v-col>
-        <v-col>
-          <v-select outlined :items="dateRanges" v-model="query.deathDateFuzziness" label="Exactness"></v-select>
+          <v-row>
+            <v-col>
+              <v-text-field
+                outlined
+                dense
+                v-model="query.deathDate"
+                type="text"
+                placeholder="Death year"
+                class="ma-0 mb-n2"
+              ></v-text-field>
+            </v-col>
+            <v-col>
+              <v-select outlined :items="dateRanges" v-model="query.deathDateFuzziness" label="Exactness"></v-select>
+            </v-col>
+          </v-row>
+          <v-row>
+            <v-col>
+              <v-autocomplete
+                outlined
+                dense
+                v-model="query.deathPlace"
+                :loading="deathPlaceLoading"
+                :items="placeItems"
+                :search-input.sync="deathPlaceSearch"
+                no-filter
+                auto-select-first
+                flat
+                hide-no-data
+                hide-details
+                solo
+                placeholder="Death place"
+                class="ma-0 mb-n2"
+              ></v-autocomplete>
+            </v-col>
+            <v-col>
+              <v-select
+                outlined
+                :items="placeFuzzinessLevels"
+                v-model="query.deathPlaceFuzziness"
+                label="Exactness"
+              ></v-select>
+            </v-col>
+          </v-row>
         </v-col>
       </v-row>
       <!--Any-->
@@ -344,17 +477,49 @@
           <h4>Any</h4>
         </v-col>
         <v-col>
-          <v-text-field
-            outlined
-            dense
-            v-model="query.anyDate"
-            type="text"
-            placeholder="Any year"
-            class="ma-0 mb-n2"
-          ></v-text-field>
-        </v-col>
-        <v-col>
-          <v-select outlined :items="dateRanges" v-model="query.anyDateFuzziness" label="Exactness"></v-select>
+          <v-row>
+            <v-col>
+              <v-text-field
+                outlined
+                dense
+                v-model="query.anyDate"
+                type="text"
+                placeholder="Any year"
+                class="ma-0 mb-n2"
+              ></v-text-field>
+            </v-col>
+            <v-col>
+              <v-select outlined :items="dateRanges" v-model="query.anyDateFuzziness" label="Exactness"></v-select>
+            </v-col>
+          </v-row>
+          <v-row>
+            <v-col>
+              <v-autocomplete
+                outlined
+                dense
+                v-model="query.anyPlace"
+                :loading="anyPlaceLoading"
+                :items="placeItems"
+                :search-input.sync="anyPlaceSearch"
+                no-filter
+                auto-select-first
+                flat
+                hide-no-data
+                hide-details
+                solo
+                placeholder="Any place"
+                class="ma-0 mb-n2"
+              ></v-autocomplete>
+            </v-col>
+            <v-col>
+              <v-select
+                outlined
+                :items="placeFuzzinessLevels"
+                v-model="query.anyPlaceFuzziness"
+                label="Exactness"
+              ></v-select>
+            </v-col>
+          </v-row>
         </v-col>
       </v-row>
 
@@ -375,6 +540,7 @@
 
 <script>
 import SearchResult from "../components/SearchResult.vue";
+import Server from "@/services/Server.js";
 import NProgress from "nprogress";
 import { mapState } from "vuex";
 
@@ -390,7 +556,12 @@ export default {
         marriageDateFuzziness: 0,
         residenceDateFuzziness: 0,
         deathDateFuzziness: 0,
-        anyDateFuzziness: 0
+        anyDateFuzziness: 0,
+        birthPlaceFuzziness: 0,
+        marriagePlaceFuzziness: 0,
+        residencePlaceFuzziness: 0,
+        deathPlaceFuzziness: 0,
+        anyPlaceFuzziness: 0
       },
       fuzziness: {
         principalGiven: [0],
@@ -428,11 +599,67 @@ export default {
         { value: 4, text: "Sounds like (narrow)" },
         { value: 8, text: "Sounds like (broad)" },
         { value: 16, text: "Fuzzy" }
-      ]
+      ],
+      placeFuzzinessLevels: [
+        { value: 0, text: "Default" },
+        { value: 1, text: "Exact" },
+        { value: 3, text: "Exact and higher-level places" }
+      ],
+      wildcardRegex: /[~*?]/,
+      placeItems: [],
+      placeTimeout: null,
+      birthPlaceSearch: "",
+      marriagePlaceSearch: "",
+      residencePlaceSearch: "",
+      deathPlaceSearch: "",
+      anyPlaceSearch: "",
+      birthPlaceLoading: false,
+      marriagePlaceLoading: false,
+      residencePlaceLoading: false,
+      deathPlaceLoading: false,
+      anyPlaceLoading: false
     };
   },
   computed: mapState(["search"]),
+  watch: {
+    birthPlaceSearch(val) {
+      val && val !== this.query.birthPlace && this.placeSearch(val, "birthPlaceLoading");
+    },
+    marriagePlaceSearch(val) {
+      val && val !== this.query.marriagePlace && this.placeSearch(val, "marriagePlaceLoading");
+    },
+    residencePlaceSearch(val) {
+      val && val !== this.query.residencePlace && this.placeSearch(val, "residencePlaceLoading");
+    },
+    deathPlaceSearch(val) {
+      val && val !== this.query.deathPlace && this.placeSearch(val, "deathPlaceLoading");
+    },
+    anyPlaceSearch(val) {
+      val && val !== this.query.anyPlace && this.placeSearch(val, "anyPlaceLoading");
+    }
+  },
   methods: {
+    placeSearch(text, loading) {
+      if (this.placeTimeout) {
+        clearTimeout(this.placeTimeout);
+      }
+      this[loading] = true;
+      this.placeTimeout = setTimeout(() => {
+        this.placeTimeout = null;
+        if (this.wildcardRegex.test(text)) {
+          this.placeItems = [text];
+          this[loading] = false;
+        } else {
+          Server.placeSearch(text)
+            .then(res => {
+              this.placeItems = res.data.map(p => p.fullName);
+            })
+            .finally(() => {
+              this[loading] = false;
+            });
+        }
+      }, 400);
+    },
     nameFuzzinessChanged(fuzziness) {
       if (this.fuzziness[fuzziness].length === 0) {
         this.fuzziness[fuzziness] = [0];

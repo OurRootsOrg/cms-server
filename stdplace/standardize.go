@@ -15,6 +15,7 @@ import (
 	"github.com/ourrootsorg/cms-server/stdtext"
 )
 
+const StdSuffix = "_std"
 const topLevel = 1
 const maxLevels = 4
 const maxRecursion = 7
@@ -53,7 +54,19 @@ func NewStandardizer(ctx context.Context, persister model.PlacePersister) (*Stan
 	if err != nil {
 		return nil, err
 	}
-	settings, err := persister.SelectPlaceSettings(ctx)
+
+	var settings *model.PlaceSettings
+	for i := 0; i < 4; i++ {
+		if i > 0 {
+			sleepSeconds := int(math.Pow(2, float64(i-1)))
+			log.Printf("[DEBUG] PlaceSettings not found; sleep for %d milliseconds\n", sleepSeconds)
+			time.Sleep(time.Duration(sleepSeconds) * time.Second)
+		}
+		settings, err = persister.SelectPlaceSettings(ctx)
+		if err == nil || !model.ErrNotFound.Matches(err) {
+			break
+		}
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -539,13 +552,15 @@ func (ps *Standardizer) checkAncestorMatch(id uint32, ids []uint32, max int) (bo
 }
 
 type placeRequest struct {
-	id uint32
-	ch chan placeResponse
+	id    uint32
+	ch    chan placeResponse
+	force bool
 }
 
 type wordRequest struct {
-	word string
-	ch   chan wordResponse
+	word  string
+	ch    chan wordResponse
+	force bool
 }
 
 type placeResponse struct {
@@ -574,39 +589,41 @@ func (ps *Standardizer) getWord(word string) ([]uint32, error) {
 
 func (ps *Standardizer) placeRequestListener(ch chan placeRequest) {
 	ctx := context.Background()
-	cancelChan := make(chan bool, 1)
+	var cancelChan chan bool
 	for req := range ch {
-		// if in LRU cache, reply immediately
-		if p, ok := ps.placeResponseCache.Get(req.id); ok {
-			if place, ok := p.(model.Place); ok {
-				req.ch <- placeResponse{
-					place: &place,
-					err:   nil,
+		if req.ch != nil {
+			// if in LRU cache, reply immediately
+			if p, ok := ps.placeResponseCache.Get(req.id); ok {
+				if place, ok := p.(model.Place); ok {
+					req.ch <- placeResponse{
+						place: &place,
+						err:   nil,
+					}
+					continue
 				}
-				continue
 			}
+			// add request to requests map
+			ps.placeRequestMap[req.id] = append(ps.placeRequestMap[req.id], req.ch)
 		}
-		// add request to requests map
-		ps.placeRequestMap[req.id] = append(ps.placeRequestMap[req.id], req.ch)
 		// if this is the first request, set up a timeout
-		if len(ps.placeRequestMap) == 1 {
+		if !req.force && len(ps.placeRequestMap) == 1 {
 			// set up timeout
 			cancelChan = make(chan bool, 1)
-			go func(cancelChan chan bool) {
+			go func(reqChan chan placeRequest, cancelChan chan bool) {
 				select {
 				case <-cancelChan:
 					return
 				case <-time.After(timeoutMillis * time.Millisecond):
-					// issue requests and clear request map
-					go func(requests map[uint32][]chan placeResponse) {
-						ps.issuePlaceRequests(ctx, requests)
-					}(ps.placeRequestMap)
-					ps.placeRequestMap = map[uint32][]chan placeResponse{}
+					reqChan <- placeRequest{force: true}
 				}
-			}(cancelChan)
-		} else if len(ps.placeRequestMap) == maxRequests {
+			}(ch, cancelChan)
+		}
+		if req.force || len(ps.placeRequestMap) == maxRequests {
 			// cancel timeout, issue requests, and clear request map
-			cancelChan <- true
+			if cancelChan != nil {
+				cancelChan <- true
+				cancelChan = nil
+			}
 			go func(requests map[uint32][]chan placeResponse) {
 				ps.issuePlaceRequests(ctx, requests)
 			}(ps.placeRequestMap)
@@ -616,6 +633,9 @@ func (ps *Standardizer) placeRequestListener(ch chan placeRequest) {
 }
 
 func (ps *Standardizer) issuePlaceRequests(ctx context.Context, reqs map[uint32][]chan placeResponse) {
+	if len(reqs) == 0 {
+		return
+	}
 	var ids []uint32
 	for id := range reqs {
 		ids = append(ids, id)
@@ -650,39 +670,41 @@ func (ps *Standardizer) issuePlaceRequests(ctx context.Context, reqs map[uint32]
 
 func (ps *Standardizer) wordRequestListener(ch chan wordRequest) {
 	ctx := context.Background()
-	cancelChan := make(chan bool, 1)
+	var cancelChan chan bool
 	for req := range ch {
-		// if in LRU cache, reply immediately
-		if w, ok := ps.wordResponseCache.Get(req.word); ok {
-			if ids, ok := w.([]uint32); ok {
-				req.ch <- wordResponse{
-					ids: ids,
-					err: nil,
+		if req.ch != nil {
+			// if in LRU cache, reply immediately
+			if w, ok := ps.wordResponseCache.Get(req.word); ok {
+				if ids, ok := w.([]uint32); ok {
+					req.ch <- wordResponse{
+						ids: ids,
+						err: nil,
+					}
+					continue
 				}
-				continue
 			}
+			// add request to requests map
+			ps.wordRequestMap[req.word] = append(ps.wordRequestMap[req.word], req.ch)
 		}
-		// add request to requests map
-		ps.wordRequestMap[req.word] = append(ps.wordRequestMap[req.word], req.ch)
 		// if this is the first request, set up a timeout
-		if len(ps.wordRequestMap) == 1 {
+		if !req.force && len(ps.wordRequestMap) == 1 {
 			// set up timeout
 			cancelChan = make(chan bool, 1)
-			go func(cancelChan chan bool) {
+			go func(reqChan chan wordRequest, cancelChan chan bool) {
 				select {
 				case <-cancelChan:
 					return
 				case <-time.After(timeoutMillis * time.Millisecond):
-					// issue requests and clear request map
-					go func(requests map[string][]chan wordResponse) {
-						ps.issueWordRequests(ctx, requests)
-					}(ps.wordRequestMap)
-					ps.wordRequestMap = map[string][]chan wordResponse{}
+					reqChan <- wordRequest{force: true}
 				}
-			}(cancelChan)
-		} else if len(ps.wordRequestMap) == maxRequests {
+			}(ch, cancelChan)
+		}
+		if req.force || len(ps.wordRequestMap) == maxRequests {
 			// cancel timeout, issue requests, and clear request map
-			cancelChan <- true
+			if cancelChan != nil {
+				cancelChan <- true
+				cancelChan = nil
+			}
 			go func(requests map[string][]chan wordResponse) {
 				ps.issueWordRequests(ctx, requests)
 			}(ps.wordRequestMap)
@@ -692,6 +714,9 @@ func (ps *Standardizer) wordRequestListener(ch chan wordRequest) {
 }
 
 func (ps *Standardizer) issueWordRequests(ctx context.Context, reqs map[string][]chan wordResponse) {
+	if len(reqs) == 0 {
+		return
+	}
 	var words []string
 	for word := range reqs {
 		words = append(words, word)

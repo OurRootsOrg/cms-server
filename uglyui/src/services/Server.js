@@ -42,6 +42,14 @@ export default {
       }
     });
   },
+  currentUser() {
+    return get(`/currentuser`);
+  },
+  placeSearch(prefix) {
+    return get(`places`, {
+      params: { prefix: prefix, count: 8 }
+    });
+  },
   postsGetAll() {
     return get("/posts");
   },

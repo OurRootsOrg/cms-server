@@ -75,7 +75,7 @@ func TestStandardizeDate(t *testing.T) {
 				Second: stddate.Date{},
 				Type:   stddate.CompoundNone,
 			},
-			encoded: "17590225|17600225",
+			encoded: "17590225,17600225",
 		},
 		{
 			text: "ABT 1900",
@@ -91,7 +91,7 @@ func TestStandardizeDate(t *testing.T) {
 				Second: stddate.Date{},
 				Type:   stddate.CompoundNone,
 			},
-			encoded: "19000000|18990101|19011231",
+			encoded: "19000000,18990101-19011231",
 		},
 		{
 			text: "EST. 1900",
@@ -107,7 +107,7 @@ func TestStandardizeDate(t *testing.T) {
 				Second: stddate.Date{},
 				Type:   stddate.CompoundNone,
 			},
-			encoded: "19000000|18900101|19101231",
+			encoded: "19000000,18900101-19101231",
 		},
 		{
 			text: "2/23/1900",
@@ -139,7 +139,7 @@ func TestStandardizeDate(t *testing.T) {
 				Second: stddate.Date{},
 				Type:   stddate.CompoundNone,
 			},
-			encoded: "19000203|19000302",
+			encoded: "19000203,19000302",
 		},
 		{
 			text: "before 1900",
@@ -155,7 +155,7 @@ func TestStandardizeDate(t *testing.T) {
 				Second: stddate.Date{},
 				Type:   stddate.CompoundNone,
 			},
-			encoded: "19000000|18900101|19001231",
+			encoded: "19000000,18900101-19001231",
 		},
 		{
 			text: "AFT 1900",
@@ -171,7 +171,7 @@ func TestStandardizeDate(t *testing.T) {
 				Second: stddate.Date{},
 				Type:   stddate.CompoundNone,
 			},
-			encoded: "19000000|19000101|19101231",
+			encoded: "19000000,19000101-19101231",
 		},
 		{
 			text: "between 1900 and 1910",
@@ -194,7 +194,7 @@ func TestStandardizeDate(t *testing.T) {
 				},
 				Type: stddate.CompoundRange,
 			},
-			encoded: "19000000|19000101|19101231",
+			encoded: "19000000,19000101-19101231",
 		},
 		{
 			text: "1900 to 1910",
@@ -217,7 +217,7 @@ func TestStandardizeDate(t *testing.T) {
 				},
 				Type: stddate.CompoundRange,
 			},
-			encoded: "19000000|19000101|19101231",
+			encoded: "19000000,19000101-19101231",
 		},
 		{
 			text: "JAN QTR 1900",
@@ -240,7 +240,7 @@ func TestStandardizeDate(t *testing.T) {
 				},
 				Type: stddate.CompoundRange,
 			},
-			encoded: "19000100|19000101|19000331",
+			encoded: "19000100,19000101-19000331",
 		},
 		{
 			text: "JAN FEB MAR 1900",
@@ -263,7 +263,7 @@ func TestStandardizeDate(t *testing.T) {
 				},
 				Type: stddate.CompoundRange,
 			},
-			encoded: "19000100|19000101|19000331",
+			encoded: "19000100,19000101-19000331",
 		},
 		{
 			text: "5 or 15 jan 1900",
@@ -286,7 +286,7 @@ func TestStandardizeDate(t *testing.T) {
 				},
 				Type: stddate.CompoundTwo,
 			},
-			encoded: "19000105|19000115",
+			encoded: "19000105,19000115",
 		},
 	}
 

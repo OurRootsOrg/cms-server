@@ -16,12 +16,12 @@ var decoder = schema.NewDecoder()
 
 // Search returns search results matching a query
 // @summary returns search results
-// @description * Names can include wildcards (* or ?). In that case name fuzziness above Exact is ignored
+// @description * Names can include wildcards (* or ?), in which case name fuzziness above Exact is ignored
 // @description * Date searching is limited to passing in a single year; use fuzziness for ranges
-// @description * Place searching is not yet implemented. It will be implemented in August.
 // @description * Name fuzziness flags (OR'd together): 0: default; 1: exact; 2: alternate spellings; 4: narrow sounds-like; 8: broad sounds-like; 16: fuzzy (levenshtein); 32: initials (applies only to given)
 // @description * Date fuzziness: 0: default; 1: exact to this year; 2: +/- 1 year; 3: +/- 2 years; 4: +/- 5 years; 5: +/- 10 years
-// @description * Place fuzziness flags (OR'd together): 0: default; 1: exact only; 2: include higher-level jurisdictions; 4: include nearby places
+// @description * Places can include wildcards (* or ?) or ~word to fuzzy-match word, in which case place fuzziness above Exact is ignored
+// @description * Place fuzziness flags (OR'd together): 0: default; 1: exact only; 2: include higher-level jurisdictions;
 // @description * Category and collection facets: to start set categoryFacet true. If the user selects a value from the returned list, set that value as the category filter and set collectionFacet true
 // @description * Date and place faceting are in a state of flux currently and may not be supported in the future depending upon user interest; do not use
 // @description * Date facets: to start set century faceting to true. If the user selects a value from the returned list, set that value as the century filter and set decade faceting to true. If the user selects a decade, set that value as the decade filter

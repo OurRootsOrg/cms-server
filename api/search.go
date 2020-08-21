@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/ourrootsorg/cms-server/stddate"
+	"github.com/ourrootsorg/cms-server/stdplace"
 
 	"github.com/ourrootsorg/cms-server/stdtext"
 
@@ -45,13 +46,12 @@ const (
 	FuzzyDateTen     = iota // 5 - +/- 10 years
 )
 
-// place search is not yet implemented
 // place fuzziness constants can also be OR'd together
 const FuzzyPlaceDefault = 0
 const (
 	FuzzyPlaceExact               = 1 << iota // 1 - search this place only
 	FuzzyPlaceHigherJurisdictions = 1 << iota // 2 - searches for City, County, State, Country also match County, State, Country or State, Country
-	FuzzyPlaceNearby              = 1 << iota // 4 - search nearby places
+	FuzzyPlaceNearby              = 1 << iota // 4 - search nearby places // TODO not implemented
 )
 
 const MaxFrom = 1000
@@ -384,7 +384,7 @@ func (api API) IndexPost(ctx context.Context, post *model.Post) error {
 		log.Printf("[ERROR] GetCollection %v\n", errs)
 		return errs
 	}
-	// read collection for post
+	// read categories for post
 	categories, errs := api.GetCategoriesByID(ctx, collection.Categories)
 	if errs != nil {
 		log.Printf("[ERROR] GetCategory %v\n", errs)
@@ -475,12 +475,28 @@ func indexRecord(record *model.Record, post *model.Post, collection *model.Colle
 		// get events
 		for _, eventType := range EventTypes {
 			if data[eventType+"Date"] != "" {
-				years, decades, valid := getStdDate(data[eventType+"Date"])
+				dates, years, decades, valid := getDatesYearsDecades(data[eventType+"Date_std"])
 				if valid {
+					ixRecord[eventType+"DateStd"] = dates
 					ixRecord[eventType+"Year"] = years
 					ixRecord[eventType+"Decade"] = decades
 				}
-				// TODO handle places
+			}
+			if data[eventType+"Place"] != "" {
+				placeLevels := getPlaceLevels(data[eventType+"Place_std"])
+				if len(placeLevels) > 0 {
+					ixRecord[eventType+"Place"] = data[eventType+"Place"]
+					ixRecord[eventType+"Place1"] = placeLevels[0]
+				}
+				if len(placeLevels) > 1 {
+					ixRecord[eventType+"Place2"] = placeLevels[1]
+				}
+				if len(placeLevels) > 2 {
+					ixRecord[eventType+"Place3"] = placeLevels[2]
+				}
+				if len(placeLevels) > 3 {
+					ixRecord[eventType+"Place4"] = placeLevels[3]
+				}
 			}
 		}
 
@@ -1163,6 +1179,7 @@ func constructPlaceQueries(label, value string, fuzziness int) ([]Query, []Query
 		return nil, nil
 	}
 
+	// support wildcards within words or ~word, which means to fuzzy-match word
 	if strings.ContainsAny(value, "~*?") {
 		var queries []Query
 		for _, v := range splitWord(value) {
@@ -1226,7 +1243,15 @@ func constructPlaceQueries(label, value string, fuzziness int) ([]Query, []Query
 		{
 			Term: map[string]TermQuery{
 				fmt.Sprintf("%s%d", label, len(levels)): {
-					Value: strings.Join(levels, "|"),
+					Value: strings.Join(levels, ","),
+					Boost: exactPlaceBoost,
+				},
+			},
+		},
+		{
+			Term: map[string]TermQuery{
+				fmt.Sprintf("%s%d", label, len(levels)): {
+					Value: strings.Join(levels, ",") + ",",
 					Boost: exactPlaceBoost,
 				},
 			},
@@ -1241,8 +1266,8 @@ func constructPlaceQueries(label, value string, fuzziness int) ([]Query, []Query
 			}
 			queries = append(queries, Query{
 				Term: map[string]TermQuery{
-					fmt.Sprintf("%s%d", label, i+1): {
-						Value: strings.Join(levels[0:i], "|") + "|_",
+					fmt.Sprintf("%s%d", label, i): {
+						Value: strings.Join(levels[0:i], ","),
 						Boost: float32(i) * levelPlaceBoost,
 					},
 				},
@@ -1380,22 +1405,6 @@ func addCenturyAgg(aggs map[string]Agg, label, field string, cond bool) {
 	}
 }
 
-func splitWord(name string) []string {
-	re := regexp.MustCompile("[^\\pL*?~]+") // keep ~*? for fuzzy and wildcards
-	return re.Split(name, -1)
-}
-
-func splitPlace(place string) []string {
-	re := regexp.MustCompile("\\s*,\\s*")
-	return re.Split(place, -1)
-}
-
-func reverse(s []string) {
-	for i, j := 0, len(s)-1; i < j; i, j = i+1, j-1 {
-		s[i], s[j] = s[j], s[i]
-	}
-}
-
 func getHitData(r ESSearchHit) (*HitData, error) {
 	idParts := strings.Split(r.ID, "_")
 	role := "principal"
@@ -1477,6 +1486,11 @@ func getDataForRole(mappings []model.CollectionMapping, record *model.Record, ro
 		if record.Data[mapping.Header] != "" &&
 			(mapping.IxRole == role || (isSpouseRole(mapping.IxRole, role) && isMarriageField(mapping.IxField))) {
 			data[mapping.IxField] = record.Data[mapping.Header]
+			if strings.HasSuffix(mapping.IxField, "Date") {
+				data[mapping.IxField+stddate.StdSuffix] = record.Data[mapping.Header+stddate.StdSuffix]
+			} else if strings.HasSuffix(mapping.IxField, "Place") {
+				data[mapping.IxField+stdplace.StdSuffix] = record.Data[mapping.Header+stdplace.StdSuffix]
+			}
 		}
 	}
 	return data
@@ -1548,64 +1562,77 @@ func getNameParts(names []GivenSurname, extractor nameExtractor) []string {
 	return parts
 }
 
-func getYears(sd *stddate.CompoundDate) []int {
+func getYears(dateParts, dateRange []string) []int {
 	years := []int{}
 	switch {
-	case sd.Type == stddate.CompoundTwo:
-		if sd.First.Year != 0 {
-			years = append(years, sd.First.Year)
+	case len(dateParts) == 1:
+		year, err := strconv.Atoi(dateParts[0][:4])
+		if err != nil {
+			break
 		}
-		if sd.Second.Year != 0 && sd.Second.Year != sd.First.Year {
-			years = append(years, sd.Second.Year)
+		years = append(years, year)
+	case len(dateParts) == 2 && len(dateRange) == 1:
+		firstYear, err := strconv.Atoi(dateParts[0][:4])
+		if err != nil {
+			break
 		}
-	case sd.Type == stddate.CompoundRange:
-		if sd.First.StartYear() != 0 {
-			years = append(years, sd.First.StartYear())
+		years = append(years, firstYear)
+		secondYear, err := strconv.Atoi(dateParts[1][:4])
+		if err != nil {
+			break
 		}
-		if sd.Second.EndYear() > sd.First.StartYear() {
-			years = append(years, sd.Second.EndYear())
+		if secondYear != firstYear {
+			years = append(years, secondYear)
 		}
-		if len(years) == 2 {
-			for y := sd.First.StartYear() + 1; y < sd.Second.EndYear(); y++ {
-				years = append(years, y)
-			}
+	case len(dateParts) == 2 && len(dateRange) == 2:
+		startYear, err := strconv.Atoi(dateRange[0][:4])
+		if err != nil {
+			break
 		}
-	case sd.First.Modifier != stddate.ModifierNone || sd.First.Quality == stddate.QualityEstimated:
-		if sd.First.StartYear() != 0 {
-			years = append(years, sd.First.StartYear())
+		endYear, err := strconv.Atoi(dateRange[1][:4])
+		if err != nil {
+			break
 		}
-		if sd.First.EndYear() > sd.First.StartYear() {
-			years = append(years, sd.First.EndYear())
-		}
-		if len(years) == 2 {
-			for y := sd.First.StartYear() + 1; y < sd.First.EndYear(); y++ {
-				years = append(years, y)
-			}
-		}
-	case sd.First.Double == stddate.DoubleDate:
-		if sd.First.Year != 0 {
-			years = append(years, sd.First.Year, sd.First.Year+1)
-		}
-	default:
-		if sd.First.Year != 0 {
-			years = append(years, sd.First.Year)
+		for y := startYear; y <= endYear; y++ {
+			years = append(years, y)
 		}
 	}
 	return years
 
 }
 
-func getStdDate(date string) ([]int, []int, bool) {
-	sd := stddate.Standardize(date)
-	if sd == nil {
-		return nil, nil, false
+func getDatesYearsDecades(encodedDate string) ([]int, []int, []int, bool) {
+	if encodedDate == "" {
+		return nil, nil, nil, false
 	}
+	// parse encoded date
+	dateParts := strings.Split(encodedDate, ",")
+	var dateRange []string
+	if len(dateParts) == 2 {
+		dateRange = strings.Split(dateParts[1], "-")
+	}
+
+	// get dates
+	dates := []int{}
+	for i := 0; i < len(dateParts); i++ {
+		ymd, err := strconv.Atoi(dateParts[i])
+		if err != nil {
+			return nil, nil, nil, false
+		}
+		dates = append(dates, ymd)
+		// get just one date for range
+		if len(dateRange) == 2 {
+			break
+		}
+	}
+
 	// get years
-	years := getYears(sd)
+	years := getYears(dateParts, dateRange)
+
 	// get decades
 	decades := []int{}
 	for _, year := range years {
-		var dec int = year / 10
+		dec := (year / 10) * 10
 		found := false
 		for _, decade := range decades {
 			if decade == dec {
@@ -1618,5 +1645,39 @@ func getStdDate(date string) ([]int, []int, bool) {
 		}
 	}
 
-	return years, decades, true
+	return dates, years, decades, true
+}
+
+func getPlaceLevels(stdPlace string) []string {
+	var stdLevels []string
+	if stdPlace == "" {
+		return stdLevels
+	}
+	levels := splitPlace(stdPlace)
+	var std string
+	for i := len(levels) - 1; i >= 0; i-- {
+		std += strings.TrimSpace(levels[i])
+		if i > 0 {
+			std += ","
+		}
+		stdLevels = append(stdLevels, std)
+	}
+	return stdLevels
+}
+
+var wordRegexp = regexp.MustCompile("[^\\pL*?~]+") // keep ~*? for fuzzy and wildcards
+func splitWord(name string) []string {
+	return wordRegexp.Split(name, -1)
+}
+
+var placeRegexp = regexp.MustCompile("\\s*,\\s*")
+
+func splitPlace(place string) []string {
+	return placeRegexp.Split(place, -1)
+}
+
+func reverse(s []string) {
+	for i, j := 0, len(s)-1; i < j; i, j = i+1, j-1 {
+		s[i], s[j] = s[j], s[i]
+	}
 }

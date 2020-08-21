@@ -29,7 +29,21 @@ func TestPlaceStandardize(t *testing.T) {
 		p := persist.NewPostgresPersister(db)
 		doStandardizePlaceTests(t, p)
 	}
-
+	// TODO implement
+	//dynamoDBTableName := os.Getenv("DYNAMODB_TEST_TABLE_NAME")
+	//if dynamoDBTableName != "" {
+	//	config := aws.Config{
+	//		Region:      aws.String("us-east-1"),
+	//		Endpoint:    aws.String("http://localhost:18000"),
+	//		DisableSSL:  aws.Bool(true),
+	//		Credentials: credentials.NewStaticCredentials("ACCESS_KEY", "SECRET", ""),
+	//	}
+	//	sess, err := session.NewSession(&config)
+	//	assert.NoError(t, err)
+	//	p, err := dynamo.NewPersister(sess, dynamoDBTableName)
+	//	assert.NoError(t, err)
+	//	doStandardizePlaceTests(t, p)
+	//}
 }
 
 func doStandardizePlaceTests(t *testing.T, p model.PlacePersister) {
@@ -115,6 +129,7 @@ func doStandardizePlaceTests(t *testing.T, p model.PlacePersister) {
 	ctx := context.TODO()
 	ps, err := stdplace.NewStandardizer(ctx, p)
 	assert.NoError(t, err, "NewStandardizer")
+	defer ps.Close()
 
 	for _, test := range tests {
 		place, err := ps.Standardize(ctx, test.text, test.defaultContainer)

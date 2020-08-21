@@ -13,6 +13,7 @@ type PlacePersister interface {
 	SelectPlaceSettings(ctx context.Context) (*PlaceSettings, error)
 	SelectPlace(ctx context.Context, id uint32) (*Place, error)
 	SelectPlacesByID(ctx context.Context, ids []uint32) ([]Place, error)
+	SelectPlacesByFullNamePrefix(ctx context.Context, prefix string, count int) ([]Place, error)
 	SelectPlaceWord(ctx context.Context, word string) (*PlaceWord, error)
 	SelectPlaceWordsByWord(ctx context.Context, words []string) ([]PlaceWord, error)
 }
