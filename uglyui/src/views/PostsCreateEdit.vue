@@ -207,9 +207,18 @@ export default {
       this.touch("metadata");
     },
     getRecordColumns() {
-      return this.collections.collection.fields.map(f => {
-        return { title: f.header, field: f.header };
-      });
+      let cols = [];
+      for (let f of this.collections.collection.fields) {
+        cols.push({ title: f.header, field: f.header });
+        if (
+          this.collections.collection.mappings.find(
+            m => m.header === f.header && (m.ixField.endsWith("Date") || m.ixField.endsWith("Place"))
+          )
+        ) {
+          cols.push({ title: f.header + "_std", field: f.header + "_std" });
+        }
+      }
+      return cols;
     },
     getMetadataColumns() {
       return this.settings.settings.postMetadata.map(pf => getMetadataColumnForEditing(pf));
