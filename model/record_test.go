@@ -30,3 +30,17 @@ func TestRecord(t *testing.T) {
 	assert.NoError(t, err)
 	// log.Printf("Record JSON: %s", string(js))
 }
+
+func TestRecordCitation(t *testing.T) {
+	in := model.RecordIn{}
+	in.Data = map[string]string{
+		"Given name": "Fred",
+		"Surname":    "Flintstone",
+	}
+	r := model.NewRecord(uint32(rand.Int31()), in)
+	citationTemplate := `{{ Given name }} {{Surname}} {{ Missing Variable }} found in <i>My Favorite Collection</i>.`
+	assert.Equal(t, "Fred Flintstone  found in <i>My Favorite Collection</i>.", r.GetCitation(citationTemplate))
+
+	citationTemplate = `{{Invalid`
+	assert.Equal(t, "template: citation:1: function \"Invalid\" not defined", r.GetCitation(citationTemplate))
+}

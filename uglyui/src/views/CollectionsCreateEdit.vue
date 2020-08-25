@@ -43,8 +43,18 @@
         ></v-autocomplete>
       </div>
 
+      <h3>Citation template (html and <span>{{</span>Spreadsheet header<span>}}</span> references allowed)</h3>
+      <div class="citation">
+        <v-textarea
+          outlined
+          name="input-7-4"
+          v-model="collection.citation_template"
+          @change="touch('citation_template')"
+          placeholder="Citation template"
+        ></v-textarea>
+      </div>
+
       <h3>Select one or more categories</h3>
-      <label>Categories (select one or more)</label>
       <multiselect
         v-model="collection.categories"
         :options="categories.categoriesList"
@@ -229,7 +239,15 @@ export default {
   },
   data() {
     return {
-      collection: { id: null, name: null, categories: [], fields: [], mappings: [] },
+      collection: {
+        id: null,
+        name: null,
+        location: null,
+        citation_template: null,
+        categories: [],
+        fields: [],
+        mappings: []
+      },
       locationLoading: false,
       locationTimeout: null,
       locationItems: [],
@@ -385,6 +403,7 @@ export default {
     collection: {
       name: { required },
       location: {},
+      citation_template: {},
       categories: { required },
       fields: {},
       mappings: {}

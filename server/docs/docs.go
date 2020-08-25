@@ -663,6 +663,114 @@ var doc = `{
                 }
             }
         },
+        "/currentuser": {
+            "get": {
+                "security": [
+                    {
+                        "OAuth2Implicit": [
+                            "cms",
+                            "openid",
+                            "profile",
+                            "email"
+                        ]
+                    },
+                    {
+                        "OAuth2AuthCode": [
+                            "cms",
+                            "openid",
+                            "profile",
+                            "email"
+                        ]
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "returns the current user",
+                "operationId": "getCurrentUser",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.Place"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/places": {
+            "get": {
+                "security": [
+                    {
+                        "OAuth2Implicit": [
+                            "cms",
+                            "openid",
+                            "profile",
+                            "email"
+                        ]
+                    },
+                    {
+                        "OAuth2AuthCode": [
+                            "cms",
+                            "openid",
+                            "profile",
+                            "email"
+                        ]
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "places"
+                ],
+                "summary": "returns places matching prefix",
+                "operationId": "getPlacesByPrefix",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "place prefix",
+                        "name": "prefix",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "maximum number of places to return",
+                        "name": "count",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.Place"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    }
+                }
+            }
+        },
         "/posts": {
             "get": {
                 "security": [
@@ -994,7 +1102,7 @@ var doc = `{
         },
         "/search": {
             "get": {
-                "description": "* Names can include wildcards (* or ?). In that case name fuzziness above Exact is ignored\n* Date searching is limited to passing in a single year; use fuzziness for ranges\n* Place searching is not yet implemented. It will be implemented in August.\n* Name fuzziness flags (OR'd together): 0: default; 1: exact; 2: alternate spellings; 4: narrow sounds-like; 8: broad sounds-like; 16: fuzzy (levenshtein); 32: initials (applies only to given)\n* Date fuzziness: 0: default; 1: exact to this year; 2: +/- 1 year; 3: +/- 2 years; 4: +/- 5 years; 5: +/- 10 years\n* Place fuzziness flags (OR'd together): 0: default; 1: exact only; 2: include higher-level jurisdictions; 4: include nearby places\n* Category and collection facets: to start set categoryFacet true. If the user selects a value from the returned list, set that value as the category filter and set collectionFacet true\n* Date and place faceting are in a state of flux currently and may not be supported in the future depending upon user interest; do not use\n* Date facets: to start set century faceting to true. If the user selects a value from the returned list, set that value as the century filter and set decade faceting to true. If the user selects a decade, set that value as the decade filter\n* Place facets: to start, set level 1 faceting to true. If the user selects a value from the returned list, set that value as the level 1 filter and set level 2 faceting to true. Continue up to level 3",
+                "description": "* Names can include wildcards (* or ?), in which case name fuzziness above Exact is ignored\n* Date searching is limited to passing in a single year; use fuzziness for ranges\n* Name fuzziness flags (OR'd together): 0: default; 1: exact; 2: alternate spellings; 4: narrow sounds-like; 8: broad sounds-like; 16: fuzzy (levenshtein); 32: initials (applies only to given)\n* Date fuzziness: 0: default; 1: exact to this year; 2: +/- 1 year; 3: +/- 2 years; 4: +/- 5 years; 5: +/- 10 years\n* Places can include wildcards (* or ?) or ~word to fuzzy-match word, in which case place fuzziness above Exact is ignored\n* Place fuzziness flags (OR'd together): 0: default; 1: exact only; 2: include higher-level jurisdictions;\n* Category and collection facets: to start set categoryFacet true. If the user selects a value from the returned list, set that value as the category filter and set collectionFacet true\n* Date and place faceting are in a state of flux currently and may not be supported in the future depending upon user interest; do not use\n* Date facets: to start set century faceting to true. If the user selects a value from the returned list, set that value as the century filter and set decade faceting to true. If the user selects a decade, set that value as the decade filter\n* Place facets: to start, set level 1 faceting to true. If the user selects a value from the returned list, set that value as the level 1 filter and set level 2 faceting to true. Continue up to level 3",
                 "produces": [
                     "application/json"
                 ],
@@ -1252,242 +1360,38 @@ var doc = `{
                     },
                     {
                         "type": "boolean",
-                        "description": "facet on century",
-                        "name": "birthCenturyFacet",
+                        "description": "facet on collection location level 1",
+                        "name": "collectionPlace1Facet",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "filter on century",
-                        "name": "birthCentury",
+                        "description": "filter on collection location level 1",
+                        "name": "collectionPlace1",
                         "in": "query"
                     },
                     {
                         "type": "boolean",
-                        "description": "facet on decade",
-                        "name": "birthDecadeFacet",
+                        "description": "facet on collection location level 2",
+                        "name": "collectionPlace2Facet",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "filter on decade",
-                        "name": "birthDecade",
+                        "description": "filter on collection location level 2",
+                        "name": "collectionPlace2",
                         "in": "query"
                     },
                     {
                         "type": "boolean",
-                        "description": "facet on place level 1",
-                        "name": "birthPlace1Facet",
+                        "description": "facet on collection location level 3",
+                        "name": "collectionPlace3Facet",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "filter on place level 1",
-                        "name": "birthPlace1",
-                        "in": "query"
-                    },
-                    {
-                        "type": "boolean",
-                        "description": "facet on place level 2",
-                        "name": "birthPlace2Facet",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "filter on place level 2",
-                        "name": "birthPlace2",
-                        "in": "query"
-                    },
-                    {
-                        "type": "boolean",
-                        "description": "facet on place level 3",
-                        "name": "birthPlace3Facet",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "filter on place level 3",
-                        "name": "birthPlace3",
-                        "in": "query"
-                    },
-                    {
-                        "type": "boolean",
-                        "description": "facet on century",
-                        "name": "marriageCenturyFacet",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "filter on century",
-                        "name": "marriageCentury",
-                        "in": "query"
-                    },
-                    {
-                        "type": "boolean",
-                        "description": "facet on decade",
-                        "name": "marriageDecadeFacet",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "filter on decade",
-                        "name": "marriageDecade",
-                        "in": "query"
-                    },
-                    {
-                        "type": "boolean",
-                        "description": "facet on place level 1",
-                        "name": "marriagePlace1Facet",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "filter on place level 1",
-                        "name": "marriagePlace1",
-                        "in": "query"
-                    },
-                    {
-                        "type": "boolean",
-                        "description": "facet on place level 2",
-                        "name": "marriagePlace2Facet",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "filter on place level 2",
-                        "name": "marriagePlace2",
-                        "in": "query"
-                    },
-                    {
-                        "type": "boolean",
-                        "description": "facet on place level 3",
-                        "name": "marriagePlace3Facet",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "filter on place level 3",
-                        "name": "marriagePlace3",
-                        "in": "query"
-                    },
-                    {
-                        "type": "boolean",
-                        "description": "facet on century",
-                        "name": "residenceCenturyFacet",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "filter on century",
-                        "name": "residenceCentury",
-                        "in": "query"
-                    },
-                    {
-                        "type": "boolean",
-                        "description": "facet on decade",
-                        "name": "residenceDecadeFacet",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "filter on decade",
-                        "name": "residenceDecade",
-                        "in": "query"
-                    },
-                    {
-                        "type": "boolean",
-                        "description": "facet on place level 1",
-                        "name": "residencePlace1Facet",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "filter on place level 1",
-                        "name": "residencePlace1",
-                        "in": "query"
-                    },
-                    {
-                        "type": "boolean",
-                        "description": "facet on place level 2",
-                        "name": "residencePlace2Facet",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "filter on place level 2",
-                        "name": "residencePlace2",
-                        "in": "query"
-                    },
-                    {
-                        "type": "boolean",
-                        "description": "facet on place level 3",
-                        "name": "residencePlace3Facet",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "filter on place level 3",
-                        "name": "residencePlace3",
-                        "in": "query"
-                    },
-                    {
-                        "type": "boolean",
-                        "description": "facet on century",
-                        "name": "deathCenturyFacet",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "filter on century",
-                        "name": "deathCentury",
-                        "in": "query"
-                    },
-                    {
-                        "type": "boolean",
-                        "description": "facet on decade",
-                        "name": "deathDecadeFacet",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "filter on decade",
-                        "name": "deathDecade",
-                        "in": "query"
-                    },
-                    {
-                        "type": "boolean",
-                        "description": "facet on place level 1",
-                        "name": "deathPlace1Facet",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "filter on place level 1",
-                        "name": "deathPlace1",
-                        "in": "query"
-                    },
-                    {
-                        "type": "boolean",
-                        "description": "facet on place level 2",
-                        "name": "deathPlace2Facet",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "filter on place level 2",
-                        "name": "deathPlace2",
-                        "in": "query"
-                    },
-                    {
-                        "type": "boolean",
-                        "description": "facet on place level 3",
-                        "name": "deathPlace3Facet",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "filter on place level 3",
-                        "name": "deathPlace3",
+                        "description": "filter on collection location level 3",
+                        "name": "collectionPlace3",
                         "in": "query"
                     },
                     {
@@ -1831,6 +1735,56 @@ var doc = `{
                 }
             }
         },
+        "model.Place": {
+            "type": "object",
+            "properties": {
+                "alsoLocatedInIds": {
+                    "type": "object",
+                    "$ref": "#/definitions/model.Uint32Slice"
+                },
+                "altNames": {
+                    "type": "object",
+                    "$ref": "#/definitions/model.StringSlice"
+                },
+                "count": {
+                    "type": "integer"
+                },
+                "countryId": {
+                    "type": "integer"
+                },
+                "fullName": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "insert_time": {
+                    "type": "string"
+                },
+                "last_update_time": {
+                    "type": "string"
+                },
+                "latitude": {
+                    "type": "number"
+                },
+                "level": {
+                    "type": "integer"
+                },
+                "locatedInId": {
+                    "type": "integer"
+                },
+                "longitude": {
+                    "type": "number"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "types": {
+                    "type": "object",
+                    "$ref": "#/definitions/model.StringSlice"
+                }
+            }
+        },
         "model.Post": {
             "type": "object",
             "required": [
@@ -1953,11 +1907,43 @@ var doc = `{
                 }
             }
         },
+        "model.SearchFacet": {
+            "type": "object",
+            "properties": {
+                "buckets": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.SearchFacetBucket"
+                    }
+                },
+                "errorUpperBound": {
+                    "type": "integer"
+                },
+                "otherDocCount": {
+                    "type": "integer"
+                }
+            }
+        },
+        "model.SearchFacetBucket": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "integer"
+                },
+                "label": {
+                    "type": "string"
+                }
+            }
+        },
         "model.SearchHit": {
             "type": "object",
             "properties": {
                 "collection": {
                     "type": "integer"
+                },
+                "collectionLocation": {
+                    "description": "only returned on search by id",
+                    "type": "string"
                 },
                 "collectionName": {
                     "type": "string"
@@ -2033,6 +2019,12 @@ var doc = `{
         "model.SearchResult": {
             "type": "object",
             "properties": {
+                "facets": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/definitions/model.SearchFacet"
+                    }
+                },
                 "hits": {
                     "type": "array",
                     "items": {
@@ -2076,6 +2068,18 @@ var doc = `{
                 "type": {
                     "type": "string"
                 }
+            }
+        },
+        "model.StringSlice": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
+        },
+        "model.Uint32Slice": {
+            "type": "array",
+            "items": {
+                "type": "integer"
             }
         }
     },

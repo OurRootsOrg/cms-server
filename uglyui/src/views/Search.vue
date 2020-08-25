@@ -880,7 +880,6 @@ export default {
       let query = this.getQuery();
 
       // issue query
-      console.log("go", query);
       this.$router.push({
         name: "search",
         query: query

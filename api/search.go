@@ -605,6 +605,7 @@ func (api API) SearchByID(ctx context.Context, id string) (*model.SearchHit, err
 		CollectionName:     collection.Name,
 		CollectionID:       collection.ID,
 		CollectionLocation: collection.Location,
+		Citation:           record.GetCitation(collection.CitationTemplate),
 	}, nil
 }
 
