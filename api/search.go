@@ -6,6 +6,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"regexp"
@@ -105,52 +107,17 @@ type SearchRequest struct {
 	AnyPlaceFuzziness       int    `schema:"anyPlaceFuzziness"`
 	// other
 	Keywords string `schema:"keywords"`
-	// event facets and filters
-	BirthPlace1Facet      bool   `schema:"birthPlace1Facet"`
-	BirthPlace1           string `schema:"birthPlace1"`
-	BirthPlace2Facet      bool   `schema:"birthPlace2Facet"`
-	BirthPlace2           string `schema:"birthPlace2"`
-	BirthPlace3Facet      bool   `schema:"birthPlace3Facet"`
-	BirthPlace3           string `schema:"birthPlace3"`
-	BirthCenturyFacet     bool   `schema:"birthCenturyFacet"`
-	BirthCentury          string `schema:"birthCentury"`
-	BirthDecadeFacet      bool   `schema:"birthDecadeFacet"`
-	BirthDecade           string `schema:"birthDecade"`
-	MarriagePlace1Facet   bool   `schema:"marriagePlace1Facet"`
-	MarriagePlace1        string `schema:"marriagePlace1"`
-	MarriagePlace2Facet   bool   `schema:"marriagePlace2Facet"`
-	MarriagePlace2        string `schema:"marriagePlace2"`
-	MarriagePlace3Facet   bool   `schema:"marriagePlace3Facet"`
-	MarriagePlace3        string `schema:"marriagePlace3"`
-	MarriageCenturyFacet  bool   `schema:"marriageCenturyFacet"`
-	MarriageCentury       string `schema:"marriageCentury"`
-	MarriageDecadeFacet   bool   `schema:"marriageDecadeFacet"`
-	MarriageDecade        string `schema:"marriageDecade"`
-	ResidencePlace1Facet  bool   `schema:"residencePlace1Facet"`
-	ResidencePlace1       string `schema:"residencePlace1"`
-	ResidencePlace2Facet  bool   `schema:"residencePlace2Facet"`
-	ResidencePlace2       string `schema:"residencePlace2"`
-	ResidencePlace3Facet  bool   `schema:"residencePlace3Facet"`
-	ResidencePlace3       string `schema:"residencePlace3"`
-	ResidenceCenturyFacet bool   `schema:"residenceCenturyFacet"`
-	ResidenceCentury      string `schema:"residenceCentury"`
-	ResidenceDecadeFacet  bool   `schema:"residenceDecadeFacet"`
-	ResidenceDecade       string `schema:"residenceDecade"`
-	DeathPlace1Facet      bool   `schema:"deathPlace1Facet"`
-	DeathPlace1           string `schema:"deathPlace1"`
-	DeathPlace2Facet      bool   `schema:"deathPlace2Facet"`
-	DeathPlace2           string `schema:"deathPlace2"`
-	DeathPlace3Facet      bool   `schema:"deathPlace3Facet"`
-	DeathPlace3           string `schema:"deathPlace3"`
-	DeathCenturyFacet     bool   `schema:"deathCenturyFacet"`
-	DeathCentury          string `schema:"deathCentury"`
-	DeathDecadeFacet      bool   `schema:"deathDecadeFacet"`
-	DeathDecade           string `schema:"deathDecade"`
-	// other facets and filters
-	CategoryFacet   bool   `schema:"categoryFacet"`
-	Category        string `schema:"category"`
-	CollectionFacet bool   `schema:"collectionFacet"`
-	Collection      string `schema:"collection"`
+	// facets and filters
+	CollectionPlace1Facet bool   `schema:"collectionPlace1Facet"`
+	CollectionPlace1      string `schema:"collectionPlace1"`
+	CollectionPlace2Facet bool   `schema:"collectionPlace2Facet"`
+	CollectionPlace2      string `schema:"collectionPlace2"`
+	CollectionPlace3Facet bool   `schema:"collectionPlace3Facet"`
+	CollectionPlace3      string `schema:"collectionPlace3"`
+	CategoryFacet         bool   `schema:"categoryFacet"`
+	Category              string `schema:"category"`
+	CollectionFacet       bool   `schema:"collectionFacet"`
+	Collection            string `schema:"collection"`
 	// from and size
 	From int `schema:"from"`
 	Size int `schema:"size"`
@@ -228,10 +195,11 @@ type ESError struct {
 }
 
 type ESSearchResponse struct {
-	Took     int            `json:"took"`
-	TimedOut bool           `json:"timed_out"`
-	Shards   ESSearchShards `json:"_shards"`
-	Hits     ESSearchHits   `json:"hits"`
+	Took         int                            `json:"took"`
+	TimedOut     bool                           `json:"timed_out"`
+	Shards       ESSearchShards                 `json:"_shards"`
+	Hits         ESSearchHits                   `json:"hits"`
+	Aggregations map[string]ESSearchAggregation `json:"aggregations"`
 }
 type ESSearchShards struct {
 	Total      int `json:"total"`
@@ -257,6 +225,15 @@ type ESSearchHit struct {
 }
 type ESSearchSource struct {
 	CollectionID uint32 `json:"collectionId"`
+}
+type ESSearchAggregation struct {
+	DocCountErrorUpperBound int                         `json:"doc_count_error_upper_bound"`
+	SumOtherDocCount        int                         `json:"sum_other_doc_count"`
+	Buckets                 []ESSearchAggregationBucket `json:"buckets"`
+}
+type ESSearchAggregationBucket struct {
+	Key      string `json:"key"`
+	DocCount int    `json:"doc_count"`
 }
 
 type HitData struct {
@@ -475,11 +452,10 @@ func indexRecord(record *model.Record, post *model.Post, collection *model.Colle
 		// get events
 		for _, eventType := range EventTypes {
 			if data[eventType+"Date"] != "" {
-				dates, years, decades, valid := getDatesYearsDecades(data[eventType+"Date_std"])
+				dates, years, valid := getDatesYears(data[eventType+"Date_std"])
 				if valid {
 					ixRecord[eventType+"DateStd"] = dates
 					ixRecord[eventType+"Year"] = years
-					ixRecord[eventType+"Decade"] = decades
 				}
 			}
 			if data[eventType+"Place"] != "" {
@@ -509,9 +485,21 @@ func indexRecord(record *model.Record, post *model.Post, collection *model.Colle
 			catNames = append(catNames, cat.Name)
 		}
 		ixRecord["post"] = post.ID
+		ixRecord["category"] = catNames
 		ixRecord["collection"] = collection.Name
 		ixRecord["collectionId"] = collection.ID
-		ixRecord["category"] = catNames
+		if collection.Location != "" {
+			placeLevels := getPlaceFacets(collection.Location)
+			if len(placeLevels) > 0 {
+				ixRecord["collectionPlace1"] = placeLevels[0]
+			}
+			if len(placeLevels) > 1 {
+				ixRecord["collectionPlace2"] = placeLevels[1]
+			}
+			if len(placeLevels) > 2 {
+				ixRecord["collectionPlace3"] = placeLevels[2]
+			}
+		}
 		ixRecord["lastModified"] = lastModified
 
 		// add to BulkIndexer
@@ -611,11 +599,12 @@ func (api API) SearchByID(ctx context.Context, id string) (*model.SearchHit, err
 	}
 
 	return &model.SearchHit{
-		ID:             hitData.ID,
-		Person:         constructSearchPerson(collection.Mappings, hitData.Role, record),
-		Record:         constructSearchRecord(collection.Mappings, record),
-		CollectionName: collection.Name,
-		CollectionID:   collection.ID,
+		ID:                 hitData.ID,
+		Person:             constructSearchPerson(collection.Mappings, hitData.Role, record),
+		Record:             constructSearchRecord(collection.Mappings, record),
+		CollectionName:     collection.Name,
+		CollectionID:       collection.ID,
+		CollectionLocation: collection.Location,
 	}, nil
 }
 
@@ -693,9 +682,15 @@ func (api API) Search(ctx context.Context, req *SearchRequest) (*model.SearchRes
 		}
 	}
 
+	var buf2 bytes.Buffer
+	tee := io.TeeReader(res.Body, &buf2)
+	s, _ := ioutil.ReadAll(tee)
+	log.Printf("[DEBUG] %s\n", s)
+	r2 := bytes.NewReader(buf2.Bytes())
+
 	// get hit datas
 	var r ESSearchResponse
-	if err := json.NewDecoder(res.Body).Decode(&r); err != nil {
+	if err := json.NewDecoder(r2).Decode(&r); err != nil {
 		log.Printf("Error parsing the response body: %s\n", err)
 		return nil, NewError(err)
 	}
@@ -771,13 +766,32 @@ func (api API) Search(ctx context.Context, req *SearchRequest) (*model.SearchRes
 			//Record:         constructSearchRecord(&record), // only return record in search by id
 			CollectionName: collection.Name,
 			CollectionID:   collection.ID,
+			//Location:       collection.Location, // only return location in search by id
 		})
+	}
+
+	// construct facets
+	facets := map[string]model.SearchFacet{}
+	for key, aggr := range r.Aggregations {
+		var buckets []model.SearchFacetBucket
+		for _, bucket := range aggr.Buckets {
+			buckets = append(buckets, model.SearchFacetBucket{
+				Label: bucket.Key,
+				Count: bucket.DocCount,
+			})
+		}
+		facets[key] = model.SearchFacet{
+			ErrorUpperBound: aggr.DocCountErrorUpperBound,
+			OtherDocCount:   aggr.SumOtherDocCount,
+			Buckets:         buckets,
+		}
 	}
 
 	return &model.SearchResult{
 		Total:    r.Hits.Total.Value,
 		MaxScore: r.Hits.MaxScore,
 		Hits:     hits,
+		Facets:   facets,
 	}, nil
 }
 
@@ -927,50 +941,16 @@ func constructSearchQuery(req *SearchRequest) *Search {
 	// filters
 	filterQueries = append(filterQueries, constructFilterQueries("category", req.Category)...)
 	filterQueries = append(filterQueries, constructFilterQueries("collection", req.Collection)...)
-	filterQueries = append(filterQueries, constructFilterQueries("birthPlace1", req.BirthPlace1)...)
-	filterQueries = append(filterQueries, constructFilterQueries("birthPlace2", req.BirthPlace2)...)
-	filterQueries = append(filterQueries, constructFilterQueries("birthPlace3", req.BirthPlace3)...)
-	filterQueries = append(filterQueries, constructCenturyFilterQueries("birthDecade", req.BirthCentury)...)
-	filterQueries = append(filterQueries, constructFilterQueries("birthDecade", req.BirthDecade)...)
-	filterQueries = append(filterQueries, constructFilterQueries("marriagePlace1", req.MarriagePlace1)...)
-	filterQueries = append(filterQueries, constructFilterQueries("marriagePlace2", req.MarriagePlace2)...)
-	filterQueries = append(filterQueries, constructFilterQueries("marriagePlace3", req.MarriagePlace3)...)
-	filterQueries = append(filterQueries, constructCenturyFilterQueries("marriageDecade", req.MarriageCentury)...)
-	filterQueries = append(filterQueries, constructFilterQueries("marriageDecade", req.MarriageDecade)...)
-	filterQueries = append(filterQueries, constructFilterQueries("residencePlace1", req.ResidencePlace1)...)
-	filterQueries = append(filterQueries, constructFilterQueries("residencePlace2", req.ResidencePlace2)...)
-	filterQueries = append(filterQueries, constructFilterQueries("residencePlace3", req.ResidencePlace3)...)
-	filterQueries = append(filterQueries, constructCenturyFilterQueries("residenceDecade", req.ResidenceCentury)...)
-	filterQueries = append(filterQueries, constructFilterQueries("residenceDecade", req.ResidenceDecade)...)
-	filterQueries = append(filterQueries, constructFilterQueries("deathPlace1", req.DeathPlace1)...)
-	filterQueries = append(filterQueries, constructFilterQueries("deathPlace2", req.DeathPlace2)...)
-	filterQueries = append(filterQueries, constructFilterQueries("deathPlace3", req.DeathPlace3)...)
-	filterQueries = append(filterQueries, constructCenturyFilterQueries("deathDecade", req.DeathCentury)...)
-	filterQueries = append(filterQueries, constructFilterQueries("deathDecade", req.DeathDecade)...)
+	filterQueries = append(filterQueries, constructFilterQueries("collectionPlace1", req.CollectionPlace1)...)
+	filterQueries = append(filterQueries, constructFilterQueries("collectionPlace2", req.CollectionPlace2)...)
+	filterQueries = append(filterQueries, constructFilterQueries("collectionPlace3", req.CollectionPlace3)...)
 
 	// facets
 	addTermsAgg(aggs, "category", req.CategoryFacet)
 	addTermsAgg(aggs, "collection", len(req.Category) > 0 && req.CollectionFacet)
-	addTermsAgg(aggs, "birthPlace1", req.BirthPlace1Facet)
-	addTermsAgg(aggs, "birthPlace2", len(req.BirthPlace1) > 0 && req.BirthPlace2Facet)
-	addTermsAgg(aggs, "birthPlace3", len(req.BirthPlace1) > 0 && len(req.BirthPlace2) > 0 && req.BirthPlace3Facet)
-	addCenturyAgg(aggs, "birthCentury", "birthDecade", req.BirthCenturyFacet)
-	addTermsAgg(aggs, "birthDecade", len(req.BirthCentury) > 0 && req.BirthDecadeFacet)
-	addTermsAgg(aggs, "marriagePlace1", req.MarriagePlace1Facet)
-	addTermsAgg(aggs, "marriagePlace2", len(req.MarriagePlace1) > 0 && req.MarriagePlace2Facet)
-	addTermsAgg(aggs, "marriagePlace3", len(req.MarriagePlace1) > 0 && len(req.MarriagePlace2) > 0 && req.MarriagePlace3Facet)
-	addCenturyAgg(aggs, "marriageCentury", "marriageDecade", req.MarriageCenturyFacet)
-	addTermsAgg(aggs, "marriageDecade", len(req.MarriageCentury) > 0 && req.MarriageDecadeFacet)
-	addTermsAgg(aggs, "residencePlace1", req.ResidencePlace1Facet)
-	addTermsAgg(aggs, "residencePlace2", len(req.ResidencePlace1) > 0 && req.ResidencePlace2Facet)
-	addTermsAgg(aggs, "residencePlace3", len(req.ResidencePlace1) > 0 && len(req.ResidencePlace2) > 0 && req.ResidencePlace3Facet)
-	addCenturyAgg(aggs, "residenceCentury", "residenceDecade", req.ResidenceCenturyFacet)
-	addTermsAgg(aggs, "residenceDecade", len(req.ResidenceCentury) > 0 && req.ResidenceDecadeFacet)
-	addTermsAgg(aggs, "deathPlace1", req.DeathPlace1Facet)
-	addTermsAgg(aggs, "deathPlace2", len(req.DeathPlace1) > 0 && req.DeathPlace2Facet)
-	addTermsAgg(aggs, "deathPlace3", len(req.DeathPlace1) > 0 && len(req.DeathPlace2) > 0 && req.DeathPlace3Facet)
-	addCenturyAgg(aggs, "deathCentury", "deathDecade", req.DeathCenturyFacet)
-	addTermsAgg(aggs, "deathDecade", len(req.DeathCentury) > 0 && req.DeathDecadeFacet)
+	addTermsAgg(aggs, "collectionPlace1", req.CollectionPlace1Facet)
+	addTermsAgg(aggs, "collectionPlace2", len(req.CollectionPlace1) > 0 && req.CollectionPlace2Facet)
+	addTermsAgg(aggs, "collectionPlace3", len(req.CollectionPlace1) > 0 && len(req.CollectionPlace2) > 0 && req.CollectionPlace3Facet)
 	if len(aggs) == 0 {
 		aggs = nil
 	}
@@ -1327,79 +1307,12 @@ func constructFilterQueries(label, value string) []Query {
 	}
 }
 
-func constructCenturyFilterQueries(label, value string) []Query {
-	if len(value) == 0 {
-		return nil
-	}
-	gte := 0
-	lte := 0
-	if strings.HasPrefix(value, "<") {
-		lte = 1599
-	} else {
-		if val, err := strconv.Atoi(value); err == nil {
-			gte = val
-			lte = val + 99
-		}
-	}
-	return []Query{
-		{
-			Range: map[string]RangeQuery{
-				label: {
-					GTE: gte,
-					LTE: lte,
-				},
-			},
-		},
-	}
-}
-
 func addTermsAgg(aggs map[string]Agg, label string, cond bool) {
 	if cond {
 		aggs[label] = Agg{
 			Terms: &TermsAgg{
 				Field: label,
 				Size:  250,
-			},
-		}
-	}
-}
-
-func addCenturyAgg(aggs map[string]Agg, label, field string, cond bool) {
-	if cond {
-		aggs[label] = Agg{
-			Range: &RangeAgg{
-				Field: field,
-				Keyed: true,
-				Ranges: []RangeAggRange{
-					{
-						Key: "<1600",
-						To:  1600,
-					},
-					{
-						Key:  "1600",
-						From: 1600,
-						To:   1700,
-					},
-					{
-						Key:  "1700",
-						From: 1700,
-						To:   1800,
-					},
-					{
-						Key:  "1800",
-						From: 1800,
-						To:   1900,
-					},
-					{
-						Key:  "1900",
-						From: 1900,
-						To:   2000,
-					},
-					{
-						Key:  "2000",
-						From: 2000,
-					},
-				},
 			},
 		}
 	}
@@ -1601,9 +1514,9 @@ func getYears(dateParts, dateRange []string) []int {
 
 }
 
-func getDatesYearsDecades(encodedDate string) ([]int, []int, []int, bool) {
+func getDatesYears(encodedDate string) ([]int, []int, bool) {
 	if encodedDate == "" {
-		return nil, nil, nil, false
+		return nil, nil, false
 	}
 	// parse encoded date
 	dateParts := strings.Split(encodedDate, ",")
@@ -1617,7 +1530,7 @@ func getDatesYearsDecades(encodedDate string) ([]int, []int, []int, bool) {
 	for i := 0; i < len(dateParts); i++ {
 		ymd, err := strconv.Atoi(dateParts[i])
 		if err != nil {
-			return nil, nil, nil, false
+			return nil, nil, false
 		}
 		dates = append(dates, ymd)
 		// get just one date for range
@@ -1629,23 +1542,7 @@ func getDatesYearsDecades(encodedDate string) ([]int, []int, []int, bool) {
 	// get years
 	years := getYears(dateParts, dateRange)
 
-	// get decades
-	decades := []int{}
-	for _, year := range years {
-		dec := (year / 10) * 10
-		found := false
-		for _, decade := range decades {
-			if decade == dec {
-				found = true
-				break
-			}
-		}
-		if !found {
-			decades = append(decades, dec)
-		}
-	}
-
-	return dates, years, decades, true
+	return dates, years, true
 }
 
 func getPlaceLevels(stdPlace string) []string {
@@ -1661,6 +1558,18 @@ func getPlaceLevels(stdPlace string) []string {
 			std += ","
 		}
 		stdLevels = append(stdLevels, std)
+	}
+	return stdLevels
+}
+
+func getPlaceFacets(stdPlace string) []string {
+	var stdLevels []string
+	if stdPlace == "" {
+		return stdLevels
+	}
+	levels := splitPlace(stdPlace)
+	for i := len(levels) - 1; i >= 0; i-- {
+		stdLevels = append(stdLevels, strings.TrimSpace(levels[i]))
 	}
 	return stdLevels
 }

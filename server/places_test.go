@@ -14,6 +14,7 @@ import (
 func TestGetPlacesByPrefix(t *testing.T) {
 	am := &api.ApiMock{}
 	app := NewApp().API(am)
+	app.authDisabled = true
 	r := app.NewRouter()
 
 	// Empty result

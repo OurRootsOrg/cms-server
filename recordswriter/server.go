@@ -123,8 +123,7 @@ func processMessage(ctx context.Context, ap *api.API, rawMsg []byte) error {
 					}
 					if placeFields[key] {
 						var std string
-						// TODO eventually get default containing place from collection
-						place, err := ap.StandardizePlace(ctx, data[key], "")
+						place, err := ap.StandardizePlace(ctx, data[key], collection.Location)
 						if err != nil {
 							log.Printf("[ERROR] Standardize place %s %v\n", data[key], err)
 						} else if place != nil {

@@ -7,45 +7,39 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestGetDatesYearsDecades(t *testing.T) {
+func TestGetDatesYears(t *testing.T) {
 	tests := []struct {
 		encodedDate string
 		dates       []int
 		years       []int
-		decades     []int
 	}{
 		{
 			encodedDate: "19010319",
 			dates:       []int{19010319},
 			years:       []int{1901},
-			decades:     []int{1900},
 		},
 		{
 			encodedDate: "19010319,19010419",
 			dates:       []int{19010319, 19010419},
 			years:       []int{1901},
-			decades:     []int{1900},
 		},
 		{
 			encodedDate: "19010319,19020419",
 			dates:       []int{19010319, 19020419},
 			years:       []int{1901, 1902},
-			decades:     []int{1900},
 		},
 		{
 			encodedDate: "19010319,18990101-19011231",
 			dates:       []int{19010319},
 			years:       []int{1899, 1900, 1901},
-			decades:     []int{1890, 1900},
 		},
 	}
 
 	for i, test := range tests {
-		dates, years, decades, valid := getDatesYearsDecades(test.encodedDate)
+		dates, years, valid := getDatesYears(test.encodedDate)
 		assert.True(t, valid, i)
 		assert.Equal(t, test.dates, dates, i)
 		assert.Equal(t, test.years, years, i)
-		assert.Equal(t, test.decades, decades, i)
 	}
 }
 
@@ -70,6 +64,31 @@ func TestGetPlaceLevels(t *testing.T) {
 
 	for _, test := range tests {
 		levels := getPlaceLevels(test.place)
+		assert.Equal(t, test.levels, levels)
+	}
+}
+
+func TestGetPlaceFacets(t *testing.T) {
+	tests := []struct {
+		place  string
+		levels []string
+	}{
+		{
+			place:  "United States",
+			levels: []string{"United States"},
+		},
+		{
+			place:  "Alabama, United States",
+			levels: []string{"United States", "Alabama"},
+		},
+		{
+			place:  "Autauga, Alabama, United States",
+			levels: []string{"United States", "Alabama", "Autauga"},
+		},
+	}
+
+	for _, test := range tests {
+		levels := getPlaceFacets(test.place)
 		assert.Equal(t, test.levels, levels)
 	}
 }
@@ -196,6 +215,23 @@ func TestSearchQuery(t *testing.T) {
 						{"term":{"birthPlace3":{"value":"United States,Alabama,Autauga,","boost":1.0}}}
 					  ]}}
 					]}},"from":0,"size":10}`,
+		},
+		{
+			req: SearchRequest{
+				Surname:               "Flintstone",
+				SurnameFuzziness:      FuzzyNameExact,
+				CollectionPlace1:      "United States",
+				CollectionPlace2Facet: true,
+			},
+			query: `{"query":{"bool":{"must":[
+					  {"bool":{"must":[
+						{"match":{"surname":{"query":"Flintstone","boost":1}}}
+					  ]}}
+					],
+                    "filter":[{"term":{"collectionPlace1":{"value":"United States"}}}]
+					}},
+					"aggs":{"collectionPlace2":{"terms":{"field":"collectionPlace2","size":250}}},
+					"from":0,"size":10}`,
 		},
 	}
 

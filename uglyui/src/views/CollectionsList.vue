@@ -54,6 +54,12 @@ export default {
           sorter: "string"
         },
         {
+          title: "Location",
+          field: "location",
+          headerFilter: "input",
+          sorter: "string"
+        },
+        {
           title: "# Posts",
           field: "postsCount",
           headerFilter: "number",
@@ -75,6 +81,7 @@ export default {
         return {
           id: c.id,
           name: c.name,
+          location: c.location,
           postsCount: this.posts.postsList.filter(post => post.collection === c.id).length,
           categoryNames: this.categories.categoriesList
             .filter(cat => c.categories.includes(cat.id))
