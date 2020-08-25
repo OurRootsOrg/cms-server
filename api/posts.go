@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"time"
 
 	"gocloud.dev/blob"
 	"gocloud.dev/pubsub"
@@ -39,6 +40,25 @@ func (api API) GetPost(ctx context.Context, id uint32) (*model.Post, error) {
 		return nil, NewError(err)
 	}
 	return post, nil
+}
+
+// GetPostImage returns a signed S3 URL to return an image file
+func (api *API) GetPostImage(ctx context.Context, id uint32, filePath string) (string, error) {
+	bucket, err := api.OpenBucket(ctx)
+	if err != nil {
+		return "", NewError(err)
+	}
+	defer bucket.Close()
+
+	key := fmt.Sprintf(ImagesPrefix, id) + filePath
+	signedURL, err := bucket.SignedURL(ctx, key, &blob.SignedURLOptions{
+		Expiry: 1 * time.Hour,
+		Method: "GET",
+	})
+	if err != nil {
+		return "", NewError(err)
+	}
+	return signedURL, nil
 }
 
 // AddPost holds the business logic around adding a Post
