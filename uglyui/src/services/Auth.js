@@ -1,5 +1,5 @@
 import { UserManager, WebStorageStateStore } from "oidc-client";
-import Server from "@/services/Server.js";
+//import Server from "@/services/Server.js";
 import store from "@/store";
 import Auth0 from "./Auth-auth0";
 import Cognito from "./Auth-cognito";
