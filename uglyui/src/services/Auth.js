@@ -1,4 +1,5 @@
 import { UserManager, WebStorageStateStore } from "oidc-client";
+import Server from "@/services/Server.js";
 import store from "@/store";
 import Auth0 from "./Auth-auth0";
 import Cognito from "./Auth-cognito";
@@ -31,9 +32,36 @@ function authClient() {
 
   let loading = new Promise(resolve => {
     mgr.getUser().then(user => {
+      console.log("getUser", user);
       store.dispatch("userSet", user ? provider.standardizeUser(user) : null);
       resolve(true);
       loading = null;
+      // if (user) {
+      //   // verify token has not expired
+      //   Server.currentUser().then(
+      //     response => {
+      //       console.log("currentUser", response);
+      //       store.dispatch("userSet", provider.standardizeUser(user));
+      //       resolve(true);
+      //       loading = null;
+      //     },
+      //     err => {
+      //       console.log("currentUser error", err);
+      //       mgr.removeUser().then(() => {
+      //         console.log("user removed");
+      //       });
+      //       storageManager.removeItem(authCanRefreshKey);
+      //       store.dispatch("userSet", null);
+      //       resolve(true);
+      //       loading = null;
+      //     }
+      //   );
+      // } else {
+      //   storageManager.removeItem(authCanRefreshKey);
+      //   store.dispatch("userSet", null);
+      //   resolve(true);
+      //   loading = null;
+      // }
     });
   });
 
@@ -82,11 +110,13 @@ function authClient() {
 
   async function refreshAccessToken() {
     let user = await mgr.getUser();
+    console.log("refreshAccessToken", user);
     if ((user && user.refresh_token) || (provider.canSilentlyRefresh() && storageManager.getItem(authCanRefreshKey))) {
       // Refresh the access token
       // The concurrency handler will only do the refresh work for the first UI view that requests it
       await concurrentActionHandler.execute(performTokenRefresh);
       user = await mgr.getUser();
+      console.log("refreshAccessToken refreshed", user);
       if (user && user.access_token) {
         return user.access_token;
       }

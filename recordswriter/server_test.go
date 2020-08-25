@@ -1,4 +1,4 @@
-package main
+package main_test
 
 import (
 	"context"
@@ -49,7 +49,7 @@ func TestRecordsWriter(t *testing.T) {
 	defer bucket.Close()
 
 	// write an object
-	content := `[{"given":"fred","surname":"flintstone"},{"given":"wilma","surname":"Slaghoople"}]`
+	content := `[{"given":"fred","surname":"flintstone","birthdate":"19 Mar 1900","birthplace":"Autaugaville, AL"},{"given":"wilma","surname":"Slaghoople","birthdate":"Abt 1900","birthplace":"AL"}]`
 	recordsKey := "/2020-05-30/2020-05-30T00:00:00.000000000Z"
 	w, err := bucket.NewWriter(ctx, recordsKey, nil)
 	assert.NoError(t, err)
@@ -94,6 +94,24 @@ func TestRecordsWriter(t *testing.T) {
 	assert.Nil(t, errors)
 	assert.Equal(t, 2, len(records.Records), "Expected two records, got %#v", records)
 
+	// check standardization results
+	fredIx := -1
+	wilmaIx := -1
+	for ix, record := range records.Records {
+		if record.Data["given"] == "fred" {
+			fredIx = ix
+		}
+		if record.Data["given"] == "wilma" {
+			wilmaIx = ix
+		}
+	}
+	assert.GreaterOrEqual(t, fredIx, 0)
+	assert.GreaterOrEqual(t, wilmaIx, 0)
+	assert.Equal(t, "19000319", records.Records[fredIx].Data["birthdate_std"])
+	assert.Equal(t, "19000000,18990101-19011231", records.Records[wilmaIx].Data["birthdate_std"])
+	assert.Equal(t, "Autaugaville, Autauga, Alabama, United States", records.Records[fredIx].Data["birthplace_std"])
+	assert.Equal(t, "Alabama, United States", records.Records[wilmaIx].Data["birthplace_std"])
+
 	// delete post
 	errors = testAPI.DeletePost(ctx, testPost.ID)
 	assert.Nil(t, errors)
@@ -119,6 +137,28 @@ func deleteTestCategory(t *testing.T, p model.CategoryPersister, category *model
 
 func createTestCollection(t *testing.T, p model.CollectionPersister, categoryID uint32) *model.Collection {
 	in := model.NewCollectionIn("Test", []uint32{categoryID})
+	in.Mappings = []model.CollectionMapping{
+		{
+			Header:  "given",
+			IxRole:  "principal",
+			IxField: "given",
+		},
+		{
+			Header:  "surname",
+			IxRole:  "principal",
+			IxField: "surname",
+		},
+		{
+			Header:  "birthdate",
+			IxRole:  "principal",
+			IxField: "birthDate",
+		},
+		{
+			Header:  "birthplace",
+			IxRole:  "principal",
+			IxField: "birthPlace",
+		},
+	}
 	created, e := p.InsertCollection(context.TODO(), in)
 	assert.Nil(t, e)
 	return created

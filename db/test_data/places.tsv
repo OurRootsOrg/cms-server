@@ -1,0 +1,11 @@
+1500	United States	United States	["Estados Unidos de América","U.S.","USA","Verenigde Staten","États-Unis d'Amérique","VS"]	["Country"]	0	[]	1	1500	38.0	-98.0	2730
+1501	Alabama	Alabama, United States	["AL","Ala","Alabama Territory"]	["State"]	1500	[]	2	1500	33.0	-87.0	2585
+1502	Autauga	Autauga, Alabama, United States	["Autauga"]	["County"]	1501	[]	3	1500	32.533	-86.65	25
+1503	Alpha Springs	Alpha Springs, Autauga, Alabama, United States	[]	["Inhabited place"]	1502	[]	4	1500	33.617	-86.417	0
+1504	Autaugaville	Autaugaville, Autauga, Alabama, United States	[]	["Town"]	1502	[]	4	1500	32.432	-86.653	1
+1505	Bethel Grove	Bethel Grove, Autauga, Alabama, United States	[]	["Inhabited place"]	1502	[]	4	1500	32.617	-86.85	0
+1506	Billingsley	Billingsley, Autauga, Alabama, United States	["Carters Mill"]	["Town"]	1502	[]	4	1500	32.66	-86.711	0
+1507	Bonita	Bonita, Autauga, Alabama, United States	[]	["Inhabited place"]	1502	[1510]	4	1500	32.533	-86.817	0
+1508	Booth	Booth, Autauga, Alabama, United States	["Fake "]	["Inhabited place"]	1502	[]	4	1500	32.5	-86.567	1
+1509	Browntown	Browntown, Autauga, Alabama, United States	["Fake"]	["Inhabited place"]	1502	[]	4	1500	32.6	-86.583	0
+1510	Fake	Fake, Alabama, United States	[]	["County"]	1501	[]	4	1500	32.6	-86.583	0

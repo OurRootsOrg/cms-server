@@ -169,6 +169,7 @@ func doPostsTests(t *testing.T,
 
 func createTestCollection(t *testing.T, p model.CollectionPersister, categoryID uint32) *model.Collection {
 	in := model.NewCollectionIn("Test", []uint32{categoryID})
+	in.Location = "Iowa, United States"
 	in.Fields = []model.CollectionField{
 		{
 			Header: "given",

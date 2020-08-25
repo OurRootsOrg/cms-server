@@ -1,0 +1,33 @@
+CREATE TABLE IF NOT EXISTS place (
+    id INTEGER PRIMARY KEY,
+    name TEXT NOT NULL DEFAULT '',
+    full_name TEXT NOT NULL DEFAULT '',
+    alt_names JSONB,
+    types JSONB,
+    located_in_id INTEGER NOT NULL DEFAULT 0,
+    also_located_in_ids JSONB,
+    level INTEGER NOT NULL DEFAULT 0,
+    country_id INTEGER references place (id),
+    latitude DECIMAL(9,6) NOT NULL DEFAULT 0,
+    longitude DECIMAL(9,6) NOT NULL DEFAULT 0,
+    sources TEXT NOT NULL DEFAULT '',
+    count INTEGER NOT NULL DEFAULT 0,
+    insert_time TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    last_update_time TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS place_full_name ON place(full_name, count);
+CREATE TABLE IF NOT EXISTS place_word (
+    word TEXT PRIMARY KEY,
+    ids JSONB,
+    insert_time TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    last_update_time TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+CREATE TABLE IF NOT EXISTS place_settings (
+    id INTEGER PRIMARY KEY,
+    body JSONB,
+    insert_time TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    last_update_time TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+GRANT SELECT, INSERT, UPDATE, DELETE ON place TO ourroots;
+GRANT SELECT, INSERT, UPDATE, DELETE ON place_word TO ourroots;
+GRANT SELECT, INSERT, UPDATE, DELETE ON place_settings TO ourroots;

@@ -11,7 +11,12 @@ import (
 	"net/url"
 	"os"
 	"reflect"
+	"strings"
 	"time"
+
+	"github.com/ourrootsorg/cms-server/stdplace"
+
+	"github.com/ourrootsorg/cms-server/stddate"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
@@ -32,7 +37,7 @@ const (
 	defaultURL = "http://localhost:3000"
 )
 
-const numWorkers = 10
+const numWorkers = 40
 
 func processMessage(ctx context.Context, ap *api.API, rawMsg []byte) error {
 	var msg model.RecordsWriterMsg
@@ -53,6 +58,24 @@ func processMessage(ctx context.Context, ap *api.API, rawMsg []byte) error {
 	if post.RecordsStatus != model.PostLoading {
 		log.Printf("[ERROR] post %d not Loading, is %s\n", post.ID, post.RecordsStatus)
 		return nil
+	}
+
+	// read collection for post
+	collection, errs := ap.GetCollection(ctx, post.Collection)
+	if errs != nil {
+		log.Printf("[ERROR] GetCollection %v\n", errs)
+		return errs
+	}
+
+	// identify date and place fields
+	dateFields := map[string]bool{}
+	placeFields := map[string]bool{}
+	for _, mapping := range collection.Mappings {
+		if strings.HasSuffix(mapping.IxField, "Date") {
+			dateFields[mapping.Header] = true
+		} else if strings.HasSuffix(mapping.IxField, "Place") {
+			placeFields[mapping.Header] = true
+		}
 	}
 
 	// delete any previous records for post
@@ -90,6 +113,26 @@ func processMessage(ctx context.Context, ap *api.API, rawMsg []byte) error {
 	for i := 0; i < numWorkers; i++ {
 		go func(in chan map[string]string, out chan error) {
 			for data := range in {
+				for key := range data {
+					if dateFields[key] {
+						var std string
+						if d := stddate.Standardize(data[key]); d != nil {
+							std = d.Encode()
+						}
+						data[key+stddate.StdSuffix] = std
+					}
+					if placeFields[key] {
+						var std string
+						place, err := ap.StandardizePlace(ctx, data[key], collection.Location)
+						if err != nil {
+							log.Printf("[ERROR] Standardize place %s %v\n", data[key], err)
+						} else if place != nil {
+							std = place.FullName
+						}
+						data[key+stdplace.StdSuffix] = std
+					}
+				}
+
 				log.Printf("[DEBUG] Processing data: %#v", data)
 				_, errs := ap.AddRecord(ctx, model.RecordIn{
 					RecordBody: model.RecordBody{
@@ -237,8 +280,13 @@ func main() {
 		log.Printf("[INFO] Connected to %s\n", dbURL.Host)
 		p := persist.NewPostgresPersister(db)
 		ap.
+			CollectionPersister(p).
 			PostPersister(p).
-			RecordPersister(p)
+			RecordPersister(p).
+			PlaceStandardizer(ctx, p)
+		if err != nil {
+			log.Fatalf("[FATAL] Error initializing place standardizer %v\n", err)
+		}
 		log.Print("[INFO] Using PostgresPersister")
 	} else {
 		sess, err := session.NewSession()
@@ -250,8 +298,13 @@ func main() {
 			log.Fatalf("[FATAL] Error creating DynamoDB persister: %v", err)
 		}
 		ap.
+			CollectionPersister(p).
 			PostPersister(p).
-			RecordPersister(p)
+			RecordPersister(p).
+			PlaceStandardizer(ctx, p)
+		if err != nil {
+			log.Fatalf("[FATAL] Error initializing place standardizer %v\n", err)
+		}
 		log.Print("[INFO] Using DynamoDBPersister")
 	}
 

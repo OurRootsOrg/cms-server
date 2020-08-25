@@ -99,3 +99,11 @@ func (a *ApiMock) GetSettings(ctx context.Context) (*model.Settings, error) {
 func (a *ApiMock) UpdateSettings(ctx context.Context, in model.Settings) (*model.Settings, error) {
 	return a.Result.(*model.Settings), a.Errors
 }
+
+func (a *ApiMock) StandardizePlace(ctx context.Context, text, defaultContainingPlace string) (*model.Place, error) {
+	return a.Result.(*model.Place), a.Errors
+}
+func (a *ApiMock) GetPlacesByPrefix(ctx context.Context, prefix string, count int) ([]model.Place, error) {
+	a.Request = prefix
+	return a.Result.([]model.Place), a.Errors
+}

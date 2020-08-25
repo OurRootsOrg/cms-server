@@ -55,7 +55,9 @@ async function request(config) {
       throw e;
     }
     // retry 401 errors one time
+    console.log("request retry 401", e.response);
     token = await Auth.refreshAccessToken();
+    console.log("request refreshed token", token);
     return await requestWithToken(config, token);
   }
 }

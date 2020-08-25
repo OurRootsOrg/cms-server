@@ -13,7 +13,7 @@
         placeholder="Name"
         class="field"
         :class="{ error: $v.collection.name.$error }"
-        @blur="touch('name')"
+        @change="touch('name')"
       ></v-text-field>
 
       <template v-if="$v.collection.name.$error">
@@ -21,6 +21,27 @@
           Name is required.
         </p>
       </template>
+
+      <h3>What location does this collection cover?</h3>
+      <div class="location">
+        <v-autocomplete
+          outlined
+          dense
+          v-model="collection.location"
+          :loading="locationLoading"
+          :items="locationItems"
+          :search-input.sync="locationSearch"
+          no-filter
+          auto-select-first
+          flat
+          hide-no-data
+          hide-details
+          solo
+          @change="touch('location')"
+          placeholder="Location"
+          class="ma-0 mb-n2"
+        ></v-autocomplete>
+      </div>
 
       <h3>Select one or more categories</h3>
       <label>Categories (select one or more)</label>
@@ -132,6 +153,7 @@ import NProgress from "nprogress";
 import { required } from "vuelidate/lib/validators";
 import Multiselect from "vue-multiselect";
 import lodash from "lodash";
+import Server from "@/services/Server";
 
 const ixRoleMap = {
   na: "Don't index",
@@ -177,6 +199,9 @@ function setup() {
     fields: lodash.cloneDeep(this.collections.collection.fields),
     mappings: lodash.cloneDeep(this.collections.collection.mappings)
   };
+  if (this.collection.location) {
+    this.locationItems = [this.collection.location];
+  }
 }
 
 export default {
@@ -205,6 +230,10 @@ export default {
   data() {
     return {
       collection: { id: null, name: null, categories: [], fields: [], mappings: [] },
+      locationLoading: false,
+      locationTimeout: null,
+      locationItems: [],
+      locationSearch: "",
       fieldColumns: [
         {
           rowHandle: true,
@@ -330,6 +359,11 @@ export default {
       ]
     };
   },
+  watch: {
+    locationSearch(val) {
+      val && val !== this.collection.location && this.doLocationSearch(val);
+    }
+  },
   computed: {
     postsForCollection() {
       return this.posts.postsList
@@ -350,12 +384,29 @@ export default {
   validations: {
     collection: {
       name: { required },
+      location: {},
       categories: { required },
       fields: {},
       mappings: {}
     }
   },
   methods: {
+    doLocationSearch(text) {
+      if (this.locationTimeout) {
+        clearTimeout(this.locationTimeout);
+      }
+      this.locationLoading = true;
+      this.locationTimeout = setTimeout(() => {
+        this.locationTimeout = null;
+        Server.placeSearch(text)
+          .then(res => {
+            this.locationItems = res.data.map(p => p.fullName);
+          })
+          .finally(() => {
+            this.locationLoading = false;
+          });
+      }, 400);
+    },
     touch(attr) {
       if (this.$v.collection[attr].$dirty) {
         return;
@@ -535,6 +586,9 @@ export default {
   content: attr(data-select);
   background: #b2ebf2;
   color: #006064;
+}
+.location {
+  margin-bottom: 24px;
 }
 </style>
 <!--the original green hex #41b883 change to cyan lighten-3 #80DEEA or cyan lighten-4 #B2EBF2-->

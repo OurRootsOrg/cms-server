@@ -12,6 +12,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ourrootsorg/cms-server/stdplace"
+
 	"github.com/cenkalti/backoff/v4"
 
 	"github.com/ourrootsorg/go-oidc"
@@ -60,6 +62,8 @@ type LocalAPI interface {
 	SearchDeleteByID(ctx context.Context, id string) error
 	GetSettings(ctx context.Context) (*model.Settings, error)
 	UpdateSettings(ctx context.Context, in model.Settings) (*model.Settings, error)
+	StandardizePlace(ctx context.Context, text, defaultContainingPlace string) (*model.Place, error)
+	GetPlacesByPrefix(ctx context.Context, prefix string, count int) ([]model.Place, error)
 }
 
 // API is the container for the apilication
@@ -69,10 +73,12 @@ type API struct {
 	postPersister            model.PostPersister
 	recordPersister          model.RecordPersister
 	userPersister            model.UserPersister
+	placePersister           model.PlacePersister
 	settingsPersister        model.SettingsPersister
 	validate                 *validator.Validate
 	blobStoreConfig          BlobStoreConfig
 	pubSubConfig             PubSubConfig
+	placeStandardizer        *stdplace.Standardizer
 	userCache                *lru.TwoQueueCache
 	rabbitmqTopicConn        *amqp.Connection
 	rabbitmqSubscriptionConn *amqp.Connection
@@ -126,6 +132,10 @@ func (api *API) Close() error {
 			err = e
 		}
 		api.rabbitmqSubscriptionConn = nil
+	}
+	if api.placeStandardizer != nil {
+		api.placeStandardizer.Close()
+		api.placeStandardizer = nil
 	}
 	return err
 }
@@ -190,6 +200,22 @@ func (api *API) QueueConfig(queueName, queueURL string) *API {
 // UserPersister sets the UserPersister for the API
 func (api *API) UserPersister(p model.UserPersister) *API {
 	api.userPersister = p
+	return api
+}
+
+// PlacePersister sets the PostPersister for the api
+func (api *API) PlacePersister(p model.PlacePersister) *API {
+	api.placePersister = p
+	return api
+}
+
+// PlaceStandardizer sets the placeStandardizer for the api
+func (api *API) PlaceStandardizer(ctx context.Context, p model.PlacePersister) *API {
+	std, err := stdplace.NewStandardizer(ctx, p)
+	if err != nil {
+		log.Fatalf("[FATAL] Error initializing place standardizer %v\n", err)
+	}
+	api.placeStandardizer = std
 	return api
 }
 
