@@ -196,7 +196,7 @@ func (app App) NewRouter() *mux.Router {
 	r.HandleFunc(app.baseURL.Path+"/search/{id}", app.SearchByID).Methods("GET")
 
 	r.Handle(app.baseURL.Path+"/places", http.HandlerFunc(app.OptionsNoop)).Methods("OPTIONS")
-	r.Handle(app.baseURL.Path+"/places", app.verifyToken(http.HandlerFunc(app.GetPlacesByPrefix))).Methods("GET")
+	r.HandleFunc(app.baseURL.Path+"/places", http.HandlerFunc(app.GetPlacesByPrefix)).Methods("GET")
 
 	r.Handle(app.baseURL.Path+"/currentuser", http.HandlerFunc(app.OptionsNoop)).Methods("OPTIONS")
 	r.Handle(app.baseURL.Path+"/currentuser", app.verifyToken(http.HandlerFunc(app.GetCurrentUser))).Methods("GET")
