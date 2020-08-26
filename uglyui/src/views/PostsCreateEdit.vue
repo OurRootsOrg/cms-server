@@ -63,7 +63,7 @@
             <v-text-field
               :placeholder="item.tooltip"
               :label="item.name"
-              v-model="posts.post.metadata[item.name]"
+              v-model="post.metadata[item.name]"
               @change="touch('metadata')"
             >
               <v-tooltip slot="append" bottom>
@@ -75,7 +75,7 @@
             </v-text-field>
           </v-col>
           <v-col cols="12" md="5" class="py-0" v-if="item.type === 'boolean'">
-            <v-checkbox :label="item.name" v-model="posts.post.metadata[item.name]" @change="touch('metadata')">
+            <v-checkbox :label="item.name" v-model="post.metadata[item.name]" @change="touch('metadata')">
               <v-tooltip slot="append" bottom>
                 <template v-slot:activator="{ on }">
                   <v-icon v-on="on" small>mdi-information-outline</v-icon>
@@ -89,7 +89,7 @@
               :placeholder="item.tooltip"
               :label="item.name"
               type="number"
-              v-model="posts.post.metadata[item.name]"
+              v-model="post.metadata[item.name]"
               @change="touch('metadata')"
             >
               <v-tooltip slot="append" bottom>
@@ -101,53 +101,39 @@
             </v-text-field>
           </v-col>
           <v-col cols="12" md="5" class="py-0" v-if="item.type === 'date'">
-            <v-text-field
-              :placeholder="item.name"
-              :label="item.name"
-              v-model="posts.post.metadata[item.name]"
-              @change="touch('metadata')"
+            <v-menu
+              v-model="showPicker"
+              :close-on-content-click="false"
+              :nudge-right="40"
+              transition="scale-transition"
+              offset-y
+              min-width="290px"
+              max-width="290px"
             >
-              <v-tooltip slot="append" bottom>
-                <template v-slot:activator="{ on }">
-                  <v-icon v-on="on" small>mdi-information-outline</v-icon>
-                </template>
-                <span>{{ item.tooltip }}</span>
-              </v-tooltip>
-            </v-text-field>
+              <template v-slot:activator="{ on }">
+                <v-text-field
+                  :placeholder="item.name"
+                  :label="item.name"
+                  v-model="post.metadata[item.name]"
+                  prepend-icon="mdi-calendar-range"
+                  readonly
+                  v-on="on"
+                >
+                  <v-tooltip slot="append" bottom>
+                    <template v-slot:activator="{ on }">
+                      <v-icon v-on="on" small>mdi-information-outline</v-icon>
+                    </template>
+                    <span>{{ item.tooltip }}</span>
+                  </v-tooltip>
+                </v-text-field>
+              </template>
+              <v-date-picker
+                v-model="post.metadata[item.name]"
+                @input="showPicker = false"
+                @change="touch('metadata')"
+              ></v-date-picker>
+            </v-menu>
           </v-col>
-          <!--date picker & field combo-->
-          <!-- <v-col cols="12" md="5" class="py-0" v-if="item.type==='date'"> 
-            <v-row v-if="item.type==='date'" style="background: #f1f1f1; padding: 15px 5px">
-              <v-col cols="12">
-                <h4>date picker experiment section</h4>
-                NESTED NOTE: return-value should be posts.post.metadata[item.name] instead of date
-                <v-menu
-                  v-model="showPicker"
-                  :close-on-content-click="false"
-                  :nudge-right="40"
-                  transition="scale-transition"
-                  offset-y
-                  min-width="290px"
-                  max-width="290px"
-                  >
-                  <template v-slot:activator="{ on }">
-                    <v-text-field
-                    v-model="posts.post.metadata[item.name]"
-                    label="date"
-                    prepend-icon="mdi-calendar-range"
-                    readonly
-                    v-on="on"
-                    ></v-text-field>
-                  </template>
-                  <v-date-picker
-                   v-model="posts.post.metadata[item.name]" 
-                   @input="showPicker=false"
-                  ></v-date-picker>
-                </v-menu>
-              </v-col>
-            </v-row>
-            NESTED NOTE: end date picker  
-          </v-col>-->
         </v-row>
       </div>
       <p v-if="$v.$anyError" class="errorMessage">
@@ -208,13 +194,11 @@
 import store from "@/store";
 import { mapState } from "vuex";
 import { required } from "vuelidate/lib/validators";
-import { getMetadataColumnForEditing } from "../utils/metadata";
 import FlatfileImporter from "flatfile-csv-importer";
 import config from "../utils/flatfileConfig.js";
 import Server from "@/services/Server.js";
 import NProgress from "nprogress";
 import lodash from "lodash";
-import moment from "moment";
 
 FlatfileImporter.setVersion(2);
 
@@ -222,8 +206,7 @@ function setup() {
   this.post = {
     ...this.posts.post
   };
-  console.log("metadata: ", this.posts.post.metadata);
-  // this.metadata.splice(0, 1, { ...this.posts.post.metadata });
+  console.log("setup", this.post);
 }
 
 async function uploadData(store, post, contentType, data) {
@@ -264,9 +247,7 @@ export default {
   },
   data() {
     return {
-      post: { id: null, name: null, collection: null, recordsStatus: null, recordsKey: null, metatdata: {} },
-      //for date picker
-      date: new Date().toISOString().substr(0, 10),
+      post: { id: null, name: null, collection: null, recordsStatus: null, recordsKey: null, metadata: {} },
       showPicker: false
     };
   },
@@ -282,15 +263,6 @@ export default {
     },
     isUnpublishable() {
       return this.post.id && this.post.recordsStatus === "Published";
-    },
-    //for date picker using moment
-    computedDateFormattedMomentjs() {
-      return this.date ? moment(this.date).format("dddd, MMMM Do YYYY") : "";
-    },
-    fromDateDisp() {
-      return this.fromDateVal;
-      // format date, apply validations, etc. Example below.
-      // return this.fromDateVal ? this.formatDate(this.fromDateVal) : "";
     },
     ...mapState(["collections", "posts", "records", "settings"])
   },
@@ -315,19 +287,22 @@ export default {
       this.touch("metadata");
     },
     getRecordColumns() {
-      //Tabulator:v-data-table translation is title:text and field:value (rename "title" as "text" and "field" as "value")
-      return this.collections.collection.fields.map(f => {
-        return { text: f.header, value: f.header };
-      });
-    },
-    getMetadataColumns() {
-      //console.log(this.settings.settings.postMetadata)
-      return this.settings.settings.postMetadata.map(pf => getMetadataColumnForEditing(pf));
+      let cols = [];
+      for (let f of this.collections.collection.fields) {
+        cols.push({ text: f.header, value: f.header });
+        if (
+          this.collections.collection.mappings.find(
+            m => m.header === f.header && (m.ixField.endsWith("Date") || m.ixField.endsWith("Place"))
+          )
+        ) {
+          cols.push({ text: f.header + "_std", value: f.header + "_std" });
+        }
+      }
+      return cols;
     },
     getPostFromForm() {
       let post = Object.assign({}, this.post);
       post.collection = +post.collection; // convert to a number
-      // post.metadata = this.metadata[0];
       console.log("getPostFromForm: ", post);
       return post;
     },
@@ -429,10 +404,6 @@ export default {
         })
       };
     }
-    // saveDate() {
-    //   dateMenu: false,
-    //   console.log("not sure")
-    // },
   }
 };
 </script>

@@ -102,7 +102,7 @@ func doSearchTests(t *testing.T,
 	assert.Equal(t, "Fred", hit.Record[0].Value)
 
 	// search
-	res, errs := testApi.Search(ctx, &api.SearchRequest{Given: "Fred"})
+	res, errs := testApi.Search(ctx, &api.SearchRequest{Given: "Fred", CollectionPlace1: "United States", CollectionPlace2Facet: true})
 	assert.Nil(t, errs, "Error searching by id")
 	assert.GreaterOrEqual(t, res.Total, 1)
 	assert.GreaterOrEqual(t, len(res.Hits), 1)
@@ -110,6 +110,10 @@ func doSearchTests(t *testing.T,
 	assert.Equal(t, testCollection.ID, res.Hits[0].CollectionID)
 	assert.Equal(t, testCollection.Name, res.Hits[0].CollectionName)
 	assert.Nil(t, res.Hits[0].Record)
+	assert.Equal(t, 1, len(res.Facets))
+	assert.Equal(t, 1, len(res.Facets["collectionPlace2"].Buckets))
+	assert.Equal(t, "Iowa", res.Facets["collectionPlace2"].Buckets[0].Label)
+	assert.Equal(t, 1, res.Facets["collectionPlace2"].Buckets[0].Count)
 }
 
 var recordData = []map[string]string{

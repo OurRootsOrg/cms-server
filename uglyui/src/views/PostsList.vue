@@ -96,7 +96,6 @@ export default {
       });
     },
     getPostColumns() {
-      //Tabulator:v-data-table translation is title:text and field:value (rename "title" as "text" and "field" as "value")
       let cols = [
         {
           text: "Name",
@@ -105,35 +104,15 @@ export default {
         {
           text: "Status",
           value: "recordsStatus"
-          // filter: value => {
-          //   // console.log("value = ", value, "recordsStatusFilter = ", this.recordsStatusFilter)
-          //     if (this.recordsStatusFilter.length === 0) return true;
-          //     return this.recordsStatusFilter.includes(value);
-          //   },
-          // headerFilter: "select",
-          // headerFilterParams: {
-          //   values: true
-          // },
-          // sorter: "string"
         },
         {
           text: "Data",
           value: "hasData",
-          // filter: value => {
-          //   // console.log("value = ", value, "hasDataFilter = ", this.hasDataFilter);
-          //     if (this.hasDataFilter.length === 0) return true;
-          //     return this.hasDataFilter.includes(value);
-          // },
-          align: "center" //used to be hozAlign: 'center'
-          // formatter: "tickCross",
-          // headerFilter: "tickCross",
-          // sorter: "boolean",
+          align: "center"
         },
         {
           text: "Collection",
           value: "collectionName"
-          // headerFilter: "input",
-          // sorter: "string"
         }
       ];
       cols.push(...this.settings.settings.postMetadata.map(pf => getMetadataColumn(pf)));

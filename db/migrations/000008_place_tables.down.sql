@@ -1,0 +1,4 @@
+DROP TABLE IF EXISTS place;
+DROP INDEX IF EXISTS place_full_name;
+DROP TABLE IF EXISTS place_word;
+DROP TABLE IF EXISTS place_settings;

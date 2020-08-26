@@ -118,6 +118,40 @@ definitions:
           type: string
         type: array
     type: object
+  model.Place:
+    properties:
+      alsoLocatedInIds:
+        $ref: '#/definitions/model.Uint32Slice'
+        type: object
+      altNames:
+        $ref: '#/definitions/model.StringSlice'
+        type: object
+      count:
+        type: integer
+      countryId:
+        type: integer
+      fullName:
+        type: string
+      id:
+        type: integer
+      insert_time:
+        type: string
+      last_update_time:
+        type: string
+      latitude:
+        type: number
+      level:
+        type: integer
+      locatedInId:
+        type: integer
+      longitude:
+        type: number
+      name:
+        type: string
+      types:
+        $ref: '#/definitions/model.StringSlice'
+        type: object
+    type: object
   model.Post:
     properties:
       collection:
@@ -126,6 +160,11 @@ definitions:
       id:
         example: 999
         type: integer
+      imagesKeys:
+        $ref: '#/definitions/model.StringSet'
+        type: object
+      imagesStatus:
+        type: string
       insert_time:
         type: string
       last_update_time:
@@ -149,6 +188,11 @@ definitions:
       collection:
         example: 999
         type: integer
+      imagesKeys:
+        $ref: '#/definitions/model.StringSet'
+        type: object
+      imagesStatus:
+        type: string
       metadata:
         additionalProperties: true
         type: object
@@ -194,10 +238,31 @@ definitions:
       type:
         type: string
     type: object
+  model.SearchFacet:
+    properties:
+      buckets:
+        items:
+          $ref: '#/definitions/model.SearchFacetBucket'
+        type: array
+      errorUpperBound:
+        type: integer
+      otherDocCount:
+        type: integer
+    type: object
+  model.SearchFacetBucket:
+    properties:
+      count:
+        type: integer
+      label:
+        type: string
+    type: object
   model.SearchHit:
     properties:
       collection:
         type: integer
+      collectionLocation:
+        description: only returned on search by id
+        type: string
       collectionName:
         type: string
       id:
@@ -247,6 +312,10 @@ definitions:
     type: object
   model.SearchResult:
     properties:
+      facets:
+        additionalProperties:
+          $ref: '#/definitions/model.SearchFacet'
+        type: object
       hits:
         items:
           $ref: '#/definitions/model.SearchHit'
@@ -276,6 +345,18 @@ definitions:
       type:
         type: string
     type: object
+  model.StringSet:
+    items:
+      type: string
+    type: array
+  model.StringSlice:
+    items:
+      type: string
+    type: array
+  model.Uint32Slice:
+    items:
+      type: integer
+    type: array
 host: api.ourroots.org
 info:
   contact:
@@ -696,9 +777,9 @@ paths:
       summary: returns a URL for uploading content
       tags:
       - content
-  /posts:
+  /currentuser:
     get:
-      operationId: getPosts
+      operationId: getCurrentUser
       produces:
       - application/json
       responses:
@@ -706,7 +787,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/model.Post'
+              $ref: '#/definitions/model.Place'
             type: array
         "500":
           description: Server error
@@ -723,9 +804,76 @@ paths:
         - openid
         - profile
         - email
-      summary: returns all posts
+      summary: returns the current user
       tags:
-      - posts
+      - users
+  /places:
+    get:
+      operationId: getPlacesByPrefix
+      parameters:
+      - description: place prefix
+        in: query
+        name: prefix
+        type: string
+      - description: maximum number of places to return
+        in: query
+        name: count
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.Place'
+            type: array
+        "500":
+          description: Server error
+          schema:
+            $ref: '#/definitions/api.Error'
+      security:
+      - OAuth2Implicit:
+        - cms
+        - openid
+        - profile
+        - email
+      - OAuth2AuthCode:
+        - cms
+        - openid
+        - profile
+        - email
+      summary: returns places matching prefix
+      tags:
+      - places
+  /posts:
+    get:
+      operationId: getSettings
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Settings'
+        "500":
+          description: Server error
+          schema:
+            $ref: '#/definitions/api.Error'
+      security:
+      - OAuth2Implicit:
+        - cms
+        - openid
+        - profile
+        - email
+      - OAuth2AuthCode:
+        - cms
+        - openid
+        - profile
+        - email
+      summary: returns goobal settings
+      tags:
+      - settings
     post:
       consumes:
       - application/json
@@ -880,6 +1028,47 @@ paths:
       summary: updates a Post
       tags:
       - posts
+  /posts/{id}/images/{filePath}:
+    get:
+      operationId: getPostImage
+      parameters:
+      - description: Post ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Image file path
+        in: path
+        name: imageFile
+        required: true
+        type: string
+      responses:
+        "307":
+          description: Temporary Redirect
+          schema:
+            type: header
+        "404":
+          description: Not found
+          schema:
+            $ref: '#/definitions/api.Error'
+        "500":
+          description: Server error
+          schema:
+            $ref: '#/definitions/api.Error'
+      security:
+      - OAuth2Implicit:
+        - cms
+        - openid
+        - profile
+        - email
+      - OAuth2AuthCode:
+        - cms
+        - openid
+        - profile
+        - email
+      summary: Returns a redirect to an image URL
+      tags:
+      - posts
   /records:
     get:
       operationId: getRecords
@@ -913,12 +1102,12 @@ paths:
   /search:
     get:
       description: |-
-        * Names can include wildcards (* or ?). In that case name fuzziness above Exact is ignored
+        * Names can include wildcards (* or ?), in which case name fuzziness above Exact is ignored
         * Date searching is limited to passing in a single year; use fuzziness for ranges
-        * Place searching is not yet implemented. It will be implemented in August.
         * Name fuzziness flags (OR'd together): 0: default; 1: exact; 2: alternate spellings; 4: narrow sounds-like; 8: broad sounds-like; 16: fuzzy (levenshtein); 32: initials (applies only to given)
         * Date fuzziness: 0: default; 1: exact to this year; 2: +/- 1 year; 3: +/- 2 years; 4: +/- 5 years; 5: +/- 10 years
-        * Place fuzziness flags (OR'd together): 0: default; 1: exact only; 2: include higher-level jurisdictions; 4: include nearby places
+        * Places can include wildcards (* or ?) or ~word to fuzzy-match word, in which case place fuzziness above Exact is ignored
+        * Place fuzziness flags (OR'd together): 0: default; 1: exact only; 2: include higher-level jurisdictions;
         * Category and collection facets: to start set categoryFacet true. If the user selects a value from the returned list, set that value as the category filter and set collectionFacet true
         * Date and place faceting are in a state of flux currently and may not be supported in the future depending upon user interest; do not use
         * Date facets: to start set century faceting to true. If the user selects a value from the returned list, set that value as the century filter and set decade faceting to true. If the user selects a decade, set that value as the decade filter
@@ -1089,165 +1278,29 @@ paths:
         in: query
         name: keywords
         type: string
-      - description: facet on century
+      - description: facet on collection location level 1
         in: query
-        name: birthCenturyFacet
+        name: collectionPlace1Facet
         type: boolean
-      - description: filter on century
+      - description: filter on collection location level 1
         in: query
-        name: birthCentury
+        name: collectionPlace1
         type: string
-      - description: facet on decade
+      - description: facet on collection location level 2
         in: query
-        name: birthDecadeFacet
+        name: collectionPlace2Facet
         type: boolean
-      - description: filter on decade
+      - description: filter on collection location level 2
         in: query
-        name: birthDecade
+        name: collectionPlace2
         type: string
-      - description: facet on place level 1
+      - description: facet on collection location level 3
         in: query
-        name: birthPlace1Facet
+        name: collectionPlace3Facet
         type: boolean
-      - description: filter on place level 1
+      - description: filter on collection location level 3
         in: query
-        name: birthPlace1
-        type: string
-      - description: facet on place level 2
-        in: query
-        name: birthPlace2Facet
-        type: boolean
-      - description: filter on place level 2
-        in: query
-        name: birthPlace2
-        type: string
-      - description: facet on place level 3
-        in: query
-        name: birthPlace3Facet
-        type: boolean
-      - description: filter on place level 3
-        in: query
-        name: birthPlace3
-        type: string
-      - description: facet on century
-        in: query
-        name: marriageCenturyFacet
-        type: boolean
-      - description: filter on century
-        in: query
-        name: marriageCentury
-        type: string
-      - description: facet on decade
-        in: query
-        name: marriageDecadeFacet
-        type: boolean
-      - description: filter on decade
-        in: query
-        name: marriageDecade
-        type: string
-      - description: facet on place level 1
-        in: query
-        name: marriagePlace1Facet
-        type: boolean
-      - description: filter on place level 1
-        in: query
-        name: marriagePlace1
-        type: string
-      - description: facet on place level 2
-        in: query
-        name: marriagePlace2Facet
-        type: boolean
-      - description: filter on place level 2
-        in: query
-        name: marriagePlace2
-        type: string
-      - description: facet on place level 3
-        in: query
-        name: marriagePlace3Facet
-        type: boolean
-      - description: filter on place level 3
-        in: query
-        name: marriagePlace3
-        type: string
-      - description: facet on century
-        in: query
-        name: residenceCenturyFacet
-        type: boolean
-      - description: filter on century
-        in: query
-        name: residenceCentury
-        type: string
-      - description: facet on decade
-        in: query
-        name: residenceDecadeFacet
-        type: boolean
-      - description: filter on decade
-        in: query
-        name: residenceDecade
-        type: string
-      - description: facet on place level 1
-        in: query
-        name: residencePlace1Facet
-        type: boolean
-      - description: filter on place level 1
-        in: query
-        name: residencePlace1
-        type: string
-      - description: facet on place level 2
-        in: query
-        name: residencePlace2Facet
-        type: boolean
-      - description: filter on place level 2
-        in: query
-        name: residencePlace2
-        type: string
-      - description: facet on place level 3
-        in: query
-        name: residencePlace3Facet
-        type: boolean
-      - description: filter on place level 3
-        in: query
-        name: residencePlace3
-        type: string
-      - description: facet on century
-        in: query
-        name: deathCenturyFacet
-        type: boolean
-      - description: filter on century
-        in: query
-        name: deathCentury
-        type: string
-      - description: facet on decade
-        in: query
-        name: deathDecadeFacet
-        type: boolean
-      - description: filter on decade
-        in: query
-        name: deathDecade
-        type: string
-      - description: facet on place level 1
-        in: query
-        name: deathPlace1Facet
-        type: boolean
-      - description: filter on place level 1
-        in: query
-        name: deathPlace1
-        type: string
-      - description: facet on place level 2
-        in: query
-        name: deathPlace2Facet
-        type: boolean
-      - description: filter on place level 2
-        in: query
-        name: deathPlace2
-        type: string
-      - description: facet on place level 3
-        in: query
-        name: deathPlace3Facet
-        type: boolean
-      - description: filter on place level 3
-        in: query
-        name: deathPlace3
+        name: collectionPlace3
         type: string
       - description: facet on category
         in: query
@@ -1265,6 +1318,14 @@ paths:
         in: query
         name: collection
         type: string
+      - description: starting result to return (default 0, max 1000)
+        in: query
+        name: from
+        type: integer
+      - description: number of results to return (default 10, max 100)
+        in: query
+        name: size
+        type: integer
       produces:
       - application/json
       responses:

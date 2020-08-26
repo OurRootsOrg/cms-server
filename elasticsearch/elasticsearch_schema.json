@@ -330,11 +330,6 @@
         "doc_values": false,
         "similarity": "boolean"
       },
-      "birthDecade": {
-        "type": "short",
-        "doc_values": true,
-        "similarity": "boolean"
-      },
       "birthPlace": {
         "type": "text",
         "analyzer": "simple_folding",
@@ -380,11 +375,6 @@
       "marriageYear": {
         "type": "short",
         "doc_values": false,
-        "similarity": "boolean"
-      },
-      "marriageDecade": {
-        "type": "short",
-        "doc_values": true,
         "similarity": "boolean"
       },
       "marriagePlace": {
@@ -434,11 +424,6 @@
         "doc_values": false,
         "similarity": "boolean"
       },
-      "residenceDecade": {
-        "type": "short",
-        "doc_values": true,
-        "similarity": "boolean"
-      },
       "residencePlace": {
         "type": "text",
         "analyzer": "simple_folding",
@@ -484,11 +469,6 @@
       "deathYear": {
         "type": "short",
         "doc_values": false,
-        "similarity": "boolean"
-      },
-      "deathDecade": {
-        "type": "short",
-        "doc_values": true,
         "similarity": "boolean"
       },
       "deathPlace": {
@@ -568,6 +548,27 @@
         "similarity": "boolean"
       },
       "otherPlace4": {
+        "type": "keyword",
+        "doc_values": true,
+        "index_options": "docs",
+        "norms": false,
+        "similarity": "boolean"
+      },
+      "collectionPlace1": {
+        "type": "keyword",
+        "doc_values": true,
+        "index_options": "docs",
+        "norms": false,
+        "similarity": "boolean"
+      },
+      "collectionPlace2": {
+        "type": "keyword",
+        "doc_values": true,
+        "index_options": "docs",
+        "norms": false,
+        "similarity": "boolean"
+      },
+      "collectionPlace3": {
         "type": "keyword",
         "doc_values": true,
         "index_options": "docs",

@@ -24,6 +24,10 @@ Parameters:
     Type: AWS::SSM::Parameter::Value<String>
   CMSRecordsWriterQueueARN:
     Type: AWS::SSM::Parameter::Value<String>
+  CMSImagesWriterQueueURL:
+    Type: AWS::SSM::Parameter::Value<String>
+  CMSImagesWriterQueueARN:
+    Type: AWS::SSM::Parameter::Value<String>
   CMSPublisherQueueURL:
     Type: AWS::SSM::Parameter::Value<String>
   CMSPublisherQueueARN:
@@ -274,6 +278,13 @@ Resources:
               Action:
                 - sqs:*
               Resource:
+                !Ref "CMSImagesWriterQueueARN"
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - sqs:*
+              Resource:
                 !Ref "CMSPublisherQueueARN"
         # Elasticsearch Domain
         - Version: '2012-10-17'
@@ -312,6 +323,7 @@ Resources:
           BLOB_STORE_BUCKET: !Ref "CMSBlobStoreBucketName"
           DYNAMODB_TABLE_NAME: !Sub "${EnvironmentName}-cms"
           PUB_SUB_RECORDSWRITER_URL: !Ref "CMSRecordsWriterQueueURL"
+          PUB_SUB_IMAGESWRITER_URL: !Ref "CMSImagesWriterQueueURL"
           PUB_SUB_PUBLISHER_URL: !Ref "CMSPublisherQueueURL"
           OIDC_DOMAIN: 'https://ourroots.auth0.com/'
           OIDC_AUDIENCE: 'https://api.ourroots.org/preprod'
@@ -366,6 +378,13 @@ Resources:
                 - sqs:*
               Resource:
                 !Ref "CMSRecordsWriterQueueARN"
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - sqs:*
+              Resource:
+                !Ref "CMSImagesWriterQueueARN"
         # DynamoDB Table
         - Version: '2012-10-17'
           Statement:
@@ -391,12 +410,89 @@ Resources:
           DYNAMODB_TABLE_NAME: !Sub "${EnvironmentName}-cms"
           BLOB_STORE_BUCKET: !Ref "CMSBlobStoreBucketName"
           PUB_SUB_RECORDSWRITER_URL: !Ref "CMSRecordsWriterQueueURL"
+          PUB_SUB_IMAGESWRITER_URL: !Ref "CMSImagesWriterQueueURL"
       Events:
         MySQSEvent:
           Type: SQS
           Properties:
             Queue:
               !Ref "CMSRecordsWriterQueueARN"
+            BatchSize: 1
+
+  # Define the Images Writer Lambda function
+  ImagesWriterFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: recordswriter/recordswriter.lambda
+      CodeUri: recordswriter.lambda.zip
+      Runtime: go1.x
+      MemorySize: 128
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        # S3 CMSBlobStoreBucket
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - s3:GetObject
+                - s3:GetObjectACL
+                - s3:PutObject
+                - s3:PutObjectACL
+                - s3:DeleteObject
+              Resource:
+                Fn::Join:
+                  - ''
+                  -
+                    - 'arn:aws:s3:::'
+                    - !Ref "CMSBlobStoreBucketName"
+                    - '/*'
+        # SQS Queue
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - sqs:*
+              Resource:
+                !Ref "CMSRecordsWriterQueueARN"
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - sqs:*
+              Resource:
+                !Ref "CMSImagesWriterQueueARN"
+        # DynamoDB Table
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: "Allow"
+              Action:
+                - dynamodb:BatchGetItem
+                - dynamodb:BatchWriteItem
+                - dynamodb:CreateTable
+                - dynamodb:DeleteItem
+                - dynamodb:Describe*
+                - dynamodb:GetItem
+                - dynamodb:PutItem
+                - dynamodb:Query
+                - dynamodb:Scan
+                - dynamodb:UpdateItem
+                - dynamodb:ConditionCheckItem
+              Resource: !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${EnvironmentName}*"
+      Timeout: 60
+      Environment:
+        Variables:
+          # This variable tells our server code what domain name and path prefix is in use
+          BASE_URL: !Sub "https://${DomainName}/api"
+          DYNAMODB_TABLE_NAME: !Sub "${EnvironmentName}-cms"
+          BLOB_STORE_BUCKET: !Ref "CMSBlobStoreBucketName"
+          PUB_SUB_RECORDSWRITER_URL: !Ref "CMSRecordsWriterQueueURL"
+          PUB_SUB_IMAGESWRITER_URL: !Ref "CMSImagesWriterQueueURL"
+      Events:
+        MySQSEvent:
+          Type: SQS
+          Properties:
+            Queue:
+              !Ref "CMSImagesWriterQueueARN"
             BatchSize: 1
 
   # Define the Publisher Lambda function

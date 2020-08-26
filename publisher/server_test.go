@@ -1,4 +1,4 @@
-package main
+package main_test
 
 import (
 	"context"
@@ -80,6 +80,32 @@ func TestPublisher(t *testing.T) {
 		assert.Equal(t, testCollection.ID, res.CollectionID, "Collection not found")
 	}
 
+	// search by date
+	searchResult, err := testAPI.Search(ctx, &api.SearchRequest{
+		BirthDate:          "1900",
+		BirthDateFuzziness: 1,
+	})
+	assert.Equal(t, 2, searchResult.Total)
+	searchResult, err = testAPI.Search(ctx, &api.SearchRequest{
+		BirthDate:          "1901",
+		BirthDateFuzziness: 1,
+	})
+	assert.Equal(t, 1, searchResult.Total)
+	assert.Equal(t, "Wilma Slaghoople", searchResult.Hits[0].Person.Name)
+
+	// search by place
+	searchResult, err = testAPI.Search(ctx, &api.SearchRequest{
+		BirthPlace:          "Alabama, United States",
+		BirthPlaceFuzziness: 1,
+	})
+	assert.Equal(t, 2, searchResult.Total)
+	searchResult, err = testAPI.Search(ctx, &api.SearchRequest{
+		BirthPlace:          "Autauga, Alabama, United States",
+		BirthPlaceFuzziness: 1,
+	})
+	assert.Equal(t, 1, searchResult.Total)
+	assert.Equal(t, "Fred Flintstone", searchResult.Hits[0].Person.Name)
+
 	// Unpublish post
 	testPost, err = testAPI.GetPost(ctx, testPost.ID)
 	testPost.RecordsStatus = model.PostDraft
@@ -137,6 +163,12 @@ func createTestCollection(t *testing.T, p model.CollectionPersister, categoryID 
 		{
 			Header: "surname",
 		},
+		{
+			Header: "birthdate",
+		},
+		{
+			Header: "birthplace",
+		},
 	}
 	in.Mappings = []model.CollectionMapping{
 		{
@@ -148,6 +180,16 @@ func createTestCollection(t *testing.T, p model.CollectionPersister, categoryID 
 			Header:  "surname",
 			IxRole:  "principal",
 			IxField: "surname",
+		},
+		{
+			Header:  "birthdate",
+			IxRole:  "principal",
+			IxField: "birthDate",
+		},
+		{
+			Header:  "birthplace",
+			IxRole:  "principal",
+			IxField: "birthPlace",
 		},
 	}
 	created, e := p.InsertCollection(context.TODO(), in)
@@ -174,12 +216,20 @@ func deleteTestPost(t *testing.T, p model.PostPersister, post *model.Post) {
 
 var recordData = []map[string]string{
 	{
-		"given":   "Fred",
-		"surname": "Flintstone",
+		"given":          "Fred",
+		"surname":        "Flintstone",
+		"birthdate":      "19 March 1900",
+		"birthdate_std":  "19000319",
+		"birthplace":     "Autaugaville, AL",
+		"birthplace_std": "Autaugaville, Autauga, Alabama, United States",
 	},
 	{
-		"given":   "Wilma",
-		"surname": "Slaghoople",
+		"given":          "Wilma",
+		"surname":        "Slaghoople",
+		"birthdate":      "Abt 1900",
+		"birthdate_std":  "19000000,18990101-19011231",
+		"birthplace":     "AL",
+		"birthplace_std": "Alabama, United States",
 	},
 }
 

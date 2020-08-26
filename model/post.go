@@ -5,6 +5,7 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"time"
 )
 
@@ -17,6 +18,7 @@ type PostPersister interface {
 	DeletePost(ctx context.Context, id uint32) error
 }
 
+// Post statuses
 const (
 	PostLoading           = "Loading"
 	PostLoadComplete      = "LoadComplete"
@@ -27,11 +29,14 @@ const (
 	PostUnpublishing      = "Unpublishing"
 	PostUnpublishComplete = "UnpublishComplete" // set only by publisher
 )
+
+// Publisher actions
 const (
 	PublisherActionIndex   = "index"
 	PublisherActionUnindex = "unindex"
 )
 
+// UserAcceptedPostRecordsStatus returns true if its argument is a valid post status
 func UserAcceptedPostRecordsStatus(status string) bool {
 	for _, s := range []string{PostLoading, PostDraft, PostPublishing, PostPublished, PostUnpublishing} {
 		if s == status {
@@ -41,13 +46,84 @@ func UserAcceptedPostRecordsStatus(status string) bool {
 	return false
 }
 
+// ImagesWriterMsg represents a message to initiate processing of an image upload
+type ImagesWriterMsg struct {
+	PostID  uint32   `json:"postId"`
+	NewZips []string `json:"newZips"`
+}
+
+// RecordsWriterMsg represents a message to initiate processing of an uploaded recods CSV
 type RecordsWriterMsg struct {
 	PostID uint32 `json:"postId"`
 }
 
+// PublisherMsg represents a message to initiate pulishing of a post
 type PublisherMsg struct {
 	Action string `json:"action"`
 	PostID uint32 `json:"postId"`
+}
+
+// StringSet represents a set of unique strings
+type StringSet []string
+
+// NewStringSet constructs a StringSet
+func NewStringSet() StringSet {
+	return StringSet(make([]string, 0))
+}
+
+// Add adds a string to a StringSet
+func (ss *StringSet) Add(s string) bool {
+	if ss.Contains(s) {
+		return false
+	}
+	*ss = append(*ss, s)
+	return true
+}
+
+// Contains indicates whether a StringSet contains a string
+func (ss *StringSet) Contains(s string) bool {
+	for _, f := range *ss {
+		if f == s {
+			return true
+		}
+	}
+	return false
+}
+
+// UnmarshalJSON unmarshals JSON to a StringSet
+func (ss *StringSet) UnmarshalJSON(b []byte) error {
+	if ss == nil {
+		*ss = NewStringSet()
+	}
+	var strings []string
+	err := json.Unmarshal(b, &strings)
+	if err != nil {
+		return err
+	}
+	for _, value := range strings {
+		if !ss.Add(value) {
+			return fmt.Errorf("Attempt to add duplicate string: %s", value)
+		}
+	}
+	return nil
+}
+
+// Equals compares two StringSets and returns true if they contain the same strings
+func (ss *StringSet) Equals(ss1 *StringSet) bool {
+	if ss == ss1 {
+		return true
+	}
+	for _, s := range *ss1 {
+		if !ss.Contains(s) {
+			return false
+		}
+	}
+	for _, s := range *ss {
+		if !ss1.Contains(s) {
+			return false
+		}
+	}
+	return true
 }
 
 // PostBody is the JSON body of a Post
@@ -56,6 +132,8 @@ type PostBody struct {
 	Metadata      map[string]interface{} `json:"metadata"`
 	RecordsKey    string                 `json:"recordsKey"`
 	RecordsStatus string                 `json:"recordsStatus"`
+	ImagesKeys    StringSet              `json:"imagesKeys"`
+	ImagesStatus  string                 `json:"imagesStatus"`
 }
 
 // Value makes PostBody implement the driver.Valuer interface.

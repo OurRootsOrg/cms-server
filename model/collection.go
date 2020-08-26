@@ -5,7 +5,6 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"errors"
-	"html/template"
 	"time"
 )
 
@@ -25,7 +24,7 @@ type CollectionBody struct {
 	Location         string              `json:"location,omitempty"`
 	Fields           []CollectionField   `json:"fields"`
 	Mappings         []CollectionMapping `json:"mappings"`
-	CitationTemplate *template.Template  `json:"citation_template,omitempty"`
+	CitationTemplate string              `json:"citation_template,omitempty"`
 }
 
 type CollectionField struct {

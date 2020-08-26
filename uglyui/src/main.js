@@ -5,7 +5,7 @@ import store from "./store";
 import "nprogress/nprogress.css";
 import Vuelidate from "vuelidate";
 import vuetify from "./plugins/vuetify";
-import VueColumnsResizableVuetify from 'vue-columns-resizable-vuetify';
+import VueColumnsResizableVuetify from "vue-columns-resizable-vuetify";
 
 Vue.use(Vuelidate);
 Vue.use(VueColumnsResizableVuetify);

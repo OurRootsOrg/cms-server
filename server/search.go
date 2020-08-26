@@ -16,12 +16,12 @@ var decoder = schema.NewDecoder()
 
 // Search returns search results matching a query
 // @summary returns search results
-// @description * Names can include wildcards (* or ?). In that case name fuzziness above Exact is ignored
+// @description * Names can include wildcards (* or ?), in which case name fuzziness above Exact is ignored
 // @description * Date searching is limited to passing in a single year; use fuzziness for ranges
-// @description * Place searching is not yet implemented. It will be implemented in August.
 // @description * Name fuzziness flags (OR'd together): 0: default; 1: exact; 2: alternate spellings; 4: narrow sounds-like; 8: broad sounds-like; 16: fuzzy (levenshtein); 32: initials (applies only to given)
 // @description * Date fuzziness: 0: default; 1: exact to this year; 2: +/- 1 year; 3: +/- 2 years; 4: +/- 5 years; 5: +/- 10 years
-// @description * Place fuzziness flags (OR'd together): 0: default; 1: exact only; 2: include higher-level jurisdictions; 4: include nearby places
+// @description * Places can include wildcards (* or ?) or ~word to fuzzy-match word, in which case place fuzziness above Exact is ignored
+// @description * Place fuzziness flags (OR'd together): 0: default; 1: exact only; 2: include higher-level jurisdictions;
 // @description * Category and collection facets: to start set categoryFacet true. If the user selects a value from the returned list, set that value as the category filter and set collectionFacet true
 // @description * Date and place faceting are in a state of flux currently and may not be supported in the future depending upon user interest; do not use
 // @description * Date facets: to start set century faceting to true. If the user selects a value from the returned list, set that value as the century filter and set decade faceting to true. If the user selects a decade, set that value as the decade filter
@@ -71,53 +71,20 @@ var decoder = schema.NewDecoder()
 // @param anyPlace query string false "place"
 // @param anyPlaceFuzziness query int false "fuzziness flags"
 // @param keywords query string false "text search on the keywords field"
-// @param birthCenturyFacet query bool false "facet on century"
-// @param birthCentury query string false "filter on century"
-// @param birthDecadeFacet query bool false "facet on decade"
-// @param birthDecade query string false "filter on decade"
-// @param birthPlace1Facet query bool false "facet on place level 1"
-// @param birthPlace1 query string false "filter on place level 1"
-// @param birthPlace2Facet query bool false "facet on place level 2"
-// @param birthPlace2 query string false "filter on place level 2"
-// @param birthPlace3Facet query bool false "facet on place level 3"
-// @param birthPlace3 query string false "filter on place level 3"
-// @param marriageCenturyFacet query bool false "facet on century"
-// @param marriageCentury query string false "filter on century"
-// @param marriageDecadeFacet query bool false "facet on decade"
-// @param marriageDecade query string false "filter on decade"
-// @param marriagePlace1Facet query bool false "facet on place level 1"
-// @param marriagePlace1 query string false "filter on place level 1"
-// @param marriagePlace2Facet query bool false "facet on place level 2"
-// @param marriagePlace2 query string false "filter on place level 2"
-// @param marriagePlace3Facet query bool false "facet on place level 3"
-// @param marriagePlace3 query string false "filter on place level 3"
-// @param residenceCenturyFacet query bool false "facet on century"
-// @param residenceCentury query string false "filter on century"
-// @param residenceDecadeFacet query bool false "facet on decade"
-// @param residenceDecade query string false "filter on decade"
-// @param residencePlace1Facet query bool false "facet on place level 1"
-// @param residencePlace1 query string false "filter on place level 1"
-// @param residencePlace2Facet query bool false "facet on place level 2"
-// @param residencePlace2 query string false "filter on place level 2"
-// @param residencePlace3Facet query bool false "facet on place level 3"
-// @param residencePlace3 query string false "filter on place level 3"
-// @param deathCenturyFacet query bool false "facet on century"
-// @param deathCentury query string false "filter on century"
-// @param deathDecadeFacet query bool false "facet on decade"
-// @param deathDecade query string false "filter on decade"
-// @param deathPlace1Facet query bool false "facet on place level 1"
-// @param deathPlace1 query string false "filter on place level 1"
-// @param deathPlace2Facet query bool false "facet on place level 2"
-// @param deathPlace2 query string false "filter on place level 2"
-// @param deathPlace3Facet query bool false "facet on place level 3"
-// @param deathPlace3 query string false "filter on place level 3"
+// @param collectionPlace1Facet query bool false "facet on collection location level 1"
+// @param collectionPlace1 query string false "filter on collection location level 1"
+// @param collectionPlace2Facet query bool false "facet on collection location level 2"
+// @param collectionPlace2 query string false "filter on collection location level 2"
+// @param collectionPlace3Facet query bool false "facet on collection location level 3"
+// @param collectionPlace3 query string false "filter on collection location level 3"
 // @param categoryFacet query bool false "facet on category"
 // @param category query string false "filter on category"
 // @param collectionFacet query bool false "facet on collection"
 // @param collection query string false "filter on collection"
+// @param from query int false "starting result to return (default 0, max 1000)"
+// @param size query int false "number of results to return (default 10, max 100)"
 // @success 200 {array} model.SearchResult "OK"
 // @failure 500 {object} api.Error "Server error"
-// TODO need to specify possible query parameters
 func (app App) Search(w http.ResponseWriter, req *http.Request) {
 	var searchRequest api.SearchRequest
 	err := decoder.Decode(&searchRequest, req.URL.Query())

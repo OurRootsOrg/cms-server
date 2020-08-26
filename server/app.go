@@ -181,6 +181,9 @@ func (app App) NewRouter() *mux.Router {
 	r.Handle(app.baseURL.Path+"/posts/{id}", app.verifyToken(http.HandlerFunc(app.PutPost))).Methods("PUT")
 	r.Handle(app.baseURL.Path+"/posts/{id}", app.verifyToken(http.HandlerFunc(app.DeletePost))).Methods("DELETE")
 
+	r.Handle(app.baseURL.Path+"/posts/{id}/images/{filePath:.*}", http.HandlerFunc(app.OptionsNoop)).Methods("OPTIONS")
+	r.Handle(app.baseURL.Path+"/posts/{id}/images/{filePath:.*}", app.verifyToken(http.HandlerFunc(app.GetPostImage))).Methods("GET")
+
 	r.Handle(app.baseURL.Path+"/records", http.HandlerFunc(app.OptionsNoop)).Methods("OPTIONS")
 	r.Handle(app.baseURL.Path+"/records", app.verifyToken(http.HandlerFunc(app.GetRecords))).Methods("GET")
 
@@ -194,6 +197,12 @@ func (app App) NewRouter() *mux.Router {
 
 	r.Handle(app.baseURL.Path+"/search/{id}", http.HandlerFunc(app.OptionsNoop)).Methods("OPTIONS")
 	r.HandleFunc(app.baseURL.Path+"/search/{id}", app.SearchByID).Methods("GET")
+
+	r.Handle(app.baseURL.Path+"/places", http.HandlerFunc(app.OptionsNoop)).Methods("OPTIONS")
+	r.Handle(app.baseURL.Path+"/places", app.verifyToken(http.HandlerFunc(app.GetPlacesByPrefix))).Methods("GET")
+
+	r.Handle(app.baseURL.Path+"/currentuser", http.HandlerFunc(app.OptionsNoop)).Methods("OPTIONS")
+	r.Handle(app.baseURL.Path+"/currentuser", app.verifyToken(http.HandlerFunc(app.GetCurrentUser))).Methods("GET")
 
 	return r
 }
@@ -236,9 +245,9 @@ func ErrorsResponse(w http.ResponseWriter, err error) {
 // get a "id" variable from the request and validate > 0
 func getIDFromRequest(req *http.Request) (uint32, error) {
 	vars := mux.Vars(req)
-	catID, err := strconv.Atoi(vars["id"])
-	if err != nil || catID <= 0 {
+	id, err := strconv.Atoi(vars["id"])
+	if err != nil || id <= 0 {
 		return 0, api.NewError(fmt.Errorf("Bad id '%s': %v", vars["id"], err))
 	}
-	return uint32(catID), nil
+	return uint32(id), nil
 }
