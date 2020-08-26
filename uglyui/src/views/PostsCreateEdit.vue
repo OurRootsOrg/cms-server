@@ -206,7 +206,6 @@ function setup() {
   this.post = {
     ...this.posts.post
   };
-  console.log("setup", this.post);
 }
 
 async function uploadData(store, post, contentType, data) {
@@ -303,7 +302,6 @@ export default {
     getPostFromForm() {
       let post = Object.assign({}, this.post);
       post.collection = +post.collection; // convert to a number
-      console.log("getPostFromForm: ", post);
       return post;
     },
     save() {
