@@ -7,6 +7,7 @@ import (
 	"mime"
 	"net/http"
 
+	"github.com/gorilla/mux"
 	"github.com/ourrootsorg/cms-server/model"
 )
 
@@ -65,6 +66,36 @@ func (app App) GetPost(w http.ResponseWriter, req *http.Request) {
 		serverError(w, err)
 		return
 	}
+}
+
+// GetPostImage redirects the client to an image URL
+// @summary Returns a redirect to an image URL
+// @router /posts/{id}/images/{filePath} [get]
+// @tags posts
+// @id getPostImage
+// @Param id path integer true "Post ID"
+// @Param imageFile path string true "Image file path"
+// @success 307 {header} string
+// @failure 404 {object} api.Error "Not found"
+// @failure 500 {object} api.Error "Server error"
+// @Security OAuth2Implicit[cms,openid,profile,email]
+// @Security OAuth2AuthCode[cms,openid,profile,email]
+func (app App) GetPostImage(w http.ResponseWriter, req *http.Request) {
+	postID, errors := getIDFromRequest(req)
+	if errors != nil {
+		ErrorsResponse(w, errors)
+		return
+	}
+	filePath := mux.Vars(req)["filePath"]
+	if filePath == "" {
+		ErrorResponse(w, http.StatusNotFound, "Not Found")
+	}
+	imageURL, errors := app.api.GetPostImage(req.Context(), postID, filePath)
+	if errors != nil {
+		ErrorsResponse(w, errors)
+		return
+	}
+	http.Redirect(w, req, imageURL, http.StatusTemporaryRedirect)
 }
 
 // PostPost adds a new Post to the database

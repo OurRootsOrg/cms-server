@@ -7,12 +7,15 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"time"
 
 	"gocloud.dev/blob"
 	"gocloud.dev/pubsub"
 
 	"github.com/ourrootsorg/cms-server/model"
 )
+
+const ImagesPrefix = "/images/%d/"
 
 // PostResult is a paged Post result
 type PostResult struct {
@@ -37,6 +40,25 @@ func (api API) GetPost(ctx context.Context, id uint32) (*model.Post, error) {
 		return nil, NewError(err)
 	}
 	return post, nil
+}
+
+// GetPostImage returns a signed S3 URL to return an image file
+func (api *API) GetPostImage(ctx context.Context, id uint32, filePath string) (string, error) {
+	bucket, err := api.OpenBucket(ctx)
+	if err != nil {
+		return "", NewError(err)
+	}
+	defer bucket.Close()
+
+	key := fmt.Sprintf(ImagesPrefix, id) + filePath
+	signedURL, err := bucket.SignedURL(ctx, key, &blob.SignedURLOptions{
+		Expiry: 1 * time.Hour,
+		Method: "GET",
+	})
+	if err != nil {
+		return "", NewError(err)
+	}
+	return signedURL, nil
 }
 
 // AddPost holds the business logic around adding a Post
@@ -70,7 +92,7 @@ func (api API) AddPost(ctx context.Context, in model.PostIn) (*model.Post, error
 	}
 	// set images status
 	in.ImagesStatus = model.PostDraft
-	if in.ImagesKey != "" {
+	if len(in.ImagesKeys) > 0 {
 		in.ImagesStatus = model.PostLoading
 	}
 	// insert
@@ -98,10 +120,11 @@ func (api API) AddPost(ctx context.Context, in model.PostIn) (*model.Post, error
 		}
 	}
 
-	if in.ImagesKey != "" {
+	if len(in.ImagesKeys) > 0 {
 		// send a message to write the images
 		msg := model.ImagesWriterMsg{
-			PostID: post.ID,
+			PostID:  post.ID,
+			NewZips: in.ImagesKeys,
 		}
 		body, err := json.Marshal(msg)
 		if err != nil { // this had best never happen
@@ -200,17 +223,10 @@ func (api API) UpdatePost(ctx context.Context, id uint32, in model.Post) (*model
 		}
 	}
 
-	if currPost.ImagesKey != in.ImagesKey {
+	if !currPost.ImagesKeys.Equals(&in.ImagesKeys) {
 		// handle images key change
 		if currPost.ImagesStatus != in.ImagesStatus || in.ImagesStatus != model.PostDraft {
 			return nil, NewError(fmt.Errorf("cannot change imagesKey unless imagesStatus is Draft; status is %s", currPost.ImagesStatus))
-		}
-		if currPost.ImagesKey != "" {
-			errs = api.DeleteImagesForPost(ctx, id)
-			if errs != nil {
-				return nil, NewError(fmt.Errorf("Failure deleting old images for post %d: %v", id, err))
-			}
-
 		}
 		// prepare to send a message
 		imagesWriterTopic, err = api.OpenTopic(ctx, "imageswriter")
@@ -221,9 +237,15 @@ func (api API) UpdatePost(ctx context.Context, id uint32, in model.Post) (*model
 		defer imagesWriterTopic.Shutdown(ctx)
 
 		in.ImagesStatus = model.PostLoading
-		msg, err = json.Marshal(model.ImagesWriterMsg{
+		iwm := model.ImagesWriterMsg{
 			PostID: id,
-		})
+		}
+		for _, ik := range in.ImagesKeys {
+			if !currPost.ImagesKeys.Contains(ik) {
+				iwm.NewZips = append(iwm.NewZips, ik)
+			}
+		}
+		msg, err = json.Marshal(iwm)
 		if err != nil {
 			log.Printf("[ERROR] Can't marshal message %v", err)
 			return nil, NewError(err)
@@ -301,8 +323,11 @@ func (api API) UpdatePost(ctx context.Context, id uint32, in model.Post) (*model
 		}
 	}
 
-	if currPost.ImagesKey != "" && currPost.ImagesKey != in.ImagesKey {
-		api.deleteReferencedContent(ctx, currPost.ImagesKey+".zip")
+	for _, ik := range currPost.ImagesKeys {
+		if !in.ImagesKeys.Contains(ik) {
+			// Delete the ZIP file
+			api.deleteReferencedContent(ctx, ik)
+		}
 	}
 
 	return post, nil
@@ -326,12 +351,6 @@ func (api API) DeletePost(ctx context.Context, id uint32) error {
 	if err := api.DeleteRecordsForPost(ctx, id); err != nil {
 		return err
 	}
-	if post.ImagesKey != "" {
-		log.Printf("[DEBUG] deleting images for %d", id)
-		if err := api.DeleteImagesForPost(ctx, id); err != nil {
-			return NewError(err)
-		}
-	}
 	log.Printf("[DEBUG] deleting post %d", id)
 	if err := api.postPersister.DeletePost(ctx, id); err != nil {
 		return NewError(err)
@@ -340,6 +359,16 @@ func (api API) DeletePost(ctx context.Context, id uint32) error {
 	if post.RecordsKey != "" {
 		api.deleteReferencedContent(ctx, post.RecordsKey)
 	}
+	if len(post.ImagesKeys) > 0 {
+		log.Printf("[DEBUG] deleting images for %d", id)
+		if err := api.deleteImages(ctx, id); err != nil {
+			return NewError(err)
+		}
+		// Delete ZIP files
+		for _, ik := range post.ImagesKeys {
+			api.deleteReferencedContent(ctx, ik)
+		}
+	}
 	return nil
 }
 
@@ -347,20 +376,16 @@ func (api API) deleteReferencedContent(ctx context.Context, key string) {
 	// delete records data
 	bucket, err := api.OpenBucket(ctx)
 	if err != nil {
-		log.Printf("[ERROR] OpenBucket %v\n", err)
+		log.Printf("[INFO] Error calling OpenBucket while deleting content %v: %v", key, err)
 	}
 	defer bucket.Close()
 	if err := bucket.Delete(ctx, key); err != nil {
-		log.Printf("[ERROR] error deleting records file %v\n", err)
+		log.Printf("[INFO] error deleting content %v: %v\n", key, err)
 	}
 }
 
-// DeleteImagesForPost holds the business logic around deleting the images for a Post
-func (api API) DeleteImagesForPost(ctx context.Context, postID uint32) error {
-	post, err := api.GetPost(ctx, postID)
-	if err != nil {
-		return NewError(err)
-	}
+// deleteImagesForPost holds the business logic around deleting the images for a Post
+func (api API) deleteImages(ctx context.Context, postID uint32) error {
 	bucket, err := api.OpenBucket(ctx)
 	if err != nil {
 		log.Printf("[ERROR] OpenBucket %v\n", err)
@@ -368,7 +393,7 @@ func (api API) DeleteImagesForPost(ctx context.Context, postID uint32) error {
 	}
 	defer bucket.Close()
 	li := bucket.List(&blob.ListOptions{
-		Prefix: post.ImagesKey,
+		Prefix: fmt.Sprintf(ImagesPrefix, postID),
 	})
 	for {
 		obj, err := li.Next(ctx)
