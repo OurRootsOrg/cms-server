@@ -5,17 +5,6 @@
       Create a new collection
     </v-btn>
     <v-row fluid>
-      <!-- <v-col class="mt-1">
-        <Tabulator
-          :data="getCollections()"
-          :columns="collectionColumns"
-          layout="fitColumns"
-          :header-sort="true"
-          :selectable="true"
-          :resizable-columns="true"
-          @rowClicked="rowClicked"
-        />
-      </v-col> -->
       <v-col cols="12" md="5" class="pt-0">
         <v-text-field
           v-model="search"
@@ -23,41 +12,36 @@
           label="Search for a collection or category"
           single-line
           hide-details
-        ></v-text-field>        
+        ></v-text-field>
       </v-col>
       <v-col cols="12">
         <v-data-table
           :items="getCollections()"
           :headers="headers"
           sortable
-          sort-by='name'
+          sort-by="name"
           :search="search"
-          :footer-props="{
-            'items-per-page-options': [10, 25, 50]
-          }"
+          :footer-props="{ 'items-per-page-options': [10, 25, 50] }"
           :items-per-page="25"
-          @click:row="rowClicked"          
+          @click:row="rowClicked"
           dense
         >
-        >
-          <template v-slot:item.icon="{ item }">
+          <template v-slot:[`item.icon`]="{ item }">
             <v-btn icon small :to="{ name: 'collection-edit', params: { cid: item.id } }">
               <v-icon right>mdi-chevron-right</v-icon>
             </v-btn>
-          </template>            
+          </template>
         </v-data-table>
       </v-col>
-    </v-row>  
+    </v-row>
   </v-container>
 </template>
 
 <script>
 import { mapState } from "vuex";
 import store from "@/store";
-// import Tabulator from "../components/Tabulator";
 
 export default {
-  // components: { Tabulator },
   beforeRouteEnter(routeTo, routeFrom, next) {
     Promise.all([
       store.dispatch("categoriesGetAll"),
@@ -73,33 +57,13 @@ export default {
   },
   data() {
     return {
-      // collectionColumns: [
-      //   {
-      //     title: "Name",
-      //     field: "name",
-      //     headerFilter: "input",
-      //     sorter: "string"
-      //   },
-      //   {
-      //     title: "# Posts",
-      //     field: "postsCount",
-      //     headerFilter: "number",
-      //     sorter: "number"
-      //   },
-      //   {
-      //     title: "Categories",
-      //     field: "categoryNames",
-      //     headerFilter: "input",
-      //     sorter: "string"
-      //   }
-      // ],
       headers: [
         { text: "Name", value: "name" },
-        { text: "# Posts", value: "postsCount"},
+        { text: "# Posts", value: "postsCount" },
         { text: "Categories", value: "categoryNames" },
-        { text: "", value: "icon", align:"right" }
+        { text: "", value: "icon", align: "right" }
       ],
-      search: '',
+      search: ""
     };
   },
   computed: mapState(["categories", "collections", "posts"]),
@@ -126,13 +90,3 @@ export default {
   }
 };
 </script>
-
-<style scoped>
-.disabled {
-  cursor: not-allowed;
-  color: gray;
-}
-.create {
-  margin-top: 8px;
-}
-</style>

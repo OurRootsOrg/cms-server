@@ -8,7 +8,6 @@
         v-model="collection.name"
         type="text"
         placeholder="Name"
-        class="field"
         :class="{ error: $v.collection.name.$error }"
         @blur="touch('name')"
       ></v-text-field>
@@ -20,7 +19,6 @@
       </template>
 
       <h3>Select one or more categories (step 2 of 4)</h3>
-      <!-- <label>Categories (select one or more)</label> -->
       <multiselect
         v-model="collection.categories"
         :options="categories.categoriesList"
@@ -43,52 +41,21 @@
           At least one category is required.
         </p>
       </template>
-
-      <!-- <Tabulator
-        :data="collection.fields"
-        :columns="fieldColumns"
-        layout="fitColumns"
-        :movable-rows="true"
-        :resizable-columns="true"
-        @rowMoved="fieldsMoved"
-        @cellEdited="fieldsEdited"
-      /> -->
-      <!-- <v-data-table
-        :items="collection.fields"
-        :headers="fieldColumns"
-        :footer-props="{
-          'items-per-page-options': [10, 25, 50]
-        }"
-        :items-per-page="25"        
-        dense
-        class="spreadsheetColumnsTable"
-      >
-        <template v-slot:item.handle>
-          <v-btn icon small>
-            <v-icon left>mdi-drag-horizontal-variant</v-icon>
-          </v-btn>
-        </template>  
-        <template v-slot:item.required="{ item }">
-            <span v-if="item.required" ><v-icon class="green--text" small>mdi-check-circle</v-icon> Required</span>
-        </template>  
-      </v-data-table>
-       -->
-      <!-- <v-btn small color="primary" class="mt-2" href="" @click.prevent="addField">Add a row</v-btn> -->
-
       <v-row no-gutters class="mt-5">
         <v-col class="mb-0">
-          <h3>Define spreadsheet columns
+          <h3>
+            Define spreadsheet columns
             <v-tooltip bottom maxWidth="600px">
               <template v-slot:activator="{ on, attrs }">
-                <v-icon
-                  v-bind="attrs"
-                  v-on="on"
-                  small
-                >mdi-information</v-icon>
+                <v-icon v-bind="attrs" v-on="on" small>mdi-information</v-icon>
               </template>
-              <span>"Spreadsheet headers" are the names of the columns in the Excel or CSV you will be uploading. "Validation rules" are expressions defining the requirements for the spreadsheet data, and "Validation messages" are the error messages you want to show if the data does not meet the validation rules.</span>
+              <span
+                >"Spreadsheet headers" are the names of the columns in the Excel or CSV you will be uploading.
+                "Validation rules" are expressions defining the requirements for the spreadsheet data, and "Validation
+                messages" are the error messages you want to show if the data does not meet the validation rules.</span
+              >
             </v-tooltip>
-             (step 3 of 4)
+            (step 3 of 4)
           </h3>
           <v-data-table
             :items="collection.fields"
@@ -96,7 +63,7 @@
             :footer-props="{
               'items-per-page-options': [10, 25, 50]
             }"
-            :items-per-page="25"      
+            :items-per-page="25"
             dense
             v-columns-resizable
           >
@@ -104,21 +71,23 @@
               <v-toolbar flat class="ml-n3">
                 <v-dialog v-model="dialogColumnDefs" max-width="600px">
                   <template v-slot:activator="{ on, attrs }">
-                    <v-btn
-                      class="secondary primary--text"
-                      v-bind="attrs"
-                      v-on="on"
-                      small                
-                    >Add a row</v-btn>
-                    <span v-if="collection.fields.length === 0">(you need at least one row defining at least one column in your spreadsheet)</span>
+                    <v-btn class="secondary primary--text mr-3" v-bind="attrs" v-on="on" small>Add a row</v-btn>
+                    <span v-if="collection.fields.length === 0"
+                      >(you need at least one row defining at least one column in your spreadsheet)</span
+                    >
                   </template>
                   <v-card>
                     <v-card-title class="pb-5 mb-0"> {{ formTitle }}</v-card-title>
                     <v-card-text>
-                      <v-container>
+                      <v-container class="pl-0">
                         <v-row>
                           <v-col cols="12" sm="7">
-                            <v-text-field dense v-model="editedItem.header"  label="Spreadsheet header" placeholder="Column title in your spreadsheet"></v-text-field>
+                            <v-text-field
+                              dense
+                              v-model="editedItem.header"
+                              label="Spreadsheet header"
+                              placeholder="Column title in your spreadsheet"
+                            ></v-text-field>
                           </v-col>
                           <v-col cols="12" sm="5">
                             <v-checkbox
@@ -126,13 +95,25 @@
                               class="pt-0 mt-1"
                               v-model="editedItem.required"
                               :label="`Required: ${editedItem.required.toString()}`"
-                            ></v-checkbox>                      
+                            ></v-checkbox>
                           </v-col>
                           <v-col cols="12">
-                            <v-textarea dense outlined rows="2" v-model="editedItem.regex" label="Validation rule (optional)" placeholder="Regex to validate data. For help with regular expressions see http://regex101.com/"></v-textarea>
+                            <v-textarea
+                              dense
+                              outlined
+                              rows="2"
+                              v-model="editedItem.regex"
+                              label="Validation rule (optional)"
+                              placeholder="Regex to validate data. For help with regular expressions see http://regex101.com/"
+                            ></v-textarea>
                           </v-col>
                           <v-col cols="12">
-                            <v-text-field dense v-model="editedItem.regexError" label="Validation message (optional)" placeholder="Error message if validation fails"></v-text-field>
+                            <v-text-field
+                              dense
+                              v-model="editedItem.regexError"
+                              label="Validation message (optional)"
+                              placeholder="Error message if validation fails"
+                            ></v-text-field>
                           </v-col>
                         </v-row>
                       </v-container>
@@ -143,90 +124,43 @@
                       <v-btn color="primary" @click="saveColumnDefs">Save</v-btn>
                     </v-card-actions>
                   </v-card>
-                </v-dialog>        
+                </v-dialog>
               </v-toolbar>
             </template>
-            <template v-slot:item.actions="{ item }">
-            <v-icon
-              small
-              class="mr-2"
-              @click="editColumnDefs(item)"
-            >
-              mdi-pencil
-            </v-icon>
-            <v-icon
-              small
-              @click="deleteColumnDefs(item)"
-            >
-              mdi-delete
-            </v-icon>
-          </template>
-          <!-- <template v-slot:no-data>
-             <v-btn color="primary" @click="initialize">Reset</v-btn> 
-          </template> -->
+            <template v-slot:[`item.actions`]="{ item }">
+              <v-icon small class="mr-2" @click="editColumnDefs(item)">
+                mdi-pencil
+              </v-icon>
+              <v-icon small @click="deleteColumnDefs(item)">
+                mdi-delete
+              </v-icon>
+            </template>
             <template v-slot:item.handle>
               <v-btn icon small>
                 <v-icon left>mdi-drag-horizontal-variant</v-icon>
               </v-btn>
-            </template>  
-            <template v-slot:item.required="{ item }">
-                <span v-if="item.required" ><v-icon class="green--text" small>mdi-check-circle</v-icon> Required</span>
-                <!-- <v-icon v-else class="grey--text">mdi-close</v-icon> -->
-            </template>     
+            </template>
+            <template v-slot:[`item.required`]="{ item }">
+              <span v-if="item.required"><v-icon class="green--text" small>mdi-check-circle</v-icon> Required</span>
+            </template>
           </v-data-table>
         </v-col>
       </v-row>
 
-      <!-- <Tabulator
-        :data="collection.mappings"
-        :columns="mappingColumns"
-        layout="fitColumns"
-        :movable-rows="true"
-        :resizable-columns="true"
-        @rowMoved="mappingMoved"
-        @cellEdited="mappingEdited"
-      /> -->
-      <!-- <v-data-table
-        :items="collection.mappings"
-        :headers="mappingColumns"
-        :footer-props="{
-          'items-per-page-options': [10, 25, 50]
-        }"
-        :items-per-page="25"            
-        dense
-      >
-        <template v-slot:item.handle>
-          <v-btn icon small>
-            <v-icon left>mdi-drag-horizontal-variant</v-icon>
-          </v-btn>
-        </template>  
-        <template v-slot:item.ixRole="{ item }">
-          {{ixRoleMap[item.ixRole]}}
-        </template>
-        <template v-slot:item.ixField="{ item }">
-          {{ixFieldMap[item.ixField]}}
-        </template>        
-      </v-data-table>
-
-      <v-btn small color="primary" class="mt-2" href="" @click.prevent="addMapping">Add a row</v-btn>
-      <span v-if="collection.mappings.length === 0">
-        (you need at least one)
-      </span> -->
-
       <v-row no-gutters>
         <v-col class="mt-0">
-          <h3>Define how spreadsheet data is displayed and indexed
+          <h3>
+            Define how spreadsheet data is displayed and indexed
             <v-tooltip bottom maxWidth="600px">
               <template v-slot:activator="{ on, attrs }">
-                <v-icon
-                  v-bind="attrs"
-                  v-on="on"
-                  small
-                >mdi-information</v-icon>
+                <v-icon v-bind="attrs" v-on="on" small>mdi-information</v-icon>
               </template>
-              <span>This mapping determines how your spreadsheet's columns and data will be indexed and shown in search results.</span>
+              <span
+                >This mapping determines how your spreadsheet's columns and data will be indexed and shown in search
+                results.</span
+              >
             </v-tooltip>
-             (step 4 of 4)
+            (step 4 of 4)
           </h3>
           <v-data-table
             :items="collection.mappings"
@@ -234,20 +168,17 @@
             :footer-props="{
               'items-per-page-options': [10, 25, 50]
             }"
-            :items-per-page="25"      
+            :items-per-page="25"
             dense
           >
             <template v-slot:footer>
               <v-toolbar flat class="ml-n3">
                 <v-dialog v-model="dialogMapping" max-width="600px">
                   <template v-slot:activator="{ on, attrs }">
-                    <v-btn
-                      class="secondary primary--text"
-                      v-bind="attrs"
-                      v-on="on"
-                      small                
-                    >Add a row</v-btn>
-                    <span v-if="collection.mappings.length === 0">(you need at least one row defining at least one column in your spreadsheet)</span>
+                    <v-btn class="secondary primary--text mr-3" v-bind="attrs" v-on="on" small>Add a row</v-btn>
+                    <span v-if="collection.mappings.length === 0"
+                      >(you need at least one row defining at least one column in your spreadsheet)</span
+                    >
                   </template>
                   <v-card>
                     <v-card-title class="pb-5 mb-0"> {{ formTitle }}</v-card-title>
@@ -255,41 +186,45 @@
                       <v-container class="pl-0">
                         <v-row>
                           <v-col cols="12" sm="6">
-                            <!-- <v-text-field dense v-model="editedMappingItem.header"  label="Spreadsheet header" placeholder="Column title in your spreadsheet"></v-text-field> -->
-                            <v-select 
-                               v-model="editedMappingItem.header" 
-                               label="Spreadsheet header"      
-                               :items="spreadsheetColumnHeaders"                          
-                               dense
+                            <v-select
+                              v-model="editedMappingItem.header"
+                              label="Spreadsheet header"
+                              :items="spreadsheetColumnHeaders"
+                              dense
                             >
                             </v-select>
                           </v-col>
                           <v-col cols="12" sm="6">
-                            <v-text-field dense v-model="editedMappingItem.dbField"  label="Search results title" placeholder="Title for search results"></v-text-field>                   
+                            <v-text-field
+                              dense
+                              v-model="editedMappingItem.dbField"
+                              label="Search results title"
+                              placeholder="Title for search results"
+                            ></v-text-field>
                           </v-col>
                           <v-col cols="12">
                             <v-select
-                             v-model="editedMappingItem.ixRole" 
-                             label="Relationship of this information to the primary search person" 
-                             :items="ixRoleMapOptions" 
+                              v-model="editedMappingItem.ixRole"
+                              label="Relationship of this information to the primary search person"
+                              :items="ixRoleMapOptions"
                             >
                               <v-tooltip slot="append" maxWidth="600px">
                                 <template v-slot:activator="{ on, attrs }">
-                                  <v-icon
-                                    v-bind="attrs"
-                                    v-on="on"
-                                    small
-                                  >mdi-information</v-icon>
+                                  <v-icon v-bind="attrs" v-on="on" small>mdi-information</v-icon>
                                 </template>
-                                <span>Select the role/relationtip to the primary person (principal) the information plays in the evidence. This affects how the information will be displayed in search results.</span>
-                              </v-tooltip>                            
+                                <span
+                                  >Select the role/relationtip to the primary person (principal) the information plays
+                                  in the evidence. This affects how the information will be displayed in search
+                                  results.</span
+                                >
+                              </v-tooltip>
                             </v-select>
                           </v-col>
                           <v-col cols="12">
                             <v-select
-                             v-model="editedMappingItem.ixField" 
-                             label="Index field" 
-                             :items="ixFieldMapOptions"                           
+                              v-model="editedMappingItem.ixField"
+                              label="Index field"
+                              :items="ixFieldMapOptions"
                             ></v-select>
                           </v-col>
                         </v-row>
@@ -301,10 +236,10 @@
                       <v-btn color="primary" @click="saveMapping">Save</v-btn>
                     </v-card-actions>
                   </v-card>
-                </v-dialog>        
+                </v-dialog>
               </v-toolbar>
             </template>
-            <template v-slot:item.actions="{ item }">
+            <template v-slot:[`item.actions`]="{ item }">
               <v-icon small class="mr-2" @click="editMapping(item)">mdi-pencil</v-icon>
               <v-icon small @click="deleteMapping(item)">mdi-delete</v-icon>
             </template>
@@ -312,61 +247,48 @@
               <v-btn icon small>
                 <v-icon left>mdi-drag-horizontal-variant</v-icon>
               </v-btn>
-            </template>  
-            <template v-slot:item.ixRole="{ item }">
-              {{ixRoleMap[item.ixRole]}}
             </template>
-            <template v-slot:item.ixField="{ item }">
-              {{ixFieldMap[item.ixField]}}
-            </template>        
+            <template v-slot:[`item.ixRole`]="{ item }">
+              {{ ixRoleMap[item.ixRole] }}
+            </template>
+            <template v-slot:[`item.ixField`]="{ item }">
+              {{ ixFieldMap[item.ixField] }}
+            </template>
           </v-data-table>
         </v-col>
       </v-row>
 
-
-<!--end the new mapping table-->      
-      
       <div class="d-flex justify-space-between">
-          <v-btn
-            type="submit"
-            color="primary"
-            :disabled="
-              $v.$anyError || collection.fields.length === 0 || collection.mappings.length === 0 || !$v.$anyDirty
-            "
-            >
-            <v-icon left small>
-              mdi-alert
-            </v-icon>
-            Important: Save all changes
-          </v-btn>
-          <v-btn
-            v-if="collection.id"
-            class="mt-2"
-            buttonClass="danger"
-            :title="postsForCollection.length > 0 ? 'Collections with posts cannot be deleted' : 'Cannot be undone!'"
-            @click="del()"
-            :disabled="postsForCollection.length > 0"
-            >Delete Collection
-          </v-btn>
-          <span v-if="$v.$anyError" class="red--text">
-            Please fill out the required field(s).
-          </span>
-        </div>
+        <v-btn
+          type="submit"
+          color="primary"
+          :disabled="
+            $v.$anyError || collection.fields.length === 0 || collection.mappings.length === 0 || !$v.$anyDirty
+          "
+        >
+          <v-icon left small>
+            mdi-alert
+          </v-icon>
+          Important: Save all changes
+        </v-btn>
+        <v-btn
+          v-if="collection.id"
+          class="mt-2"
+          buttonClass="danger"
+          :title="postsForCollection.length > 0 ? 'Collections with posts cannot be deleted' : 'Cannot be undone!'"
+          @click="del()"
+          :disabled="postsForCollection.length > 0"
+          >Delete Collection
+        </v-btn>
+        <span v-if="$v.$anyError" class="red--text">
+          Please fill out the required field(s).
+        </span>
+      </div>
     </v-form>
 
     <v-row class="pt-5">
       <v-col>
         <h3 class="mt-4" v-if="collection.id">Posts</h3>
-        <!-- <Tabulator
-          v-if="collection.id"
-          :data="postsForCollection"
-          :columns="getPostColumns()"
-          layout="fitColumns"
-          :header-sort="true"
-          :selectable="true"
-          :resizable-columns="true"
-          @rowClicked="postRowClicked"
-        /> -->
         <v-data-table
           v-if="collection.id"
           :items="postsForCollection"
@@ -375,37 +297,36 @@
           :footer-props="{
             'items-per-page-options': [10, 25, 50]
           }"
-          :items-per-page="25"             
+          :items-per-page="25"
           dense
           class="rowHover"
         >
-          <template v-slot:item.hasData="{ item }">
+          <template v-slot:[`item.hasData`]="{ item }">
             <v-icon v-if="item.hasData" class="green--text">mdi-checkbox-marked</v-icon>
             <v-icon v-else class="red--text">mdi-close-circle</v-icon>
-          </template>          
+          </template>
         </v-data-table>
 
         <v-btn v-if="collection.id" outlined color="primary" class="mt-4" to="/posts/create">
           Create a new post
         </v-btn>
       </v-col>
-    </v-row>  
+    </v-row>
   </v-container>
 </template>
 
 <script>
 import store from "@/store";
 import { mapState } from "vuex";
-// import Tabulator from "../components/Tabulator";
 import { getMetadataColumn } from "../utils/metadata";
 import NProgress from "nprogress";
 import { required } from "vuelidate/lib/validators";
 import Multiselect from "vue-multiselect";
 import lodash from "lodash";
 
-const ixEmptyFieldMap = {
-  na: "Don't index"
-};
+// const ixEmptyFieldMap = {
+//   na: "Don't index"
+// };
 
 function setup() {
   this.collection = {
@@ -437,14 +358,13 @@ export default {
         next("/");
       });
   },
-  //added this watch for the experimental table; delete if not used
   watch: {
-    dialogColumnDefs (val) {
-      val || this.closeColumnDefs()
+    dialogColumnDefs(val) {
+      val || this.closeColumnDefs();
     },
-    dialogMapping (val) {
-      val || this.closeMapping()
-    },    
+    dialogMapping(val) {
+      val || this.closeMapping();
+    }
   },
   created() {
     if (this.$route.params && this.$route.params.cid) {
@@ -453,33 +373,32 @@ export default {
   },
   data() {
     return {
-      //this section for the experimental table (delete if not used)
       dialogColumnDefs: false,
       dialogMapping: false,
       editedIndex: -1,
       editedItem: {
-        header: '',
-        required: '',
-        regex: '',
-        regexError: '',
+        header: "",
+        required: "",
+        regex: "",
+        regexError: ""
       },
       editedMappingItem: {
-        header: '',
-        dbField:'',
-        ixRole: '',
-        ixField: '',
+        header: "",
+        dbField: "",
+        ixRole: "",
+        ixField: ""
       },
       defaultItem: {
-        header: '',
-        required: '',
-        regex: '',
-        regexError: '',      
+        header: "",
+        required: "",
+        regex: "",
+        regexError: ""
       },
       defaultMappingItem: {
-        header: '',
-        dbField:'',
-        ixRole: '',
-        ixField: '',  
+        header: "",
+        dbField: "",
+        ixRole: "",
+        ixField: ""
       },
       ixRoleMap: {
         na: "Don't index",
@@ -494,7 +413,7 @@ export default {
         groomFather: "Father of the groom",
         groomMother: "Mother of the groom",
         other: "Other person"
-      },    
+      },
       ixFieldMap: {
         na: "Don't index",
         given: "Given name",
@@ -509,88 +428,84 @@ export default {
         residencePlace: "Residence Place",
         otherDate: "Other Date",
         otherPlace: "Other Place"
-      },        
+      },
       //do it like this [{value: true, text: "Has data"}, {value: false, text: "No data"}]
-      ixRoleMapOptions:[
-        {value: "na", text: ""},
-        {value: "na", text: "Don't index"},
-        {value: "principal", text: "Principal"},
-        {value: "father", text: "Father"},
-        {value: "mother", text: "Mother"},
-        {value: "spouse", text: "Spouse"},
-        {value: "bride", text: "Bride"},
-        {value: "groom", text: "Groom"},
-        {value: "brideFather", text: "Father of the bride"},
-        {value: "brideMother", text: "Mother of the bride"},
-        {value: "groomFather", text: "Father of the groom"},
-        {value: "groomMother", text: "Mother of the groom"},
-        {value: "other", text: "Other person"}
+      ixRoleMapOptions: [
+        { value: "na", text: "" },
+        { value: "na", text: "Don't index" },
+        { value: "principal", text: "Principal" },
+        { value: "father", text: "Father" },
+        { value: "mother", text: "Mother" },
+        { value: "spouse", text: "Spouse" },
+        { value: "bride", text: "Bride" },
+        { value: "groom", text: "Groom" },
+        { value: "brideFather", text: "Father of the bride" },
+        { value: "brideMother", text: "Mother of the bride" },
+        { value: "groomFather", text: "Father of the groom" },
+        { value: "groomMother", text: "Mother of the groom" },
+        { value: "other", text: "Other person" }
       ],
-      ixFieldMapOptions:[
-        {value: "na", text: ""},
-        {value: "na", text: "Don't index"},   
-        {value: "given", text: "Given name"},
-        {value: "surname", text: "Surname"},
-        {value: "birthDate", text: "Birth Date"},
-        {value: "birthPlace", text: "Birth Place"},
-        {value: "marriageDate", text: "Marriage Date"},
-        {value: "marriagePlace", text: "Marriage Place"},
-        {value: "deathDate", text: "Death Date"},
-        {value: "deathPlace", text: "Death Place"},
-        {value: "residenceDate", text: "Residence Date"},
-        {value: "residencePlace", text: "Residence Place"},
-        {value: "otherDate", text: "Other Date"},
-        {value: "otherPlace", text: "Other Place"}             
+      ixFieldMapOptions: [
+        { value: "na", text: "" },
+        { value: "na", text: "Don't index" },
+        { value: "given", text: "Given name" },
+        { value: "surname", text: "Surname" },
+        { value: "birthDate", text: "Birth Date" },
+        { value: "birthPlace", text: "Birth Place" },
+        { value: "marriageDate", text: "Marriage Date" },
+        { value: "marriagePlace", text: "Marriage Place" },
+        { value: "deathDate", text: "Death Date" },
+        { value: "deathPlace", text: "Death Place" },
+        { value: "residenceDate", text: "Residence Date" },
+        { value: "residencePlace", text: "Residence Place" },
+        { value: "otherDate", text: "Other Date" },
+        { value: "otherPlace", text: "Other Place" }
       ],
-      spreadsheetColumnOptions: [
-        {value: "get this from the columns", text: "Spreadsheet column"}
-      ],
+      spreadsheetColumnOptions: [{ value: "get this from the columns", text: "Spreadsheet column" }],
       //end of data for experimental table; keep everything after this
       collection: { id: null, name: null, categories: [], fields: [], mappings: [] },
       fieldColumns: [
-      //Tabulator:v-data-table translation is title:text and field:value (rename "title" as "text" and "field" as "value")
+        //Tabulator:v-data-table translation is title:text and field:value (rename "title" as "text" and "field" as "value")
         {
-          text: "", 
-          value: "handle", 
-          // width:"15", 
-          align:"left",
-          rowHandle: true,
-          formatter: "handle",
-          headerSort: false,
-          frozen: true,
-          // width: 30,
-          // minWidth: 30
+          text: "",
+          value: "handle",
+          align: "left",
+          // rowHandle: true,
+          // formatter: "handle",
+          // headerSort: false,
+          // frozen: true,
+          width: 10
         },
         {
           text: "Spreadsheet header",
           // widthGrow: 2,
-          value: "header",
-          tooltip: "spreadsheet column header (required)",
-          editor: "input",
-          validator: ["unique"]
+          value: "header"
+          // tooltip: "spreadsheet column header (required)",
+          // editor: "input",
+          // validator: ["unique"]
         },
         {
           text: "Required?",
           value: "required",
-          tooltip: "is this field required?",
-          editor: "tickCross",
-          align: "center", //used to be hozAlign: "center"
-          formatter: "tickCross",
-          formatterParams: { allowEmpty: true }
+          // tooltip: "is this field required?",
+          // editor: "tickCross",
+          align: "center" //used to be hozAlign: "center"
+          // formatter: "tickCross",
+          // formatterParams: { allowEmpty: true }
         },
         {
           text: "Validation rule",
           // widthGrow: 2,
-          value: "regex",
-          tooltip: "regular expression used to validate column values (optional)",
-          editor: "input"
+          value: "regex"
+          // tooltip: "regular expression used to validate column values (optional)",
+          // editor: "input"
         },
         {
           text: "Validation Message",
           // widthGrow: 2,
-          value: "regexError",
-          tooltip: "message to report if the value fails the validation rule (optional)",
-          editor: "input"
+          value: "regexError"
+          // tooltip: "message to report if the value fails the validation rule (optional)",
+          // editor: "input"
         },
         // {
         //   text: "Delete",
@@ -605,73 +520,73 @@ export default {
         // },
         {
           text: "",
-          value:"actions",
-          align:"right",
+          value: "actions",
+          align: "right"
         }
       ],
       mappingColumns: [
         {
-          text: "", 
-          value: "handle", 
-          align:"left",
-          rowHandle: true,
-          formatter: "handle",
-          headerSort: false,
-          frozen: true,
-          // width: 30,
+          text: "",
+          value: "handle",
+          align: "left",
+          // rowHandle: true,
+          // formatter: "handle",
+          // headerSort: false,
+          // frozen: true,
+          width: 20
           // minWidth: 30
         },
         {
           text: "Spreadsheet header",
           // widthGrow: 2,
-          value: "header",
-          tooltip: "spreadsheet column header from table above (required)",
-          editor: "select",
-          editorParams: () => {
-            return {
-              values: this.collection.fields.map(f => f.header),
-              verticalNavigation: "table"
-            };
-          },
-          validator: ["required"]
+          value: "header"
+          // tooltip: "spreadsheet column header from table above (required)",
+          // editor: "select",
+          // editorParams: () => {
+          //   return {
+          //     values: this.collection.fields.map(f => f.header),
+          //     verticalNavigation: "table"
+          //   };
+          // },
+          // validator: ["required"]
         },
         {
           text: "Record detail field label",
           // widthGrow: 2,
-          value: "dbField",
-          tooltip: "name of the field when displaying the record detail (don't display if empty)",
-          editor: "input"
+          value: "dbField"
+          // tooltip: "name of the field when displaying the record detail (don't display if empty)",
+          // editor: "input"
         },
         {
           text: "Index Role",
-          value: "ixRole",
-          tooltip: "whether to index this field for the principal or another person in the record (optional)",
-          formatter: "lookup",
-          formatterParams: this.ixRoleMap,
-          editor: "select",
-          editorParams: {
-            values: this.ixRoleMap,
-            defaultValue: "na"
-          },
-          validator: ["required"]
+          value: "ixRole"
+          // tooltip: "whether to index this field for the principal or another person in the record (optional)",
+          // formatter: "lookup",
+          // formatterParams: this.ixRoleMap,
+          // editor: "select",
+          // editorParams: {
+          //   values: this.ixRoleMap,
+          //   defaultValue: "na"
+          // },
+          // validator: ["required"]
         },
         {
           text: "Index Field",
-          value: "ixField",
-          tooltip: "how to index this field (optional)",
-          formatter: "lookup",
-          formatterParams: this.ixFieldMap,
-          editor: "select",
-          editorParams: cell => {
-            let ixRole = cell
-              .getRow()
-              .getCell("ixRole")
-              .getValue();
-            return {
-              values: !ixRole || ixRole === "na" ? ixEmptyFieldMap : this.ixFieldMap
-            };
-          },
-          validator: ["required"]
+          value: "ixField"
+          // tooltip: "how to index this field (optional)",
+          // formatter: "lookup",
+          // formatterParams: this.ixFieldMap,
+          // editor: "select",
+          // editorParams: cell => {
+          //   let ixRole = cell
+          //     .getRow()
+          //     .getCell("ixRole")
+          //     .getValue();
+          //   return {
+          //     values: !ixRole || ixRole === "na" ? ixEmptyFieldMap : this.ixFieldMap
+          //   };
+          // },
+          // validator: ["required"]
         },
         // {
         //   text: "Delete",
@@ -685,8 +600,8 @@ export default {
         // }
         {
           text: "",
-          value:"actions",
-          align:"right",
+          value: "actions",
+          align: "right"
         }
       ]
     };
@@ -709,8 +624,8 @@ export default {
     spreadsheetColumnHeaders() {
       return this.collection.fields.map(f => f.header);
     },
-    formTitle () {
-      return this.editedIndex === -1 ? 'New Spreadsheet Item' : 'Edit Spreadsheet Item'
+    formTitle() {
+      return this.editedIndex === -1 ? "New Spreadsheet Item" : "Edit Spreadsheet Item";
     },
     ...mapState(["collections", "categories", "posts", "settings"])
   },
@@ -735,32 +650,6 @@ export default {
         this.$v.collection[attr].$touch();
       }
     },
-    // addField() {
-    //   this.collection.fields.push({});
-    // },
-    // fieldsMoved(data) {
-    //   this.collection.fields = data;
-    //   this.touch("fields");
-    // },
-    // fieldsDelete(ix) {
-    //   let header = this.collection.fields[ix].header;
-    //   this.collection.fields.splice(ix, 1);
-    //   this.syncFieldsMappings(null, header);
-    //   this.touch("fields");
-    // }, 
-    // fieldsEdited(cell) {
-    //   if (cell.getField() === "header") {
-    //     this.syncFieldsMappings(cell.getValue(), cell.getOldValue());
-    //   }
-    //   this.touch("fields");
-    // }, 
-    // fieldsEdited(item) {
-    //   if (item.getField() === "header") {
-    //     this.syncFieldsMappings(item.getValue(), item.getOldValue());
-    //   }
-    //   this.touch("fields");
-    // },    
-
     addMapping() {
       this.collection.mappings.push({ ixRole: "na", ixField: "na" });
     },
@@ -772,18 +661,6 @@ export default {
       this.collection.mappings.splice(ix, 1);
       this.touch("mappings");
     },
-    // mappingEdited(cell) {
-    //   if (cell.getField() === "ixRole") {
-    //     if (cell.getValue() === "" || cell.getValue() === "na") {
-    //       cell
-    //         .getRow()
-    //         .getCell("ixField")
-    //         .setValue("na", true);
-    //     }
-    //   }
-    //   this.touch("mappings");
-    // },
-    //if the role gets changed to na, set the ix field value to also na; **these two fields are linked** but it won't be with getRow or cell; it will be with the ITEM field
     mappingEdited(item) {
       if (item.getField() === "ixRole") {
         if (item.getValue() === "" || item.getValue() === "na") {
@@ -794,7 +671,7 @@ export default {
         }
       }
       this.touch("mappings");
-    },    
+    },
     syncFieldsMappings(newValue, oldValue) {
       if (newValue) {
         if (oldValue) {
@@ -902,90 +779,80 @@ export default {
           NProgress.done();
         });
     },
-
-  //methods for the spreadsheet columns table
-
-      editColumnDefs (item) {
-        // console.log("editItem", item)
-        this.editedIndex = this.collection.fields.indexOf(item)
-        this.editedItem = Object.assign({}, item)
-        this.dialogColumnDefs = true
-      },
-
-      deleteColumnDefs (item) {
-        const index = this.collection.fields.indexOf(item)
-        if (confirm('Are you sure you want to delete this item?') ) {
-          this.collection.fields.splice(index, 1);
-          this.syncFieldsMappings(null, item.header);
-        }
-      },
-
-      closeColumnDefs () {
-        this.dialogColumnDefs = false
-        this.$nextTick(() => {
-          this.editedItem = Object.assign({}, this.defaultItem)
-          this.editedIndex = -1
-        })
-      },
-
-      saveColumnDefs () {
-        if (this.editedIndex > -1) {
-          if (this.editedItem.header !== this.collection.fields[this.editedIndex].header) {
-            this.syncFieldsMappings(this.editedItem.header, this.collection.fields[this.editedIndex].header);
-          }
-          Object.assign(this.collection.fields[this.editedIndex], this.editedItem);
-          this.touch("fields");
-        } else {
-          this.collection.fields.push(this.editedItem)
-          this.syncFieldsMappings(this.editedItem.header, null);
-        }
-        this.closeColumnDefs()
-      },
-
-    //methods for the mappings table
-      editMapping (item) {
-        // console.log("editItem", item)
-        this.editedIndex = this.collection.mappings.indexOf(item)
-        this.editedMappingItem = Object.assign({}, item)
-        this.dialogMapping = true
-      },
-
-      deleteMapping (item) {
-        const index = this.collection.mappings.indexOf(item)
-        if (confirm('Are you sure you want to delete this item?') ) {
-          this.collection.mappings.splice(index, 1);
-          this.syncFieldsMappings(null, item.header);
-        }
-      },
-
-      closeMapping () {
-        this.dialogMapping = false
-        this.$nextTick(() => {
-          this.editedMappingItem = Object.assign({}, this.defaultMappingItem)
-          this.editedIndex = -1
-        })
-      },
-
-      saveMapping () {
-        if (this.editedIndex > -1) {
-          // if (this.editedMappingItem.header !== this.collection.mappings[this.editedIndex].header) {
-          //   this.syncFieldsMappings(this.editedMappingItem.header, this.collection.mappings[this.editedIndex].header);
-          // }
-          Object.assign(this.collection.mappings[this.editedIndex], this.editedMappingItem);
-          this.touch("fields");
-        } else {
-          this.collection.mappings.push(this.editedMappingItem)
-          // this.syncFieldsMappings(this.editedMappingItem.header, null);
-        }
-        this.closeMapping()
+    //methods for the spreadsheet columns table
+    editColumnDefs(item) {
+      // console.log("editItem", item)
+      this.editedIndex = this.collection.fields.indexOf(item);
+      this.editedItem = Object.assign({}, item);
+      this.dialogColumnDefs = true;
+    },
+    deleteColumnDefs(item) {
+      const index = this.collection.fields.indexOf(item);
+      if (confirm("Are you sure you want to delete this item?")) {
+        this.collection.fields.splice(index, 1);
+        this.syncFieldsMappings(null, item.header);
       }
-  },  
+    },
+    closeColumnDefs() {
+      this.dialogColumnDefs = false;
+      this.$nextTick(() => {
+        this.editedItem = Object.assign({}, this.defaultItem);
+        this.editedIndex = -1;
+      });
+    },
+    saveColumnDefs() {
+      if (this.editedIndex > -1) {
+        if (this.editedItem.header !== this.collection.fields[this.editedIndex].header) {
+          this.syncFieldsMappings(this.editedItem.header, this.collection.fields[this.editedIndex].header);
+        }
+        Object.assign(this.collection.fields[this.editedIndex], this.editedItem);
+        this.touch("fields");
+      } else {
+        this.collection.fields.push(this.editedItem);
+        this.syncFieldsMappings(this.editedItem.header, null);
+      }
+      this.closeColumnDefs();
+    },
+    //methods for the mappings table
+    editMapping(item) {
+      // console.log("editItem", item)
+      this.editedIndex = this.collection.mappings.indexOf(item);
+      this.editedMappingItem = Object.assign({}, item);
+      this.dialogMapping = true;
+    },
+    deleteMapping(item) {
+      const index = this.collection.mappings.indexOf(item);
+      if (confirm("Are you sure you want to delete this item?")) {
+        this.collection.mappings.splice(index, 1);
+        this.syncFieldsMappings(null, item.header);
+      }
+    },
+    closeMapping() {
+      this.dialogMapping = false;
+      this.$nextTick(() => {
+        this.editedMappingItem = Object.assign({}, this.defaultMappingItem);
+        this.editedIndex = -1;
+      });
+    },
+    saveMapping() {
+      if (this.editedIndex > -1) {
+        // if (this.editedMappingItem.header !== this.collection.mappings[this.editedIndex].header) {
+        //   this.syncFieldsMappings(this.editedMappingItem.header, this.collection.mappings[this.editedIndex].header);
+        // }
+        Object.assign(this.collection.mappings[this.editedIndex], this.editedMappingItem);
+        this.touch("fields");
+      } else {
+        this.collection.mappings.push(this.editedMappingItem);
+        // this.syncFieldsMappings(this.editedMappingItem.header, null);
+      }
+      this.closeMapping();
+    }
+  }
 };
 </script>
 
 <style src="vue-multiselect/dist/vue-multiselect.min.css"></style>
 <style>
-
 .multiselect__tag {
   color: #006064;
   line-height: 1;
@@ -1035,26 +902,26 @@ export default {
   background: white;
 }
 .spreadsheetColumnsTable >>> table > tbody > tr > td:nth-child(1):hover {
-  background-color:#efefef;
+  background-color: #efefef;
 }
 
-.spreadsheetColumnsTable >>>  table > tbody > tr > td {
+.spreadsheetColumnsTable >>> table > tbody > tr > td {
   padding: 0 8px;
 }
 .spreadsheetColumnsTable >>> thead .text-start {
   vertical-align: top;
   text-align: left;
-  padding-left:8px;
+  padding-left: 8px;
 }
 .spreadsheetColumnsTable >>> thead .sortable {
   vertical-align: top;
   text-align: left;
-  padding-left:8px;
+  padding-left: 8px;
 }
 .spreadsheetColumnsTable >>> .table-header-group {
   vertical-align: top;
-  text-align:left;
-  padding-left:8px;
+  text-align: left;
+  padding-left: 8px;
 }
 </style>
 <!--the original green hex #41b883 change to cyan lighten-3 #80DEEA or cyan lighten-4 #B2EBF2-->
