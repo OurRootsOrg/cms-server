@@ -28,6 +28,7 @@ uglyui/node_modules/
 .idea/
 uglyui/.idea/
 .vscode/
+.DS_Store
 
 #ignore local env
 uglyui/.env.development.local
