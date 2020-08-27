@@ -4,7 +4,7 @@
     <v-form @submit.prevent="go">
       <v-row>
         <v-col cols="2">
-          <h4>Primary</h4>
+          <h4>Name</h4>
         </v-col>
         <v-col>
           <v-row class="pa-0 ma-0">
@@ -53,217 +53,83 @@
           </v-row>
         </v-col>
       </v-row>
-      <!--Father-->
+
+      <!-- any place and birth year -->
       <v-row>
         <v-col cols="2">
-          <h4 class="mb-1">Father</h4>
+          <h4>Place your ancestor might have lived</h4>
         </v-col>
         <v-col>
-          <v-row class="pa-0 ma-0">
+          <v-row>
             <v-col>
-              <v-text-field
+              <v-autocomplete
                 outlined
                 dense
-                v-model="query.fatherGiven"
-                type="text"
-                placeholder="Father's given name"
+                v-model="query.anyPlace"
+                :loading="anyPlaceLoading"
+                :items="anyPlaceItems"
+                :search-input.sync="anyPlaceSearch"
+                no-filter
+                auto-select-first
+                flat
+                hide-no-data
+                hide-details
+                solo
+                placeholder="Any place"
                 class="ma-0 mb-n2"
-              ></v-text-field>
+                @change="anyPlaceChanged()"
+              ></v-autocomplete>
             </v-col>
             <v-col>
               <v-select
                 outlined
-                :multiple="true"
-                :items="givenFuzzinessLevels"
-                v-model="fuzziness.fatherGiven"
-                :change="nameFuzzinessChanged('fatherGiven')"
-                label="Exactness"
-              ></v-select>
-            </v-col>
-          </v-row>
-          <v-row class="pa-0 ma-0">
-            <v-col>
-              <v-text-field
-                outlined
-                dense
-                v-model="query.fatherSurname"
-                type="text"
-                placeholder="Father's surname"
-                class="ma-0 mb-n2"
-              ></v-text-field>
-            </v-col>
-            <v-col>
-              <v-select
-                outlined
-                :multiple="true"
-                :items="surnameFuzzinessLevels"
-                v-model="fuzziness.fatherSurname"
-                :change="nameFuzzinessChanged('fatherSurname')"
+                :items="placeFuzzinessLevels"
+                v-model="query.anyPlaceFuzziness"
                 label="Exactness"
               ></v-select>
             </v-col>
           </v-row>
         </v-col>
       </v-row>
-      <!--Mother-->
       <v-row>
         <v-col cols="2">
-          <h4 class="mb-1">Mother</h4>
+          <h4>Birth year</h4>
         </v-col>
         <v-col>
-          <v-row class="pa-0 ma-0">
+          <v-row>
             <v-col>
               <v-text-field
                 outlined
                 dense
-                v-model="query.motherGiven"
+                v-model="query.birthDate"
                 type="text"
-                placeholder="Mother's given name"
+                placeholder="Birth year"
                 class="ma-0 mb-n2"
+                @change="birthYearChanged()"
               ></v-text-field>
             </v-col>
             <v-col>
-              <v-select
-                outlined
-                :multiple="true"
-                :items="givenFuzzinessLevels"
-                v-model="fuzziness.motherGiven"
-                :change="nameFuzzinessChanged('motherGiven')"
-                label="Exactness"
-              ></v-select>
-            </v-col>
-          </v-row>
-          <v-row class="pa-0 ma-0">
-            <v-col>
-              <v-text-field
-                outlined
-                dense
-                v-model="query.motherSurname"
-                type="text"
-                placeholder="Mother's surname"
-                class="ma-0 mb-n2"
-              ></v-text-field>
-            </v-col>
-            <v-col>
-              <v-select
-                outlined
-                :multiple="true"
-                :items="surnameFuzzinessLevels"
-                v-model="fuzziness.motherSurname"
-                :change="nameFuzzinessChanged('motherSurname')"
-                label="Exactness"
-              ></v-select>
-            </v-col>
-          </v-row>
-        </v-col>
-      </v-row>
-      <!--Spouse-->
-      <v-row>
-        <v-col cols="2">
-          <h4 class="mb-1">Spouse</h4>
-        </v-col>
-        <v-col>
-          <v-row class="pa-0 ma-0">
-            <v-col>
-              <v-text-field
-                outlined
-                dense
-                v-model="query.spouseGiven"
-                type="text"
-                placeholder="Spouse's given name"
-                class="ma-0 mb-n2"
-              ></v-text-field>
-            </v-col>
-            <v-col>
-              <v-select
-                outlined
-                :multiple="true"
-                :items="givenFuzzinessLevels"
-                v-model="fuzziness.spouseGiven"
-                :change="nameFuzzinessChanged('spouseGiven')"
-                label="Exactness"
-              ></v-select>
-            </v-col>
-          </v-row>
-          <v-row class="pa-0 ma-0">
-            <v-col>
-              <v-text-field
-                outlined
-                dense
-                v-model="query.spouseSurname"
-                type="text"
-                placeholder="Spouse's surname"
-                class="ma-0 mb-n2"
-              ></v-text-field>
-            </v-col>
-            <v-col>
-              <v-select
-                outlined
-                :multiple="true"
-                :items="surnameFuzzinessLevels"
-                v-model="fuzziness.spouseSurname"
-                :change="nameFuzzinessChanged('spouseSurname')"
-                label="Exactness"
-              ></v-select>
-            </v-col>
-          </v-row>
-        </v-col>
-      </v-row>
-      <!--Other-->
-      <v-row>
-        <v-col cols="2">
-          <h4 class="mb-1">Other person</h4>
-        </v-col>
-        <v-col>
-          <v-row class="pa-0 ma-0">
-            <v-col>
-              <v-text-field
-                outlined
-                dense
-                v-model="query.otherGiven"
-                type="text"
-                placeholder="Other person's given name"
-                class="ma-0 mb-n2"
-              ></v-text-field>
-            </v-col>
-            <v-col>
-              <v-select
-                outlined
-                :multiple="true"
-                :items="givenFuzzinessLevels"
-                v-model="fuzziness.otherGiven"
-                :change="nameFuzzinessChanged('otherGiven')"
-                label="Exactness"
-              ></v-select>
-            </v-col>
-          </v-row>
-          <v-row class="pa-0 ma-0">
-            <v-col>
-              <v-text-field
-                outlined
-                dense
-                v-model="query.otherSurname"
-                type="text"
-                placeholder="Other person's surname"
-                class="ma-0 mb-n2"
-              ></v-text-field>
-            </v-col>
-            <v-col>
-              <v-select
-                outlined
-                :multiple="true"
-                :items="surnameFuzzinessLevels"
-                v-model="fuzziness.otherSurname"
-                :change="nameFuzzinessChanged('otherSurname')"
-                label="Exactness"
-              ></v-select>
+              <v-select outlined :items="dateRanges" v-model="query.birthDateFuzziness" label="Exactness"></v-select>
             </v-col>
           </v-row>
         </v-col>
       </v-row>
 
-      <!--Birth-->
+      <!--Events-->
       <v-row>
+        <v-col>
+          <strong>Add event:</strong>
+          <v-btn text color="primary" :disabled="showEvent.birth" @click="showEvent.birth = true">Birth</v-btn>
+          <v-btn text color="primary" :disabled="showEvent.marriage" @click="showEvent.marriage = true">Marriage</v-btn>
+          <v-btn text color="primary" :disabled="showEvent.death" @click="showEvent.death = true">Death</v-btn>
+          <v-btn text color="primary" :disabled="showEvent.residence" @click="showEvent.residence = true"
+            >Lived In</v-btn
+          >
+          <v-btn text color="primary" :disabled="showEvent.any" @click="showEvent.any = true">Any Event</v-btn>
+        </v-col>
+      </v-row>
+      <!--Birth-->
+      <v-row v-if="showEvent.birth">
         <v-col cols="2">
           <h4>Birth</h4>
         </v-col>
@@ -312,11 +178,122 @@
             </v-col>
           </v-row>
         </v-col>
+        <v-col cols="1">
+          <v-btn text @click="clearEvent('birth')">X</v-btn>
+        </v-col>
+      </v-row>
+      <!--Marriage-->
+      <v-row v-if="showEvent.marriage">
+        <v-col cols="2">
+          <h4>Marriage</h4>
+        </v-col>
+        <v-col>
+          <v-row>
+            <v-col>
+              <v-text-field
+                outlined
+                dense
+                v-model="query.marriageDate"
+                type="text"
+                placeholder="Marriage year"
+                class="ma-0 mb-n2"
+              ></v-text-field>
+            </v-col>
+            <v-col>
+              <v-select outlined :items="dateRanges" v-model="query.marriageDateFuzziness" label="Exactness"></v-select>
+            </v-col>
+          </v-row>
+          <v-row>
+            <v-col>
+              <v-autocomplete
+                outlined
+                dense
+                v-model="query.marriagePlace"
+                :loading="marriagePlaceLoading"
+                :items="marriagePlaceItems"
+                :search-input.sync="marriagePlaceSearch"
+                no-filter
+                auto-select-first
+                flat
+                hide-no-data
+                hide-details
+                solo
+                placeholder="Marriage place"
+                class="ma-0 mb-n2"
+              ></v-autocomplete>
+            </v-col>
+            <v-col>
+              <v-select
+                outlined
+                :items="placeFuzzinessLevels"
+                v-model="query.marriagePlaceFuzziness"
+                label="Exactness"
+              ></v-select>
+            </v-col>
+          </v-row>
+        </v-col>
+        <v-col cols="1">
+          <v-btn text @click="clearEvent('marriage')">X</v-btn>
+        </v-col>
+      </v-row>
+      <!--Death-->
+      <v-row v-if="showEvent.death">
+        <v-col cols="2">
+          <h4>Death</h4>
+        </v-col>
+        <v-col>
+          <v-row>
+            <v-col>
+              <v-text-field
+                outlined
+                dense
+                v-model="query.deathDate"
+                type="text"
+                placeholder="Death year"
+                class="ma-0 mb-n2"
+              ></v-text-field>
+            </v-col>
+            <v-col>
+              <v-select outlined :items="dateRanges" v-model="query.deathDateFuzziness" label="Exactness"></v-select>
+            </v-col>
+          </v-row>
+          <v-row>
+            <v-col>
+              <v-autocomplete
+                outlined
+                dense
+                v-model="query.deathPlace"
+                :loading="deathPlaceLoading"
+                :items="deathPlaceItems"
+                :search-input.sync="deathPlaceSearch"
+                no-filter
+                auto-select-first
+                flat
+                hide-no-data
+                hide-details
+                solo
+                placeholder="Death place"
+                class="ma-0 mb-n2"
+              ></v-autocomplete>
+            </v-col>
+            <v-col>
+              <v-select
+                outlined
+                :items="placeFuzzinessLevels"
+                v-model="query.deathPlaceFuzziness"
+                label="Exactness"
+              ></v-select>
+            </v-col>
+          </v-row>
+        </v-col>
+        <v-col cols="1">
+          <v-btn text @click="clearEvent('death')">X</v-btn>
+        </v-col>
       </v-row>
       <!--Residence-->
-      <v-row>
+      <v-row v-if="showEvent.residence">
         <v-col cols="2">
-          <h4>Residence</h4>
+          <h4>Lived In</h4>
         </v-col>
         <v-col>
           <v-row>
@@ -368,113 +345,14 @@
             </v-col>
           </v-row>
         </v-col>
-      </v-row>
-      <!--Marriage-->
-      <v-row>
-        <v-col cols="2">
-          <h4>Marriage</h4>
-        </v-col>
-        <v-col>
-          <v-row>
-            <v-col>
-              <v-text-field
-                outlined
-                dense
-                v-model="query.marriageDate"
-                type="text"
-                placeholder="Marriage year"
-                class="ma-0 mb-n2"
-              ></v-text-field>
-            </v-col>
-            <v-col>
-              <v-select outlined :items="dateRanges" v-model="query.marriageDateFuzziness" label="Exactness"></v-select>
-            </v-col>
-          </v-row>
-          <v-row>
-            <v-col>
-              <v-autocomplete
-                outlined
-                dense
-                v-model="query.marriagePlace"
-                :loading="marriagePlaceLoading"
-                :items="marriagePlaceItems"
-                :search-input.sync="marriagePlaceSearch"
-                no-filter
-                auto-select-first
-                flat
-                hide-no-data
-                hide-details
-                solo
-                placeholder="Marriage place"
-                class="ma-0 mb-n2"
-              ></v-autocomplete>
-            </v-col>
-            <v-col>
-              <v-select
-                outlined
-                :items="placeFuzzinessLevels"
-                v-model="query.marriagePlaceFuzziness"
-                label="Exactness"
-              ></v-select>
-            </v-col>
-          </v-row>
-        </v-col>
-      </v-row>
-      <!--Death-->
-      <v-row>
-        <v-col cols="2">
-          <h4>Death</h4>
-        </v-col>
-        <v-col>
-          <v-row>
-            <v-col>
-              <v-text-field
-                outlined
-                dense
-                v-model="query.deathDate"
-                type="text"
-                placeholder="Death year"
-                class="ma-0 mb-n2"
-              ></v-text-field>
-            </v-col>
-            <v-col>
-              <v-select outlined :items="dateRanges" v-model="query.deathDateFuzziness" label="Exactness"></v-select>
-            </v-col>
-          </v-row>
-          <v-row>
-            <v-col>
-              <v-autocomplete
-                outlined
-                dense
-                v-model="query.deathPlace"
-                :loading="deathPlaceLoading"
-                :items="deathPlaceItems"
-                :search-input.sync="deathPlaceSearch"
-                no-filter
-                auto-select-first
-                flat
-                hide-no-data
-                hide-details
-                solo
-                placeholder="Death place"
-                class="ma-0 mb-n2"
-              ></v-autocomplete>
-            </v-col>
-            <v-col>
-              <v-select
-                outlined
-                :items="placeFuzzinessLevels"
-                v-model="query.deathPlaceFuzziness"
-                label="Exactness"
-              ></v-select>
-            </v-col>
-          </v-row>
+        <v-col cols="1">
+          <v-btn text @click="clearEvent('residence')">X</v-btn>
         </v-col>
       </v-row>
       <!--Any-->
-      <v-row>
+      <v-row v-if="showEvent.any">
         <v-col cols="2">
-          <h4>Any</h4>
+          <h4>Any Event</h4>
         </v-col>
         <v-col>
           <v-row>
@@ -520,6 +398,257 @@
               ></v-select>
             </v-col>
           </v-row>
+        </v-col>
+        <v-col cols="1">
+          <v-btn text @click="clearEvent('any')">X</v-btn>
+        </v-col>
+      </v-row>
+
+      <!--Relatives-->
+      <v-row>
+        <v-col>
+          <strong>Add family member:</strong>
+          <v-btn text color="primary" :disabled="showRelative.father" @click="showRelative.father = true">Father</v-btn>
+          <v-btn text color="primary" :disabled="showRelative.mother" @click="showRelative.mother = true">Mother</v-btn>
+          <v-btn text color="primary" :disabled="showRelative.spouse" @click="showRelative.spouse = true">Spouse</v-btn>
+          <v-btn text color="primary" :disabled="showRelative.other" @click="showRelative.other = true">Other</v-btn>
+        </v-col>
+      </v-row>
+      <!--Father-->
+      <v-row v-if="showRelative.father">
+        <v-col cols="2">
+          <h4 class="mb-1">Father</h4>
+        </v-col>
+        <v-col>
+          <v-row class="pa-0 ma-0">
+            <v-col>
+              <v-text-field
+                outlined
+                dense
+                v-model="query.fatherGiven"
+                type="text"
+                placeholder="Father's given name"
+                class="ma-0 mb-n2"
+              ></v-text-field>
+            </v-col>
+            <v-col>
+              <v-select
+                outlined
+                :multiple="true"
+                :items="givenFuzzinessLevels"
+                v-model="fuzziness.fatherGiven"
+                :change="nameFuzzinessChanged('fatherGiven')"
+                label="Exactness"
+              ></v-select>
+            </v-col>
+          </v-row>
+          <v-row class="pa-0 ma-0">
+            <v-col>
+              <v-text-field
+                outlined
+                dense
+                v-model="query.fatherSurname"
+                type="text"
+                placeholder="Father's surname"
+                class="ma-0 mb-n2"
+              ></v-text-field>
+            </v-col>
+            <v-col>
+              <v-select
+                outlined
+                :multiple="true"
+                :items="surnameFuzzinessLevels"
+                v-model="fuzziness.fatherSurname"
+                :change="nameFuzzinessChanged('fatherSurname')"
+                label="Exactness"
+              ></v-select>
+            </v-col>
+          </v-row>
+        </v-col>
+        <v-col cols="1">
+          <v-btn text @click="clearRelative('father')">X</v-btn>
+        </v-col>
+      </v-row>
+      <!--Mother-->
+      <v-row v-if="showRelative.mother">
+        <v-col cols="2">
+          <h4 class="mb-1">Mother</h4>
+        </v-col>
+        <v-col>
+          <v-row class="pa-0 ma-0">
+            <v-col>
+              <v-text-field
+                outlined
+                dense
+                v-model="query.motherGiven"
+                type="text"
+                placeholder="Mother's given name"
+                class="ma-0 mb-n2"
+              ></v-text-field>
+            </v-col>
+            <v-col>
+              <v-select
+                outlined
+                :multiple="true"
+                :items="givenFuzzinessLevels"
+                v-model="fuzziness.motherGiven"
+                :change="nameFuzzinessChanged('motherGiven')"
+                label="Exactness"
+              ></v-select>
+            </v-col>
+          </v-row>
+          <v-row class="pa-0 ma-0">
+            <v-col>
+              <v-text-field
+                outlined
+                dense
+                v-model="query.motherSurname"
+                type="text"
+                placeholder="Mother's surname"
+                class="ma-0 mb-n2"
+              ></v-text-field>
+            </v-col>
+            <v-col>
+              <v-select
+                outlined
+                :multiple="true"
+                :items="surnameFuzzinessLevels"
+                v-model="fuzziness.motherSurname"
+                :change="nameFuzzinessChanged('motherSurname')"
+                label="Exactness"
+              ></v-select>
+            </v-col>
+          </v-row>
+        </v-col>
+        <v-col cols="1">
+          <v-btn text @click="clearRelative('mother')">X</v-btn>
+        </v-col>
+      </v-row>
+      <!--Spouse-->
+      <v-row v-if="showRelative.spouse">
+        <v-col cols="2">
+          <h4 class="mb-1">Spouse</h4>
+        </v-col>
+        <v-col>
+          <v-row class="pa-0 ma-0">
+            <v-col>
+              <v-text-field
+                outlined
+                dense
+                v-model="query.spouseGiven"
+                type="text"
+                placeholder="Spouse's given name"
+                class="ma-0 mb-n2"
+              ></v-text-field>
+            </v-col>
+            <v-col>
+              <v-select
+                outlined
+                :multiple="true"
+                :items="givenFuzzinessLevels"
+                v-model="fuzziness.spouseGiven"
+                :change="nameFuzzinessChanged('spouseGiven')"
+                label="Exactness"
+              ></v-select>
+            </v-col>
+          </v-row>
+          <v-row class="pa-0 ma-0">
+            <v-col>
+              <v-text-field
+                outlined
+                dense
+                v-model="query.spouseSurname"
+                type="text"
+                placeholder="Spouse's surname"
+                class="ma-0 mb-n2"
+              ></v-text-field>
+            </v-col>
+            <v-col>
+              <v-select
+                outlined
+                :multiple="true"
+                :items="surnameFuzzinessLevels"
+                v-model="fuzziness.spouseSurname"
+                :change="nameFuzzinessChanged('spouseSurname')"
+                label="Exactness"
+              ></v-select>
+            </v-col>
+          </v-row>
+        </v-col>
+        <v-col cols="1">
+          <v-btn text @click="clearRelative('spouse')">X</v-btn>
+        </v-col>
+      </v-row>
+      <!--Other-->
+      <v-row v-if="showRelative.other">
+        <v-col cols="2">
+          <h4 class="mb-1">Other person</h4>
+        </v-col>
+        <v-col>
+          <v-row class="pa-0 ma-0">
+            <v-col>
+              <v-text-field
+                outlined
+                dense
+                v-model="query.otherGiven"
+                type="text"
+                placeholder="Other person's given name"
+                class="ma-0 mb-n2"
+              ></v-text-field>
+            </v-col>
+            <v-col>
+              <v-select
+                outlined
+                :multiple="true"
+                :items="givenFuzzinessLevels"
+                v-model="fuzziness.otherGiven"
+                :change="nameFuzzinessChanged('otherGiven')"
+                label="Exactness"
+              ></v-select>
+            </v-col>
+          </v-row>
+          <v-row class="pa-0 ma-0">
+            <v-col>
+              <v-text-field
+                outlined
+                dense
+                v-model="query.otherSurname"
+                type="text"
+                placeholder="Other person's surname"
+                class="ma-0 mb-n2"
+              ></v-text-field>
+            </v-col>
+            <v-col>
+              <v-select
+                outlined
+                :multiple="true"
+                :items="surnameFuzzinessLevels"
+                v-model="fuzziness.otherSurname"
+                :change="nameFuzzinessChanged('otherSurname')"
+                label="Exactness"
+              ></v-select>
+            </v-col>
+          </v-row>
+        </v-col>
+        <v-col cols="1">
+          <v-btn text @click="clearRelative('other')">X</v-btn>
+        </v-col>
+      </v-row>
+
+      <!--Keywords-->
+      <v-row>
+        <v-col cols="2">
+          <h4 class="mb-1">Keyword</h4>
+        </v-col>
+        <v-col>
+          <v-text-field
+            outlined
+            dense
+            v-model="query.keywords"
+            type="text"
+            placeholder="Occupation, etc."
+            class="ma-0 mb-n2"
+          ></v-text-field>
         </v-col>
       </v-row>
 
@@ -642,15 +771,40 @@ export default {
       for (let f in this.fuzziness) {
         this.fuzziness[f] = decodeFuzziness(this.query[f + "Fuzziness"]);
       }
-      for (let f of ["birthPlace", "marriagePlace", "residencePlace", "deathPlace", "anyPlace"]) {
-        if (this.query[f]) {
-          this[f + "Items"] = [this.query[f]];
+      for (let e of ["birth", "marriage", "death", "residence", "any"]) {
+        for (let f of ["Date", "Place"]) {
+          if (this.query[e + f]) {
+            this.showEvent[e] = true;
+            if (f === "Place") {
+              this[e + f + "Items"] = [this.query[e + f]];
+            }
+          }
+        }
+      }
+      for (let r of ["father", "mother", "spouse", "other"]) {
+        for (let f of ["Given", "Surname"]) {
+          if (this.query[r + f]) {
+            this.showRelative[r] = true;
+          }
         }
       }
     }
   },
   data() {
     return {
+      showRelative: {
+        father: false,
+        mother: false,
+        spouse: false,
+        other: false
+      },
+      showEvent: {
+        birth: false,
+        marriage: false,
+        residence: false,
+        death: false,
+        any: false
+      },
       searchPerformed: false,
       query: {
         birthDateFuzziness: 0,
@@ -766,6 +920,34 @@ export default {
     }
   },
   methods: {
+    clearRelative(relative) {
+      this.showRelative[relative] = false;
+      this.query[relative + "Given"] = null;
+      this.query[relative + "Surname"] = null;
+      this.fuzziness[relative + "Given"] = [0];
+      this.fuzziness[relative + "Surname"] = [0];
+    },
+    clearEvent(event) {
+      this.showEvent[event] = false;
+      this.query[event + "Date"] = null;
+      this.query[event + "Place"] = null;
+      this.query[event + "DateFuzziness"] = 0;
+      this.query[event + "PlaceFuzziness"] = 0;
+    },
+    anyPlaceChanged() {
+      if (this.query.anyPlace && !this.showEvent.any) {
+        this.showEvent.any = true;
+      } else if (!this.query.anyPlace && !this.query.anyDate && this.showEvent.any) {
+        this.showEvent.any = false;
+      }
+    },
+    birthYearChanged() {
+      if (this.query.birthDate && !this.showEvent.birth) {
+        this.showEvent.birth = true;
+      } else if (!this.query.birthPlace && !this.query.birthDate && this.showEvent.birth) {
+        this.showEvent.birth = false;
+      }
+    },
     placeSearch(text, prefix) {
       if (this.placeTimeout) {
         clearTimeout(this.placeTimeout);
