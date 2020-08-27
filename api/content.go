@@ -3,7 +3,6 @@ package api
 import (
 	"context"
 	"fmt"
-	"mime"
 	"time"
 
 	"gocloud.dev/blob"
@@ -22,10 +21,6 @@ type ContentResult struct {
 
 // PostContentRequest returns a URL for posting content
 func (api API) PostContentRequest(ctx context.Context, contentRequest ContentRequest) (*ContentResult, error) {
-	mimeType, _, err := mime.ParseMediaType(contentRequest.ContentType)
-	if err != nil && err != mime.ErrInvalidMediaParameter {
-		return nil, NewError(fmt.Errorf("Bad ContentType %s: %v", contentRequest.ContentType, err))
-	}
 	bucket, err := api.OpenBucket(ctx)
 	if err != nil {
 		return nil, NewError(err)
@@ -34,10 +29,6 @@ func (api API) PostContentRequest(ctx context.Context, contentRequest ContentReq
 
 	now := time.Now()
 	key := fmt.Sprintf("%s/%s", now.Format("2006-01-02"), now.Format(time.RFC3339Nano))
-	// Maybe we should do this for other types, but that wouldn't be backwards compatible
-	if mimeType == "application/zip" || mimeType == "application/x-zip-compressed" {
-		key += ".zip"
-	}
 	signedURL, err := bucket.SignedURL(ctx, key, &blob.SignedURLOptions{
 		Expiry:      5 * time.Minute,
 		Method:      "PUT",

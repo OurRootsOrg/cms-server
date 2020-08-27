@@ -1053,6 +1053,69 @@ var doc = `{
                 }
             }
         },
+        "/posts/{id}/images/{filePath}": {
+            "get": {
+                "security": [
+                    {
+                        "OAuth2Implicit": [
+                            "cms",
+                            "openid",
+                            "profile",
+                            "email"
+                        ]
+                    },
+                    {
+                        "OAuth2AuthCode": [
+                            "cms",
+                            "openid",
+                            "profile",
+                            "email"
+                        ]
+                    }
+                ],
+                "tags": [
+                    "posts"
+                ],
+                "summary": "Returns a redirect to an image URL",
+                "operationId": "getPostImage",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Post ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Image file path",
+                        "name": "imageFile",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "307": {
+                        "description": "Temporary Redirect",
+                        "schema": {
+                            "type": "header"
+                        }
+                    },
+                    "404": {
+                        "description": "Not found",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    }
+                }
+            }
+        },
         "/records": {
             "get": {
                 "security": [
@@ -1801,8 +1864,9 @@ var doc = `{
                     "type": "integer",
                     "example": 999
                 },
-                "imagesKey": {
-                    "type": "string"
+                "imagesKeys": {
+                    "type": "object",
+                    "$ref": "#/definitions/model.StringSet"
                 },
                 "imagesStatus": {
                     "type": "string"
@@ -1839,8 +1903,9 @@ var doc = `{
                     "type": "integer",
                     "example": 999
                 },
-                "imagesKey": {
-                    "type": "string"
+                "imagesKeys": {
+                    "type": "object",
+                    "$ref": "#/definitions/model.StringSet"
                 },
                 "imagesStatus": {
                     "type": "string"
@@ -2068,6 +2133,12 @@ var doc = `{
                 "type": {
                     "type": "string"
                 }
+            }
+        },
+        "model.StringSet": {
+            "type": "array",
+            "items": {
+                "type": "string"
             }
         },
         "model.StringSlice": {

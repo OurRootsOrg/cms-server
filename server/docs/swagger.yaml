@@ -160,8 +160,9 @@ definitions:
       id:
         example: 999
         type: integer
-      imagesKey:
-        type: string
+      imagesKeys:
+        $ref: '#/definitions/model.StringSet'
+        type: object
       imagesStatus:
         type: string
       insert_time:
@@ -187,8 +188,9 @@ definitions:
       collection:
         example: 999
         type: integer
-      imagesKey:
-        type: string
+      imagesKeys:
+        $ref: '#/definitions/model.StringSet'
+        type: object
       imagesStatus:
         type: string
       metadata:
@@ -343,6 +345,10 @@ definitions:
       type:
         type: string
     type: object
+  model.StringSet:
+    items:
+      type: string
+    type: array
   model.StringSlice:
     items:
       type: string
@@ -1020,6 +1026,47 @@ paths:
         - profile
         - email
       summary: updates a Post
+      tags:
+      - posts
+  /posts/{id}/images/{filePath}:
+    get:
+      operationId: getPostImage
+      parameters:
+      - description: Post ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Image file path
+        in: path
+        name: imageFile
+        required: true
+        type: string
+      responses:
+        "307":
+          description: Temporary Redirect
+          schema:
+            type: header
+        "404":
+          description: Not found
+          schema:
+            $ref: '#/definitions/api.Error'
+        "500":
+          description: Server error
+          schema:
+            $ref: '#/definitions/api.Error'
+      security:
+      - OAuth2Implicit:
+        - cms
+        - openid
+        - profile
+        - email
+      - OAuth2AuthCode:
+        - cms
+        - openid
+        - profile
+        - email
+      summary: Returns a redirect to an image URL
       tags:
       - posts
   /records:

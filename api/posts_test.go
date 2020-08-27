@@ -157,6 +157,11 @@ func doPostsTests(t *testing.T,
 		assert.Equal(t, model.ErrConcurrentUpdate, err.(*api.Error).Errs()[0].Code, "err.(*api.Error).Errs()[0]: %#v", err.(*api.Error).Errs()[0])
 	}
 
+	// updated, err = testApi.GetPost(context.TODO(), updated.ID)
+	// assert.NoError(t, err)
+
+	// updated.ImagesKeys =
+
 	// DELETE
 	err = testApi.DeletePost(context.TODO(), updated.ID)
 	assert.NoError(t, err)

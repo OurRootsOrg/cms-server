@@ -66,19 +66,6 @@ func processMessage(ctx context.Context, ap *api.API, rawMsg []byte) error {
 		return api.NewError(err)
 	}
 	defer bucket.Close()
-	// Read zip file data
-	zipName := post.ImagesKey + ".zip"
-	ra, err := NewBucketReaderAt(ctx, bucket, zipName)
-	if err != nil {
-		log.Printf("[ERROR] Error opening zip file %s: %v\n", zipName, err)
-		return api.NewError(err)
-	}
-	zr, err := zip.NewReader(ra, ra.Size)
-	if err != nil {
-		log.Printf("[ERROR] Error reading zip file %s: %v\n", zipName, err)
-		return api.NewError(err)
-	}
-
 	// set up workers
 	in := make(chan *zip.File)
 	out := make(chan error)
@@ -111,29 +98,43 @@ func processMessage(ctx context.Context, ap *api.API, rawMsg []byte) error {
 					out <- errs
 					continue
 				}
-				name := post.ImagesKey + "/" + f.Name
+				name := fmt.Sprintf(api.ImagesPrefix, msg.PostID) + f.Name
 				errs = bucket.WriteAll(ctx, name, fileBytes, nil)
 				out <- errs
 			}
 		}(in, out)
 	}
-
-	// send files to workers
-	go func(in chan *zip.File, files []*zip.File) {
-		for _, f := range files {
-			in <- f
+	var fileCount int
+	for _, zipName := range msg.NewZips {
+		// Read zip file data
+		ra, err := NewBucketReaderAt(ctx, bucket, zipName)
+		if err != nil {
+			log.Printf("[ERROR] Error opening zip file %s: %v\n", zipName, err)
+			return api.NewError(err)
 		}
-		close(in)
-	}(in, zr.File)
+		zr, err := zip.NewReader(ra, ra.Size)
+		if err != nil {
+			log.Printf("[ERROR] Error reading zip file %s: %v\n", zipName, err)
+			return api.NewError(err)
+		}
 
-	// // wait for workers to complete
+		// send files to workers
+		go func(in chan *zip.File, files []*zip.File) {
+			for _, f := range files {
+				in <- f
+			}
+		}(in, zr.File)
+		fileCount += len(zr.File)
+	}
+	// wait for workers to complete
 	errs = nil
-	for i := 0; i < len(zr.File); i++ {
+	for i := 0; i < fileCount; i++ {
 		if e := <-out; e != nil {
 			log.Printf("[ERROR] Error saving image file: %#v", e)
 			errs = e
 		}
 	}
+	close(in)
 	close(out)
 
 	if errs != nil {
