@@ -10,6 +10,7 @@
       {{ search.searchResult.collectionLocation ? "in " + search.searchResult.collectionLocation : "" }}
     </h4>
     <div v-for="(lv, $ix) in search.searchResult.record" :key="$ix">{{ lv.label }}: {{ lv.value }}</div>
+    <div>Citation: {{ search.searchResult.citation }}</div>
   </div>
 </template>
 
