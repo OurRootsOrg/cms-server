@@ -251,6 +251,7 @@ func makePostIn(t *testing.T) (model.PostIn, *bytes.Buffer) {
 			Name:          "First",
 			RecordsKey:    "key",
 			RecordsStatus: model.PostDraft,
+			ImagesStatus:  model.PostDraft,
 		},
 		Collection: 1,
 	}

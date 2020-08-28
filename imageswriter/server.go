@@ -137,6 +137,7 @@ func processMessage(ctx context.Context, ap *api.API, rawMsg []byte) error {
 	close(in)
 	close(out)
 
+	// TODO we need a better way to notify the user of errors; this doesn't tell the user that anything went wrong
 	if errs != nil {
 		post.ImagesStatus = model.PostDraft
 	} else {

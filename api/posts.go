@@ -30,6 +30,12 @@ func (api API) GetPosts(ctx context.Context /* filter/search criteria */) (*Post
 	if err != nil {
 		return nil, NewError(err)
 	}
+	// default ImagesStatus, but see the comment about ImagesLoading in model/post.go
+	for i := range posts {
+		if posts[i].ImagesStatus == "" {
+			posts[i].ImagesStatus = model.PostDraft
+		}
+	}
 	return &PostResult{Posts: posts}, nil
 }
 
@@ -38,6 +44,10 @@ func (api API) GetPost(ctx context.Context, id uint32) (*model.Post, error) {
 	post, err := api.postPersister.SelectOnePost(ctx, id)
 	if err != nil {
 		return nil, NewError(err)
+	}
+	// default ImagesStatus, but see the comment about ImagesLoading in model/post.go
+	if post.ImagesStatus == "" {
+		post.ImagesStatus = model.PostDraft
 	}
 	return post, nil
 }
@@ -157,8 +167,8 @@ func (api API) UpdatePost(ctx context.Context, id uint32, in model.Post) (*model
 		return nil, errs
 	}
 
-	var recordsWriterTopic, imagesWriterTopic *pubsub.Topic
-	var msg []byte
+	var recordsWriterTopic, imagesWriterTopic, publisherTopic *pubsub.Topic
+	var recordsMsg, imagesMsg, publisherMsg []byte
 
 	if currPost.RecordsKey != in.RecordsKey {
 		// handle records key change
@@ -174,7 +184,7 @@ func (api API) UpdatePost(ctx context.Context, id uint32, in model.Post) (*model
 		defer recordsWriterTopic.Shutdown(ctx)
 
 		in.RecordsStatus = model.PostLoading
-		msg, err = json.Marshal(model.RecordsWriterMsg{
+		recordsMsg, err = json.Marshal(model.RecordsWriterMsg{
 			PostID: id,
 		})
 		if err != nil {
@@ -187,12 +197,12 @@ func (api API) UpdatePost(ctx context.Context, id uint32, in model.Post) (*model
 		case (currPost.RecordsStatus == model.PostDraft && in.RecordsStatus == model.PostPublished) ||
 			(currPost.RecordsStatus == model.PostPublished && in.RecordsStatus == model.PostDraft):
 			// prepare to send a message
-			recordsWriterTopic, err = api.OpenTopic(ctx, "publisher")
+			publisherTopic, err = api.OpenTopic(ctx, "publisher")
 			if err != nil {
 				log.Printf("[ERROR] Can't open publisher topic %v", err)
 				return nil, NewError(err)
 			}
-			defer recordsWriterTopic.Shutdown(ctx)
+			defer publisherTopic.Shutdown(ctx)
 
 			var action string
 			if in.RecordsStatus == model.PostPublished {
@@ -202,7 +212,7 @@ func (api API) UpdatePost(ctx context.Context, id uint32, in model.Post) (*model
 				in.RecordsStatus = model.PostUnpublishing
 				action = model.PublisherActionUnindex
 			}
-			msg, err = json.Marshal(model.PublisherMsg{
+			publisherMsg, err = json.Marshal(model.PublisherMsg{
 				Action: action,
 				PostID: id,
 			})
@@ -245,7 +255,7 @@ func (api API) UpdatePost(ctx context.Context, id uint32, in model.Post) (*model
 				iwm.NewZips = append(iwm.NewZips, ik)
 			}
 		}
-		msg, err = json.Marshal(iwm)
+		imagesMsg, err = json.Marshal(iwm)
 		if err != nil {
 			log.Printf("[ERROR] Can't marshal message %v", err)
 			return nil, NewError(err)
@@ -253,36 +263,7 @@ func (api API) UpdatePost(ctx context.Context, id uint32, in model.Post) (*model
 	} else if currPost.ImagesStatus != in.ImagesStatus {
 		// handle images status change
 		switch {
-		case (currPost.ImagesStatus == model.PostDraft && in.ImagesStatus == model.PostPublished) ||
-			(currPost.ImagesStatus == model.PostPublished && in.ImagesStatus == model.PostDraft):
-			// prepare to send a message
-			imagesWriterTopic, err = api.OpenTopic(ctx, "publisher")
-			if err != nil {
-				log.Printf("[ERROR] Can't open publisher topic %v", err)
-				return nil, NewError(err)
-			}
-			defer imagesWriterTopic.Shutdown(ctx)
-
-			var action string
-			if in.ImagesStatus == model.PostPublished {
-				in.ImagesStatus = model.PostPublishing
-				action = model.PublisherActionIndex
-			} else {
-				in.ImagesStatus = model.PostUnpublishing
-				action = model.PublisherActionUnindex
-			}
-			msg, err = json.Marshal(model.PublisherMsg{
-				Action: action,
-				PostID: id,
-			})
-			if err != nil {
-				log.Printf("[ERROR] Can't marshal message %v", err)
-				return nil, NewError(err)
-			}
-		case currPost.ImagesStatus == model.PostPublishing && in.ImagesStatus == model.PostPublishComplete:
-			in.ImagesStatus = model.PostPublished
-		case currPost.ImagesStatus == model.PostUnpublishing && in.ImagesStatus == model.PostUnpublishComplete:
-			in.ImagesStatus = model.PostDraft
+		// images don't need to be published; only loaded
 		case currPost.ImagesStatus == model.PostLoading && in.ImagesStatus == model.PostLoadComplete:
 			in.ImagesStatus = model.PostDraft
 		default:
@@ -292,14 +273,16 @@ func (api API) UpdatePost(ctx context.Context, id uint32, in model.Post) (*model
 		}
 	}
 
+	// update post
 	post, e := api.postPersister.UpdatePost(ctx, id, in)
 	if e != nil {
 		return nil, NewError(e)
 	}
 
-	if recordsWriterTopic != nil && msg != nil {
+	// send message to records writer
+	if recordsWriterTopic != nil && recordsMsg != nil {
 		// send the message
-		err = recordsWriterTopic.Send(ctx, &pubsub.Message{Body: msg})
+		err = recordsWriterTopic.Send(ctx, &pubsub.Message{Body: recordsMsg})
 		if err != nil { // this had best never happen
 			log.Printf("[ERROR] Can't send message %v", err)
 			// undo the update
@@ -312,9 +295,10 @@ func (api API) UpdatePost(ctx context.Context, id uint32, in model.Post) (*model
 		api.deleteReferencedContent(ctx, currPost.RecordsKey)
 	}
 
-	if imagesWriterTopic != nil && msg != nil {
+	// send message to images writer
+	if imagesWriterTopic != nil && imagesMsg != nil {
 		// send the message
-		err = imagesWriterTopic.Send(ctx, &pubsub.Message{Body: msg})
+		err = imagesWriterTopic.Send(ctx, &pubsub.Message{Body: imagesMsg})
 		if err != nil { // this had best never happen
 			log.Printf("[ERROR] Can't send message %v", err)
 			// undo the update
@@ -327,6 +311,17 @@ func (api API) UpdatePost(ctx context.Context, id uint32, in model.Post) (*model
 		if !in.ImagesKeys.Contains(ik) {
 			// Delete the ZIP file
 			api.deleteReferencedContent(ctx, ik)
+		}
+	}
+
+	if publisherTopic != nil && publisherMsg != nil {
+		// send the message
+		err = publisherTopic.Send(ctx, &pubsub.Message{Body: publisherMsg})
+		if err != nil { // this had best never happen
+			log.Printf("[ERROR] Can't send message %v", err)
+			// undo the update
+			_, _ = api.postPersister.UpdatePost(ctx, id, *currPost)
+			return nil, NewError(err)
 		}
 	}
 

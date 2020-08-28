@@ -36,9 +36,19 @@ const (
 	PublisherActionUnindex = "unindex"
 )
 
-// UserAcceptedPostRecordsStatus returns true if its argument is a valid post status
+// UserAcceptedPostRecordsStatus returns true if its argument is a valid records status
 func UserAcceptedPostRecordsStatus(status string) bool {
 	for _, s := range []string{PostLoading, PostDraft, PostPublishing, PostPublished, PostUnpublishing} {
+		if s == status {
+			return true
+		}
+	}
+	return false
+}
+
+// UserAcceptedPostImagesStatus returns true if its argument is a valid images status
+func UserAcceptedPostImagesStatus(status string) bool {
+	for _, s := range []string{PostLoading, PostDraft} {
 		if s == status {
 			return true
 		}
@@ -127,6 +137,9 @@ func (ss *StringSet) Equals(ss1 *StringSet) bool {
 }
 
 // PostBody is the JSON body of a Post
+// TODO Consider having a PostStatus which can be draft, publishing, published, or unpublishing
+// TODO and instead of RecordsStatus and ImagesStatus, have RecordsLoading (bool) and ImagesLoading (bool)
+// TODO Also consider having a RecordsLoadingError and ImagesLoadingError with the error result from the last load
 type PostBody struct {
 	Name          string                 `json:"name" validate:"required"`
 	Metadata      map[string]interface{} `json:"metadata"`

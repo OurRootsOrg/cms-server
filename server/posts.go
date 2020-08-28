@@ -179,6 +179,11 @@ func (app App) PutPost(w http.ResponseWriter, req *http.Request) {
 		ErrorResponse(w, http.StatusBadRequest, msg)
 		return
 	}
+	if !model.UserAcceptedPostImagesStatus(in.ImagesStatus) {
+		msg := fmt.Sprintf("Invalid records status: %s", in.RecordsStatus)
+		ErrorResponse(w, http.StatusBadRequest, msg)
+		return
+	}
 	post, errors := app.api.UpdatePost(req.Context(), postID, in)
 	if errors != nil {
 		ErrorsResponse(w, errors)
