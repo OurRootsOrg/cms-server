@@ -30,6 +30,7 @@
           @click:row="rowClicked"
           dense
           class="rowHover postsTable"
+          v-columns-resizable
         >
           <template v-slot:[`item.hasData`]="{ item }">
             <v-icon v-if="item.hasData" class="green--text">mdi-checkbox-marked</v-icon>

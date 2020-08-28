@@ -197,6 +197,7 @@
             'items-per-page-options': [10, 25, 50]
           }"
           :items-per-page="25"
+          v-columns-resizable
         >
         </v-data-table>
       </v-col>
