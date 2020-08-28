@@ -711,13 +711,19 @@
 
     <v-row v-if="searchPerformed && search.searchTotal > 0">
       <v-col>
-        <p>Showing 1 - {{ search.searchList.length }} of {{ search.searchTotal }}</p>
+        <p>Showing {{ query.from + 1 }} - {{ query.from + search.searchList.length }} of {{ search.searchTotal }}</p>
       </v-col>
     </v-row>
 
     <v-row v-for="(result, $ix) in search.searchList" :key="$ix">
       <v-col>
         <SearchResult :result="result" />
+      </v-col>
+    </v-row>
+
+    <v-row v-if="searchPerformed && search.searchTotal > 0">
+      <v-col>
+        <v-pagination v-model="page" :length="numPages" :total-visible="7" @input="pageChanged()"></v-pagination>
       </v-col>
     </v-row>
   </div>
@@ -788,10 +794,13 @@ export default {
           }
         }
       }
+      this.page = Math.floor(this.query.from / this.pageSize) + 1;
     }
   },
   data() {
     return {
+      page: 1,
+      pageSize: 10,
       showRelative: {
         father: false,
         mother: false,
@@ -880,6 +889,9 @@ export default {
     };
   },
   computed: {
+    numPages() {
+      return Math.ceil(this.search.searchTotal / this.pageSize);
+    },
     placeFacet() {
       let key = null;
       if (this.search.searchFacets.collectionPlace1) {
@@ -1056,9 +1068,21 @@ export default {
         query["collectionFacet"] = true;
       }
 
+      query.from = (this.page - 1) * this.pageSize;
+      query.size = this.pageSize;
+
       return query;
     },
+    pageChanged() {
+      if ((this.page - 1) * this.pageSize !== this.query.from) {
+        this.issueQuery();
+      }
+    },
     go() {
+      this.page = 1;
+      this.issueQuery();
+    },
+    issueQuery() {
       let query = this.getQuery();
 
       // issue query
