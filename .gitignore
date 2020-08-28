@@ -2,6 +2,7 @@
 server/server
 publisher/publisher
 recordswriter/recordswriter
+imageswriter/imageswriter
 *.lambda
 deploy/awslambda/*.lambda.zip
 *.exe
@@ -27,6 +28,7 @@ uglyui/node_modules/
 .idea/
 uglyui/.idea/
 .vscode/
+.DS_Store
 
 #ignore local env
 uglyui/.env.development.local

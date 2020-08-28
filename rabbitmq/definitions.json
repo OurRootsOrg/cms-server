@@ -56,6 +56,15 @@
       }
     },
     {
+      "name": "imageswriter",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-queue-type": "classic"
+      }
+    },
+    {
       "name": "test",
       "vhost": "/",
       "durable": true,
@@ -77,6 +86,15 @@
     },
     {
       "name": "recordswriter",
+      "vhost": "/",
+      "type": "fanout",
+      "durable": true,
+      "auto_delete": false,
+      "internal": false,
+      "arguments": {}
+    },
+    {
+      "name": "imageswriter",
       "vhost": "/",
       "type": "fanout",
       "durable": true,
@@ -107,6 +125,14 @@
       "source": "recordswriter",
       "vhost": "/",
       "destination": "recordswriter",
+      "destination_type": "queue",
+      "routing_key": "",
+      "arguments": {}
+    },
+    {
+      "source": "imageswriter",
+      "vhost": "/",
+      "destination": "imageswriter",
       "destination_type": "queue",
       "routing_key": "",
       "arguments": {}

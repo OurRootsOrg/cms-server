@@ -2,14 +2,14 @@
   <v-container class="collections-create">
     <h1>{{ collection.id ? "Edit" : "Create" }} Collection</h1>
     <v-form @submit.prevent="save">
-      <h3>Give your collection a name (step 1 of 4)</h3>
+      <h3>Give your collection a name (step 1 of 5)</h3>
       <v-text-field
         label="Collection Name"
         v-model="collection.name"
         type="text"
         placeholder="Name"
         :class="{ error: $v.collection.name.$error }"
-        @blur="touch('name')"
+        @change="touch('name')"
       ></v-text-field>
 
       <template v-if="$v.collection.name.$error">
@@ -18,7 +18,28 @@
         </p>
       </template>
 
-      <h3>Select one or more categories (step 2 of 4)</h3>
+      <h3>What location does this collection cover? (step 2 of 5)</h3>
+      <div class="location">
+        <v-autocomplete
+          outlined
+          dense
+          v-model="collection.location"
+          :loading="locationLoading"
+          :items="locationItems"
+          :search-input.sync="locationSearch"
+          no-filter
+          auto-select-first
+          flat
+          hide-no-data
+          hide-details
+          solo
+          @change="touch('location')"
+          placeholder="Location"
+          class="ma-0 mb-n2"
+        ></v-autocomplete>
+      </div>
+
+      <h3>Select one or more categories (step 3 of 5)</h3>
       <multiselect
         v-model="collection.categories"
         :options="categories.categoriesList"
@@ -55,7 +76,7 @@
                 messages" are the error messages you want to show if the data does not meet the validation rules.</span
               >
             </v-tooltip>
-            (step 3 of 4)
+            (step 4 of 5)
           </h3>
           <p class="caption">Hint: use the <v-icon small>mdi-drag-horizontal-variant</v-icon> handles to drag rows up and down the list to put them in whatever order you want them to show on the record page</p>
 <!--non-draggable (keeping just until we know for sure the draggable works!)
@@ -251,7 +272,7 @@
                 results.</span
               >
             </v-tooltip>
-            (step 4 of 4)
+            (step 5 of 5)
           </h3>
           <v-data-table
             :items="collection.mappings"
@@ -512,11 +533,8 @@ import NProgress from "nprogress";
 import { required } from "vuelidate/lib/validators";
 import Multiselect from "vue-multiselect";
 import lodash from "lodash";
+import Server from "@/services/Server";
 import draggable from "vuedraggable";
-
-// const ixEmptyFieldMap = {
-//   na: "Don't index"
-// };
 
 function setup() {
   this.collection = {
@@ -527,6 +545,9 @@ function setup() {
     fields: lodash.cloneDeep(this.collections.collection.fields),
     mappings: lodash.cloneDeep(this.collections.collection.mappings)
   };
+  if (this.collection.location) {
+    this.locationItems = [this.collection.location];
+  }
 }
 
 export default {
@@ -546,14 +567,6 @@ export default {
       .catch(() => {
         next("/");
       });
-  },
-  watch: {
-    dialogColumnDefs(val) {
-      val || this.closeColumnDefs();
-    },
-    dialogMapping(val) {
-      val || this.closeMapping();
-    }
   },
   created() {
     if (this.$route.params && this.$route.params.cid) {
@@ -651,60 +664,34 @@ export default {
       spreadsheetColumnOptions: [{ value: "get this from the columns", text: "Spreadsheet column" }],
       //end of data for experimental table; keep everything after this
       collection: { id: null, name: null, categories: [], fields: [], mappings: [] },
+      locationLoading: false,
+      locationTimeout: null,
+      locationItems: [],
+      locationSearch: "",
       fieldColumns: [
-        //Tabulator:v-data-table translation is title:text and field:value (rename "title" as "text" and "field" as "value")
         {
           text: "",
           value: "handle",
           align: "left",
-          // rowHandle: true,
-          // formatter: "handle",
-          // headerSort: false,
-          // frozen: true,
           width: 10
         },
         {
           text: "Spreadsheet header",
-          // widthGrow: 2,
           value: "header"
-          // tooltip: "spreadsheet column header (required)",
-          // editor: "input",
-          // validator: ["unique"]
         },
         {
           text: "Required?",
           value: "required",
-          // tooltip: "is this field required?",
-          // editor: "tickCross",
-          align: "center" //used to be hozAlign: "center"
-          // formatter: "tickCross",
-          // formatterParams: { allowEmpty: true }
+          align: "center"
         },
         {
           text: "Validation rule",
-          // widthGrow: 2,
           value: "regex"
-          // tooltip: "regular expression used to validate column values (optional)",
-          // editor: "input"
         },
         {
           text: "Validation Message",
-          // widthGrow: 2,
           value: "regexError"
-          // tooltip: "message to report if the value fails the validation rule (optional)",
-          // editor: "input"
         },
-        // {
-        //   text: "Delete",
-        //   value:"buttonCross",
-        //   formatter: "buttonCross",
-        //   hozAlign: "center",
-        //   // width: 55,
-        //   // minWidth: 55,
-        //   cellClick: (e, cell) => {
-        //     this.fieldsDelete(cell.getRow().getPosition());
-        //   }
-        // },
         {
           text: "",
           value: "actions",
@@ -712,79 +699,28 @@ export default {
         }
       ],
       mappingColumns: [
-        // {
-        //   text: "",
-        //   value: "handle",
-        //   align: "left",
-        //   // rowHandle: true,
-        //   // formatter: "handle",
-        //   // headerSort: false,
-        //   // frozen: true,
-        //   width: 20
-        //   // minWidth: 30
-        // },
+        {
+          text: "",
+          value: "handle",
+          align: "left",
+          width: 20
+        },
         {
           text: "Spreadsheet header",
-          // widthGrow: 2,
           value: "header"
-          // tooltip: "spreadsheet column header from table above (required)",
-          // editor: "select",
-          // editorParams: () => {
-          //   return {
-          //     values: this.collection.fields.map(f => f.header),
-          //     verticalNavigation: "table"
-          //   };
-          // },
-          // validator: ["required"]
         },
         {
           text: "Record detail field label",
-          // widthGrow: 2,
           value: "dbField"
-          // tooltip: "name of the field when displaying the record detail (don't display if empty)",
-          // editor: "input"
         },
         {
           text: "Index Role",
           value: "ixRole"
-          // tooltip: "whether to index this field for the principal or another person in the record (optional)",
-          // formatter: "lookup",
-          // formatterParams: this.ixRoleMap,
-          // editor: "select",
-          // editorParams: {
-          //   values: this.ixRoleMap,
-          //   defaultValue: "na"
-          // },
-          // validator: ["required"]
         },
         {
           text: "Index Field",
           value: "ixField"
-          // tooltip: "how to index this field (optional)",
-          // formatter: "lookup",
-          // formatterParams: this.ixFieldMap,
-          // editor: "select",
-          // editorParams: cell => {
-          //   let ixRole = cell
-          //     .getRow()
-          //     .getCell("ixRole")
-          //     .getValue();
-          //   return {
-          //     values: !ixRole || ixRole === "na" ? ixEmptyFieldMap : this.ixFieldMap
-          //   };
-          // },
-          // validator: ["required"]
         },
-        // {
-        //   text: "Delete",
-        //   formatter: "buttonCross",
-        //   align: "center", //used to be hozAlign: "center",
-        //   width: 55,
-        //   minWidth: 55,
-        //   cellClick: (e, cell) => {
-        //     this.mappingDelete(cell.getRow().getPosition());
-        //   }
-        // }
         {
           text: "",
           value: "actions",
@@ -792,6 +728,17 @@ export default {
         }
       ]
     };
+  },
+  watch: {
+    dialogColumnDefs(val) {
+      val || this.closeColumnDefs();
+    },
+    dialogMapping(val) {
+      val || this.closeMapping();
+    },
+    locationSearch(val) {
+      val && val !== this.collection.location && this.doLocationSearch(val);
+    }
   },
   computed: {
     postsForCollection() {
@@ -819,12 +766,29 @@ export default {
   validations: {
     collection: {
       name: { required },
+      location: {},
       categories: { required },
       fields: {},
       mappings: {}
     }
   },
   methods: {
+    doLocationSearch(text) {
+      if (this.locationTimeout) {
+        clearTimeout(this.locationTimeout);
+      }
+      this.locationLoading = true;
+      this.locationTimeout = setTimeout(() => {
+        this.locationTimeout = null;
+        Server.placeSearch(text)
+          .then(res => {
+            this.locationItems = res.data.map(p => p.fullName);
+          })
+          .finally(() => {
+            this.locationLoading = false;
+          });
+      }, 400);
+    },
     touch(attr) {
       if (this.$v.collection[attr].$dirty) {
         return;
@@ -836,28 +800,6 @@ export default {
       if (!this.collection.id || !lodash.isEqual(value, this.collections.collection[attr])) {
         this.$v.collection[attr].$touch();
       }
-    },
-    addMapping() {
-      this.collection.mappings.push({ ixRole: "na", ixField: "na" });
-    },
-    mappingMoved(data) {
-      this.collection.mappings = data;
-      this.touch("mappings");
-    },
-    mappingDelete(ix) {
-      this.collection.mappings.splice(ix, 1);
-      this.touch("mappings");
-    },
-    mappingEdited(item) {
-      if (item.getField() === "ixRole") {
-        if (item.getValue() === "" || item.getValue() === "na") {
-          item
-            .getRow()
-            .getCell("ixField")
-            .setValue("na", true);
-        }
-      }
-      this.touch("mappings");
     },
     syncFieldsMappings(newValue, oldValue) {
       if (newValue) {
@@ -876,7 +818,6 @@ export default {
       this.touch("mappings");
     },
     getPostColumns() {
-      //Tabulator:v-data-table translation is title:text and field:value (rename "title" as "text" and "field" as "value")
       let cols = [
         {
           text: "Name",
@@ -956,7 +897,6 @@ export default {
     },
     //methods for the spreadsheet columns table
     editColumnDefs(item) {
-      // console.log("editItem", item)
       this.editedIndex = this.collection.fields.indexOf(item);
       this.editedItem = Object.assign({}, item);
       this.dialogColumnDefs = true;
@@ -990,7 +930,6 @@ export default {
     },
     //methods for the mappings table
     editMapping(item) {
-      // console.log("editItem", item)
       this.editedIndex = this.collection.mappings.indexOf(item);
       this.editedMappingItem = Object.assign({}, item);
       this.dialogMapping = true;
@@ -1011,14 +950,10 @@ export default {
     },
     saveMapping() {
       if (this.editedIndex > -1) {
-        // if (this.editedMappingItem.header !== this.collection.mappings[this.editedIndex].header) {
-        //   this.syncFieldsMappings(this.editedMappingItem.header, this.collection.mappings[this.editedIndex].header);
-        // }
         Object.assign(this.collection.mappings[this.editedIndex], this.editedMappingItem);
         this.touch("fields");
       } else {
         this.collection.mappings.push(this.editedMappingItem);
-        // this.syncFieldsMappings(this.editedMappingItem.header, null);
       }
       this.closeMapping();
     }
@@ -1043,7 +978,6 @@ export default {
   background: #b2ebf2;
   color: #006064;
 }
-
 .spreadsheetColumnsTable >>> table > tbody > tr > td:nth-child(1),
 .spreadsheetColumnsTable >>> table > thead > tr > th:nth-child(1) {
   left: 0;
@@ -1097,6 +1031,9 @@ export default {
   vertical-align: top;
   text-align: left;
   padding-left: 8px;
+}
+.location {
+  margin-bottom: 24px;
 }
 </style>
 <!--the original green hex #41b883 change to cyan lighten-3 #80DEEA or cyan lighten-4 #B2EBF2-->

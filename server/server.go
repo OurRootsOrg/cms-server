@@ -102,6 +102,7 @@ func main() {
 		BlobStoreConfig(env.Region, env.BlobStoreEndpoint, env.BlobStoreAccessKey, env.BlobStoreSecretKey, env.BlobStoreBucket, env.BlobStoreDisableSSL).
 		QueueConfig("publisher", env.PubSubPublisherURL).
 		QueueConfig("recordswriter", env.PubSubRecordsWriterURL).
+		QueueConfig("imageswriter", env.PubSubImagesWriterURL).
 		ElasticsearchConfig(env.ElasticsearchURLString, esTransport)
 	app := NewApp().BaseURL(*env.BaseURL).API(ap).OIDC(env.OIDCAudience, env.OIDCDomain)
 	if env.BaseURL.Scheme == "https" {
@@ -170,7 +171,8 @@ func main() {
 			PostPersister(p).
 			RecordPersister(p).
 			UserPersister(p).
-			SettingsPersister(p)
+			SettingsPersister(p).
+			PlacePersister(p)
 		log.Print("[INFO] Using PostgresPersister")
 
 	} else {
@@ -188,7 +190,8 @@ func main() {
 			PostPersister(p).
 			RecordPersister(p).
 			SettingsPersister(p).
-			UserPersister(p)
+			UserPersister(p).
+			PlacePersister(p)
 		log.Print("[INFO] Using DynamoDBPersister")
 	}
 	r := app.NewRouter()
@@ -260,6 +263,7 @@ type Env struct {
 	BlobStoreBucket        string `env:"BLOB_STORE_BUCKET"`
 	BlobStoreDisableSSL    bool   `env:"BLOB_STORE_DISABLE_SSL"`
 	PubSubRecordsWriterURL string `env:"PUB_SUB_RECORDSWRITER_URL" validate:"required,url"`
+	PubSubImagesWriterURL  string `env:"PUB_SUB_IMAGESWRITER_URL" validate:"required,url"`
 	PubSubPublisherURL     string `env:"PUB_SUB_PUBLISHER_URL" validate:"required,url"`
 	OIDCAudience           string `env:"OIDC_AUDIENCE" validate:"omitempty"`
 	OIDCDomain             string `env:"OIDC_DOMAIN" validate:"omitempty"`
@@ -291,6 +295,8 @@ func ParseEnv() (*Env, error) {
 				errs += fmt.Sprintf("  Invalid MIGRATION_DATABASE_URL: '%v' is not a valid PostgreSQL URL\n", fe.Value())
 			case "PUB_SUB_RECORDSWRITER_URL":
 				errs += fmt.Sprintf("  Invalid PUB_SUB_RECORDSWRITER_URL: '%v'is not a valid URL\n", fe.Value())
+			case "PUB_SUB_IMAGESWRITER_URL":
+				errs += fmt.Sprintf("  Invalid PUB_SUB_IMAGESWRITER_URL: '%v'is not a valid URL\n", fe.Value())
 			case "PUB_SUB_PUBLISHER_URL":
 				errs += fmt.Sprintf("  Invalid PUB_SUB_PUBLISHER_URL: '%v'is not a valid URL\n", fe.Value())
 			case "ELASTICSEARCH_URL":

@@ -154,13 +154,6 @@ import NProgress from "nprogress";
 import lodash from "lodash";
 import draggable from "vuedraggable";
 
-// const postMetadataTypes = {
-//   string: "Text",
-//   number: "Numeric",
-//   date: "Date",
-//   boolean: "Checkbox"
-// };
-
 function setup() {
   this.settingsObj = {
     ...this.settings.settings,
@@ -204,58 +197,25 @@ export default {
         { value: "date", text: "Date" },
         { value: "boolean", text: "Checkbox" }
       ],
-      //Tabulator:v-data-table translation is title:text and field:value (rename "title" as "text" and "field" as "value")
       postMetadataColumns: [
         {
           text: "",
           value: "handle",
-          // rowHandle: true,
-          // formatter: "handle",
-          // headerSort: false,
-          // frozen: true,
           width: 30
         },
         {
           text: "Name",
-          // minWidth: 200,
-          // widthGrow: 2,
           value: "name"
-          // tooltip: "custom field name",
-          // editor: "input",
-          // validator: ["unique"]
         },
         {
           text: "Type",
           width: 80,
           value: "type"
-          // tooltip: "type of data the field will hold",
-          // formatter: "lookup",
-          // formatterParams: postMetadataTypes,
-          // editor: "select",
-          // editorParams: {
-          //   values: postMetadataTypes,
-          //   defaultValue: "string"
-          // },
-          // validator: ["required"]
         },
         {
           text: "Tooltip",
-          // minWidth: 200,
-          // widthGrow: 2,
           value: "tooltip"
-          // tooltip: "tooltip for field (optional)",
-          // editor: "input"
         },
-        // {
-        //   title: "Delete",
-        //   formatter: "buttonCross",
-        //   hozAlign: "center",
-        //   width: 55,
-        //   minWidth: 55,
-        //   cellClick: (e, cell) => {
-        //     this.postMetadataDelete(cell.getRow().getPosition());
-        //   }
-        // }
         { title: "", value: "actions" }
       ]
     };
@@ -280,18 +240,11 @@ export default {
         this.$v.settingsObj[attr].$touch();
       }
     },
-    addPostMetadata() {
-      this.settingsObj.postMetadata.push({ type: "string" });
-    },
     postMetadataMoved(data) {
       this.settingsObj.postMetadata = data;
       this.touch("postMetadata");
     },
     postMetadataEdited() {
-      this.touch("postMetadata");
-    },
-    postMetadataDelete(ix) {
-      this.settingsObj.postMetadata.splice(ix, 1);
       this.touch("postMetadata");
     },
     save() {

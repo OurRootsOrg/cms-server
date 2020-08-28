@@ -14,10 +14,8 @@
     "core-js": "^3.6.4",
     "flatfile-csv-importer": "^0.2.12",
     "lodash": "^4.17.19",
-    "moment": "^2.27.0",
     "nprogress": "^0.2.0",
     "oidc-client": "^1.10.1",
-    "tabulator-tables": "^4.7.2",
     "vue": "^2.6.11",
     "vue-columns-resizable-vuetify": "^1.0.3",
     "vue-multiselect": "^2.1.6",
@@ -28,11 +26,11 @@
     "vuex": "^3.5.1"
   },
   "devDependencies": {
-    "@vue/cli-plugin-babel": "~4.3.0",
-    "@vue/cli-plugin-eslint": "~4.3.0",
-    "@vue/cli-plugin-router": "~4.3.0",
-    "@vue/cli-plugin-vuex": "~4.3.0",
-    "@vue/cli-service": "~4.3.0",
+    "@vue/cli-plugin-babel": "^4.5.4",
+    "@vue/cli-plugin-eslint": "^4.5.4",
+    "@vue/cli-plugin-router": "^4.5.4",
+    "@vue/cli-plugin-vuex": "^4.5.4",
+    "@vue/cli-service": "^4.5.4",
     "@vue/eslint-config-prettier": "^6.0.0",
     "babel-eslint": "^10.1.0",
     "copy-webpack-plugin": "^6.0.3",
@@ -43,7 +41,7 @@
     "prettier": "^1.19.1",
     "sass": "^1.26.10",
     "sass-loader": "^8.0.2",
-    "vue-cli-plugin-vuetify": "~2.0.6",
+    "vue-cli-plugin-vuetify": "^2.0.7",
     "vue-template-compiler": "^2.6.11",
     "vuetify-loader": "^1.6.0"
   }

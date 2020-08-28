@@ -12,6 +12,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ourrootsorg/cms-server/stdplace"
+
 	"github.com/cenkalti/backoff/v4"
 
 	"github.com/ourrootsorg/go-oidc"
@@ -33,6 +35,7 @@ const TokenProperty TokenKey = "token"
 // UserProperty is the name of the token property in the request context
 const UserProperty TokenKey = "user"
 
+// LocalAPI is an interface used for mocking API
 type LocalAPI interface {
 	GetCategories(context.Context) (*CategoryResult, error)
 	GetCategoriesByID(ctx context.Context, ids []uint32) ([]model.Category, error)
@@ -48,6 +51,7 @@ type LocalAPI interface {
 	DeleteCollection(ctx context.Context, id uint32) error
 	GetPosts(ctx context.Context /* filter/search criteria */) (*PostResult, error)
 	GetPost(ctx context.Context, id uint32) (*model.Post, error)
+	GetPostImage(ctx context.Context, id uint32, filePath string) (string, error)
 	AddPost(ctx context.Context, in model.PostIn) (*model.Post, error)
 	UpdatePost(ctx context.Context, id uint32, in model.Post) (*model.Post, error)
 	DeletePost(ctx context.Context, id uint32) error
@@ -60,6 +64,8 @@ type LocalAPI interface {
 	SearchDeleteByID(ctx context.Context, id string) error
 	GetSettings(ctx context.Context) (*model.Settings, error)
 	UpdateSettings(ctx context.Context, in model.Settings) (*model.Settings, error)
+	StandardizePlace(ctx context.Context, text, defaultContainingPlace string) (*model.Place, error)
+	GetPlacesByPrefix(ctx context.Context, prefix string, count int) ([]model.Place, error)
 }
 
 // API is the container for the apilication
@@ -69,10 +75,12 @@ type API struct {
 	postPersister            model.PostPersister
 	recordPersister          model.RecordPersister
 	userPersister            model.UserPersister
+	placePersister           model.PlacePersister
 	settingsPersister        model.SettingsPersister
 	validate                 *validator.Validate
 	blobStoreConfig          BlobStoreConfig
 	pubSubConfig             PubSubConfig
+	placeStandardizer        *stdplace.Standardizer
 	userCache                *lru.TwoQueueCache
 	rabbitmqTopicConn        *amqp.Connection
 	rabbitmqSubscriptionConn *amqp.Connection
@@ -126,6 +134,10 @@ func (api *API) Close() error {
 			err = e
 		}
 		api.rabbitmqSubscriptionConn = nil
+	}
+	if api.placeStandardizer != nil {
+		api.placeStandardizer.Close()
+		api.placeStandardizer = nil
 	}
 	return err
 }
@@ -181,7 +193,7 @@ func (api *API) BlobStoreConfig(region, endpoint, accessKeyID, secretAccessKey, 
 	return api
 }
 
-// QueueConfig configures the recordswriter queue
+// QueueConfig configures queues
 func (api *API) QueueConfig(queueName, queueURL string) *API {
 	api.pubSubConfig.queueURL[queueName] = queueURL
 	return api
@@ -190,6 +202,22 @@ func (api *API) QueueConfig(queueName, queueURL string) *API {
 // UserPersister sets the UserPersister for the API
 func (api *API) UserPersister(p model.UserPersister) *API {
 	api.userPersister = p
+	return api
+}
+
+// PlacePersister sets the PostPersister for the api
+func (api *API) PlacePersister(p model.PlacePersister) *API {
+	api.placePersister = p
+	return api
+}
+
+// PlaceStandardizer sets the placeStandardizer for the api
+func (api *API) PlaceStandardizer(ctx context.Context, p model.PlacePersister) *API {
+	std, err := stdplace.NewStandardizer(ctx, p)
+	if err != nil {
+		log.Fatalf("[FATAL] Error initializing place standardizer %v\n", err)
+	}
+	api.placeStandardizer = std
 	return api
 }
 

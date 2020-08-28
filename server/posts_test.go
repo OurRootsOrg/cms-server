@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -131,6 +132,25 @@ func TestGetPost(t *testing.T) {
 	assert.NotNil(t, errRet)
 	assert.Equal(t, 1, len(errRet))
 	assert.Equal(t, am.Errors.(*api.Error).Errs(), errRet)
+}
+
+func TestGetPostImage(t *testing.T) {
+	am := &api.ApiMock{}
+	app := NewApp().API(am)
+	app.authDisabled = true
+	r := app.NewRouter()
+
+	postID := 1
+	imagePath := "foo/bar/image.jpg"
+
+	am.Result = "https://s3.example.com/mybucket" + fmt.Sprintf(api.ImagesPrefix, postID) + imagePath
+	am.Errors = nil
+
+	request, _ := http.NewRequest("GET", "/posts/1/images/"+imagePath, nil)
+	response := httptest.NewRecorder()
+	r.ServeHTTP(response, request)
+	assert.Equal(t, http.StatusTemporaryRedirect, response.Code)
+	assert.Equal(t, am.Result, response.Header().Get("Location"))
 }
 
 func TestPostPost(t *testing.T) {

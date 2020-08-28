@@ -62,6 +62,7 @@ func doPostsTests(t *testing.T,
 	defer testApi.Close()
 	testApi = testApi.
 		QueueConfig("recordswriter", "amqp://guest:guest@localhost:35672/").
+		QueueConfig("imageswriter", "amqp://guest:guest@localhost:35672/").
 		QueueConfig("publisher", "amqp://guest:guest@localhost:35672/").
 		CollectionPersister(colP).
 		PostPersister(postP).
@@ -156,6 +157,11 @@ func doPostsTests(t *testing.T,
 		assert.Equal(t, model.ErrConcurrentUpdate, err.(*api.Error).Errs()[0].Code, "err.(*api.Error).Errs()[0]: %#v", err.(*api.Error).Errs()[0])
 	}
 
+	// updated, err = testApi.GetPost(context.TODO(), updated.ID)
+	// assert.NoError(t, err)
+
+	// updated.ImagesKeys =
+
 	// DELETE
 	err = testApi.DeletePost(context.TODO(), updated.ID)
 	assert.NoError(t, err)
@@ -168,6 +174,7 @@ func doPostsTests(t *testing.T,
 
 func createTestCollection(t *testing.T, p model.CollectionPersister, categoryID uint32) *model.Collection {
 	in := model.NewCollectionIn("Test", []uint32{categoryID})
+	in.Location = "Iowa, United States"
 	in.Fields = []model.CollectionField{
 		{
 			Header: "given",

@@ -8,6 +8,8 @@ import (
 	"github.com/ourrootsorg/cms-server/stdtext"
 )
 
+const StdSuffix = "_std"
+
 type CompoundDate struct {
 	First  Date
 	Second Date
@@ -25,20 +27,20 @@ func (cd CompoundDate) String() string {
 func (cd CompoundDate) Encode() string {
 	switch {
 	case cd.Type == CompoundTwo:
-		return cd.First.YearMmDd() + "|" + cd.Second.YearMmDd()
+		return cd.First.YearMmDd() + "," + cd.Second.YearMmDd()
 	case cd.Type == CompoundRange:
-		return cd.First.YearMmDd() + "|" + cd.First.StartYearMmDd() + "|" + cd.Second.EndYearMmDd()
+		return cd.First.YearMmDd() + "," + cd.First.StartYearMmDd() + "-" + cd.Second.EndYearMmDd()
 	case cd.First.Modifier != ModifierNone || cd.First.Quality == QualityEstimated:
-		return cd.First.YearMmDd() + "|" + cd.First.StartYearMmDd() + "|" + cd.First.EndYearMmDd()
+		return cd.First.YearMmDd() + "," + cd.First.StartYearMmDd() + "-" + cd.First.EndYearMmDd()
 	case cd.First.Quality == QualityAmbiguous:
 		altDate := cd.First
 		altDate.Month = cd.First.Day
 		altDate.Day = cd.First.Month
-		return cd.First.YearMmDd() + "|" + altDate.YearMmDd()
+		return cd.First.YearMmDd() + "," + altDate.YearMmDd()
 	case cd.First.Double == DoubleDate:
 		altDate := cd.First
 		altDate.Year = cd.First.Year + 1
-		return cd.First.YearMmDd() + "|" + altDate.YearMmDd()
+		return cd.First.YearMmDd() + "," + altDate.YearMmDd()
 	default:
 		return cd.First.YearMmDd()
 	}

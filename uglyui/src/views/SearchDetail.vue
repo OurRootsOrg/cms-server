@@ -5,7 +5,10 @@
       <div>Name: {{ search.searchResult.person.name }}</div>
       <div>Role: {{ search.searchResult.person.role }}</div>
     </div>
-    <h4>{{ search.searchResult.collectionName }}</h4>
+    <h4>
+      {{ search.searchResult.collectionName }}
+      {{ search.searchResult.collectionLocation ? "in " + search.searchResult.collectionLocation : "" }}
+    </h4>
     <div v-for="(lv, $ix) in search.searchResult.record" :key="$ix">{{ lv.label }}: {{ lv.value }}</div>
   </div>
 </template>

@@ -57,6 +57,9 @@ func (a *ApiMock) GetPosts(ctx context.Context /* filter/search criteria */) (*P
 func (a *ApiMock) GetPost(ctx context.Context, id uint32) (*model.Post, error) {
 	return a.Result.(*model.Post), a.Errors
 }
+func (a *ApiMock) GetPostImage(ctx context.Context, id uint32, filePath string) (string, error) {
+	return a.Result.(string), a.Errors
+}
 func (a *ApiMock) AddPost(ctx context.Context, in model.PostIn) (*model.Post, error) {
 	return a.Result.(*model.Post), a.Errors
 }
@@ -98,4 +101,12 @@ func (a *ApiMock) GetSettings(ctx context.Context) (*model.Settings, error) {
 }
 func (a *ApiMock) UpdateSettings(ctx context.Context, in model.Settings) (*model.Settings, error) {
 	return a.Result.(*model.Settings), a.Errors
+}
+
+func (a *ApiMock) StandardizePlace(ctx context.Context, text, defaultContainingPlace string) (*model.Place, error) {
+	return a.Result.(*model.Place), a.Errors
+}
+func (a *ApiMock) GetPlacesByPrefix(ctx context.Context, prefix string, count int) ([]model.Place, error) {
+	a.Request = prefix
+	return a.Result.([]model.Place), a.Errors
 }
