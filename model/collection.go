@@ -25,6 +25,7 @@ type CollectionBody struct {
 	Fields           []CollectionField   `json:"fields"`
 	Mappings         []CollectionMapping `json:"mappings"`
 	CitationTemplate string              `json:"citation_template,omitempty"`
+	ImagePathHeader  string              `json:"imagePathHeader,omitempty"`
 }
 
 type CollectionField struct {

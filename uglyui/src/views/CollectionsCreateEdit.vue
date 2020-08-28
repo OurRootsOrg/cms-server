@@ -109,6 +109,17 @@
         (you need at least one)
       </span>
 
+      <h3 class="mt-4">Column containing image file names (if any)</h3>
+      <v-select
+        outlined
+        v-model="collection.imagePathHeader"
+        :items="headers"
+        @change="touch('imagePathHeader')"
+      ></v-select>
+      <div v-if="!isHeader(collection.imagePathHeader)" class="errorMessage">
+        Column containing image file names no longer appears in the list of spreadsheet columns.
+      </div>
+
       <v-layout row>
         <v-flex class="ma-3">
           <v-btn
@@ -211,6 +222,9 @@ function setup() {
   };
   if (this.collection.location) {
     this.locationItems = [this.collection.location];
+  }
+  if (!this.collection.imagePathHeader) {
+    this.collection.imagePathHeader = "";
   }
 }
 
@@ -383,6 +397,21 @@ export default {
     }
   },
   computed: {
+    headers() {
+      let headers = [{ text: "N/A", value: "" }].concat(
+        this.collection.fields.map(f => {
+          return {
+            get text() {
+              return f.header;
+            },
+            get value() {
+              return f.header;
+            }
+          };
+        })
+      );
+      return headers;
+    },
     postsForCollection() {
       return this.posts.postsList
         .filter(p => p.collection === this.collection.id)
@@ -406,7 +435,8 @@ export default {
       citation_template: {},
       categories: { required },
       fields: {},
-      mappings: {}
+      mappings: {},
+      imagePathHeader: {}
     }
   },
   methods: {
@@ -536,6 +566,10 @@ export default {
         params: { pid: post.id }
       });
     },
+    isHeader(value) {
+      if (!value) value = "";
+      return this.headers.findIndex(h => h.value === value) >= 0;
+    },
     save() {
       this.collection.fields = this.collection.fields.filter(f => f.header);
       if (this.collection.fields.length === 0) {
@@ -543,6 +577,9 @@ export default {
       }
       this.collection.mappings = this.collection.mappings.filter(f => f.header);
       if (this.collection.mappings.length === 0) {
+        return;
+      }
+      if (!this.isHeader(this.imagePathHeader)) {
         return;
       }
       let collection = Object.assign({}, this.collection);
@@ -590,7 +627,7 @@ export default {
 </script>
 
 <style src="vue-multiselect/dist/vue-multiselect.min.css"></style>
-<style>
+<style scoped>
 .multiselect__tag {
   color: #006064;
   line-height: 1;
