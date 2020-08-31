@@ -17,10 +17,12 @@
     "moment": "^2.27.0",
     "nprogress": "^0.2.0",
     "oidc-client": "^1.10.1",
+    "openseadragon": "^2.4.2",
     "tabulator-tables": "^4.7.2",
     "vue": "^2.6.11",
     "vue-multiselect": "^2.1.6",
     "vue-router": "^3.3.4",
+    "vue-upload-component": "^2.8.20",
     "vuelidate": "^0.7.5",
     "vuetify": "^2.3.4",
     "vuex": "^3.5.1"

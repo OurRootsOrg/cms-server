@@ -5,7 +5,11 @@ module.exports = {
   configureWebpack: {
     plugins: [
       new CopyWebpackPlugin({
-        patterns: [{ from: "node_modules/oidc-client/dist/oidc-client.min.js", to: "js" }]
+        patterns: [
+          { from: "node_modules/oidc-client/dist/oidc-client.min.js", to: "js" },
+          { from: "src/assets/seadragon", to: "img/seadragon" },
+          { from: "node_modules/openseadragon/build/openseadragon/images", to: "img/seadragon" }
+        ]
       })
     ]
   }

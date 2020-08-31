@@ -143,14 +143,35 @@ func TestGetPostImage(t *testing.T) {
 	postID := 1
 	imagePath := "foo/bar/image.jpg"
 
-	am.Result = "https://s3.example.com/mybucket" + fmt.Sprintf(api.ImagesPrefix, postID) + imagePath
+	url := "https://s3.example.com/mybucket" + fmt.Sprintf(api.ImagesPrefix, postID) + imagePath
+	am.Result = &api.ImageMetadata{URL: url}
 	am.Errors = nil
 
 	request, _ := http.NewRequest("GET", "/posts/1/images/"+imagePath, nil)
 	response := httptest.NewRecorder()
 	r.ServeHTTP(response, request)
 	assert.Equal(t, http.StatusTemporaryRedirect, response.Code)
-	assert.Equal(t, am.Result, response.Header().Get("Location"))
+	assert.Equal(t, url, response.Header().Get("Location"))
+
+	request, _ = http.NewRequest("GET", "/posts/1/images/"+imagePath+"?height=100", nil)
+	response = httptest.NewRecorder()
+	r.ServeHTTP(response, request)
+	assert.Equal(t, http.StatusTemporaryRedirect, response.Code)
+	assert.Equal(t, url, response.Header().Get("Location"))
+
+	request, _ = http.NewRequest("GET", "/posts/1/images/"+imagePath+"?noredirect=true", nil)
+	response = httptest.NewRecorder()
+	r.ServeHTTP(response, request)
+	assert.Equal(t, http.StatusOK, response.Code)
+	assert.Equal(t,
+		contentType,
+		response.Result().Header["Content-Type"][0])
+	var metadata api.ImageMetadata
+	err := json.NewDecoder(response.Body).Decode(&metadata)
+	if err != nil {
+		t.Errorf("Error parsing JSON: %v", err)
+	}
+	assert.Equal(t, url, metadata.URL)
 }
 
 func TestPostPost(t *testing.T) {

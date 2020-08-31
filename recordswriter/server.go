@@ -86,7 +86,7 @@ func processMessage(ctx context.Context, ap *api.API, rawMsg []byte) error {
 	}
 
 	// open bucket
-	bucket, err := ap.OpenBucket(ctx)
+	bucket, err := ap.OpenBucket(ctx, false)
 	if err != nil {
 		log.Printf("[ERROR] OpenBucket %v\n", err)
 		return api.NewError(err)

@@ -9,10 +9,10 @@ import (
 	"log"
 	"time"
 
+	"github.com/disintegration/imaging"
+	"github.com/ourrootsorg/cms-server/model"
 	"gocloud.dev/blob"
 	"gocloud.dev/pubsub"
-
-	"github.com/ourrootsorg/cms-server/model"
 )
 
 const ImagesPrefix = "/images/%d/"
@@ -21,6 +21,12 @@ const ImagesPrefix = "/images/%d/"
 type PostResult struct {
 	Posts    []model.Post `json:"posts"`
 	NextPage string       `json:"next_page"`
+}
+
+type ImageMetadata struct {
+	URL    string `json:"url"`
+	Height int    `json:"height"`
+	Width  int    `json:"width"`
 }
 
 // GetPosts holds the business logic around getting many Posts
@@ -52,23 +58,113 @@ func (api API) GetPost(ctx context.Context, id uint32) (*model.Post, error) {
 	return post, nil
 }
 
+const thumbQuality = 75
+
 // GetPostImage returns a signed S3 URL to return an image file
-func (api *API) GetPostImage(ctx context.Context, id uint32, filePath string) (string, error) {
-	bucket, err := api.OpenBucket(ctx)
+func (api *API) GetPostImage(ctx context.Context, id uint32, filePath string, expireSeconds, height, width int) (*ImageMetadata, error) {
+	signingBucket, err := api.OpenBucket(ctx, true)
 	if err != nil {
-		return "", NewError(err)
+		return nil, NewError(err)
+	}
+	defer signingBucket.Close()
+
+	bucket, err := api.OpenBucket(ctx, false)
+	if err != nil {
+		return nil, NewError(err)
 	}
 	defer bucket.Close()
 
 	key := fmt.Sprintf(ImagesPrefix, id) + filePath
-	signedURL, err := bucket.SignedURL(ctx, key, &blob.SignedURLOptions{
-		Expiry: 1 * time.Hour,
+
+	// return full image?
+	if height == 0 && width == 0 {
+		// kind of a shame to read and decode the entire image just to get the dimensions
+		// we read the image once and could store the dimensions in a separate _dimensions.json file for future use,
+		// but this seems like a case of pre-mature optimization
+		// openseadragon, used by the client, needs the image dimensions in order to function properly
+		reader, err := bucket.NewReader(ctx, key, nil)
+		if err != nil {
+			log.Printf("[ERROR] GetPostImage read image %#v\n", err)
+			return nil, NewError(fmt.Errorf("GetPostImage read image %v", err))
+		}
+		defer reader.Close()
+		img, err := imaging.Decode(reader, imaging.AutoOrientation(true))
+		if err != nil {
+			log.Printf("[ERROR] GetPostImage decode %#v\n", err)
+			return nil, NewError(fmt.Errorf("GetPostImage decode image %v", err))
+		}
+
+		signedURL, err := signingBucket.SignedURL(ctx, key, &blob.SignedURLOptions{
+			Expiry: time.Duration(expireSeconds) * time.Second,
+			Method: "GET",
+		})
+		if err != nil {
+			return nil, NewError(err)
+		}
+		log.Printf("SignedURL %s\n", signedURL)
+		return &ImageMetadata{
+			URL:    signedURL,
+			Height: img.Bounds().Dy(),
+			Width:  img.Bounds().Dx(),
+		}, nil
+	}
+
+	// generate and return a thumbnail
+	thumbKey := fmt.Sprintf("%s__thumb_%dx%d", key, height, width)
+
+	// does the thumbnail already exist?
+	exists, err := bucket.Exists(ctx, thumbKey)
+	if err != nil {
+		log.Printf("[ERROR] GetPostImage check thumb exists %#v\n", err)
+		return nil, NewError(fmt.Errorf("GetPostImage exists error %v", err))
+	}
+
+	// generate the thumbnail and save it
+	if !exists {
+		reader, err := bucket.NewReader(ctx, key, nil)
+		if err != nil {
+			log.Printf("[ERROR] GetPostImage read image %#v\n", err)
+			return nil, NewError(fmt.Errorf("GetPostImage read image %v", err))
+		}
+		defer reader.Close()
+		img, err := imaging.Decode(reader, imaging.AutoOrientation(true))
+		if err != nil {
+			log.Printf("[ERROR] GetPostImage decode %#v\n", err)
+			return nil, NewError(fmt.Errorf("GetPostImage decode image %v", err))
+		}
+		// scale image
+		thumb := imaging.Resize(img, width, height, imaging.Box)
+
+		// write image
+		writer, err := bucket.NewWriter(ctx, thumbKey, &blob.WriterOptions{
+			ContentType: "image/jpeg",
+		})
+		if err != nil {
+			log.Printf("[ERROR] GetPostImage start write image %#v\n", err)
+			return nil, NewError(fmt.Errorf("GetPostImage start write image %v", err))
+		}
+		err = imaging.Encode(writer, thumb, imaging.JPEG, imaging.JPEGQuality(thumbQuality))
+		closeErr := writer.Close()
+		if err != nil || closeErr != nil {
+			log.Printf("[ERROR] GetPostImage write image %#v close %#v\n", err, closeErr)
+			return nil, NewError(fmt.Errorf("GetPostImage write image %v close %v", err, closeErr))
+		}
+	}
+
+	// return the thumbnail
+	signedURL, err := signingBucket.SignedURL(ctx, thumbKey, &blob.SignedURLOptions{
+		Expiry: time.Duration(expireSeconds) * time.Second,
 		Method: "GET",
 	})
 	if err != nil {
-		return "", NewError(err)
+		return nil, NewError(err)
 	}
-	return signedURL, nil
+	log.Printf("SignedURL %s\n", signedURL)
+	return &ImageMetadata{
+		URL:    signedURL,
+		Height: height,
+		Width:  width,
+	}, nil
 }
 
 // AddPost holds the business logic around adding a Post
@@ -369,7 +465,7 @@ func (api API) DeletePost(ctx context.Context, id uint32) error {
 
 func (api API) deleteReferencedContent(ctx context.Context, key string) {
 	// delete records data
-	bucket, err := api.OpenBucket(ctx)
+	bucket, err := api.OpenBucket(ctx, false)
 	if err != nil {
 		log.Printf("[INFO] Error calling OpenBucket while deleting content %v: %v", key, err)
 	}
@@ -381,7 +477,7 @@ func (api API) deleteReferencedContent(ctx context.Context, key string) {
 
 // deleteImagesForPost holds the business logic around deleting the images for a Post
 func (api API) deleteImages(ctx context.Context, postID uint32) error {
-	bucket, err := api.OpenBucket(ctx)
+	bucket, err := api.OpenBucket(ctx, false)
 	if err != nil {
 		log.Printf("[ERROR] OpenBucket %v\n", err)
 		return NewError(err)

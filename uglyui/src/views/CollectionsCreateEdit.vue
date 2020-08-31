@@ -419,8 +419,9 @@ export default {
           return {
             id: p.id,
             name: p.name,
-            recordsStatus: p.recordsStatus,
+            recordsStatus: p.imagesStatus === "Loading" ? p.imagesStatus : p.recordsStatus,
             hasData: !!p.recordsKey,
+            hasImages: !!p.imagesKeys && p.imagesKeys.length > 0,
             collectionName: this.collections.collectionsList.find(coll => coll.id === p.collection).name,
             ...p.metadata
           };
@@ -545,6 +546,14 @@ export default {
         {
           title: "Has Data",
           field: "hasData",
+          hozAlign: "center",
+          formatter: "tickCross",
+          headerFilter: "tickCross",
+          sorter: "boolean"
+        },
+        {
+          title: "Has Images",
+          field: "hasImages",
           hozAlign: "center",
           formatter: "tickCross",
           headerFilter: "tickCross",
