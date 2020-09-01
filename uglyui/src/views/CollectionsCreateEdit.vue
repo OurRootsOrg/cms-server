@@ -78,7 +78,6 @@
             </v-tooltip>
             (step 4 of 5)
           </h3>
-          <p class="caption">Hint: use the <v-icon small>mdi-drag-horizontal-variant</v-icon> handles to drag rows up and down the list to put them in whatever order you want them to show on the record page</p>
 <!--non-draggable (keeping just until we know for sure the draggable works!)
           <v-data-table
             :items="collection.fields"
@@ -180,6 +179,7 @@
           v-columns-resizable
         >
           <template v-slot:body="props">
+            <!--took out the @change="columnDefsDrag" for now-->
             <draggable :list="props.items" tag="tbody">
               <tr v-for="(field, index) in props.items" :key="index">
                 <td> <v-icon small>mdi-drag-horizontal-variant</v-icon> </td>
@@ -274,6 +274,8 @@
             </v-tooltip>
             (step 5 of 5)
           </h3>
+
+          <!--not draggable; keep until I'm sure draggable works
           <v-data-table
             :items="collection.mappings"
             :headers="mappingColumns"
@@ -311,8 +313,8 @@
                             <v-text-field
                               dense
                               v-model="editedMappingItem.dbField"
-                              label="Search results title"
-                              placeholder="Title for search results"
+                              label="Record detail field label"
+                              placeholder="Label for record detail page"
                             ></v-text-field>
                           </v-col>
                           <v-col cols="12">
@@ -320,13 +322,14 @@
                               v-model="editedMappingItem.ixRole"
                               label="Relationship of this information to the primary search person"
                               :items="ixRoleMapOptions"
+                              @change="ixRoleChanged"
                             >
                               <v-tooltip slot="append" maxWidth="600px">
                                 <template v-slot:activator="{ on, attrs }">
                                   <v-icon v-bind="attrs" v-on="on" small>mdi-information</v-icon>
                                 </template>
                                 <span
-                                  >Select the role/relationtip to the primary person (principal) the information plays
+                                  >Select the role/relationship to the primary person (principal) the information plays
                                   in the evidence. This affects how the information will be displayed in search
                                   results.</span
                                 >
@@ -338,6 +341,7 @@
                               v-model="editedMappingItem.ixField"
                               label="Index field"
                               :items="ixFieldMapOptions"
+                              :disabled="editedMappingItem.ixRole === 'na'"
                             ></v-select>
                           </v-col>
                         </v-row>
@@ -346,7 +350,7 @@
                     <v-card-actions class="pb-5 pr-5">
                       <v-spacer></v-spacer>
                       <v-btn color="primary" text @click="closeMapping" class="mr-5">Cancel</v-btn>
-                      <v-btn color="primary" @click="saveMapping">Save</v-btn>
+                      <v-btn color="primary" @click="saveMapping" :disabled="editedMappingItem.ixRole !== 'na' && editedMappingItem.ixField === 'na'">Save</v-btn>
                     </v-card-actions>
                   </v-card>
                 </v-dialog>
@@ -356,23 +360,22 @@
               <v-icon small class="mr-2" @click="editMapping(item)">mdi-pencil</v-icon>
               <v-icon small @click="deleteMapping(item)">mdi-delete</v-icon>
             </template>
-            <!-- <template v-slot:item.handle>
+            NESTED COMMENT <template v-slot:item.handle>
               <v-btn icon small>
                 <v-icon left>mdi-drag-horizontal-variant</v-icon>
               </v-btn>
-            </template> -->
+            </template> END NESTED COMMENT
             <template v-slot:[`item.ixRole`]="{ item }">
               {{ ixRoleMap[item.ixRole] }}
             </template>
             <template v-slot:[`item.ixField`]="{ item }">
               {{ ixFieldMap[item.ixField] }}
             </template>
-          </v-data-table>
-        </v-col>
-      </v-row>
+          </v-data-table>-->
 
-<!--draggable mappings
-<h4>Draggable mapping</h4>
+
+<!--draggable mappings-->
+        <p class="caption">Hint: use the <v-icon small>mdi-drag-horizontal-variant</v-icon> handles to drag rows up and down the list to put them in whatever order you want them to show on the record page</p>
         <v-data-table
           :headers="mappingColumns"
           :items="collection.mappings"
@@ -383,13 +386,14 @@
           v-columns-resizable
         >
           <template v-slot:body="props">
+            <!--took off @change="mappingDrag" for now; it resets the drag & drop instead of changing it-->
             <draggable :list="props.items" tag="tbody">
               <tr v-for="(field, index) in props.items" :key="index">
                 <td> <v-icon small>mdi-drag-horizontal-variant</v-icon> </td>
                 <td> {{ field.header }} </td>
-                <td> {{ field.dbfield}} </td>
-                <td> {{ field.ixRoleMap }} </td>
-                <td> {{ field.ixFieldMap }} </td>
+                <td> {{ field.dbField}} </td>
+                <td> {{ ixRoleMap[field.ixRole] }} </td>
+                <td> {{ ixFieldMap[field.ixField] }} </td>
                 <td> 
                   <v-icon small @click="editMapping(field)" class="mr-3">mdi-pencil</v-icon>
                   <v-icon small @click="deleteMapping(field)" >mdi-delete</v-icon>
@@ -424,8 +428,8 @@
                           <v-text-field
                             dense
                             v-model="editedMappingItem.dbField"
-                            label="Search results title"
-                            placeholder="Title for search results"
+                            label="Label shown on search results and detail page"
+                            placeholder="Label for search and details pages"
                           ></v-text-field>
                         </v-col>
                         <v-col cols="12">
@@ -434,7 +438,7 @@
                             label="Relationship of this information to the primary search person"
                             :items="ixRoleMapOptions"
                           >
-                            <v-tooltip slot="append" maxWidth="600px">
+                            <v-tooltip bottom slot="append" maxWidth="600px">
                               <template v-slot:activator="{ on, attrs }">
                                 <v-icon v-bind="attrs" v-on="on" small>mdi-information</v-icon>
                               </template>
@@ -466,7 +470,10 @@
             </v-toolbar>
           </template>
         </v-data-table>
-end draggable mapping-->           
+<!--end draggable mapping-->      
+
+        </v-col>
+      </v-row>
 
       <div class="d-flex justify-space-between">
         <v-btn
@@ -797,7 +804,7 @@ export default {
       if (attr === "categories") {
         value = value.map(v => v.id);
       }
-      if (!this.collection.id || !lodash.isEqual(value, this.collections.collection[attr])) {
+      if (attr === "mappings" || attr === "fields" || !this.collection.id || !lodash.isEqual(value, this.collections.collection[attr])) {
         this.$v.collection[attr].$touch();
       }
     },
@@ -928,6 +935,15 @@ export default {
       }
       this.closeColumnDefs();
     },
+    //methods to save the drag & drop ordering
+    columnDefsDrag() {
+      console.log("Fields were re-ordered");
+      this.touch("fields");
+    },
+    mappingDrag() {
+      console.log("Mappings were re-ordered");
+      this.touch("fields");
+    },    
     //methods for the mappings table
     editMapping(item) {
       this.editedIndex = this.collection.mappings.indexOf(item);
@@ -956,6 +972,11 @@ export default {
         this.collection.mappings.push(this.editedMappingItem);
       }
       this.closeMapping();
+    },
+    ixRoleChanged() {
+      if (this.editedMappingItem.ixRole === "na") {
+        this.editedMappingItem.ixField = "na";
+      }
     }
   }
 };

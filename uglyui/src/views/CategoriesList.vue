@@ -28,6 +28,7 @@
           @click:row="rowClicked"
           dense
           class="rowHover"
+          v-columns-resizable
         >
           <template v-slot:[`item.icon`]="{ item }">
             <v-btn icon small :to="{ name: 'category-edit', params: { cid: item.id } }">
@@ -58,7 +59,7 @@ export default {
       headers: [
         { text: "Name", value: "name" },
         { text: "# Collections", value: "collectionsCount" },
-        { text: "", value: "icon", align: "right" }
+        { text: "", value: "icon", align: "right", width:"15px" }
       ],
       search: ""
     };

@@ -49,6 +49,7 @@
           @click:row="collectionRowClicked"
           dense
           class="rowHover"
+          v-columns-resizable
         >
           <template v-slot:[`item.icon`]="{ item }">
             <v-btn icon small :to="{ name: 'collection-edit', params: { cid: item.id } }">
@@ -121,7 +122,7 @@ export default {
         { text: "Name", value: "name" },
         { text: "# Posts", value: "postsCount" },
         { text: "Categories", value: "categoryNames" },
-        { text: "", value: "icon", align: "right" }
+        { text: "", value: "icon", align: "right", width:"15px" }
       ],
       search: ""
     };
