@@ -44,6 +44,8 @@ definitions:
       id:
         example: 999
         type: integer
+      imagePathHeader:
+        type: string
       insert_time:
         type: string
       last_update_time:
@@ -84,6 +86,8 @@ definitions:
         items:
           $ref: '#/definitions/model.CollectionField'
         type: array
+      imagePathHeader:
+        type: string
       location:
         type: string
       mappings:
@@ -258,6 +262,9 @@ definitions:
     type: object
   model.SearchHit:
     properties:
+      citation:
+        description: only returned on search by id
+        type: string
       collection:
         type: integer
       collectionLocation:
@@ -267,9 +274,15 @@ definitions:
         type: string
       id:
         type: string
+      imagePath:
+        description: only returned on search by id
+        type: string
       person:
         $ref: '#/definitions/model.SearchPerson'
         type: object
+      post:
+        description: only returned on search by id
+        type: integer
       record:
         $ref: '#/definitions/model.SearchRecord'
         description: only returned on search by id
@@ -848,14 +861,16 @@ paths:
       - places
   /posts:
     get:
-      operationId: getSettings
+      operationId: getPosts
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/model.Settings'
+            items:
+              $ref: '#/definitions/model.Post'
+            type: array
         "500":
           description: Server error
           schema:
@@ -871,9 +886,9 @@ paths:
         - openid
         - profile
         - email
-      summary: returns goobal settings
+      summary: returns all posts
       tags:
-      - settings
+      - posts
     post:
       consumes:
       - application/json
@@ -1042,6 +1057,18 @@ paths:
         name: imageFile
         required: true
         type: string
+      - description: 'return the url as json {url: <url>} if true (optional)'
+        in: query
+        name: noredirect
+        type: boolean
+      - description: height of image thumbnail (optional)
+        in: query
+        name: height
+        type: integer
+      - description: width of image thumbnail (optional)
+        in: query
+        name: width
+        type: integer
       responses:
         "307":
           description: Temporary Redirect

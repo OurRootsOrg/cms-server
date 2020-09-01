@@ -429,13 +429,12 @@ func (api API) DeletePost(ctx context.Context, id uint32) error {
 	log.Printf("[DEBUG] deleting %d", id)
 	post, err := api.GetPost(ctx, id)
 	if err != nil {
+		log.Printf("[ERROR] reading post %d error=%v", id, err)
 		return NewError(err)
 	}
-	if post.RecordsStatus != model.PostDraft {
+	// allow deleting posts where the records or images are stuck in loading status
+	if post.RecordsStatus == model.PostPublished || post.RecordsStatus == model.PostPublishing || post.RecordsStatus == model.PostUnpublishing {
 		return NewError(fmt.Errorf("post(%d).RecordsStatus must be Draft; is %s", post.ID, post.RecordsStatus))
-	}
-	if post.ImagesStatus != model.PostDraft && post.ImagesStatus != "" /* backwards compatibility */ {
-		return NewError(fmt.Errorf("post(%d).ImagesStatus must be Draft; is %s", post.ID, post.ImagesStatus))
 	}
 	log.Printf("[DEBUG] deleting records for %d", id)
 	// delete records for post first so we don't have referential integrity errors
@@ -453,6 +452,7 @@ func (api API) DeletePost(ctx context.Context, id uint32) error {
 	if len(post.ImagesKeys) > 0 {
 		log.Printf("[DEBUG] deleting images for %d", id)
 		if err := api.deleteImages(ctx, id); err != nil {
+			log.Printf("[ERROR] deleting images for %d error=%v", id, err)
 			return NewError(err)
 		}
 		// Delete ZIP files
@@ -483,14 +483,16 @@ func (api API) deleteImages(ctx context.Context, postID uint32) error {
 		return NewError(err)
 	}
 	defer bucket.Close()
+	prefix := fmt.Sprintf(ImagesPrefix, postID)
 	li := bucket.List(&blob.ListOptions{
-		Prefix: fmt.Sprintf(ImagesPrefix, postID),
+		Prefix: prefix,
 	})
 	for {
 		obj, err := li.Next(ctx)
 		if err == io.EOF {
 			break
 		} else if err != nil {
+			log.Printf("[ERROR] Error getting next object with prefix %s error=%v", prefix, err)
 			return NewError(err)
 		}
 		log.Printf("[DEBUG] Deleting key %s", obj.Key)

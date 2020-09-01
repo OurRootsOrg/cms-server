@@ -795,15 +795,18 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "settings"
+                    "posts"
                 ],
-                "summary": "returns goobal settings",
-                "operationId": "getSettings",
+                "summary": "returns all posts",
+                "operationId": "getPosts",
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/model.Settings"
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.Post"
+                            }
                         }
                     },
                     "500": {
@@ -1092,6 +1095,24 @@ var doc = `{
                         "name": "imageFile",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "return the url as json {url: \u003curl\u003e} if true (optional)",
+                        "name": "noredirect",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "height of image thumbnail (optional)",
+                        "name": "height",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "width of image thumbnail (optional)",
+                        "name": "width",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -1691,6 +1712,9 @@ var doc = `{
                     "type": "integer",
                     "example": 999
                 },
+                "imagePathHeader": {
+                    "type": "string"
+                },
                 "insert_time": {
                     "type": "string"
                 },
@@ -1749,6 +1773,9 @@ var doc = `{
                     "items": {
                         "$ref": "#/definitions/model.CollectionField"
                     }
+                },
+                "imagePathHeader": {
+                    "type": "string"
                 },
                 "location": {
                     "type": "string"
@@ -2003,6 +2030,10 @@ var doc = `{
         "model.SearchHit": {
             "type": "object",
             "properties": {
+                "citation": {
+                    "description": "only returned on search by id",
+                    "type": "string"
+                },
                 "collection": {
                     "type": "integer"
                 },
@@ -2016,9 +2047,17 @@ var doc = `{
                 "id": {
                     "type": "string"
                 },
+                "imagePath": {
+                    "description": "only returned on search by id",
+                    "type": "string"
+                },
                 "person": {
                     "type": "object",
                     "$ref": "#/definitions/model.SearchPerson"
+                },
+                "post": {
+                    "description": "only returned on search by id",
+                    "type": "integer"
                 },
                 "record": {
                     "description": "only returned on search by id",

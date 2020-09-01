@@ -47,7 +47,7 @@ func processMessage(ctx context.Context, ap *api.API, rawMsg []byte) error {
 		return nil // Don't return an error, because parsing will never succeed
 	}
 
-	log.Printf("[DEBUG] Processing PostID: %d", msg.PostID)
+	log.Printf("[DEBUG] RecordsWriter Processing PostID: %d", msg.PostID)
 
 	// read post
 	post, errs := ap.GetPost(ctx, msg.PostID)

@@ -272,12 +272,13 @@ Resources:
                 - s3:PutObject
                 - s3:PutObjectACL
                 - s3:DeleteObject
+                - s3:ListBucket
               Resource:
                 Fn::Join:
                   - ''
                   -
                     - 'arn:aws:s3:::'
-                    - !Ref CMSBlobStoreBucketName
+                    - !Ref "CMSBlobStoreBucketName"
                     - '/*'
         # SQS Queue
         - Version: '2012-10-17'
@@ -479,8 +480,8 @@ Resources:
   ImagesWriterFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: recordswriter/recordswriter.lambda
-      CodeUri: recordswriter.lambda.zip
+      Handler: imageswriter/imageswriter.lambda
+      CodeUri: imageswriter.lambda.zip
       Runtime: go1.x
       MemorySize: 128
       Policies:
