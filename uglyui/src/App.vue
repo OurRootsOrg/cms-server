@@ -124,3 +124,9 @@ export default {
   }
 };
 </script>
+
+<style>
+.errorMessage {
+  color: red;
+}
+</style>

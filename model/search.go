@@ -15,6 +15,8 @@ type SearchHit struct {
 	CollectionName     string       `json:"collectionName"`
 	CollectionLocation string       `json:"collectionLocation,omitempty"` // only returned on search by id
 	Citation           string       `json:"citation,omitempty"`           // only returned on search by id
+	PostID             uint32       `json:"post,omitempty"`               // only returned on search by id
+	ImagePath          string       `json:"imagePath,omitempty"`          // only returned on search by id
 }
 type SearchPerson struct {
 	Name          string               `json:"name"`

@@ -56,6 +56,12 @@ export default {
   postsGetOne(id) {
     return get(`/posts/${id}`);
   },
+  postsGetImage(postId, imagePath, height, width) {
+    if (height > 0 || width > 0) {
+      return get(`/posts/${postId}/images/${imagePath}?noredirect=true&height=${height}&width=${width}`);
+    }
+    return get(`/posts/${postId}/images/${imagePath}?noredirect=true`);
+  },
   postsCreate(pst) {
     return post("/posts", pst);
   },
