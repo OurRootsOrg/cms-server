@@ -18,7 +18,7 @@ var decoder = schema.NewDecoder()
 // @summary returns search results
 // @description * Names can include wildcards (* or ?), in which case name fuzziness above Exact is ignored
 // @description * Date searching is limited to passing in a single year; use fuzziness for ranges
-// @description * Name fuzziness flags (OR'd together): 0: default; 1: exact; 2: alternate spellings; 4: narrow sounds-like; 8: broad sounds-like; 16: fuzzy (levenshtein); 32: initials (applies only to given)
+// @description * Name fuzziness flags (OR'd together): 0: default; 1: exact; 2: variant spellings; 4: narrow sounds-like; 8: broad sounds-like; 16: fuzzy (levenshtein); 32: initials (applies only to given)
 // @description * Date fuzziness: 0: default; 1: exact to this year; 2: +/- 1 year; 3: +/- 2 years; 4: +/- 5 years; 5: +/- 10 years
 // @description * Places can include wildcards (* or ?) or ~word to fuzzy-match word, in which case place fuzziness above Exact is ignored
 // @description * Place fuzziness flags (OR'd together): 0: default; 1: exact only; 2: include higher-level jurisdictions;

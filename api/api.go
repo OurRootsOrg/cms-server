@@ -66,6 +66,7 @@ type LocalAPI interface {
 	UpdateSettings(ctx context.Context, in model.Settings) (*model.Settings, error)
 	StandardizePlace(ctx context.Context, text, defaultContainingPlace string) (*model.Place, error)
 	GetPlacesByPrefix(ctx context.Context, prefix string, count int) ([]model.Place, error)
+	GetNameVariants(ctx context.Context, nameType model.NameType, name string) (*model.NameVariants, error)
 }
 
 // API is the container for the apilication
@@ -76,12 +77,14 @@ type API struct {
 	recordPersister          model.RecordPersister
 	userPersister            model.UserPersister
 	placePersister           model.PlacePersister
+	namePersister            model.NamePersister
 	settingsPersister        model.SettingsPersister
 	validate                 *validator.Validate
 	blobStoreConfig          BlobStoreConfig
 	pubSubConfig             PubSubConfig
 	placeStandardizer        *stdplace.Standardizer
 	userCache                *lru.TwoQueueCache
+	nameVariantsCache        *lru.TwoQueueCache
 	rabbitmqTopicConn        *amqp.Connection
 	rabbitmqSubscriptionConn *amqp.Connection
 	es                       *elasticsearch.Client
@@ -113,6 +116,10 @@ func NewAPI() (*API, error) {
 	api.Validate(validator.New())
 	var err error
 	api.userCache, err = lru.New2Q(100)
+	if err != nil {
+		return nil, err
+	}
+	api.nameVariantsCache, err = lru.New2Q(100)
 	if err != nil {
 		return nil, err
 	}
@@ -218,6 +225,12 @@ func (api *API) PlaceStandardizer(ctx context.Context, p model.PlacePersister) *
 		log.Fatalf("[FATAL] Error initializing place standardizer %v\n", err)
 	}
 	api.placeStandardizer = std
+	return api
+}
+
+// NamePersister sets the NamePersister for the api
+func (api *API) NamePersister(p model.NamePersister) *API {
+	api.namePersister = p
 	return api
 }
 
