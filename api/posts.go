@@ -76,6 +76,15 @@ func (api *API) GetPostImage(ctx context.Context, id uint32, filePath string, ex
 
 	key := fmt.Sprintf(ImagesPrefix, id) + filePath
 
+	// TODO the imaging.Decode operations in this function require *a lot* of memory - an extra 100Mb or so
+	// eventually, we could get around this by:
+	// 1. call image.DecodeConfig, but we'd also need to handle EXIF orientation as described in
+	//    https://github.com/disintegration/imaging/issues/30
+	//    or maybe ImagesWriter should store the dimensions somewhere?
+	// 2. send a message to the images writer queue to generate a thumbnail, return the signed URL, and tell the client to retry until the image appears
+	//    or maybe ImagesWriter should generate thumbnails
+	// the more I think about it, I think ImagesWriter needs to store the dimensions as a file and generate thumbnails
+
 	// return full image?
 	if height == 0 && width == 0 {
 		// kind of a shame to read and decode the entire image just to get the dimensions
@@ -429,13 +438,12 @@ func (api API) DeletePost(ctx context.Context, id uint32) error {
 	log.Printf("[DEBUG] deleting %d", id)
 	post, err := api.GetPost(ctx, id)
 	if err != nil {
+		log.Printf("[ERROR] reading post %d error=%v", id, err)
 		return NewError(err)
 	}
-	if post.RecordsStatus != model.PostDraft {
+	// allow deleting posts where the records or images are stuck in loading status
+	if post.RecordsStatus == model.PostPublished || post.RecordsStatus == model.PostPublishing || post.RecordsStatus == model.PostUnpublishing {
 		return NewError(fmt.Errorf("post(%d).RecordsStatus must be Draft; is %s", post.ID, post.RecordsStatus))
-	}
-	if post.ImagesStatus != model.PostDraft && post.ImagesStatus != "" /* backwards compatibility */ {
-		return NewError(fmt.Errorf("post(%d).ImagesStatus must be Draft; is %s", post.ID, post.ImagesStatus))
 	}
 	log.Printf("[DEBUG] deleting records for %d", id)
 	// delete records for post first so we don't have referential integrity errors
@@ -453,6 +461,7 @@ func (api API) DeletePost(ctx context.Context, id uint32) error {
 	if len(post.ImagesKeys) > 0 {
 		log.Printf("[DEBUG] deleting images for %d", id)
 		if err := api.deleteImages(ctx, id); err != nil {
+			log.Printf("[ERROR] deleting images for %d error=%v", id, err)
 			return NewError(err)
 		}
 		// Delete ZIP files
@@ -479,24 +488,26 @@ func (api API) deleteReferencedContent(ctx context.Context, key string) {
 func (api API) deleteImages(ctx context.Context, postID uint32) error {
 	bucket, err := api.OpenBucket(ctx, false)
 	if err != nil {
-		log.Printf("[ERROR] OpenBucket %v\n", err)
+		log.Printf("[ERROR] OpenBucket %#v\n", err)
 		return NewError(err)
 	}
 	defer bucket.Close()
+	prefix := fmt.Sprintf(ImagesPrefix, postID)
 	li := bucket.List(&blob.ListOptions{
-		Prefix: fmt.Sprintf(ImagesPrefix, postID),
+		Prefix: prefix,
 	})
 	for {
 		obj, err := li.Next(ctx)
 		if err == io.EOF {
 			break
 		} else if err != nil {
+			log.Printf("[ERROR] Error getting next object with prefix %s: %#v", prefix, err)
 			return NewError(err)
 		}
 		log.Printf("[DEBUG] Deleting key %s", obj.Key)
 		err = bucket.Delete(ctx, obj.Key)
 		if err != nil {
-			log.Printf("[ERROR] Error deleting key %s", obj.Key)
+			log.Printf("[ERROR] Error deleting key %s: %#v", obj.Key, err)
 			return NewError(err)
 		}
 	}

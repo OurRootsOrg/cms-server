@@ -244,12 +244,21 @@ Resources:
       Handler: server/main.lambda
       CodeUri: main.lambda.zip
       Runtime: go1.x
-      MemorySize: 128
+      MemorySize: 256
       Policies:
         - AWSLambdaBasicExecutionRole
         # S3 CMSBlobStoreBucket
         - Version: '2012-10-17'
           Statement:
+            - Effect: Allow
+              Action:
+                - s3:ListBucket
+              Resource:
+                Fn::Join:
+                  - ''
+                  -
+                    - 'arn:aws:s3:::'
+                    - !Ref CMSBlobStoreBucketName
             - Effect: Allow
               Action:
                 - s3:GetObject
@@ -423,8 +432,8 @@ Resources:
   ImagesWriterFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: recordswriter/recordswriter.lambda
-      CodeUri: recordswriter.lambda.zip
+      Handler: imageswriter/imageswriter.lambda
+      CodeUri: imageswriter.lambda.zip
       Runtime: go1.x
       MemorySize: 128
       Policies:
