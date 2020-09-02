@@ -479,7 +479,7 @@ func (api API) deleteReferencedContent(ctx context.Context, key string) {
 func (api API) deleteImages(ctx context.Context, postID uint32) error {
 	bucket, err := api.OpenBucket(ctx, false)
 	if err != nil {
-		log.Printf("[ERROR] OpenBucket %v\n", err)
+		log.Printf("[ERROR] OpenBucket %#v\n", err)
 		return NewError(err)
 	}
 	defer bucket.Close()
@@ -492,13 +492,13 @@ func (api API) deleteImages(ctx context.Context, postID uint32) error {
 		if err == io.EOF {
 			break
 		} else if err != nil {
-			log.Printf("[ERROR] Error getting next object with prefix %s error=%v", prefix, err)
+			log.Printf("[ERROR] Error getting next object with prefix %s: %#v", prefix, err)
 			return NewError(err)
 		}
 		log.Printf("[DEBUG] Deleting key %s", obj.Key)
 		err = bucket.Delete(ctx, obj.Key)
 		if err != nil {
-			log.Printf("[ERROR] Error deleting key %s", obj.Key)
+			log.Printf("[ERROR] Error deleting key %s: %#v", obj.Key, err)
 			return NewError(err)
 		}
 	}

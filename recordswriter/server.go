@@ -303,9 +303,10 @@ func main() {
 			PostPersister(p).
 			RecordPersister(p).
 			PlaceStandardizer(ctx, p)
-		if err != nil {
-			log.Fatalf("[FATAL] Error initializing place standardizer %v\n", err)
-		}
+		// This doesn't do anything
+		// if err != nil {
+		// 	log.Fatalf("[FATAL] Error initializing place standardizer %v\n", err)
+		// }
 		log.Print("[INFO] Using DynamoDBPersister")
 	}
 

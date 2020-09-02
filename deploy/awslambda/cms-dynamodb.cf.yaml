@@ -252,6 +252,15 @@ Resources:
           Statement:
             - Effect: Allow
               Action:
+                - s3:ListBucket
+              Resource:
+                Fn::Join:
+                  - ''
+                  -
+                    - 'arn:aws:s3:::'
+                    - !Ref CMSBlobStoreBucketName
+            - Effect: Allow
+              Action:
                 - s3:GetObject
                 - s3:GetObjectACL
                 - s3:PutObject
@@ -423,8 +432,8 @@ Resources:
   ImagesWriterFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: recordswriter/recordswriter.lambda
-      CodeUri: recordswriter.lambda.zip
+      Handler: imageswriter/imageswriter.lambda
+      CodeUri: imageswriter.lambda.zip
       Runtime: go1.x
       MemorySize: 128
       Policies:

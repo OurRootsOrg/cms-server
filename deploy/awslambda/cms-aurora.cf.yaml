@@ -267,18 +267,26 @@ Resources:
           Statement:
             - Effect: Allow
               Action:
-                - s3:GetObject
-                - s3:GetObjectACL
-                - s3:PutObject
-                - s3:PutObjectACL
-                - s3:DeleteObject
                 - s3:ListBucket
               Resource:
                 Fn::Join:
                   - ''
                   -
                     - 'arn:aws:s3:::'
-                    - !Ref "CMSBlobStoreBucketName"
+                    - !Ref CMSBlobStoreBucketName
+            - Effect: Allow
+              Action:
+                - s3:GetObject
+                - s3:GetObjectACL
+                - s3:PutObject
+                - s3:PutObjectACL
+                - s3:DeleteObject
+              Resource:
+                Fn::Join:
+                  - ''
+                  -
+                    - 'arn:aws:s3:::'
+                    - !Ref CMSBlobStoreBucketName
                     - '/*'
         # SQS Queue
         - Version: '2012-10-17'
@@ -511,7 +519,7 @@ Resources:
               Action:
                 - sqs:*
               Resource:
-                !Ref "CMSRecordsWriterQueueARN"
+                !Ref "CMSImagesWriterQueueARN"
         - Version: '2012-10-17'
           Statement:
             - Effect: Allow
