@@ -21,7 +21,7 @@ type ContentResult struct {
 
 // PostContentRequest returns a URL for posting content
 func (api API) PostContentRequest(ctx context.Context, contentRequest ContentRequest) (*ContentResult, error) {
-	bucket, err := api.OpenBucket(ctx)
+	bucket, err := api.OpenBucket(ctx, true)
 	if err != nil {
 		return nil, NewError(err)
 	}
@@ -41,7 +41,7 @@ func (api API) PostContentRequest(ctx context.Context, contentRequest ContentReq
 }
 
 func (api API) GetContent(ctx context.Context, key string) ([]byte, error) {
-	bucket, err := api.OpenBucket(ctx)
+	bucket, err := api.OpenBucket(ctx, false)
 	if err != nil {
 		return nil, NewError(err)
 	}

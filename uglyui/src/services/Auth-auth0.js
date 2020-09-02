@@ -6,6 +6,8 @@ export default {
       redirect_uri: process.env.VUE_APP_AUTH_REDIRECT_URL,
       response_type: "id_token token",
       scope: "openid profile email",
+      // we seem to be having problems with silent renewal
+      automaticSilentRenew: false,
       filterProtocolClaims: true,
       // Auth0 doesn't include an end_session_endpoint so we have to list everything
       metadata: {
@@ -29,6 +31,6 @@ export default {
     };
   },
   canSilentlyRefresh() {
-    return true;
+    return false; // we seem to be having problems with silent renewal
   }
 };

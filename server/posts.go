@@ -6,6 +6,7 @@ import (
 	"log"
 	"mime"
 	"net/http"
+	"strconv"
 
 	"github.com/gorilla/mux"
 	"github.com/ourrootsorg/cms-server/model"
@@ -75,12 +76,16 @@ func (app App) GetPost(w http.ResponseWriter, req *http.Request) {
 // @id getPostImage
 // @Param id path integer true "Post ID"
 // @Param imageFile path string true "Image file path"
+// @param noredirect query bool false "return the url as json {url: <url>} if true (optional)"
+// @param height query int false "height of image thumbnail (optional)"
+// @param width query int false "width of image thumbnail (optional)"
 // @success 307 {header} string
 // @failure 404 {object} api.Error "Not found"
 // @failure 500 {object} api.Error "Server error"
 // @Security OAuth2Implicit[cms,openid,profile,email]
 // @Security OAuth2AuthCode[cms,openid,profile,email]
 func (app App) GetPostImage(w http.ResponseWriter, req *http.Request) {
+	const expireSeconds = 3600
 	postID, errors := getIDFromRequest(req)
 	if errors != nil {
 		ErrorsResponse(w, errors)
@@ -90,12 +95,34 @@ func (app App) GetPostImage(w http.ResponseWriter, req *http.Request) {
 	if filePath == "" {
 		ErrorResponse(w, http.StatusNotFound, "Not Found")
 	}
-	imageURL, errors := app.api.GetPostImage(req.Context(), postID, filePath)
+	noredirect, _ := strconv.ParseBool(req.URL.Query().Get("noredirect"))
+	height, err := strconv.Atoi(req.URL.Query().Get("height"))
+	if err != nil {
+		height = 0
+	}
+	width, err := strconv.Atoi(req.URL.Query().Get("width"))
+	if err != nil {
+		width = 0
+	}
+	imageMetadata, errors := app.api.GetPostImage(req.Context(), postID, filePath, expireSeconds, height, width)
 	if errors != nil {
 		ErrorsResponse(w, errors)
 		return
 	}
-	http.Redirect(w, req, imageURL, http.StatusTemporaryRedirect)
+	// necessary because the <img> tag in a browser can't send the auth header
+	// and a javascript GET request must always follow redirects, which we don't want
+	if noredirect {
+		enc := json.NewEncoder(w)
+		enc.SetEscapeHTML(false)
+		w.Header().Set("Content-Type", contentType)
+		w.Header().Set("Cache-Control", fmt.Sprintf("max-age=%d", expireSeconds))
+		err := enc.Encode(imageMetadata)
+		if err != nil {
+			serverError(w, err)
+		}
+		return
+	}
+	http.Redirect(w, req, imageMetadata.URL, http.StatusTemporaryRedirect)
 }
 
 // PostPost adds a new Post to the database
@@ -175,6 +202,11 @@ func (app App) PutPost(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	if !model.UserAcceptedPostRecordsStatus(in.RecordsStatus) {
+		msg := fmt.Sprintf("Invalid records status: %s", in.RecordsStatus)
+		ErrorResponse(w, http.StatusBadRequest, msg)
+		return
+	}
+	if !model.UserAcceptedPostImagesStatus(in.ImagesStatus) {
 		msg := fmt.Sprintf("Invalid records status: %s", in.RecordsStatus)
 		ErrorResponse(w, http.StatusBadRequest, msg)
 		return

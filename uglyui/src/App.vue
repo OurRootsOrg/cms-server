@@ -137,5 +137,7 @@ export default {
   border-left: solid 1px #ccc; 
   height:100px;
   max-height:31px;
+.errorMessage {
+  color: red;
 }
 </style>

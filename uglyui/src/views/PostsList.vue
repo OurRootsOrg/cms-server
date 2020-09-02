@@ -89,8 +89,9 @@ export default {
         return {
           id: p.id,
           name: p.name,
-          recordsStatus: p.recordsStatus,
+          recordsStatus: p.imagesStatus === "Loading" ? p.imagesStatus : p.recordsStatus,
           hasData: !!p.recordsKey,
+          hasImages: !!p.imagesKeys && p.imagesKeys.length > 0,
           collectionName: this.collections.collectionsList.find(coll => coll.id === p.collection).name,
           ...p.metadata
         };
@@ -107,13 +108,18 @@ export default {
           value: "recordsStatus"
         },
         {
-          text: "Data",
+          text: "Has Data",
           value: "hasData",
           align: "center"
         },
         {
-          text: "Collection",
-          value: "collectionName"
+          title: "Has Images",
+          field: "hasImages",
+          align: "center"
+        },
+        {
+          title: "Collection",
+          field: "collectionName"
         }
       ];
       cols.push(...this.settings.settings.postMetadata.map(pf => getMetadataColumn(pf)));

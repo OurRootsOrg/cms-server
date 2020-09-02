@@ -5,6 +5,9 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"errors"
+	"html/template"
+	"regexp"
+	"strings"
 	"time"
 )
 
@@ -78,4 +81,22 @@ func NewRecord(id uint32, ci RecordIn) Record {
 		LastUpdateTime: now,
 	}
 	return c
+}
+
+var mustacheRE = regexp.MustCompile(`{{\s*([^} ]+(\s+[^} ]+)*)\s*}}`)
+
+// Accept a citation in simple mustache syntax {{ var name can have spaces }}
+// and convert it to go template syntax before applying it to the record data
+func (record Record) GetCitation(tpl string) string {
+	var citation strings.Builder
+	if tpl != "" {
+		tpl = mustacheRE.ReplaceAllString(tpl, "{{index . \"$1\"}}")
+		tmpl, err := template.New("citation").Parse(tpl)
+		if err != nil {
+			citation.WriteString(err.Error())
+		} else if err = tmpl.Execute(&citation, record.Data); err != nil {
+			citation.WriteString(err.Error())
+		}
+	}
+	return citation.String()
 }

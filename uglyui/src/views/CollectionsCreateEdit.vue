@@ -39,6 +39,17 @@
         ></v-autocomplete>
       </div>
 
+      <h3>Citation template (html and <span>{{</span>Spreadsheet header<span>}}</span> references allowed)</h3>
+      <div class="citation">
+        <v-textarea
+          outlined
+          name="input-7-4"
+          v-model="collection.citation_template"
+          @change="touch('citation_template')"
+          placeholder="Citation template"
+        ></v-textarea>
+      </div>
+
       <h3>Select one or more categories (step 3 of 5)</h3>
       <multiselect
         v-model="collection.categories"
@@ -78,17 +89,31 @@
             </v-tooltip>
             (step 4 of 5)
           </h3>
-<!--non-draggable (keeping just until we know for sure the draggable works!)
           <v-data-table
-            :items="collection.fields"
             :headers="fieldColumns"
-            :footer-props="{
-              'items-per-page-options': [10, 25, 50]
-            }"
-            :items-per-page="25"
+            :items="collection.fields"
+            item-key="id"
+            :show-select="false"
+            :disable-pagination="true"
             dense
             v-columns-resizable
           >
+            <template v-slot:body="props">
+              <!--took out the @change="columnDefsDrag" for now-->
+              <draggable :list="props.items" tag="tbody">
+                <tr v-for="(field, index) in props.items" :key="index">
+                  <td> <v-icon small>mdi-drag-horizontal-variant</v-icon> </td>
+                  <td> {{ field.header }} </td>
+                  <td> <span v-if="field.required"><v-icon class="green--text" small>mdi-check-circle</v-icon> Required</span> </td>
+                  <td> {{ field.regex }} </td>
+                  <td> {{ field.regexError }} </td>
+                  <td>
+                    <v-icon small @click="editColumnDefs(field)" class="mr-3">mdi-pencil</v-icon>
+                    <v-icon small @click="deleteColumnDefs(field)" >mdi-delete</v-icon>
+                  </td>
+                </tr>
+              </draggable>
+            </template>
             <template v-slot:footer>
               <v-toolbar flat class="ml-n3">
                 <v-dialog v-model="dialogColumnDefs" max-width="600px">
@@ -149,115 +174,9 @@
                 </v-dialog>
               </v-toolbar>
             </template>
-            <template v-slot:[`item.actions`]="{ item }">
-              <v-icon small class="mr-2" @click="editColumnDefs(item)">
-                mdi-pencil
-              </v-icon>
-              <v-icon small @click="deleteColumnDefs(item)">
-                mdi-delete
-              </v-icon>
-            </template>
-            <template v-slot:item.handle>
-              <v-btn icon small>
-                <v-icon left>mdi-drag-horizontal-variant</v-icon>
-              </v-btn>
-            </template>
-            <template v-slot:[`item.required`]="{ item }">
-              <span v-if="item.required"><v-icon class="green--text" small>mdi-check-circle</v-icon> Required</span>
-            </template>
           </v-data-table>
--->
-
-<!--draggable-->
-        <v-data-table
-          :headers="fieldColumns"
-          :items="collection.fields"
-          item-key="id"
-          :show-select="false"
-          :disable-pagination="true"
-          dense
-          v-columns-resizable
-        >
-          <template v-slot:body="props">
-            <!--took out the @change="columnDefsDrag" for now-->
-            <draggable :list="props.items" tag="tbody">
-              <tr v-for="(field, index) in props.items" :key="index">
-                <td> <v-icon small>mdi-drag-horizontal-variant</v-icon> </td>
-                <td> {{ field.header }} </td>
-                <td> <span v-if="field.required"><v-icon class="green--text" small>mdi-check-circle</v-icon> Required</span> </td>
-                <td> {{ field.regex }} </td>
-                <td> {{ field.regexError }} </td>
-                <td> 
-                  <v-icon small @click="editColumnDefs(field)" class="mr-3">mdi-pencil</v-icon>
-                  <v-icon small @click="deleteColumnDefs(field)" >mdi-delete</v-icon>
-                </td>
-              </tr>
-            </draggable>
-          </template>
-          <template v-slot:footer>
-            <v-toolbar flat class="ml-n3">
-              <v-dialog v-model="dialogColumnDefs" max-width="600px">
-                <template v-slot:activator="{ on, attrs }">
-                  <v-btn class="secondary primary--text mr-3" v-bind="attrs" v-on="on" small>Add a row</v-btn>
-                  <span v-if="collection.fields.length === 0"
-                    >(you need at least one row defining at least one column in your spreadsheet)</span
-                  >
-                </template>
-                <v-card>
-                  <v-card-title class="pb-5 mb-0"> {{ formTitle }}</v-card-title>
-                  <v-card-text>
-                    <v-container class="pl-0">
-                      <v-row>
-                        <v-col cols="12" sm="7">
-                          <v-text-field
-                            dense
-                            v-model="editedItem.header"
-                            label="Spreadsheet header"
-                            placeholder="Column title in your spreadsheet"
-                          ></v-text-field>
-                        </v-col>
-                        <v-col cols="12" sm="5">
-                          <v-checkbox
-                            dense
-                            class="pt-0 mt-1"
-                            v-model="editedItem.required"
-                            :label="`Required: ${editedItem.required.toString()}`"
-                          ></v-checkbox>
-                        </v-col>
-                        <v-col cols="12">
-                          <v-textarea
-                            dense
-                            outlined
-                            rows="2"
-                            v-model="editedItem.regex"
-                            label="Validation rule (optional)"
-                            placeholder="Regex to validate data. For help with regular expressions see http://regex101.com/"
-                          ></v-textarea>
-                        </v-col>
-                        <v-col cols="12">
-                          <v-text-field
-                            dense
-                            v-model="editedItem.regexError"
-                            label="Validation message (optional)"
-                            placeholder="Error message if validation fails"
-                          ></v-text-field>
-                        </v-col>
-                      </v-row>
-                    </v-container>
-                  </v-card-text>
-                  <v-card-actions class="pb-5 pr-5">
-                    <v-spacer></v-spacer>
-                    <v-btn color="primary" text @click="closeColumnDefs" class="mr-5">Cancel</v-btn>
-                    <v-btn color="primary" @click="saveColumnDefs">Save</v-btn>
-                  </v-card-actions>
-                </v-card>
-              </v-dialog>
-            </v-toolbar>
-          </template>    
-        </v-data-table>
-      </v-col>
-    </v-row>    
-<!--end draggable-->      
+        </v-col>
+      </v-row>
 
       <v-row no-gutters>
         <v-col class="mt-0">
@@ -275,17 +194,33 @@
             (step 5 of 5)
           </h3>
 
-          <!--not draggable; keep until I'm sure draggable works
+<!--draggable mappings-->
+          <p class="caption">Hint: use the <v-icon small>mdi-drag-horizontal-variant</v-icon> handles to drag rows up and down the list to put them in whatever order you want them to show on the record page</p>
           <v-data-table
-            :items="collection.mappings"
             :headers="mappingColumns"
-            :footer-props="{
-              'items-per-page-options': [10, 25, 50]
-            }"
-            :items-per-page="25"
+            :items="collection.mappings"
+            item-key="id"
+            :show-select="false"
+            :disable-pagination="true"
             dense
             v-columns-resizable
           >
+            <template v-slot:body="props">
+              <!--took off @change="mappingDrag" for now; it resets the drag & drop instead of changing it-->
+              <draggable :list="props.items" tag="tbody">
+                <tr v-for="(field, index) in props.items" :key="index">
+                  <td> <v-icon small>mdi-drag-horizontal-variant</v-icon> </td>
+                  <td> {{ field.header }} </td>
+                  <td> {{ field.dbField}} </td>
+                  <td> {{ ixRoleMap[field.ixRole] }} </td>
+                  <td> {{ ixFieldMap[field.ixField] }} </td>
+                  <td>
+                    <v-icon small @click="editMapping(field)" class="mr-3">mdi-pencil</v-icon>
+                    <v-icon small @click="deleteMapping(field)" >mdi-delete</v-icon>
+                  </td>
+                </tr>
+              </draggable>
+            </template>
             <template v-slot:footer>
               <v-toolbar flat class="ml-n3">
                 <v-dialog v-model="dialogMapping" max-width="600px">
@@ -313,8 +248,8 @@
                             <v-text-field
                               dense
                               v-model="editedMappingItem.dbField"
-                              label="Record detail field label"
-                              placeholder="Label for record detail page"
+                              label="Label shown on search results and detail page"
+                              placeholder="Label for search and details pages"
                             ></v-text-field>
                           </v-col>
                           <v-col cols="12">
@@ -322,14 +257,13 @@
                               v-model="editedMappingItem.ixRole"
                               label="Relationship of this information to the primary search person"
                               :items="ixRoleMapOptions"
-                              @change="ixRoleChanged"
                             >
-                              <v-tooltip slot="append" maxWidth="600px">
+                              <v-tooltip bottom slot="append" maxWidth="600px">
                                 <template v-slot:activator="{ on, attrs }">
                                   <v-icon v-bind="attrs" v-on="on" small>mdi-information</v-icon>
                                 </template>
                                 <span
-                                  >Select the role/relationship to the primary person (principal) the information plays
+                                  >Select the role/relationtip to the primary person (principal) the information plays
                                   in the evidence. This affects how the information will be displayed in search
                                   results.</span
                                 >
@@ -341,7 +275,6 @@
                               v-model="editedMappingItem.ixField"
                               label="Index field"
                               :items="ixFieldMapOptions"
-                              :disabled="editedMappingItem.ixRole === 'na'"
                             ></v-select>
                           </v-col>
                         </v-row>
@@ -350,130 +283,27 @@
                     <v-card-actions class="pb-5 pr-5">
                       <v-spacer></v-spacer>
                       <v-btn color="primary" text @click="closeMapping" class="mr-5">Cancel</v-btn>
-                      <v-btn color="primary" @click="saveMapping" :disabled="editedMappingItem.ixRole !== 'na' && editedMappingItem.ixField === 'na'">Save</v-btn>
+                      <v-btn color="primary" @click="saveMapping">Save</v-btn>
                     </v-card-actions>
                   </v-card>
                 </v-dialog>
               </v-toolbar>
             </template>
-            <template v-slot:[`item.actions`]="{ item }">
-              <v-icon small class="mr-2" @click="editMapping(item)">mdi-pencil</v-icon>
-              <v-icon small @click="deleteMapping(item)">mdi-delete</v-icon>
-            </template>
-            NESTED COMMENT <template v-slot:item.handle>
-              <v-btn icon small>
-                <v-icon left>mdi-drag-horizontal-variant</v-icon>
-              </v-btn>
-            </template> END NESTED COMMENT
-            <template v-slot:[`item.ixRole`]="{ item }">
-              {{ ixRoleMap[item.ixRole] }}
-            </template>
-            <template v-slot:[`item.ixField`]="{ item }">
-              {{ ixFieldMap[item.ixField] }}
-            </template>
-          </v-data-table>-->
-
-
-<!--draggable mappings-->
-        <p class="caption">Hint: use the <v-icon small>mdi-drag-horizontal-variant</v-icon> handles to drag rows up and down the list to put them in whatever order you want them to show on the record page</p>
-        <v-data-table
-          :headers="mappingColumns"
-          :items="collection.mappings"
-          item-key="id"
-          :show-select="false"
-          :disable-pagination="true"
-          dense
-          v-columns-resizable
-        >
-          <template v-slot:body="props">
-            <!--took off @change="mappingDrag" for now; it resets the drag & drop instead of changing it-->
-            <draggable :list="props.items" tag="tbody">
-              <tr v-for="(field, index) in props.items" :key="index">
-                <td> <v-icon small>mdi-drag-horizontal-variant</v-icon> </td>
-                <td> {{ field.header }} </td>
-                <td> {{ field.dbField}} </td>
-                <td> {{ ixRoleMap[field.ixRole] }} </td>
-                <td> {{ ixFieldMap[field.ixField] }} </td>
-                <td> 
-                  <v-icon small @click="editMapping(field)" class="mr-3">mdi-pencil</v-icon>
-                  <v-icon small @click="deleteMapping(field)" >mdi-delete</v-icon>
-                </td>
-              </tr>
-            </draggable>
-          </template>
-          <template v-slot:footer>
-            <v-toolbar flat class="ml-n3">
-              <v-dialog v-model="dialogMapping" max-width="600px">
-                <template v-slot:activator="{ on, attrs }">
-                  <v-btn class="secondary primary--text mr-3" v-bind="attrs" v-on="on" small>Add a row</v-btn>
-                  <span v-if="collection.mappings.length === 0"
-                    >(you need at least one row defining at least one column in your spreadsheet)</span
-                  >
-                </template>
-                <v-card>
-                  <v-card-title class="pb-5 mb-0"> {{ formTitle }}</v-card-title>
-                  <v-card-text>
-                    <v-container class="pl-0">
-                      <v-row>
-                        <v-col cols="12" sm="6">
-                          <v-select
-                            v-model="editedMappingItem.header"
-                            label="Spreadsheet header"
-                            :items="spreadsheetColumnHeaders"
-                            dense
-                          >
-                          </v-select>
-                        </v-col>
-                        <v-col cols="12" sm="6">
-                          <v-text-field
-                            dense
-                            v-model="editedMappingItem.dbField"
-                            label="Label shown on search results and detail page"
-                            placeholder="Label for search and details pages"
-                          ></v-text-field>
-                        </v-col>
-                        <v-col cols="12">
-                          <v-select
-                            v-model="editedMappingItem.ixRole"
-                            label="Relationship of this information to the primary search person"
-                            :items="ixRoleMapOptions"
-                          >
-                            <v-tooltip bottom slot="append" maxWidth="600px">
-                              <template v-slot:activator="{ on, attrs }">
-                                <v-icon v-bind="attrs" v-on="on" small>mdi-information</v-icon>
-                              </template>
-                              <span
-                                >Select the role/relationtip to the primary person (principal) the information plays
-                                in the evidence. This affects how the information will be displayed in search
-                                results.</span
-                              >
-                            </v-tooltip>
-                          </v-select>
-                        </v-col>
-                        <v-col cols="12">
-                          <v-select
-                            v-model="editedMappingItem.ixField"
-                            label="Index field"
-                            :items="ixFieldMapOptions"
-                          ></v-select>
-                        </v-col>
-                      </v-row>
-                    </v-container>
-                  </v-card-text>
-                  <v-card-actions class="pb-5 pr-5">
-                    <v-spacer></v-spacer>
-                    <v-btn color="primary" text @click="closeMapping" class="mr-5">Cancel</v-btn>
-                    <v-btn color="primary" @click="saveMapping">Save</v-btn>
-                  </v-card-actions>
-                </v-card>
-              </v-dialog>
-            </v-toolbar>
-          </template>
-        </v-data-table>
-<!--end draggable mapping-->      
-
+          </v-data-table>
+<!--end draggable mapping-->
         </v-col>
       </v-row>
+
+      <h3 class="mt-4">Column containing image file names (if any)</h3>
+      <v-select
+          outlined
+          v-model="collection.imagePathHeader"
+          :items="headers"
+          @change="touch('imagePathHeader')"
+      ></v-select>
+      <div v-if="!isHeader(collection.imagePathHeader)" class="errorMessage">
+        Column containing image file names no longer appears in the list of spreadsheet columns.
+      </div>
 
       <div class="d-flex justify-space-between">
         <v-btn
@@ -535,7 +365,6 @@
 <script>
 import store from "@/store";
 import { mapState } from "vuex";
-import { getMetadataColumn } from "../utils/metadata";
 import NProgress from "nprogress";
 import { required } from "vuelidate/lib/validators";
 import Multiselect from "vue-multiselect";
@@ -554,6 +383,9 @@ function setup() {
   };
   if (this.collection.location) {
     this.locationItems = [this.collection.location];
+  }
+  if (!this.collection.imagePathHeader) {
+    this.collection.imagePathHeader = "";
   }
 }
 
@@ -670,7 +502,15 @@ export default {
       ],
       spreadsheetColumnOptions: [{ value: "get this from the columns", text: "Spreadsheet column" }],
       //end of data for experimental table; keep everything after this
-      collection: { id: null, name: null, categories: [], fields: [], mappings: [] },
+      collection: {
+        id: null,
+        name: null,
+        location: null,
+        citation_template: null,
+        categories: [],
+        fields: [],
+        mappings: []
+      },
       locationLoading: false,
       locationTimeout: null,
       locationItems: [],
@@ -748,6 +588,21 @@ export default {
     }
   },
   computed: {
+    headers() {
+      let headers = [{ text: "N/A", value: "" }].concat(
+        this.collection.fields.map(f => {
+          return {
+            get text() {
+              return f.header;
+            },
+            get value() {
+              return f.header;
+            }
+          };
+        })
+      );
+      return headers;
+    },
     postsForCollection() {
       return this.posts.postsList
         .filter(p => p.collection === this.collection.id)
@@ -755,8 +610,9 @@ export default {
           return {
             id: p.id,
             name: p.name,
-            recordsStatus: p.recordsStatus,
+            recordsStatus: p.imagesStatus === "Loading" ? p.imagesStatus : p.recordsStatus,
             hasData: !!p.recordsKey,
+            hasImages: !!p.imagesKeys && p.imagesKeys.length > 0,
             collectionName: this.collections.collectionsList.find(coll => coll.id === p.collection).name,
             ...p.metadata
           };
@@ -774,9 +630,11 @@ export default {
     collection: {
       name: { required },
       location: {},
+      citation_template: {},
       categories: { required },
       fields: {},
-      mappings: {}
+      mappings: {},
+      imagePathHeader: {}
     }
   },
   methods: {
@@ -840,8 +698,13 @@ export default {
           align: "center",
         },
         {
-          text: "Collection",
-          value: "collectionName",
+          title: "Has Images",
+          field: "hasImages",
+          align: "center",
+        },
+        {
+          title: "Collection",
+          field: "collectionName",
         }
       ];
       cols.push(...this.settings.settings.postMetadata.map(pf => getMetadataColumn(pf)));
@@ -853,6 +716,10 @@ export default {
         params: { pid: post.id }
       });
     },
+    isHeader(value) {
+      if (!value) value = "";
+      return this.headers.findIndex(h => h.value === value) >= 0;
+    },
     save() {
       this.collection.fields = this.collection.fields.filter(f => f.header);
       if (this.collection.fields.length === 0) {
@@ -860,6 +727,9 @@ export default {
       }
       this.collection.mappings = this.collection.mappings.filter(f => f.header);
       if (this.collection.mappings.length === 0) {
+        return;
+      }
+      if (!this.isHeader(this.imagePathHeader)) {
         return;
       }
       let collection = Object.assign({}, this.collection);
@@ -983,7 +853,7 @@ export default {
 </script>
 
 <style src="vue-multiselect/dist/vue-multiselect.min.css"></style>
-<style>
+<style scoped>
 .multiselect__tag {
   color: #006064;
   line-height: 1;

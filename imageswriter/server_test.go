@@ -51,7 +51,7 @@ func TestImagesWriter(t *testing.T) {
 		RecordPersister(p)
 
 	// write a zip file to a bucket
-	bucket, err := testAPI.OpenBucket(ctx)
+	bucket, err := testAPI.OpenBucket(ctx, false)
 	assert.NoError(t, err)
 	defer bucket.Close()
 
@@ -203,8 +203,10 @@ func TestPostImage(t *testing.T) {
 	assert.NoError(t, err)
 	zipNames := make(map[string]bool)
 	for _, f := range zr.File {
-		t.Logf("file name: %s\n", f.Name)
-		zipNames[f.Name] = true
+		t.Logf("file name: %s mode.IsDir=%t \n", f.Name, f.Mode().IsDir())
+		if !f.Mode().IsDir() {
+			zipNames[f.Name] = true
+		}
 	}
 
 	// write a zip file to a bucket
@@ -254,9 +256,9 @@ func TestPostImage(t *testing.T) {
 
 	// read images for post
 	for name := range zipNames {
-		url, errors := testAPI.GetPostImage(ctx, testPost.ID, name)
-		assert.Nil(t, errors)
-		resp, err := http.Get(url)
+		imageMetadata, errors := testAPI.GetPostImage(ctx, testPost.ID, name, 3600, 0, 0)
+		assert.Nil(t, errors, name)
+		resp, err := http.Get(imageMetadata.URL)
 		assert.NoError(t, err)
 		defer resp.Body.Close()
 		assert.Equal(t, http.StatusOK, resp.StatusCode)

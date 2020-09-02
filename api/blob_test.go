@@ -24,7 +24,7 @@ func TestBlobService(t *testing.T) {
 	ap = ap.
 		BlobStoreConfig("us-east-1", "127.0.0.1:19000", "minioaccess", "miniosecret", "testbucket", true)
 
-	bucket, err := ap.OpenBucket(ctx)
+	bucket, err := ap.OpenBucket(ctx, false)
 	assert.NoError(t, err)
 	defer bucket.Close()
 

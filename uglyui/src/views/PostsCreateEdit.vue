@@ -43,7 +43,13 @@
       </div>
       <div v-if="post.id">
         <h3>Post status</h3>
-        <p>{{ post.recordsStatus }}</p>
+        <p>
+          <span>{{ post.recordsStatus }}</span
+          ><span v-if="post.imagesStatus === 'Loading'"> - loading images</span>
+          <span v-if="!!post.imagesKeys && post.imagesKeys.length > 0 && post.imagesStatus === 'Draft'">
+            - with images</span
+          >
+        </p>
       </div>
       <div v-if="settings.settings.postMetadata.length > 0">
         <h3>
@@ -141,22 +147,23 @@
       </p>
       <v-row>
         <v-col class="d-flex">
-          <v-btn type="submit" color="primary" :disabled="$v.$anyError || !$v.$anyDirty">
-            Save
-          </v-btn>
-          <v-btn v-if="isPublishable" @click="publish" color="primary" title="Publish the post to make it searchable">
-            Publish Post
-          </v-btn>
+          <v-btn type="submit" color="primary" :disabled="$v.$anyError || !$v.$anyDirty">Save </v-btn>
+          <v-btn
+            v-if="isPublishable"
+            @click="publish"
+            color="primary"
+            title="Publish the post to make it searchable"
+            >Publish Post</v-btn
+          >
           <v-spacer></v-spacer>
           <v-btn
             v-if="isUnpublishable"
             @click="unpublish"
             color="primary"
-            title="Unpublish the post to remove it from the index"
             class="mr-5"
+            title="Unpublish the post to remove it from the index"
+            >Unpublish Post</v-btn
           >
-            Unpublish Post
-          </v-btn>
           <v-btn
             v-if="isImportable"
             id="importData"
@@ -166,6 +173,62 @@
           >
             {{ post.recordsKey ? "Replace data" : "Import data" }}
           </v-btn>
+          <v-dialog
+            v-if="isImportable && collections.collection.imagePathHeader"
+            v-model="importImagesDlg"
+            persistent
+            max-width="320"
+          >
+            <template v-slot:activator="{ on, attrs }">
+              <v-btn color="primary" v-bind="attrs" v-on="on" class="btn mt-4" :disabled="post.imagesStatus !== 'Draft'">
+                {{ !!post.imagesKeys && post.imagesKeys.length > 0 ? "Replace images" : "Import images" }}
+              </v-btn>
+            </template>
+            <v-card>
+              <v-card-title class="headline">Select file to import</v-card-title>
+              <v-card-text>
+                <file-upload
+                  class="btn btn-primary"
+                  post-action="/"
+                  extensions="zip"
+                  accept="application/zip"
+                  :multiple="false"
+                  :size="1024 * 1024 * 1024 * 10"
+                  v-model="imageFiles"
+                  @input-filter="imagesInputFilter"
+                  ref="upload"
+                >
+                  <v-btn class="btn primary" :disabled="imagesUploading">Select ZIP file</v-btn>
+                </file-upload>
+                <ul>
+                  <li v-for="file in imageFiles" :key="file.id">
+                    <span>{{ file.name }}</span> - <span>{{ file.size | formatSize }}</span>
+                    <span v-if="file.error"> - {{ file.error }}</span>
+                    <span v-else-if="file.success"> - success</span>
+                    <span v-else-if="file.active"> - active</span>
+                    <span v-else></span>
+                  </li>
+                </ul>
+              </v-card-text>
+              <v-card-actions>
+                <v-spacer></v-spacer>
+                <v-btn text v-if="!imageFiles.find(f => f.success)" @click="cancelImagesUpload($refs.upload)"
+                  >Cancel</v-btn
+                >
+                <v-btn
+                  color="primary"
+                  text
+                  v-if="!imageFiles.find(f => f.success)"
+                  :disabled="!$refs.upload || $refs.upload.active"
+                  @click="startImagesUpload($refs.upload)"
+                  >Start Upload</v-btn
+                >
+                <v-btn color="primary" text v-if="imageFiles.find(f => f.success)" @click="endImagesUpload()"
+                  >Upload Successful!</v-btn
+                >
+              </v-card-actions>
+            </v-card>
+          </v-dialog>
           <v-btn :disabled="!isDeletable" @click="del" class="warning">Delete Post</v-btn>
         </v-col>
       </v-row>
@@ -174,16 +237,16 @@
       <v-col>
         <h3 v-if="post.id && post.recordsKey && post.recordsStatus !== 'Loading'" class="pl-1">Post data</h3>
         <v-data-table
-          v-if="post.id && post.recordsKey && post.recordsStatus !== 'Loading'"
-          :items="records.recordsList.map(r => r.data)"
-          :headers="getRecordColumns()"
-          dense
-          sortable
-          :footer-props="{
+            v-if="post.id && post.recordsKey && post.recordsStatus !== 'Loading'"
+            :items="records.recordsList.map(r => r.data)"
+            :headers="getRecordColumns()"
+            dense
+            sortable
+            :footer-props="{
             'items-per-page-options': [10, 25, 50]
           }"
-          :items-per-page="25"
-          v-columns-resizable
+            :items-per-page="25"
+            v-columns-resizable
         >
         </v-data-table>
       </v-col>
@@ -196,6 +259,7 @@ import store from "@/store";
 import { mapState } from "vuex";
 import { required } from "vuelidate/lib/validators";
 import FlatfileImporter from "flatfile-csv-importer";
+import FileUpload from "vue-upload-component";
 import config from "../utils/flatfileConfig.js";
 import Server from "@/services/Server.js";
 import NProgress from "nprogress";
@@ -218,6 +282,7 @@ async function uploadData(store, post, contentType, data) {
 }
 
 export default {
+  components: { FileUpload },
   beforeRouteEnter: function(routeTo, routeFrom, next) {
     let routes = [store.dispatch("settingsGet")];
     if (routeTo.params && routeTo.params.pid) {
@@ -248,7 +313,11 @@ export default {
   data() {
     return {
       post: { id: null, name: null, collection: null, recordsStatus: null, recordsKey: null, metadata: {} },
-      showPicker: false
+      showPicker: false,
+      importImagesDlg: false,
+      imageFiles: [],
+      imagesUploading: false,
+      imagesPostRequestResultData: null,
     };
   },
   computed: {
@@ -318,6 +387,47 @@ export default {
       let post = this.getPostFromForm();
       post.recordsStatus = "Draft";
       this.update(post);
+    },
+    imagesInputFilter(newFile, oldFile, prevent) {
+      if (newFile && !oldFile) {
+        if (!newFile.name || !newFile.name.endsWith(".zip")) {
+          return prevent();
+        }
+        return Server.contentPostRequest("application/zip").then(result => {
+          console.log("contentPostRequest", result.data);
+          this.imagesPostRequestResultData = result.data;
+          newFile.putAction = result.data.putURL;
+        });
+      }
+    },
+    cancelImagesUpload(upload) {
+      upload.active = false;
+      this.imagesUploading = false;
+      this.imageFiles = [];
+      this.importImagesDlg = false;
+    },
+    startImagesUpload(upload) {
+      upload.active = true;
+      this.imagesUploading = true;
+    },
+    endImagesUpload() {
+      this.imageFiles = [];
+      this.importImagesDlg = false;
+      this.imagesUploading = false;
+      let post = this.getPostFromForm();
+      this.$v.$touch();
+      NProgress.start();
+      post.imagesKeys = [this.imagesPostRequestResultData.key];
+      console.log("emdImagesUpload", post, this.imagesPostRequestResultData);
+      this.$store
+        .dispatch("postsUpdate", post)
+        .then(() => {
+          setup.bind(this)();
+          this.$v.$reset();
+        })
+        .finally(() => {
+          NProgress.done();
+        });
     },
     update(post) {
       NProgress.start();
