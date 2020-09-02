@@ -110,3 +110,7 @@ func (a *ApiMock) GetPlacesByPrefix(ctx context.Context, prefix string, count in
 	a.Request = prefix
 	return a.Result.([]model.Place), a.Errors
 }
+
+func (a *ApiMock) GetNameVariants(ctx context.Context, nameType model.NameType, name string) (*model.NameVariants, error) {
+	return a.Result.(*model.NameVariants), a.Errors
+}

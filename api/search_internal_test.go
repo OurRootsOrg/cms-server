@@ -94,6 +94,9 @@ func TestGetPlaceFacets(t *testing.T) {
 }
 
 func TestSearchQuery(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping tests in short mode")
+	}
 	tests := []struct {
 		req   SearchRequest
 		query string

@@ -31,7 +31,7 @@ import (
 const FuzzyNameDefault = 0
 const (
 	FuzzyNameExact            = 1 << iota // 1 - exact match
-	FuzzyNameAlternate        = 1 << iota // 2 - alternate spellings - not yet implemented
+	FuzzyNameVariants         = 1 << iota // 2 - variant spellings
 	FuzzyNameSoundsLikeNarrow = 1 << iota // 4 - sounds-like (narrow) - high-precision, low-recall
 	FuzzyNameSoundsLikeBroad  = 1 << iota // 8 - sounds-like (broad) - low-precision, high-recall
 	FuzzyNameLevenshtein      = 1 << iota // 16 - fuzzy (levenshtein)
@@ -651,7 +651,10 @@ func (api API) SearchDeleteByID(ctx context.Context, id string) error {
 
 // Search
 func (api API) Search(ctx context.Context, req *SearchRequest) (*model.SearchResult, error) {
-	search := constructSearchQuery(req)
+	search, err := api.constructSearchQuery(ctx, req)
+	if err != nil {
+		return nil, err
+	}
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(search); err != nil {
@@ -798,15 +801,21 @@ func (api API) Search(ctx context.Context, req *SearchRequest) (*model.SearchRes
 	}, nil
 }
 
-func constructSearchQuery(req *SearchRequest) *Search {
+func (api API) constructSearchQuery(ctx context.Context, req *SearchRequest) (*Search, error) {
 	var mustQueries []Query
 	var shouldQueries []Query
 	var filterQueries []Query
 	aggs := map[string]Agg{}
 
 	// name
-	shouldGivenQueries, mustGivenQueries := constructNameQueries("given", req.Given, req.GivenFuzziness, true)
-	shouldSurnameQueries, mustSurnameQueries := constructNameQueries("surname", req.Surname, req.SurnameFuzziness, false)
+	shouldGivenQueries, mustGivenQueries, err := api.constructNameQueries(ctx, "given", req.Given, req.GivenFuzziness, model.GivenType)
+	if err != nil {
+		return nil, err
+	}
+	shouldSurnameQueries, mustSurnameQueries, err := api.constructNameQueries(ctx, "surname", req.Surname, req.SurnameFuzziness, model.SurnameType)
+	if err != nil {
+		return nil, err
+	}
 	if len(shouldGivenQueries) > 0 || len(shouldSurnameQueries) > 0 || len(mustGivenQueries) > 0 || len(mustSurnameQueries) > 0 {
 		mustQueries = append(mustQueries, Query{
 			Bool: &BoolQuery{
@@ -817,28 +826,52 @@ func constructSearchQuery(req *SearchRequest) *Search {
 	}
 
 	// relative names
-	shouldSubqueries, mustSubqueries := constructNameQueries("fatherGiven", req.FatherGiven, req.FatherGivenFuzziness, true)
+	shouldSubqueries, mustSubqueries, err := api.constructNameQueries(ctx, "fatherGiven", req.FatherGiven, req.FatherGivenFuzziness, model.GivenType)
+	if err != nil {
+		return nil, err
+	}
 	shouldQueries = append(shouldQueries, shouldSubqueries...)
 	mustQueries = append(mustQueries, mustSubqueries...)
-	shouldSubqueries, mustSubqueries = constructNameQueries("fatherSurname", req.FatherSurname, req.FatherSurnameFuzziness, false)
+	shouldSubqueries, mustSubqueries, err = api.constructNameQueries(ctx, "fatherSurname", req.FatherSurname, req.FatherSurnameFuzziness, model.SurnameType)
+	if err != nil {
+		return nil, err
+	}
 	shouldQueries = append(shouldQueries, shouldSubqueries...)
 	mustQueries = append(mustQueries, mustSubqueries...)
-	shouldSubqueries, mustSubqueries = constructNameQueries("motherGiven", req.MotherGiven, req.MotherGivenFuzziness, true)
+	shouldSubqueries, mustSubqueries, err = api.constructNameQueries(ctx, "motherGiven", req.MotherGiven, req.MotherGivenFuzziness, model.GivenType)
+	if err != nil {
+		return nil, err
+	}
 	shouldQueries = append(shouldQueries, shouldSubqueries...)
 	mustQueries = append(mustQueries, mustSubqueries...)
-	shouldSubqueries, mustSubqueries = constructNameQueries("motherSurname", req.MotherSurname, req.MotherSurnameFuzziness, false)
+	shouldSubqueries, mustSubqueries, err = api.constructNameQueries(ctx, "motherSurname", req.MotherSurname, req.MotherSurnameFuzziness, model.SurnameType)
+	if err != nil {
+		return nil, err
+	}
 	shouldQueries = append(shouldQueries, shouldSubqueries...)
 	mustQueries = append(mustQueries, mustSubqueries...)
-	shouldSubqueries, mustSubqueries = constructNameQueries("spouseGiven", req.SpouseGiven, req.SpouseGivenFuzziness, true)
+	shouldSubqueries, mustSubqueries, err = api.constructNameQueries(ctx, "spouseGiven", req.SpouseGiven, req.SpouseGivenFuzziness, model.GivenType)
+	if err != nil {
+		return nil, err
+	}
 	shouldQueries = append(shouldQueries, shouldSubqueries...)
 	mustQueries = append(mustQueries, mustSubqueries...)
-	shouldSubqueries, mustSubqueries = constructNameQueries("spouseSurname", req.SpouseSurname, req.SpouseSurnameFuzziness, false)
+	shouldSubqueries, mustSubqueries, err = api.constructNameQueries(ctx, "spouseSurname", req.SpouseSurname, req.SpouseSurnameFuzziness, model.SurnameType)
+	if err != nil {
+		return nil, err
+	}
 	shouldQueries = append(shouldQueries, shouldSubqueries...)
 	mustQueries = append(mustQueries, mustSubqueries...)
-	shouldSubqueries, mustSubqueries = constructNameQueries("otherGiven", req.OtherGiven, req.OtherGivenFuzziness, true)
+	shouldSubqueries, mustSubqueries, err = api.constructNameQueries(ctx, "otherGiven", req.OtherGiven, req.OtherGivenFuzziness, model.GivenType)
+	if err != nil {
+		return nil, err
+	}
 	shouldQueries = append(shouldQueries, shouldSubqueries...)
 	mustQueries = append(mustQueries, mustSubqueries...)
-	shouldSubqueries, mustSubqueries = constructNameQueries("otherSurname", req.OtherSurname, req.OtherSurnameFuzziness, false)
+	shouldSubqueries, mustSubqueries, err = api.constructNameQueries(ctx, "otherSurname", req.OtherSurname, req.OtherSurnameFuzziness, model.SurnameType)
+	if err != nil {
+		return nil, err
+	}
 	shouldQueries = append(shouldQueries, shouldSubqueries...)
 	mustQueries = append(mustQueries, mustSubqueries...)
 
@@ -980,20 +1013,21 @@ func constructSearchQuery(req *SearchRequest) *Search {
 		Aggs: aggs,
 		From: from,
 		Size: size,
-	}
+	}, nil
 }
 
 // TODO learn the best boost values
 const exactNameBoost = 1.0
-const narrowNameBoost = 0.8
-const wildcardNameBoost = 0.7
-const broadNameBoost = 0.6
-const initialNameBoost = 0.4
-const fuzzyNameBoost = 0.2
+const variantNameBoost = 0.7
+const narrowNameBoost = 0.6
+const wildcardNameBoost = 0.5
+const broadNameBoost = 0.4
+const fuzzyNameBoost = 0.3
+const initialNameBoost = 0.2
 
-func constructNameQueries(label, value string, fuzziness int, isGiven bool) ([]Query, []Query) {
+func (api API) constructNameQueries(ctx context.Context, label, value string, fuzziness int, nameType model.NameType) ([]Query, []Query, error) {
 	if len(value) == 0 {
-		return nil, nil
+		return nil, nil, nil
 	}
 	var queries []Query
 
@@ -1032,8 +1066,24 @@ func constructNameQueries(label, value string, fuzziness int, isGiven bool) ([]Q
 
 		subqueries := []Query{exactQuery}
 
-		if fuzziness == FuzzyNameDefault || fuzziness&FuzzyNameAlternate > 0 {
-			// TODO alternate spellings
+		if fuzziness == FuzzyNameDefault || fuzziness&FuzzyNameVariants > 0 {
+			nameVariants, err := api.GetNameVariants(ctx, nameType, v)
+			if err != nil {
+				if !model.ErrNotFound.Matches(err) {
+					return nil, nil, err
+				}
+				nameVariants = &model.NameVariants{}
+			}
+			for _, variant := range nameVariants.Variants {
+				subqueries = append(subqueries, Query{
+					Match: map[string]MatchQuery{
+						label: {
+							Query: variant,
+							Boost: variantNameBoost,
+						},
+					},
+				})
+			}
 		}
 		// TODO choose the best coders for broad and narrow
 		if fuzziness == FuzzyNameDefault || fuzziness&FuzzyNameSoundsLikeNarrow > 0 {
@@ -1069,7 +1119,7 @@ func constructNameQueries(label, value string, fuzziness int, isGiven bool) ([]Q
 				},
 			})
 		}
-		if fuzziness == FuzzyNameDefault || fuzziness&FuzzyNameInitials > 0 && isGiven {
+		if fuzziness == FuzzyNameDefault || fuzziness&FuzzyNameInitials > 0 && nameType == model.GivenType {
 			subqueries = append(subqueries, Query{
 				Match: map[string]MatchQuery{
 					label: {
@@ -1088,9 +1138,9 @@ func constructNameQueries(label, value string, fuzziness int, isGiven bool) ([]Q
 	}
 
 	if fuzziness == FuzzyNameDefault {
-		return queries, nil
+		return queries, nil, nil
 	} else {
-		return nil, queries
+		return nil, queries, nil
 	}
 }
 
