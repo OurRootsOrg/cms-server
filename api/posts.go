@@ -76,6 +76,15 @@ func (api *API) GetPostImage(ctx context.Context, id uint32, filePath string, ex
 
 	key := fmt.Sprintf(ImagesPrefix, id) + filePath
 
+	// TODO the imaging.Decode operations in this function require *a lot* of memory - an extra 100Mb or so
+	// eventually, we could get around this by:
+	// 1. call image.DecodeConfig, but we'd also need to handle EXIF orientation as described in
+	//    https://github.com/disintegration/imaging/issues/30
+	//    or maybe ImagesWriter should store the dimensions somewhere?
+	// 2. send a message to the images writer queue to generate a thumbnail, return the signed URL, and tell the client to retry until the image appears
+	//    or maybe ImagesWriter should generate thumbnails
+	// the more I think about it, I think ImagesWriter needs to store the dimensions as a file and generate thumbnails
+
 	// return full image?
 	if height == 0 && width == 0 {
 		// kind of a shame to read and decode the entire image just to get the dimensions

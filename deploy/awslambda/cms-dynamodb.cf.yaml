@@ -244,7 +244,7 @@ Resources:
       Handler: server/main.lambda
       CodeUri: main.lambda.zip
       Runtime: go1.x
-      MemorySize: 128
+      MemorySize: 256
       Policies:
         - AWSLambdaBasicExecutionRole
         # S3 CMSBlobStoreBucket
