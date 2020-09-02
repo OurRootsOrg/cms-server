@@ -59,7 +59,7 @@ export default {
       headers: [
         { text: "Name", value: "name" },
         { text: "# Collections", value: "collectionsCount" },
-        { text: "", value: "icon", align: "right", width:"15px" }
+        { text: "", value: "icon", align: "right", width: "15px" }
       ],
       search: ""
     };

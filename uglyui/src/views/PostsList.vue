@@ -36,6 +36,10 @@
             <v-icon v-if="item.hasData" class="green--text">mdi-checkbox-marked</v-icon>
             <v-icon v-else class="red--text">mdi-close-circle</v-icon>
           </template>
+          <template v-slot:[`item.hasImages`]="{ item }">
+            <v-icon v-if="item.hasImages" class="green--text">mdi-checkbox-marked</v-icon>
+            <v-icon v-else class="red--text">mdi-close-circle</v-icon>
+          </template>
           <template v-slot:[`item.icon`]="{ item }">
             <v-btn icon small :to="{ name: 'post-edit', params: { pid: item.id } }">
               <v-icon right>mdi-chevron-right</v-icon>
@@ -64,18 +68,11 @@ export default {
   },
   data() {
     return {
-      cols: [
-        { text: "Name", value: "name" },
-        { text: "Status", value: "recordsStatus" },
-        { text: "Has Data", value: "hasData" },
-        { text: "Collection", value: "collectionName" },
-        { text: "", value: "icon", align: "right" }
-      ],
       search: "",
       status: "",
       recordsStatusFilter: [],
       hasDataFilter: [],
-      recordsStatusOptions: ["Published", "Publishing", "Draft"],
+      recordsStatusOptions: ["Published", "Draft"],
       hasDataOptions: [
         { value: true, text: "Has data" },
         { value: false, text: "No data" }
@@ -105,24 +102,31 @@ export default {
         },
         {
           text: "Status",
-          value: "recordsStatus"
+          value: "recordsStatus",
+          filter: value => {
+            return this.recordsStatusFilter.length === 0 || this.recordsStatusFilter.includes(value);
+          }
         },
         {
           text: "Has Data",
           value: "hasData",
+          align: "center",
+          filter: value => {
+            return this.hasDataFilter.length === 0 || this.hasDataFilter.includes(value);
+          }
+        },
+        {
+          text: "Has Images",
+          value: "hasImages",
           align: "center"
         },
         {
-          title: "Has Images",
-          field: "hasImages",
-          align: "center"
-        },
-        {
-          title: "Collection",
-          field: "collectionName"
+          text: "Collection",
+          value: "collectionName"
         }
       ];
       cols.push(...this.settings.settings.postMetadata.map(pf => getMetadataColumn(pf)));
+      cols.push({ text: "", value: "icon", align: "right" });
       return cols;
     },
     rowClicked(post) {

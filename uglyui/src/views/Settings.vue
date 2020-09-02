@@ -2,7 +2,7 @@
   <v-container class="settings">
     <v-row no-gutters>
       <v-col cols="12">
-        <h1>Settings</h1>     
+        <h1>Settings</h1>
       </v-col>
     </v-row>
     <v-row no-gutters>
@@ -21,9 +21,30 @@
                     Metadata <em>does not</em> appear in search results.</span
                   >
                 </v-tooltip>
-              </h3>                 
-<!--not draggable (keep until we're sure draggable completely works)              
-              <v-data-table :headers="postMetadataColumns" :items="settingsObj.postMetadata" dense>
+              </h3>
+
+              <v-data-table
+                :headers="postMetadataColumns"
+                :items="settingsObj.postMetadata"
+                item-key="id"
+                :disable-pagination="true"
+                dense
+                v-columns-resizable
+              >
+                <template v-slot:body>
+                  <draggable :list="settingsObj.postMetadata" tag="tbody" @change="metadataDrag">
+                    <tr v-for="(item, index) in settingsObj.postMetadata" :key="index">
+                      <td><v-icon small class="page__grab-icon">mdi-drag-horizontal-variant</v-icon></td>
+                      <td>{{ item.name }}</td>
+                      <td>{{ typeOptions.find(x => x.value === item.type).text }}</td>
+                      <td>{{ item.tooltip }}</td>
+                      <td>
+                        <v-icon small @click="editItem(item)" class="mr-3">mdi-pencil</v-icon>
+                        <v-icon small @click="deleteItem(item)">mdi-delete</v-icon>
+                      </td>
+                    </tr>
+                  </draggable>
+                </template>
                 <template v-slot:footer>
                   <v-toolbar flat color="white">
                     <v-dialog v-model="dialog" max-width="600px">
@@ -52,85 +73,20 @@
                         <v-card-actions>
                           <v-spacer></v-spacer>
                           <v-btn color="blue darken-1" text @click="close">Cancel</v-btn>
-                          <v-btn color="blue darken-1" text @click="saveField">Save</v-btn>
+                          <v-btn
+                            color="blue darken-1"
+                            text
+                            @click="saveField"
+                            :disabled="!editedItem.name || !editedItem.type"
+                            >Save</v-btn
+                          >
                         </v-card-actions>
                       </v-card>
                     </v-dialog>
                   </v-toolbar>
                 </template>
-                <template v-slot:[`item.type`]="{ item }">
-                  {{ typeOptions.find(x => x.value === item.type).text }}
-                </template>
-                <template v-slot:[`item.actions`]="{ item }">
-                  <v-icon small class="mr-2" @click="editItem(item)">mdi-pencil</v-icon>
-                  <v-icon small @click="deleteItem(item)">mdi-delete</v-icon>
-                </template>
-                <template v-slot:item.handle>
-                  <v-btn icon small>
-                    <v-icon left>mdi-drag-horizontal-variant</v-icon>
-                  </v-btn>
-                </template>
               </v-data-table>
--->          
-<!--draggable-->
-            <v-data-table
-              :headers="postMetadataColumns"
-              :items="settingsObj.postMetadata"
-              item-key="id"
-              :disable-pagination="true"
-              dense
-              v-columns-resizable
-            >
-              <template v-slot:body="props">
-                <draggable :list="props.items" tag="tbody" >
-                  <tr v-for="(item, index) in props.items" :key="index">
-                    <td> <v-icon small class="page__grab-icon">mdi-drag-horizontal-variant</v-icon> </td>
-                    <td> {{ item.name }} </td>
-                    <td> {{ typeOptions.find(x => x.value === item.type).text }} </td>
-                    <td> {{ item.tooltip }} </td>
-                    <td> 
-                      <v-icon small @click="editItem(item)" class="mr-3">mdi-pencil</v-icon> 
-                      <v-icon small @click="deleteItem(item)">mdi-delete</v-icon>
-                    </td>
-                  </tr>
-                </draggable>
-              </template>
-              <template v-slot:footer>
-                <v-toolbar flat color="white">
-                  <v-dialog v-model="dialog" max-width="600px">
-                    <template v-slot:activator="{ on, attrs }">
-                      <v-btn class="secondary primary--text ml-n3" v-bind="attrs" v-on="on">New Custom Field</v-btn>
-                    </template>
-                    <v-card>
-                      <v-card-title>
-                        <span class="headline">{{ formTitle }}</span>
-                      </v-card-title>
-                      <v-card-text>
-                        <v-container>
-                          <v-row>
-                            <v-col cols="12">
-                              <v-text-field v-model="editedItem.name" label="Name"></v-text-field>
-                            </v-col>
-                            <v-col cols="12">
-                              <v-select v-model="editedItem.type" :items="typeOptions" label="Field type"></v-select>
-                            </v-col>
-                            <v-col cols="12">
-                              <v-text-field v-model="editedItem.tooltip" label="Tooltip"></v-text-field>
-                            </v-col>
-                          </v-row>
-                        </v-container>
-                      </v-card-text>
-                      <v-card-actions>
-                        <v-spacer></v-spacer>
-                        <v-btn color="blue darken-1" text @click="close">Cancel</v-btn>
-                        <v-btn color="blue darken-1" text @click="saveField" :disabled="!editedItem.type">Save</v-btn>
-                      </v-card-actions>
-                    </v-card>
-                  </v-dialog>
-                </v-toolbar>
-              </template>      
-            </v-data-table>
-<!--end draggable-->
+              <!--end draggable-->
             </v-col>
           </v-row>
           <v-row class="pl-3">
@@ -163,7 +119,7 @@ function setup() {
 }
 
 export default {
-  components: {draggable},
+  components: { draggable },
   beforeRouteEnter: function(routeTo, routeFrom, next) {
     store
       .dispatch("settingsGet")
@@ -224,7 +180,7 @@ export default {
   computed: {
     formTitle() {
       return this.editedIndex === -1 ? "New custom field" : "Edit custom field";
-    },  
+    },
     ...mapState(["settings"])
   },
   validations: {
@@ -291,6 +247,9 @@ export default {
       }
       this.touch("postMetadata");
       this.close();
+    },
+    metadataDrag() {
+      this.touch("postMetadata");
     }
   }
 };

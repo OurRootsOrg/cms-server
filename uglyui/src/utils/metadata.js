@@ -6,40 +6,25 @@ function getMetadataColumn(pf) {
       return {
         text: pf.name,
         value: pf.name,
-        tooltip: pf.tooltip,
-        // headerFilter: "input",
-        // sorter: "string"
+        tooltip: pf.tooltip
       };
     case "number":
       return {
         text: pf.name,
         value: pf.name,
-        tooltip: pf.tooltip,
-        // headerFilter: "number",
-        // sorter: "number"
+        tooltip: pf.tooltip
       };
     case "date":
       return {
         text: pf.name,
         value: pf.name,
-        // align: "center",
-        tooltip: pf.tooltip,
-        // headerFilter: "input",
-        // sorter: "date",
-        // sorterParams: {
-        //   format: "DD MMM YYYY",
-        //   alignEmptyValues: "top"
-        // }
+        tooltip: pf.tooltip
       };
     case "boolean":
       return {
         text: pf.name,
         value: pf.name,
-        tooltip: pf.tooltip,
-        // align: "center",
-        // formatter: "tickCross",
-        // headerFilter: "tickCross",
-        // sorter: "boolean"
+        tooltip: pf.tooltip
       };
   }
 }

@@ -71,14 +71,7 @@
               :label="item.name"
               v-model="post.metadata[item.name]"
               @change="touch('metadata')"
-            >
-              <v-tooltip slot="append" bottom>
-                <template v-slot:activator="{ on }">
-                  <v-icon v-on="on" small>mdi-information-outline</v-icon>
-                </template>
-                <span>{{ item.tooltip }}</span>
-              </v-tooltip>
-            </v-text-field>
+            ></v-text-field>
           </v-col>
           <v-col cols="12" md="5" class="py-0" v-if="item.type === 'boolean'">
             <v-checkbox :label="item.name" v-model="post.metadata[item.name]" @change="touch('metadata')">
@@ -97,14 +90,7 @@
               type="number"
               v-model="post.metadata[item.name]"
               @change="touch('metadata')"
-            >
-              <v-tooltip slot="append" bottom>
-                <template v-slot:activator="{ on }">
-                  <v-icon v-on="on" small>mdi-information-outline</v-icon>
-                </template>
-                <span>{{ item.tooltip }}</span>
-              </v-tooltip>
-            </v-text-field>
+            ></v-text-field>
           </v-col>
           <v-col cols="12" md="5" class="py-0" v-if="item.type === 'date'">
             <v-menu
@@ -118,20 +104,13 @@
             >
               <template v-slot:activator="{ on }">
                 <v-text-field
-                  :placeholder="item.name"
+                  :placeholder="item.tooltip"
                   :label="item.name"
                   v-model="post.metadata[item.name]"
                   prepend-icon="mdi-calendar-range"
                   readonly
                   v-on="on"
-                >
-                  <v-tooltip slot="append" bottom>
-                    <template v-slot:activator="{ on }">
-                      <v-icon v-on="on" small>mdi-information-outline</v-icon>
-                    </template>
-                    <span>{{ item.tooltip }}</span>
-                  </v-tooltip>
-                </v-text-field>
+                ></v-text-field>
               </template>
               <v-date-picker
                 v-model="post.metadata[item.name]"
@@ -145,6 +124,7 @@
       <p v-if="$v.$anyError" class="errorMessage">
         Please fill out the required field(s).
       </p>
+
       <v-row>
         <v-col class="d-flex">
           <v-btn type="submit" color="primary" :disabled="$v.$anyError || !$v.$anyDirty">Save </v-btn>
@@ -153,15 +133,16 @@
             @click="publish"
             color="primary"
             title="Publish the post to make it searchable"
+            :disabled="post.imagesStatus !== 'Draft'"
+            class="ml-4"
             >Publish Post</v-btn
           >
-          <v-spacer></v-spacer>
           <v-btn
             v-if="isUnpublishable"
             @click="unpublish"
             color="primary"
-            class="mr-5"
             title="Unpublish the post to remove it from the index"
+            class="ml-4"
             >Unpublish Post</v-btn
           >
           <v-btn
@@ -170,6 +151,7 @@
             @click="importData"
             color="primary"
             title="Upload or replace records"
+            class="ml-4"
           >
             {{ post.recordsKey ? "Replace data" : "Import data" }}
           </v-btn>
@@ -180,7 +162,7 @@
             max-width="320"
           >
             <template v-slot:activator="{ on, attrs }">
-              <v-btn color="primary" v-bind="attrs" v-on="on" class="btn mt-4" :disabled="post.imagesStatus !== 'Draft'">
+              <v-btn color="primary" v-bind="attrs" v-on="on" class="ml-4" :disabled="post.imagesStatus !== 'Draft'">
                 {{ !!post.imagesKeys && post.imagesKeys.length > 0 ? "Replace images" : "Import images" }}
               </v-btn>
             </template>
@@ -229,24 +211,28 @@
               </v-card-actions>
             </v-card>
           </v-dialog>
+
+          <v-spacer></v-spacer>
+
           <v-btn :disabled="!isDeletable" @click="del" class="warning">Delete Post</v-btn>
         </v-col>
       </v-row>
     </v-form>
+
     <v-row class="pt-5">
       <v-col>
         <h3 v-if="post.id && post.recordsKey && post.recordsStatus !== 'Loading'" class="pl-1">Post data</h3>
         <v-data-table
-            v-if="post.id && post.recordsKey && post.recordsStatus !== 'Loading'"
-            :items="records.recordsList.map(r => r.data)"
-            :headers="getRecordColumns()"
-            dense
-            sortable
-            :footer-props="{
+          v-if="post.id && post.recordsKey && post.recordsStatus !== 'Loading'"
+          :items="records.recordsList.map(r => r.data)"
+          :headers="getRecordColumns()"
+          dense
+          sortable
+          :footer-props="{
             'items-per-page-options': [10, 25, 50]
           }"
-            :items-per-page="25"
-            v-columns-resizable
+          :items-per-page="25"
+          v-columns-resizable
         >
         </v-data-table>
       </v-col>
@@ -317,7 +303,7 @@ export default {
       importImagesDlg: false,
       imageFiles: [],
       imagesUploading: false,
-      imagesPostRequestResultData: null,
+      imagesPostRequestResultData: null
     };
   },
   computed: {
@@ -465,7 +451,6 @@ export default {
     importData() {
       let post = this.getPostFromForm();
       let store = this.$store;
-      this.$v.$touch();
       if (!this.$v.$invalid) {
         const importer = new FlatfileImporter(config.license, this.getFlatFileOptions(this.collections.collection));
         // TODO set to real user

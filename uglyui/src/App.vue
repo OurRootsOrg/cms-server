@@ -129,14 +129,15 @@ export default {
 .rowHover {
   cursor: pointer;
 }
- .v-data-table--dense .v-data-table-header {
+.v-data-table--dense .v-data-table-header {
   background: #f1f1f1;
-  padding-top:5px;
-} 
+  padding-top: 5px;
+}
 .columns-resize-bar {
-  border-left: solid 1px #ccc; 
-  height:100px;
-  max-height:31px;
+  border-left: solid 1px #ccc;
+  height: 100px;
+  max-height: 31px;
+}
 .errorMessage {
   color: red;
 }

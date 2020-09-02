@@ -63,7 +63,7 @@ export default {
         { text: "Location", value: "location" },
         { text: "# Posts", value: "postsCount" },
         { text: "Categories", value: "categoryNames" },
-        { text: "", value: "icon", align: "right", width:"15px" }
+        { text: "", value: "icon", align: "right", width: "15px" }
       ],
       search: ""
     };
