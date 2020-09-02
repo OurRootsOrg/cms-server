@@ -51,7 +51,7 @@ type LocalAPI interface {
 	DeleteCollection(ctx context.Context, id uint32) error
 	GetPosts(ctx context.Context /* filter/search criteria */) (*PostResult, error)
 	GetPost(ctx context.Context, id uint32) (*model.Post, error)
-	GetPostImage(ctx context.Context, id uint32, filePath string) (string, error)
+	GetPostImage(ctx context.Context, id uint32, filePath string, expireSeconds, height, width int) (*ImageMetadata, error)
 	AddPost(ctx context.Context, in model.PostIn) (*model.Post, error)
 	UpdatePost(ctx context.Context, id uint32, in model.Post) (*model.Post, error)
 	DeletePost(ctx context.Context, id uint32) error

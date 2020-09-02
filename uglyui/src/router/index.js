@@ -58,6 +58,12 @@ const routes = [
     component: () => import(/* webpackChunkName: "about" */ "../views/CollectionsCreateEdit.vue")
   },
   {
+    path: "/images/:pid/:path",
+    name: "image",
+    meta: { requiresAuth: true },
+    component: () => import(/* webpackChunkName: "about" */ "../views/Image.vue")
+  },
+  {
     path: "/posts",
     name: "posts-list",
     meta: { requiresAuth: true },
@@ -76,12 +82,6 @@ const routes = [
     component: () => import(/* webpackChunkName: "about" */ "../views/PostsCreateEdit.vue")
   },
   {
-    path: "/users",
-    name: "users-list",
-    meta: { requiresAuth: true },
-    component: () => import(/* webpackChunkName: "about" */ "../views/UsersList.vue")
-  },
-  {
     path: "/search",
     name: "search",
     component: () => import(/* webpackChunkName: "about" */ "../views/Search.vue")
@@ -96,6 +96,12 @@ const routes = [
     name: "settings",
     meta: { requiresAuth: true },
     component: () => import(/* webpackChunkName: "about" */ "../views/Settings.vue")
+  },
+  {
+    path: "/users",
+    name: "users-list",
+    meta: { requiresAuth: true },
+    component: () => import(/* webpackChunkName: "about" */ "../views/UsersList.vue")
   },
   {
     path: "/404",

@@ -44,7 +44,7 @@ func TestRecordsWriter(t *testing.T) {
 		RecordPersister(p)
 
 	// write an object to a bucket
-	bucket, err := testAPI.OpenBucket(ctx)
+	bucket, err := testAPI.OpenBucket(ctx, false)
 	assert.NoError(t, err)
 	defer bucket.Close()
 

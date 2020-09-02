@@ -46,7 +46,7 @@ func processMessage(ctx context.Context, ap *api.API, rawMsg []byte) error {
 		return nil // Don't return an error, because parsing will never succeed
 	}
 
-	log.Printf("[DEBUG] Processing PostID: %d", msg.PostID)
+	log.Printf("[DEBUG] ImagesWriter Processing PostID: %d", msg.PostID)
 
 	// read post
 	post, errs := ap.GetPost(ctx, msg.PostID)
@@ -60,7 +60,7 @@ func processMessage(ctx context.Context, ap *api.API, rawMsg []byte) error {
 	}
 
 	// open bucket
-	bucket, err := ap.OpenBucket(ctx)
+	bucket, err := ap.OpenBucket(ctx, false)
 	if err != nil {
 		log.Printf("[ERROR] OpenBucket %v\n", err)
 		return api.NewError(err)
@@ -137,6 +137,7 @@ func processMessage(ctx context.Context, ap *api.API, rawMsg []byte) error {
 	close(in)
 	close(out)
 
+	// TODO we need a better way to notify the user of errors; this doesn't tell the user that anything went wrong
 	if errs != nil {
 		post.ImagesStatus = model.PostDraft
 	} else {
