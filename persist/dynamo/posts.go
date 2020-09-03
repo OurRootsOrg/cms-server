@@ -62,7 +62,7 @@ func (p Persister) SelectOnePost(ctx context.Context, id uint32) (*model.Post, e
 		TableName: p.tableName,
 		Key: map[string]*dynamodb.AttributeValue{
 			pkName: {
-				N: aws.String(strconv.FormatInt(int64(id), 10)),
+				S: aws.String(strconv.FormatInt(int64(id), 10)),
 			},
 			skName: {
 				S: aws.String(postType),
@@ -121,7 +121,7 @@ func (p Persister) InsertPost(ctx context.Context, in model.PostIn) (*model.Post
 			TableName: p.tableName,
 			Key: map[string]*dynamodb.AttributeValue{
 				pkName: {
-					N: aws.String(strconv.FormatInt(int64(post.Collection), 10)),
+					S: aws.String(strconv.FormatInt(int64(post.Collection), 10)),
 				},
 				skName: {
 					S: aws.String(collectionType),
@@ -209,7 +209,7 @@ func (p Persister) UpdatePost(ctx context.Context, id uint32, in model.Post) (*m
 			TableName: p.tableName,
 			Key: map[string]*dynamodb.AttributeValue{
 				pkName: {
-					N: aws.String(strconv.FormatInt(int64(post.Collection), 10)),
+					S: aws.String(strconv.FormatInt(int64(post.Collection), 10)),
 				},
 				skName: {
 					S: aws.String(collectionType),
@@ -280,7 +280,7 @@ func (p Persister) DeletePost(ctx context.Context, id uint32) error {
 	dii := &dynamodb.DeleteItemInput{
 		TableName: p.tableName,
 		Key: map[string]*dynamodb.AttributeValue{
-			pkName: {N: aws.String(strconv.FormatInt(int64(id), 10))},
+			pkName: {S: aws.String(strconv.FormatInt(int64(id), 10))},
 			skName: {S: aws.String(postType)},
 		},
 	}

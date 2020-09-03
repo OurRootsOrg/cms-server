@@ -51,7 +51,7 @@ func (p Persister) SelectRecordsByID(ctx context.Context, ids []uint32) ([]model
 	for i, id := range ids {
 		keys[i] = map[string]*dynamodb.AttributeValue{
 			pkName: {
-				N: aws.String(strconv.FormatInt(int64(id), 10)),
+				S: aws.String(strconv.FormatInt(int64(id), 10)),
 			},
 			skName: {
 				S: aws.String(recordType),
@@ -115,7 +115,7 @@ func (p Persister) SelectOneRecord(ctx context.Context, id uint32) (*model.Recor
 		TableName: p.tableName,
 		Key: map[string]*dynamodb.AttributeValue{
 			pkName: {
-				N: aws.String(strconv.FormatInt(int64(id), 10)),
+				S: aws.String(strconv.FormatInt(int64(id), 10)),
 			},
 			skName: {
 				S: aws.String(recordType),
@@ -174,7 +174,7 @@ func (p Persister) InsertRecord(ctx context.Context, in model.RecordIn) (*model.
 			TableName: p.tableName,
 			Key: map[string]*dynamodb.AttributeValue{
 				pkName: {
-					N: aws.String(strconv.FormatInt(int64(record.Post), 10)),
+					S: aws.String(strconv.FormatInt(int64(record.Post), 10)),
 				},
 				skName: {
 					S: aws.String(postType),
@@ -250,7 +250,7 @@ func (p Persister) UpdateRecord(ctx context.Context, id uint32, in model.Record)
 			TableName: p.tableName,
 			Key: map[string]*dynamodb.AttributeValue{
 				pkName: {
-					N: aws.String(strconv.FormatInt(int64(record.Post), 10)),
+					S: aws.String(strconv.FormatInt(int64(record.Post), 10)),
 				},
 				skName: {
 					S: aws.String(postType),
@@ -321,7 +321,7 @@ func (p Persister) DeleteRecord(ctx context.Context, id uint32) error {
 	dii := &dynamodb.DeleteItemInput{
 		TableName: p.tableName,
 		Key: map[string]*dynamodb.AttributeValue{
-			pkName: {N: aws.String(strconv.FormatInt(int64(id), 10))},
+			pkName: {S: aws.String(strconv.FormatInt(int64(id), 10))},
 			skName: {S: aws.String(recordType)},
 		},
 	}
@@ -345,7 +345,7 @@ func (p Persister) DeleteRecordsForPost(ctx context.Context, postID uint32) erro
 			&dynamodb.WriteRequest{
 				DeleteRequest: &dynamodb.DeleteRequest{
 					Key: map[string]*dynamodb.AttributeValue{
-						pkName: {N: aws.String(strconv.FormatInt(int64(r.ID), 10))},
+						pkName: {S: aws.String(strconv.FormatInt(int64(r.ID), 10))},
 						skName: {S: aws.String(recordType)},
 					},
 				},

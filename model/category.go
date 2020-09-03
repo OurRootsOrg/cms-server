@@ -59,7 +59,7 @@ func (cb *CategoryBody) Scan(value interface{}) error {
 
 // Category represents a set of collections
 type Category struct {
-	ID   uint32 `json:"id,omitempty" example:"999" validate:"required,omitempty" dynamodbav:"pk"`
+	ID   uint32 `json:"id,omitempty" example:"999" validate:"required,omitempty" dynamodbav:"pk,string"`
 	Type string `json:"-" dynamodbav:"sk"`
 	CategoryBody
 	InsertTime     time.Time `json:"insert_time,omitempty"`
@@ -73,3 +73,32 @@ func NewCategory(id uint32, in CategoryIn) Category {
 		CategoryBody: in.CategoryBody,
 	}
 }
+
+// func (cat *Category) MarshalDynamoDBAttributeValue(av *dynamodb.AttributeValue) error {
+// 	avs, err := dynamodbattribute.MarshalMap(cat)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	log.Printf("[DEBUG] MarshalDynamoDBAttributeValue cat = %#v, av = %#v", cat, avs)
+// 	av.SetM(avs)
+// 	av.M["ID"].SetS(*av.M["Type"].S + "#" + *avs["ID"].S)
+// 	log.Printf("[DEBUG] MarshalDynamoDBAttributeValue updated ID, cat = %#v, avs = %#v, av = %#v", cat, avs, av)
+// 	return nil
+// }
+
+// func (cat *Category) UnmarshalDynamoDBAttributeValue(av *dynamodb.AttributeValue) error {
+// 	cat = &Category{}
+// 	err := dynamodbattribute.UnmarshalMap(av.M, cat)
+// 	if err != nil {
+// 		log.Printf("[ERROR] Error unmarshalling %#v into Category: %v", av, err)
+// 		return err
+// 	}
+// 	log.Printf("[DEBUG] UnmarshalDynamoDBAttributeValue cat = %#v, av = %#v", cat, av)
+// 	id, err := strconv.ParseUint(strings.TrimPrefix(*av.M["ID"].S, *av.M["Type"].S+"#"), 10, 32)
+// 	if err != nil {
+// 		log.Printf("[ERROR] Error calling ParseUint on %s: %v", strings.TrimPrefix(*av.M["ID"].S, *av.M["Type"].S+"#"), err)
+// 		return err
+// 	}
+// 	cat.ID = uint32(id)
+// 	return nil
+// }

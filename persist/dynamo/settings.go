@@ -3,7 +3,6 @@ package dynamo
 import (
 	"context"
 	"log"
-	"strconv"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -21,7 +20,7 @@ func (p Persister) SelectSettings(ctx context.Context) (*model.Settings, error) 
 		TableName: p.tableName,
 		Key: map[string]*dynamodb.AttributeValue{
 			pkName: {
-				N: aws.String(strconv.Itoa(settingsID)),
+				S: aws.String(settingsType),
 			},
 			skName: {
 				S: aws.String(settingsType),
@@ -36,7 +35,7 @@ func (p Persister) SelectSettings(ctx context.Context) (*model.Settings, error) 
 		return nil, model.NewError(model.ErrOther, err.Error())
 	}
 	if gio.Item == nil {
-		return nil, model.NewError(model.ErrNotFound, strconv.Itoa(settingsID))
+		return nil, model.NewError(model.ErrNotFound, settingsType)
 	}
 	err = dynamodbattribute.UnmarshalMap(gio.Item, &settings)
 	if err != nil {
@@ -54,7 +53,7 @@ func (p Persister) SelectSettings(ctx context.Context) (*model.Settings, error) 
 
 // UpsertSettings updates or inserts a Settings object in the database and returns the updated Settings
 func (p Persister) UpsertSettings(ctx context.Context, in model.Settings) (*model.Settings, error) {
-	in.ID = settingsID
+	in.ID = settingsType
 	in.Sk = settingsType
 	settings := in
 	now := time.Now().Truncate(0)

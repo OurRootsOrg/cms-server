@@ -20,7 +20,7 @@ const (
 )
 
 type collectionCategory struct {
-	ID uint32 `dynamodbav:"pk"`
+	ID uint32 `dynamodbav:"pk,string"`
 	SK string `dynamodbav:"sk"`
 }
 
@@ -60,7 +60,7 @@ func (p Persister) SelectCollectionsByID(ctx context.Context, ids []uint32) ([]m
 	for i, id := range ids {
 		keys[i] = map[string]*dynamodb.AttributeValue{
 			pkName: {
-				N: aws.String(strconv.FormatInt(int64(id), 10)),
+				S: aws.String(strconv.FormatInt(int64(id), 10)),
 			},
 			skName: {
 				S: aws.String(collectionType),
@@ -96,7 +96,7 @@ func (p Persister) SelectOneCollection(ctx context.Context, id uint32) (*model.C
 		KeyConditionExpression: aws.String(pkName + "= :pk and begins_with(" + skName + ", :sk)"),
 		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
 			":pk": {
-				N: aws.String(sid),
+				S: aws.String(sid),
 			},
 			":sk": {
 				S: aws.String(collectionType),
@@ -202,7 +202,7 @@ func (p Persister) InsertCollection(ctx context.Context, in model.CollectionIn) 
 				TableName: p.tableName,
 				Key: map[string]*dynamodb.AttributeValue{
 					pkName: {
-						N: aws.String(strconv.FormatInt(int64(catID), 10)),
+						S: aws.String(strconv.FormatInt(int64(catID), 10)),
 					},
 					skName: {
 						S: aws.String(categoryType),
@@ -230,7 +230,7 @@ func (p Persister) InsertCollection(ctx context.Context, in model.CollectionIn) 
 			Put: &dynamodb.Put{
 				TableName: p.tableName,
 				Item: map[string]*dynamodb.AttributeValue{
-					pkName: {N: aws.String(strconv.FormatInt(int64(coll.ID), 10))},
+					pkName: {S: aws.String(strconv.FormatInt(int64(coll.ID), 10))},
 					skName: {S: aws.String(collectionCategoryPrefix + strconv.FormatInt(int64(catID), 10))},
 				},
 				ConditionExpression: aws.String("attribute_not_exists(" + pkName + ") AND attribute_not_exists(" + skName + ")"), // Make duplicate insert fail
@@ -341,7 +341,7 @@ func (p Persister) UpdateCollection(ctx context.Context, id uint32, in model.Col
 				TableName: p.tableName,
 				Key: map[string]*dynamodb.AttributeValue{
 					pkName: {
-						N: aws.String(strconv.FormatInt(int64(catID), 10)),
+						S: aws.String(strconv.FormatInt(int64(catID), 10)),
 					},
 					skName: {
 						S: aws.String(categoryType),
@@ -370,7 +370,7 @@ func (p Persister) UpdateCollection(ctx context.Context, id uint32, in model.Col
 			Delete: &dynamodb.Delete{
 				TableName: p.tableName,
 				Key: map[string]*dynamodb.AttributeValue{
-					pkName: {N: aws.String(strconv.FormatInt(int64(coll.ID), 10))},
+					pkName: {S: aws.String(strconv.FormatInt(int64(coll.ID), 10))},
 					skName: {S: aws.String(collectionCategoryPrefix + strconv.FormatInt(int64(catID), 10))},
 				},
 			},
@@ -384,7 +384,7 @@ func (p Persister) UpdateCollection(ctx context.Context, id uint32, in model.Col
 			Put: &dynamodb.Put{
 				TableName: p.tableName,
 				Item: map[string]*dynamodb.AttributeValue{
-					pkName: {N: aws.String(strconv.FormatInt(int64(coll.ID), 10))},
+					pkName: {S: aws.String(strconv.FormatInt(int64(coll.ID), 10))},
 					skName: {S: aws.String(collectionCategoryPrefix + strconv.FormatInt(int64(catID), 10))},
 				},
 			},
@@ -449,7 +449,7 @@ func (p Persister) DeleteCollection(ctx context.Context, id uint32) error {
 			Delete: &dynamodb.Delete{
 				TableName: p.tableName,
 				Key: map[string]*dynamodb.AttributeValue{
-					pkName: {N: aws.String(strconv.FormatInt(int64(id), 10))},
+					pkName: {S: aws.String(strconv.FormatInt(int64(id), 10))},
 					skName: {S: aws.String(collectionCategoryPrefix + strconv.FormatInt(int64(catID), 10))},
 				},
 			},
@@ -460,7 +460,7 @@ func (p Persister) DeleteCollection(ctx context.Context, id uint32) error {
 		Delete: &dynamodb.Delete{
 			TableName: p.tableName,
 			Key: map[string]*dynamodb.AttributeValue{
-				pkName: {N: aws.String(strconv.FormatInt(int64(id), 10))},
+				pkName: {S: aws.String(strconv.FormatInt(int64(id), 10))},
 				skName: {S: aws.String(collectionType)},
 			},
 		},

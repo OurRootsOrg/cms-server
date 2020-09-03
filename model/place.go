@@ -23,7 +23,7 @@ type Uint32Slice []uint32
 
 // Place holds information about a place
 type Place struct {
-	ID               uint32      `json:"id" dynamodbav:"pk"`
+	ID               uint32      `json:"id" dynamodbav:"pk,string"`
 	Name             string      `json:"name"`
 	FullName         string      `json:"fullName"`
 	AltNames         StringSlice `json:"altNames"`
@@ -110,7 +110,7 @@ type PlaceSettingsIn struct {
 
 // PlaceSettings represents global placeSettings
 type PlaceSettings struct {
-	ID int    `json:"-" dynamodbav:"pk"`
+	ID int    `json:"-" dynamodbav:"pk,string"`
 	Sk string `json:"-" dynamodbav:"sk"`
 	PlaceSettingsIn
 	InsertTime     time.Time `json:"insert_time,omitempty"`

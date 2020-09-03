@@ -71,7 +71,7 @@ func (cb *UserBody) Scan(value interface{}) error {
 
 // User represents a set of collections that all contain the same fields
 type User struct {
-	ID      uint32 `json:"id,omitempty" example:"999" validate:"required,omitempty" dynamodbav:"pk"`
+	ID      uint32 `json:"id,omitempty" example:"999" validate:"required,omitempty" dynamodbav:"pk,string"`
 	Type    string `json:"-" dynamodbav:"sk"`
 	SortKey string `json:"-" dynamodbav:"altSort"`
 	UserBody

@@ -53,7 +53,7 @@ type RecordIn struct {
 
 // Record represents a set of related Records
 type Record struct {
-	ID   uint32 `json:"id,omitempty" example:"999" validate:"required" dynamodbav:"pk"`
+	ID   uint32 `json:"id,omitempty" example:"999" validate:"required" dynamodbav:"pk,string"`
 	Type string `json:"-" dynamodbav:"sk"`
 	RecordIn
 	IxHash         string    `json:"ix_hash,omitempty"`
