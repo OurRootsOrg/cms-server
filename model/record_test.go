@@ -44,3 +44,19 @@ func TestRecordCitation(t *testing.T) {
 	citationTemplate = `{{Invalid`
 	assert.Equal(t, "template: citation:1: function \"Invalid\" not defined", r.GetCitation(citationTemplate))
 }
+
+func TestRecordHousehold(t *testing.T) {
+	in := model.RecordHousehold{}
+	in.Post = 10
+	in.Household = "h"
+	in.Records = model.Uint32Slice{1, 2, 3}
+	js, err := json.Marshal(in)
+	assert.NoError(t, err)
+	// log.Printf("RecordBody JSON: %s", string(js))
+	in = model.RecordHousehold{}
+	err = json.Unmarshal(js, &in)
+	assert.NoError(t, err)
+	assert.Equal(t, uint32(10), in.Post)
+	assert.Equal(t, "h", in.Household)
+	assert.Equal(t, 3, len(in.Records))
+}

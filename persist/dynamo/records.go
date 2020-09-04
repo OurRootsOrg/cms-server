@@ -375,6 +375,30 @@ func (p Persister) DeleteRecordsForPost(ctx context.Context, postID uint32) erro
 	return nil
 }
 
+// SelectRecordHouseholdsForPost selects all record households for a post
+func (p Persister) SelectRecordHouseholdsForPost(ctx context.Context, postID uint32) ([]model.RecordHousehold, error) {
+	// TODO implement
+	return nil, fmt.Errorf("SelectRecordHouseholdsForPost not implemented")
+}
+
+// SelectOneRecordHousehold selects one record household
+func (p Persister) SelectOneRecordHousehold(ctx context.Context, postID uint32, householdID string) (*model.RecordHousehold, error) {
+	// TODO implement
+	return nil, fmt.Errorf("SelectOneRecordHousehold not implemented")
+}
+
+// InsertRecordHousehold inserts a RecordHouseholdIn into the database and returns a RecordHousehold
+func (p Persister) InsertRecordHousehold(ctx context.Context, in model.RecordHouseholdIn) (*model.RecordHousehold, error) {
+	// TODO implement
+	return nil, fmt.Errorf("InsertRecordHousehold not implemented")
+}
+
+// DeleteRecordHouseholdsForPost deletes the record households associated with a Post
+func (p Persister) DeleteRecordHouseholdsForPost(ctx context.Context, postID uint32) error {
+	// TODO implement
+	return fmt.Errorf("DeleteRecordHouseholdsForPost not implemented")
+}
+
 func (p Persister) deleteRecordBatch(ris map[string][]*dynamodb.WriteRequest) error {
 	var bwio *dynamodb.BatchWriteItemOutput
 	var err error

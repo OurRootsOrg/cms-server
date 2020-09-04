@@ -125,3 +125,64 @@ func (p PostgresPersister) DeleteRecordsForPost(ctx context.Context, postID uint
 	_, err := p.db.ExecContext(ctx, "DELETE FROM record WHERE post_id = $1", postID)
 	return translateError(err, &postID, nil, "")
 }
+
+// SelectRecordsForPost selects all records households for a post
+func (p PostgresPersister) SelectRecordHouseholdsForPost(ctx context.Context, postID uint32) ([]model.RecordHousehold, error) {
+	query := "SELECT post_id, household_id, record_ids, insert_time, last_update_time FROM record_household WHERE post_id = $1"
+	rows, err := p.db.QueryContext(ctx, query, postID)
+	if err != nil {
+		return nil, translateError(err, &postID, nil, "")
+	}
+	defer rows.Close()
+	recordHouseholds := make([]model.RecordHousehold, 0)
+	for rows.Next() {
+		var recordHousehold model.RecordHousehold
+		err := rows.Scan(&recordHousehold.Post, &recordHousehold.Household, &recordHousehold.Records, &recordHousehold.InsertTime, &recordHousehold.LastUpdateTime)
+		if err != nil {
+			return nil, translateError(err, &postID, nil, "")
+		}
+		recordHouseholds = append(recordHouseholds, recordHousehold)
+	}
+	return recordHouseholds, nil
+}
+
+// SelectOneRecordHousehold selects a single record household
+func (p PostgresPersister) SelectOneRecordHousehold(ctx context.Context, postID uint32, householdID string) (*model.RecordHousehold, error) {
+	var recordHousehold model.RecordHousehold
+	query := "SELECT post_id, household_id, record_ids, insert_time, last_update_time FROM record_household WHERE post_id = $1 AND household_id = $2"
+	err := p.db.QueryRowContext(ctx, query, postID, householdID).Scan(
+		&recordHousehold.Post,
+		&recordHousehold.Household,
+		&recordHousehold.Records,
+		&recordHousehold.InsertTime,
+		&recordHousehold.LastUpdateTime,
+	)
+	if err != nil {
+		return nil, translateError(err, &postID, nil, "")
+	}
+	return &recordHousehold, nil
+}
+
+// InsertRecordHousehold inserts a RecordHouseholdIn into the database and returns the inserted RecordHousehold
+func (p PostgresPersister) InsertRecordHousehold(ctx context.Context, in model.RecordHouseholdIn) (*model.RecordHousehold, error) {
+	var recordHousehold model.RecordHousehold
+	err := p.db.QueryRowContext(ctx,
+		`INSERT INTO record_household (post_id, household_id, record_ids)
+		 VALUES ($1, $2, $3)
+		 RETURNING post_id, household_id, record_ids, insert_time, last_update_time`,
+		in.Post, in.Household, in.Records).
+		Scan(
+			&recordHousehold.Post,
+			&recordHousehold.Household,
+			&recordHousehold.Records,
+			&recordHousehold.InsertTime,
+			&recordHousehold.LastUpdateTime,
+		)
+	return &recordHousehold, translateError(err, nil, &in.Post, "post")
+}
+
+// DeleteRecordHouseholdsForPost deletes all Record Households for a post
+func (p PostgresPersister) DeleteRecordHouseholdsForPost(ctx context.Context, postID uint32) error {
+	_, err := p.db.ExecContext(ctx, "DELETE FROM record_household WHERE post_id = $1", postID)
+	return translateError(err, &postID, nil, "")
+}

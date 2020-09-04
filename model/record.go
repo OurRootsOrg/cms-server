@@ -20,6 +20,10 @@ type RecordPersister interface {
 	UpdateRecord(ctx context.Context, id uint32, in Record) (*Record, error)
 	DeleteRecord(ctx context.Context, id uint32) error
 	DeleteRecordsForPost(ctx context.Context, postID uint32) error
+	SelectRecordHouseholdsForPost(ctx context.Context, postID uint32) ([]RecordHousehold, error)
+	SelectOneRecordHousehold(ctx context.Context, postID uint32, householdID string) (*RecordHousehold, error)
+	InsertRecordHousehold(ctx context.Context, in RecordHouseholdIn) (*RecordHousehold, error)
+	DeleteRecordHouseholdsForPost(ctx context.Context, postID uint32) error
 }
 
 // RecordBody is the JSON body of a Record
@@ -53,6 +57,20 @@ type Record struct {
 	Type string `json:"-" dynamodbav:"sk"`
 	RecordIn
 	IxHash         string    `json:"ix_hash,omitempty"`
+	InsertTime     time.Time `json:"insert_time,omitempty"`
+	LastUpdateTime time.Time `json:"last_update_time,omitempty"`
+}
+
+// RecordHouseholdIn is the payload to create a Record Household
+type RecordHouseholdIn struct {
+	Post      uint32      `json:"post" example:"999" validate:"required"`
+	Household string      `json:"household" example:"999" validate:"required"`
+	Records   Uint32Slice `json:"records" example:"[1,2,3]" validate:"required"`
+}
+
+// RecordHousehold holds the record IDs of all records in this household
+type RecordHousehold struct {
+	RecordHouseholdIn
 	InsertTime     time.Time `json:"insert_time,omitempty"`
 	LastUpdateTime time.Time `json:"last_update_time,omitempty"`
 }

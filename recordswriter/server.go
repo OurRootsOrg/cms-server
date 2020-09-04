@@ -47,7 +47,7 @@ func processMessage(ctx context.Context, ap *api.API, rawMsg []byte) error {
 		return nil // Don't return an error, because parsing will never succeed
 	}
 
-	log.Printf("[DEBUG] Processing PostID: %d", msg.PostID)
+	log.Printf("[DEBUG] Processing Post: %d", msg.PostID)
 
 	// read post
 	post, errs := ap.GetPost(ctx, msg.PostID)
@@ -76,6 +76,13 @@ func processMessage(ctx context.Context, ap *api.API, rawMsg []byte) error {
 		} else if strings.HasSuffix(mapping.IxField, "Place") {
 			placeFields[mapping.Header] = true
 		}
+	}
+
+	// delete any previous record households for post
+	errs = ap.DeleteRecordHouseholdsForPost(ctx, post.ID)
+	if errs != nil {
+		log.Printf("[ERROR] DeleteRecordHouseholdsForPost on %d: %v\n", post.ID, errs)
+		return errs
 	}
 
 	// delete any previous records for post

@@ -2,7 +2,7 @@
   <v-container class="collections-create">
     <h1>{{ collection.id ? "Edit" : "Create" }} Collection</h1>
     <v-form @submit.prevent="save">
-      <h3>Give your collection a name (step 1 of 7)</h3>
+      <h3>Give your collection a name (step 1 of 8)</h3>
       <v-text-field
         label="Collection Name"
         v-model="collection.name"
@@ -18,7 +18,7 @@
         </p>
       </template>
 
-      <h3>Select one or more categories (step 2 of 7)</h3>
+      <h3>Select one or more categories (step 2 of 8)</h3>
       <multiselect
         v-model="collection.categories"
         :options="categories.categoriesList"
@@ -42,7 +42,7 @@
         </p>
       </template>
 
-      <h3 style="margin-top: 16px;">What location does this collection cover? (step 3 of 7)</h3>
+      <h3 style="margin-top: 16px;">What location does this collection cover? (step 3 of 8)</h3>
       <div class="location">
         <v-autocomplete
           outlined
@@ -71,7 +71,7 @@
           </template>
           <span>You can include html and <span>{{</span>Spreadsheet header<span>}}</span> references</span>
         </v-tooltip>
-        (step 4 of 7)
+        (step 4 of 8)
       </h3>
       <div class="citation">
         <v-textarea
@@ -97,7 +97,7 @@
                 messages" are the error messages you want to show if the data does not meet the validation rules.</span
               >
             </v-tooltip>
-            (step 5 of 7)
+            (step 5 of 8)
           </h3>
           <v-data-table
             :headers="fieldColumns"
@@ -204,7 +204,7 @@
                 results.</span
               >
             </v-tooltip>
-            (step 6 of 7)
+            (step 6 of 8)
           </h3>
 
           <!--draggable mappings-->
@@ -330,16 +330,77 @@
           </template>
           <span>If the collection does not contain images, leave this blank</span>
         </v-tooltip>
-        (step 7 of 7)
+        (step 7 of 8)
       </h3>
       <v-select
         outlined
+        label="Image filename column"
         v-model="collection.imagePathHeader"
         :items="headers"
         @change="touch('imagePathHeader')"
       ></v-select>
       <div v-if="!isHeader(collection.imagePathHeader)" class="errorMessage">
         Column containing image file names no longer appears in the list of spreadsheet columns.
+      </div>
+
+      <h3 class="mt-4">
+        Columns containing household information
+        <v-tooltip bottom maxWidth="600px">
+          <template v-slot:activator="{ on, attrs }">
+            <v-icon v-bind="attrs" v-on="on" small>mdi-information</v-icon>
+          </template>
+          <div>
+            If the collection does not have households (multiple records that should be displayed together on the record
+            detail page), leave these fields blank.
+          </div>
+          <div>
+            <strong>Household number:</strong> Column containing the household number. All records with the same
+            household number will be displayed together on the record detail page.
+          </div>
+          <div>
+            <strong>Relationship to head:</strong> Column containing the record's relationship to the "head" of the
+            household. Leave this blank if the records in the household are not in the same family. If the values in
+            this column are "head", "father", "mother", "spouse", "son", "daughter", "child", then the corresponding
+            relationships will be created when indexing the records.
+          </div>
+          <div>
+            <strong>Gender:</strong> Column containing the gender. This is used to determine whether a father or mother
+            relationship should be created when indexing the "head" record of a son, daughter, or child.
+          </div>
+        </v-tooltip>
+        (step 8 of 8)
+      </h3>
+      <v-select
+        outlined
+        label="Household number column"
+        v-model="collection.householdNumberHeader"
+        :items="headers"
+        @change="householdNumberChanged"
+      ></v-select>
+      <div v-if="!isHeader(collection.householdNumberHeader)" class="errorMessage">
+        Column containing household numbers no longer appears in the list of spreadsheet columns.
+      </div>
+      <v-select
+        outlined
+        label="Relationship to head column"
+        v-model="collection.householdRelationshipHeader"
+        :items="headers"
+        @change="touch('householdRelationshipHeader')"
+        :disabled="!collection.householdNumberHeader"
+      ></v-select>
+      <div v-if="!isHeader(collection.householdRelationshipHeader)" class="errorMessage">
+        Column containing relationship to head no longer appears in the list of spreadsheet columns.
+      </div>
+      <v-select
+        outlined
+        label="Gender column"
+        v-model="collection.genderHeader"
+        :items="headers"
+        @change="touch('genderHeader')"
+        :disabled="!collection.householdNumberHeader"
+      ></v-select>
+      <div v-if="!isHeader(collection.genderHeader)" class="errorMessage">
+        Column containing gender no longer appears in the list of spreadsheet columns.
       </div>
 
       <div class="d-flex justify-space-between">
@@ -422,9 +483,10 @@ function setup() {
   if (this.collection.location) {
     this.locationItems = [this.collection.location];
   }
-  if (!this.collection.imagePathHeader) {
-    this.collection.imagePathHeader = "";
-  }
+  this.collection.imagePathHeader = this.collection.imagePathHeader || "";
+  this.collection.householdNumberHeader = this.collection.householdNumberHeader || "";
+  this.collection.householdRelationshipHeader = this.collection.householdRelationshipHeader || "";
+  this.collection.genderHeader = this.collection.genderHeader || "";
 }
 
 export default {
@@ -469,7 +531,7 @@ export default {
       },
       defaultItem: {
         header: "",
-        required: "",
+        required: false,
         regex: "",
         regexError: ""
       },
@@ -672,7 +734,10 @@ export default {
       categories: { required },
       fields: {},
       mappings: {},
-      imagePathHeader: {}
+      imagePathHeader: {},
+      householdNumberHeader: {},
+      householdRelationshipHeader: {},
+      genderHeader: {}
     }
   },
   methods: {
@@ -691,6 +756,11 @@ export default {
             this.locationLoading = false;
           });
       }, 400);
+    },
+    householdNumberChanged() {
+      this.collection.householdRelationshipHeader = "";
+      this.collection.genderHeader = "";
+      this.touch("householdNumberHeader");
     },
     touch(attr) {
       if (this.$v.collection[attr].$dirty) {
@@ -772,7 +842,12 @@ export default {
       if (this.collection.mappings.length === 0) {
         return;
       }
-      if (!this.isHeader(this.imagePathHeader)) {
+      if (
+        !this.isHeader(this.imagePathHeader) ||
+        !this.isHeader(this.householdNumberHeader) ||
+        !this.isHeader(this.householdRelationshipHeader) ||
+        !this.isHeader(this.genderHeader)
+      ) {
         return;
       }
       let collection = Object.assign({}, this.collection);

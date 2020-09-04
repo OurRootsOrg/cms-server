@@ -84,6 +84,36 @@ func (a *ApiMock) RetrieveUser(ctx context.Context, provider OIDCProvider, token
 func (a *ApiMock) GetRecordsForPost(ctx context.Context, postid uint32) (*RecordResult, error) {
 	return a.Result.(*RecordResult), a.Errors
 }
+func (a *ApiMock) GetRecordsByID(ctx context.Context, ids []uint32) ([]model.Record, error) {
+	return a.Result.([]model.Record), a.Errors
+}
+func (a *ApiMock) GetRecord(ctx context.Context, id uint32) (*model.Record, error) {
+	return a.Result.(*model.Record), a.Errors
+}
+func (a *ApiMock) AddRecord(ctx context.Context, in model.RecordIn) (*model.Record, error) {
+	return a.Result.(*model.Record), a.Errors
+}
+func (a *ApiMock) UpdateRecord(ctx context.Context, id uint32, in model.Record) (*model.Record, error) {
+	return a.Result.(*model.Record), a.Errors
+}
+func (a *ApiMock) DeleteRecord(ctx context.Context, id uint32) error {
+	return a.Errors
+}
+func (a *ApiMock) DeleteRecordsForPost(ctx context.Context, postID uint32) error {
+	return a.Errors
+}
+func (a *ApiMock) GetRecordHouseholdsForPost(ctx context.Context, postid uint32) ([]model.RecordHousehold, error) {
+	return a.Result.([]model.RecordHousehold), a.Errors
+}
+func (a *ApiMock) GetRecordHousehold(ctx context.Context, postID uint32, householdID string) (*model.RecordHousehold, error) {
+	return a.Result.(*model.RecordHousehold), a.Errors
+}
+func (a *ApiMock) AddRecordHousehold(ctx context.Context, in model.RecordHouseholdIn) (*model.RecordHousehold, error) {
+	return a.Result.(*model.RecordHousehold), a.Errors
+}
+func (a *ApiMock) DeleteRecordHouseholdsForPost(ctx context.Context, postID uint32) error {
+	return a.Errors
+}
 
 func (a *ApiMock) Search(ctx context.Context, searchRequest *SearchRequest) (*model.SearchResult, error) {
 	a.Request = searchRequest

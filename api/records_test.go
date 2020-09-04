@@ -86,6 +86,7 @@ func doRecordsTests(t *testing.T,
 	}
 	created, err := testApi.AddRecord(context.TODO(), in)
 	assert.NoError(t, err)
+	defer testApi.DeleteRecord(context.TODO(), created.ID)
 	assert.Equal(t, in.Data, created.Data, "Expected Name to match")
 	assert.NotEmpty(t, created.ID)
 	assert.Equal(t, in.Post, created.Post)
@@ -99,7 +100,6 @@ func doRecordsTests(t *testing.T,
 	// GET /records should now return the created Record
 	ret, err := testApi.GetRecordsForPost(context.TODO(), testPost.ID)
 	assert.NoError(t, err)
-	assert.Equal(t, 0, len(empty.Records), "Expected empty slice, got %#v", empty)
 	assert.Equal(t, 1, len(ret.Records))
 	assert.Equal(t, *created, ret.Records[0])
 
@@ -164,6 +164,55 @@ func doRecordsTests(t *testing.T,
 
 	// DELETE
 	err = testApi.DeleteRecord(context.TODO(), updated.ID)
+	assert.NoError(t, err)
+
+	// Record Households
+
+	emptyHouseholds, err := testApi.GetRecordHouseholdsForPost(context.TODO(), testPost.ID)
+	assert.NoError(t, err)
+	assert.Equal(t, 0, len(emptyHouseholds), "Expected empty slice, got %#v", emptyHouseholds)
+
+	// Add a Record Household
+	inHousehold := model.RecordHouseholdIn{
+		Post:      testPost.ID,
+		Household: "H1",
+		Records:   model.Uint32Slice{1, 2, 3},
+	}
+	createdHousehold, err := testApi.AddRecordHousehold(context.TODO(), inHousehold)
+	assert.NoError(t, err)
+	defer testApi.DeleteRecordsForPost(context.TODO(), testPost.ID)
+	assert.Equal(t, inHousehold.Records, createdHousehold.Records, "Expected record ids to match")
+	assert.Equal(t, inHousehold.Post, createdHousehold.Post)
+	assert.Equal(t, inHousehold.Household, createdHousehold.Household)
+
+	// GET record households should now return the created Record Households
+	retHouseholds, err := testApi.GetRecordHouseholdsForPost(context.TODO(), testPost.ID)
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(retHouseholds))
+	assert.Equal(t, *createdHousehold, retHouseholds[0])
+
+	// GET record household should now return the created Record
+	retHh, err := testApi.GetRecordHousehold(context.TODO(), createdHousehold.Post, createdHousehold.Household)
+	assert.NoError(t, err)
+	assert.Equal(t, createdHousehold, retHh)
+
+	// Bad request - no post
+	inHousehold.Post = 0
+	_, err = testApi.AddRecordHousehold(context.TODO(), inHousehold)
+	assert.IsType(t, &api.Error{}, err)
+	if assert.Len(t, err.(*api.Error).Errs(), 1, "err.(*api.Error).Errs(): %#v", err.(*api.Error).Errs()) {
+		assert.Equal(t, err.(*api.Error).Errs()[0].Code, model.ErrRequired)
+	}
+
+	// Record Household not found
+	_, err = testApi.GetRecordHousehold(context.TODO(), createdHousehold.Post, createdHousehold.Household+"a")
+	assert.Error(t, err)
+	assert.IsType(t, &api.Error{}, err)
+	assert.Len(t, err.(*api.Error).Errs(), 1)
+	assert.Equal(t, model.ErrNotFound, err.(*api.Error).Errs()[0].Code, "err.(*api.Error).Errs()[0]: %#v", err.(*api.Error).Errs()[0])
+
+	// DELETE
+	err = testApi.DeleteRecordHouseholdsForPost(context.TODO(), testPost.ID)
 	assert.NoError(t, err)
 }
 
