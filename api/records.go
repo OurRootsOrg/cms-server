@@ -118,7 +118,7 @@ func (api API) AddRecordHousehold(ctx context.Context, in model.RecordHouseholdI
 	if e != nil {
 		return nil, NewError(e)
 	}
-	log.Printf("[DEBUG] Added record Household post=%d household=", recordHousehold.Post, recordHousehold.Household)
+	log.Printf("[DEBUG] Added record Household post=%d household=%s\n", recordHousehold.Post, recordHousehold.Household)
 	return recordHousehold, nil
 }
 

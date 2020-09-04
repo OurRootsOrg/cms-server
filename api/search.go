@@ -1067,7 +1067,7 @@ func (api API) constructNameQueries(ctx context.Context, label, value string, fu
 		subqueries := []Query{exactQuery}
 
 		if fuzziness == FuzzyNameDefault || fuzziness&FuzzyNameVariants > 0 {
-			nameVariants, err := api.GetNameVariants(ctx, nameType, v)
+			nameVariants, err := api.GetNameVariants(ctx, nameType, stdtext.AsciiFold(strings.ToLower(v)))
 			if err != nil {
 				if !model.ErrNotFound.Matches(err) {
 					return nil, nil, err

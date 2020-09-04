@@ -62,3 +62,14 @@ docker run --rm -v cms_esdata:/volume -v /tmp:/backup alpine tar -cjf /backup/cm
 ```
 docker run --rm -v cms_esdata:/volume -v /tmp:/backup alpine sh -c "rm -rf /volume/* /volume/..?* /volume/.[!.]* ; tar -C /volume/ -xjf /backup/cms_esdata.tar.bz2"
 ```
+
+# Populating database tables
+
+Download the following files from S3 into a `test_data` directory
+* https://s3.amazonaws.com/public.ourroots.org/givenname_variants.tsv
+* https://s3.amazonaws.com/public.ourroots.org/surname_variants.tsv
+* https://s3.amazonaws.com/public.ourroots.org/place_settings.tsv
+* https://s3.amazonaws.com/public.ourroots.org/place_words.tsv
+* https://s3.amazonaws.com/public.ourroots.org/places.tsv
+
+then run the `db/db_load.sh` script from the parent directory of the `test_data` directory

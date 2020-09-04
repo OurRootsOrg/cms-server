@@ -55,7 +55,7 @@ func doNameTests(t *testing.T, p model.NamePersister) {
 
 	result, err := testApi.GetNameVariants(context.TODO(), model.GivenType, "fred")
 	assert.NoError(t, err)
-	assert.Equal(t, 3, len(result.Variants))
+	assert.Equal(t, 1, len(result.Variants))
 
 	result, err = testApi.GetNameVariants(context.TODO(), model.SurnameType, "bedrock")
 	assert.NoError(t, err)

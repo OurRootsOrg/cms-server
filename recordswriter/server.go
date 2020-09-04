@@ -47,7 +47,7 @@ func processMessage(ctx context.Context, ap *api.API, rawMsg []byte) error {
 		return nil // Don't return an error, because parsing will never succeed
 	}
 
-	log.Printf("[DEBUG] Processing Post: %d", msg.PostID)
+	log.Printf("[DEBUG] RecordsWriter Processing PostID: %d", msg.PostID)
 
 	// read post
 	post, errs := ap.GetPost(ctx, msg.PostID)
@@ -310,9 +310,10 @@ func main() {
 			PostPersister(p).
 			RecordPersister(p).
 			PlaceStandardizer(ctx, p)
-		if err != nil {
-			log.Fatalf("[FATAL] Error initializing place standardizer %v\n", err)
-		}
+		// This doesn't do anything
+		// if err != nil {
+		// 	log.Fatalf("[FATAL] Error initializing place standardizer %v\n", err)
+		// }
 		log.Print("[INFO] Using DynamoDBPersister")
 	}
 

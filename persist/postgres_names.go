@@ -20,7 +20,7 @@ func (p PostgresPersister) SelectNameVariants(ctx context.Context, nameType mode
 		return nil, model.NewError(model.ErrOther, fmt.Sprintf("Unknown name type %d", nameType))
 	}
 
-	err := p.db.QueryRowContext(ctx, "SELECT name, variants, insert_time, last_update_time FROM "+table+" WHERE name=$1", name).Scan(
+	err := p.db.QueryRowContext(ctx, "SELECT name, variants, insert_time, last_update_time FROM "+table+" WHERE name = $1", name).Scan(
 		&nameVariants.Name,
 		&nameVariants.Variants,
 		&nameVariants.InsertTime,
