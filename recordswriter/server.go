@@ -39,6 +39,12 @@ const (
 
 const numWorkers = 40
 
+type workerResult struct {
+	data     map[string]string
+	recordID uint32
+	errs     error
+}
+
 func processMessage(ctx context.Context, ap *api.API, rawMsg []byte) error {
 	var msg model.RecordsWriterMsg
 	err := json.Unmarshal(rawMsg, &msg)
@@ -116,9 +122,9 @@ func processMessage(ctx context.Context, ap *api.API, rawMsg []byte) error {
 
 	// set up workers
 	in := make(chan map[string]string)
-	out := make(chan error)
+	out := make(chan workerResult)
 	for i := 0; i < numWorkers; i++ {
-		go func(in chan map[string]string, out chan error) {
+		go func(in chan map[string]string, out chan workerResult) {
 			for data := range in {
 				for key := range data {
 					if dateFields[key] {
@@ -141,7 +147,7 @@ func processMessage(ctx context.Context, ap *api.API, rawMsg []byte) error {
 				}
 
 				log.Printf("[DEBUG] Processing data: %#v", data)
-				_, errs := ap.AddRecord(ctx, model.RecordIn{
+				record, errs := ap.AddRecord(ctx, model.RecordIn{
 					RecordBody: model.RecordBody{
 						Data: data,
 					},
@@ -155,7 +161,7 @@ func processMessage(ctx context.Context, ap *api.API, rawMsg []byte) error {
 					}
 					time.Sleep(wait)
 					log.Printf("[DEBUG] Error %#v, retry #%d %#v", errs, i+1, data)
-					_, errs = ap.AddRecord(ctx, model.RecordIn{
+					record, errs = ap.AddRecord(ctx, model.RecordIn{
 						RecordBody: model.RecordBody{
 							Data: data,
 						},
@@ -165,7 +171,11 @@ func processMessage(ctx context.Context, ap *api.API, rawMsg []byte) error {
 						log.Printf("[DEBUG] Retry #%d failed: %#v", i+1, errs)
 					}
 				}
-				out <- errs
+				out <- workerResult{
+					data:     data,
+					recordID: record.ID,
+					errs:     errs,
+				}
 			}
 		}(in, out)
 	}
@@ -178,15 +188,39 @@ func processMessage(ctx context.Context, ap *api.API, rawMsg []byte) error {
 		close(in)
 	}(in, datas)
 
-	// wait for workers to complete
+	// wait for workers to complete and gather household information (if any)
+	households := map[string][]uint32{}
 	errs = nil
 	for i := 0; i < len(datas); i++ {
-		if e := <-out; e != nil {
-			log.Printf("[ERROR] AddRecord received error: %#v", e)
-			errs = e
+		result := <-out
+		if result.errs != nil {
+			log.Printf("[ERROR] AddRecord received error: %#v", result.errs)
+			errs = result.errs
+			continue
+		}
+		if collection.HouseholdNumberHeader != "" {
+			householdID := result.data[collection.HouseholdNumberHeader]
+			if householdID != "" {
+				households[householdID] = append(households[householdID], result.recordID)
+			}
 		}
 	}
 	close(out)
+
+	// create households
+	if collection.HouseholdNumberHeader != "" {
+		for householdID, recordIDs := range households {
+			if _, e := ap.AddRecordHousehold(ctx, model.RecordHouseholdIn{
+				Post:      post.ID,
+				Household: householdID,
+				Records:   recordIDs,
+			}); e != nil {
+				log.Printf("[ERROR] AddRecordHousehold received error: %#v", e)
+				errs = e
+				break
+			}
+		}
+	}
 
 	// TODO we need a better way to notify the user of errors; this doesn't tell the user that anything went wrong
 	if errs != nil {

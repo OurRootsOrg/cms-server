@@ -49,7 +49,9 @@ func TestRecordsWriter(t *testing.T) {
 	defer bucket.Close()
 
 	// write an object
-	content := `[{"given":"fred","surname":"flintstone","birthdate":"19 Mar 1900","birthplace":"Autaugaville, AL"},{"given":"wilma","surname":"Slaghoople","birthdate":"Abt 1900","birthplace":"AL"}]`
+	content := `[{"household":"H1","given":"fred","surname":"flintstone","birthdate":"19 Mar 1900","birthplace":"Autaugaville, AL"},
+				 {"household":"H1","given":"wilma","surname":"slaghoople","birthdate":"Abt 1900","birthplace":"AL"},
+				 {"household":"H2","given":"barney","surname":"rubble"}]`
 	recordsKey := "/2020-05-30/2020-05-30T00:00:00.000000000Z"
 	w, err := bucket.NewWriter(ctx, recordsKey, nil)
 	assert.NoError(t, err)
@@ -92,7 +94,7 @@ func TestRecordsWriter(t *testing.T) {
 	// read records for post
 	records, errors := testAPI.GetRecordsForPost(ctx, testPost.ID)
 	assert.Nil(t, errors)
-	assert.Equal(t, 2, len(records.Records), "Expected two records, got %#v", records)
+	assert.Equal(t, 3, len(records.Records), "Expected three records, got %#v", records)
 
 	// check standardization results
 	fredIx := -1
@@ -111,6 +113,23 @@ func TestRecordsWriter(t *testing.T) {
 	assert.Equal(t, "19000000,18990101-19011231", records.Records[wilmaIx].Data["birthdate_std"])
 	assert.Equal(t, "Autaugaville, Autauga, Alabama, United States", records.Records[fredIx].Data["birthplace_std"])
 	assert.Equal(t, "Alabama, United States", records.Records[wilmaIx].Data["birthplace_std"])
+
+	// read households for post
+	recordHouseholds, errors := testAPI.GetRecordHouseholdsForPost(ctx, testPost.ID)
+	assert.Nil(t, errors)
+	assert.Equal(t, 2, len(recordHouseholds), "Expected two households, got %#v", recordHouseholds)
+	flintstoneIx := -1
+	rubbleIx := -1
+	for ix, recordHousehold := range recordHouseholds {
+		if recordHousehold.Household == "H1" {
+			flintstoneIx = ix
+		}
+		if recordHousehold.Household == "H2" {
+			rubbleIx = ix
+		}
+	}
+	assert.Equal(t, 2, len(recordHouseholds[flintstoneIx].Records))
+	assert.Equal(t, 1, len(recordHouseholds[rubbleIx].Records))
 
 	// delete post
 	errors = testAPI.DeletePost(ctx, testPost.ID)
@@ -159,6 +178,7 @@ func createTestCollection(t *testing.T, p model.CollectionPersister, categoryID 
 			IxField: "birthPlace",
 		},
 	}
+	in.HouseholdNumberHeader = "household"
 	created, e := p.InsertCollection(context.TODO(), in)
 	assert.Nil(t, e)
 	return created
