@@ -251,7 +251,7 @@ export default {
     isUnpublishable() {
       return this.post.id && this.post.recordsStatus === "Published";
     },
-    ...mapState(["collections", "posts", "records", "settings"])
+    ...mapState(["collections", "posts", "records", "settings", "user"])
   },
   validations: {
     post: {
@@ -390,8 +390,8 @@ export default {
       this.$v.$touch();
       if (!this.$v.$invalid) {
         const importer = new FlatfileImporter(config.license, this.getFlatFileOptions(this.collections.collection));
-        // TODO set to real user
-        importer.setCustomer({ userId: 1, email: "dallan@gmail.com" });
+        console.log("setCustomer", this.user.user.id.toString(), this.user.user.email);
+        importer.setCustomer({ userId: this.user.user.id.toString(), email: this.user.user.email });
         importer
           .requestDataFromUser()
           .then(results => {
