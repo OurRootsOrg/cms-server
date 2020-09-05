@@ -76,9 +76,8 @@ func (app App) GetPost(w http.ResponseWriter, req *http.Request) {
 // @id getPostImage
 // @Param id path integer true "Post ID"
 // @Param imageFile path string true "Image file path"
-// @param noredirect query bool false "return the url as json {url: <url>} if true (optional)"
-// @param height query int false "height of image thumbnail (optional)"
-// @param width query int false "width of image thumbnail (optional)"
+// @param noredirect query bool false "return the url as json {url, height, width} if true"
+// @param thumbnail query bool false "return thumbnail"
 // @success 307 {header} string
 // @failure 404 {object} api.Error "Not found"
 // @failure 500 {object} api.Error "Server error"
@@ -96,15 +95,8 @@ func (app App) GetPostImage(w http.ResponseWriter, req *http.Request) {
 		ErrorResponse(w, http.StatusNotFound, "Not Found")
 	}
 	noredirect, _ := strconv.ParseBool(req.URL.Query().Get("noredirect"))
-	height, err := strconv.Atoi(req.URL.Query().Get("height"))
-	if err != nil {
-		height = 0
-	}
-	width, err := strconv.Atoi(req.URL.Query().Get("width"))
-	if err != nil {
-		width = 0
-	}
-	imageMetadata, errors := app.api.GetPostImage(req.Context(), postID, filePath, expireSeconds, height, width)
+	thumbnail, _ := strconv.ParseBool(req.URL.Query().Get("thumbnail"))
+	imageMetadata, errors := app.api.GetPostImage(req.Context(), postID, filePath, thumbnail, expireSeconds)
 	if errors != nil {
 		ErrorsResponse(w, errors)
 		return

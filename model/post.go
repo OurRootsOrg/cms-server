@@ -31,10 +31,31 @@ const (
 )
 
 // Publisher actions
+type PublisherAction string
+
 const (
-	PublisherActionIndex   = "index"
-	PublisherActionUnindex = "unindex"
+	PublisherActionIndex   PublisherAction = "index"
+	PublisherActionUnindex                 = "unindex"
 )
+
+// ImageWriter actions
+type ImagesWriterAction string
+
+const (
+	ImagesWriterActionUnzip             ImagesWriterAction = "unzip"
+	ImagesWriterActionGenerateThumbnail                    = "thumb"
+)
+
+const ImageDimensionsSuffix = "__dimensions.json"
+const ImageThumbnailSuffix = "__thumbnail.jpg"
+const ImageThumbnailQuality = 75
+const ImageThumbnailWidth = 160
+const ImageThumbnailHeight = 0
+
+type ImageDimensions struct {
+	Height int `json:"height"`
+	Width  int `json:"width"`
+}
 
 // UserAcceptedPostRecordsStatus returns true if its argument is a valid records status
 func UserAcceptedPostRecordsStatus(status string) bool {
@@ -58,8 +79,10 @@ func UserAcceptedPostImagesStatus(status string) bool {
 
 // ImagesWriterMsg represents a message to initiate processing of an image upload
 type ImagesWriterMsg struct {
-	PostID  uint32   `json:"postId"`
-	NewZips []string `json:"newZips"`
+	PostID    uint32             `json:"postId"`
+	Action    ImagesWriterAction `json:"action"`
+	ImagePath string             `json:"imagePath"`
+	NewZips   []string           `json:"newZips"`
 }
 
 // RecordsWriterMsg represents a message to initiate processing of an uploaded recods CSV
@@ -69,8 +92,8 @@ type RecordsWriterMsg struct {
 
 // PublisherMsg represents a message to initiate pulishing of a post
 type PublisherMsg struct {
-	Action string `json:"action"`
-	PostID uint32 `json:"postId"`
+	Action PublisherAction `json:"action"`
+	PostID uint32          `json:"postId"`
 }
 
 // StringSet represents a set of unique strings
