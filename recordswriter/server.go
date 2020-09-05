@@ -11,6 +11,7 @@ import (
 	"net/url"
 	"os"
 	"reflect"
+	"sort"
 	"strings"
 	"time"
 
@@ -39,10 +40,21 @@ const (
 
 const numWorkers = 40
 
-type workerResult struct {
+type workerIn struct {
+	data map[string]string
+	ix   int
+}
+
+type workerOut struct {
 	data     map[string]string
+	ix       int
 	recordID uint32
 	errs     error
+}
+
+type recordIndex struct {
+	recordID uint32
+	ix       int
 }
 
 func processMessage(ctx context.Context, ap *api.API, rawMsg []byte) error {
@@ -121,35 +133,35 @@ func processMessage(ctx context.Context, ap *api.API, rawMsg []byte) error {
 	log.Printf("[DEBUG] datas: %#v", datas)
 
 	// set up workers
-	in := make(chan map[string]string)
-	out := make(chan workerResult)
+	in := make(chan workerIn)
+	out := make(chan workerOut)
 	for i := 0; i < numWorkers; i++ {
-		go func(in chan map[string]string, out chan workerResult) {
-			for data := range in {
-				for key := range data {
+		go func(in chan workerIn, out chan workerOut) {
+			for msg := range in {
+				for key := range msg.data {
 					if dateFields[key] {
 						var std string
-						if d := stddate.Standardize(data[key]); d != nil {
+						if d := stddate.Standardize(msg.data[key]); d != nil {
 							std = d.Encode()
 						}
-						data[key+stddate.StdSuffix] = std
+						msg.data[key+stddate.StdSuffix] = std
 					}
 					if placeFields[key] {
 						var std string
-						place, err := ap.StandardizePlace(ctx, data[key], collection.Location)
+						place, err := ap.StandardizePlace(ctx, msg.data[key], collection.Location)
 						if err != nil {
-							log.Printf("[ERROR] Standardize place %s %v\n", data[key], err)
+							log.Printf("[ERROR] Standardize place %s %v\n", msg.data[key], err)
 						} else if place != nil {
 							std = place.FullName
 						}
-						data[key+stdplace.StdSuffix] = std
+						msg.data[key+stdplace.StdSuffix] = std
 					}
 				}
 
-				log.Printf("[DEBUG] Processing data: %#v", data)
+				log.Printf("[DEBUG] Processing data: %#v", msg.data)
 				record, errs := ap.AddRecord(ctx, model.RecordIn{
 					RecordBody: model.RecordBody{
-						Data: data,
+						Data: msg.data,
 					},
 					Post: post.ID,
 				})
@@ -160,10 +172,10 @@ func processMessage(ctx context.Context, ap *api.API, rawMsg []byte) error {
 						break
 					}
 					time.Sleep(wait)
-					log.Printf("[DEBUG] Error %#v, retry #%d %#v", errs, i+1, data)
+					log.Printf("[DEBUG] Error %#v, retry #%d %#v", errs, i+1, msg.data)
 					record, errs = ap.AddRecord(ctx, model.RecordIn{
 						RecordBody: model.RecordBody{
-							Data: data,
+							Data: msg.data,
 						},
 						Post: post.ID,
 					})
@@ -171,9 +183,10 @@ func processMessage(ctx context.Context, ap *api.API, rawMsg []byte) error {
 						log.Printf("[DEBUG] Retry #%d failed: %#v", i+1, errs)
 					}
 				}
-				out <- workerResult{
-					data:     data,
+				out <- workerOut{
+					data:     msg.data,
 					recordID: record.ID,
+					ix:       msg.ix,
 					errs:     errs,
 				}
 			}
@@ -181,15 +194,15 @@ func processMessage(ctx context.Context, ap *api.API, rawMsg []byte) error {
 	}
 
 	// send datas to workers
-	go func(in chan map[string]string, datas []map[string]string) {
-		for _, data := range datas {
-			in <- data
+	go func(in chan workerIn, datas []map[string]string) {
+		for ix, data := range datas {
+			in <- workerIn{data: data, ix: ix}
 		}
 		close(in)
 	}(in, datas)
 
 	// wait for workers to complete and gather household information (if any)
-	households := map[string][]uint32{}
+	households := map[string][]recordIndex{}
 	errs = nil
 	for i := 0; i < len(datas); i++ {
 		result := <-out
@@ -201,7 +214,7 @@ func processMessage(ctx context.Context, ap *api.API, rawMsg []byte) error {
 		if collection.HouseholdNumberHeader != "" {
 			householdID := result.data[collection.HouseholdNumberHeader]
 			if householdID != "" {
-				households[householdID] = append(households[householdID], result.recordID)
+				households[householdID] = append(households[householdID], recordIndex{recordID: result.recordID, ix: result.ix})
 			}
 		}
 	}
@@ -209,7 +222,15 @@ func processMessage(ctx context.Context, ap *api.API, rawMsg []byte) error {
 
 	// create households
 	if collection.HouseholdNumberHeader != "" {
-		for householdID, recordIDs := range households {
+		for householdID, recordIndexes := range households {
+			// sort recordIDs by index
+			sort.Slice(recordIndexes, func(i, j int) bool {
+				return recordIndexes[i].ix < recordIndexes[j].ix
+			})
+			var recordIDs []uint32
+			for _, recordIndex := range recordIndexes {
+				recordIDs = append(recordIDs, recordIndex.recordID)
+			}
 			if _, e := ap.AddRecordHousehold(ctx, model.RecordHouseholdIn{
 				Post:      post.ID,
 				Household: householdID,

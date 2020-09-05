@@ -40,21 +40,40 @@
           >
             <v-img :contain="true" :src="thumbURL" :max-width="thumbWidth"></v-img>
           </router-link>
+          <router-link
+            :to="{
+              name: 'image',
+              params: { pid: search.searchResult.post, path: search.searchResult.imagePath }
+            }"
+          >
+            Larger image
+          </router-link>
         </div>
-        <router-link
-          :to="{
-            name: 'image',
-            params: { pid: search.searchResult.post, path: search.searchResult.imagePath }
-          }"
-        >
-          Larger image
-        </router-link>
       </v-col>
     </v-row>
     <v-row v-if="search.searchResult.citation">
       <v-col>
         <h4>Citation</h4>
         <div>{{ search.searchResult.citation }}</div>
+      </v-col>
+    </v-row>
+    <v-row v-if="search.searchResult.household && search.searchResult.household.length > 0">
+      <v-col>
+        <h3>Household</h3>
+        <table>
+          <thead>
+            <td v-for="(header, ix) in householdHeaders" :key="ix">
+              {{ header }}
+            </td>
+          </thead>
+          <tbody>
+            <tr v-for="(record, i) in search.searchResult.household" :key="i">
+              <td v-for="(header, j) in householdHeaders" :key="j">
+                {{ getRecordValue(record, header) }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </v-col>
     </v-row>
   </div>
@@ -77,23 +96,41 @@ export default {
       });
   },
   created() {
+    console.log("searchResult", this.search.searchResult);
+    // get image path
     if (this.search.searchResult.imagePath) {
       Server.postsGetImage(this.search.searchResult.post, this.search.searchResult.imagePath, 0, this.thumbWidth).then(
         result => {
-          console.log("searchResult", this.search.searchResult);
           this.thumbURL = result.data.url;
-          console.log("thumbURL", this.thumbURL);
         }
       );
     }
+    // get household headers
+    if (this.search.searchResult.household && this.search.searchResult.household.length > 0) {
+      for (let record of this.search.searchResult.household) {
+        for (let lv of record) {
+          if (!this.householdHeaders.includes(lv.label)) {
+            this.householdHeaders.push(lv.label);
+          }
+        }
+      }
+    }
+    console.log("householdHeaders", this.householdHeaders);
   },
   data() {
     return {
       thumbWidth: 160,
-      thumbURL: ""
+      thumbURL: "",
+      householdHeaders: []
     };
   },
-  computed: mapState(["search"])
+  computed: mapState(["search"]),
+  methods: {
+    getRecordValue(record, header) {
+      let lv = record.find(lv => lv.label === header);
+      return lv ? lv.value : "";
+    }
+  }
 };
 </script>
 

@@ -177,26 +177,38 @@ func createTestCollection(t *testing.T, p model.CollectionPersister, categoryID 
 	in.Location = "Iowa, United States"
 	in.Fields = []model.CollectionField{
 		{
-			Header: "given",
+			Header: "Given",
 		},
 		{
-			Header: "surname",
+			Header: "Surname",
+		},
+		{
+			Header: "HouseholdNumber",
+		},
+		{
+			Header: "RelToHead",
+		},
+		{
+			Header: "Gender",
 		},
 	}
 	in.Mappings = []model.CollectionMapping{
 		{
-			Header:  "given",
+			Header:  "Given",
 			DbField: "Given",
 			IxRole:  "principal",
 			IxField: "given",
 		},
 		{
-			Header:  "surname",
+			Header:  "Surname",
 			DbField: "Surname",
 			IxRole:  "principal",
 			IxField: "surname",
 		},
 	}
+	in.HouseholdNumberHeader = "HouseholdNumber"
+	in.HouseholdRelationshipHeader = "RelToHead"
+	in.GenderHeader = "Gender"
 	created, e := p.InsertCollection(context.TODO(), in)
 	assert.NoError(t, e)
 	return created

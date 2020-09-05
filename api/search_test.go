@@ -77,6 +77,8 @@ func doSearchTests(t *testing.T,
 	defer deleteTestPost(t, postP, testPost)
 	records := createTestRecords(t, recordP, testPost.ID)
 	defer deleteTestRecords(t, recordP, records)
+	createTestHousehold(t, recordP, testPost.ID, records)
+	defer deleteTestHousehold(t, recordP, testPost.ID)
 
 	// index post
 	err = testApi.IndexPost(ctx, testPost)
@@ -93,17 +95,22 @@ func doSearchTests(t *testing.T,
 	hit, errs := testApi.SearchByID(ctx, searchID)
 	assert.Nil(t, errs, "Error searching by id")
 	assert.Equal(t, searchID, hit.ID)
-	assert.Equal(t, "principal", hit.Person.Role)
+	assert.Equal(t, model.PrincipalRole, hit.Person.Role)
 	assert.Equal(t, "Fred Flintstone", hit.Person.Name)
 	assert.Equal(t, testCollection.ID, hit.CollectionID)
 	assert.Equal(t, testCollection.Name, hit.CollectionName)
 	assert.Equal(t, 2, len(hit.Record))
 	assert.Equal(t, "Given", hit.Record[0].Label)
 	assert.Equal(t, "Fred", hit.Record[0].Value)
+	assert.Equal(t, 3, len(hit.Household))
+	assert.Equal(t, "Given", hit.Household[0][0].Label)
+	assert.Equal(t, "Fred", hit.Household[0][0].Value)
+	assert.Equal(t, "Wilma", hit.Household[1][0].Value)
+	assert.Equal(t, "Pebbles", hit.Household[2][0].Value)
 
 	// search
 	res, errs := testApi.Search(ctx, &api.SearchRequest{Given: "Fred", CollectionPlace1: "United States", CollectionPlace2Facet: true})
-	assert.Nil(t, errs, "Error searching by id")
+	assert.Nil(t, errs, "Error searching")
 	assert.GreaterOrEqual(t, res.Total, 1)
 	assert.GreaterOrEqual(t, len(res.Hits), 1)
 	assert.Equal(t, "Fred Flintstone", res.Hits[0].Person.Name)
@@ -114,16 +121,61 @@ func doSearchTests(t *testing.T,
 	assert.Equal(t, 1, len(res.Facets["collectionPlace2"].Buckets))
 	assert.Equal(t, "Iowa", res.Facets["collectionPlace2"].Buckets[0].Label)
 	assert.Equal(t, 1, res.Facets["collectionPlace2"].Buckets[0].Count)
+
+	// search with relative
+	res, errs = testApi.Search(ctx, &api.SearchRequest{
+		Given:                "Wilma",
+		GivenFuzziness:       api.FuzzyNameExact,
+		SpouseGiven:          "Fred",
+		SpouseGivenFuzziness: api.FuzzyNameExact,
+	})
+	assert.Nil(t, errs, "Error searching")
+	assert.GreaterOrEqual(t, len(res.Hits), 1)
+	assert.Equal(t, "Wilma Flintstone", res.Hits[0].Person.Name)
+
+	res, errs = testApi.Search(ctx, &api.SearchRequest{
+		Given:                "Pebbles",
+		GivenFuzziness:       api.FuzzyNameExact,
+		FatherGiven:          "Fred",
+		FatherGivenFuzziness: api.FuzzyNameExact,
+		MotherGiven:          "Wilma",
+		MotherGivenFuzziness: api.FuzzyNameExact,
+	})
+	assert.Nil(t, errs, "Error searching")
+	assert.GreaterOrEqual(t, len(res.Hits), 1)
+	assert.Equal(t, "Pebbles Flintstone", res.Hits[0].Person.Name)
+
+	res, errs = testApi.Search(ctx, &api.SearchRequest{
+		Given:                "Pebbles",
+		GivenFuzziness:       api.FuzzyNameExact,
+		FatherGiven:          "Imposter",
+		FatherGivenFuzziness: api.FuzzyNameExact,
+	})
+	assert.Nil(t, errs, "Error searching")
+	assert.Equal(t, len(res.Hits), 0)
 }
 
 var recordData = []map[string]string{
 	{
-		"given":   "Fred",
-		"surname": "Flintstone",
+		"Given":           "Fred",
+		"Surname":         "Flintstone",
+		"HouseholdNumber": "H1",
+		"RelToHead":       "HEAD",
+		"Gender":          "Male",
 	},
 	{
-		"given":   "Wilma",
-		"surname": "Slaghoople",
+		"Given":           "Wilma",
+		"Surname":         "Flintstone",
+		"HouseholdNumber": "H1",
+		"RelToHead":       "Wife",
+		"Gender":          "Female",
+	},
+	{
+		"Given":           "Pebbles",
+		"Surname":         "Flintstone",
+		"HouseholdNumber": "H1",
+		"RelToHead":       "Child",
+		"Gender":          "Female",
 	},
 }
 
@@ -143,4 +195,23 @@ func deleteTestRecords(t *testing.T, p model.RecordPersister, records []model.Re
 		e := p.DeleteRecord(context.TODO(), record.ID)
 		assert.Nil(t, e)
 	}
+}
+
+func createTestHousehold(t *testing.T, p model.RecordPersister, postID uint32, records []model.Record) {
+	var recordIDs []uint32
+	for _, record := range records {
+		recordIDs = append(recordIDs, record.ID)
+	}
+	inHousehold := model.RecordHouseholdIn{
+		Post:      postID,
+		Household: "H1",
+		Records:   recordIDs,
+	}
+	_, e := p.InsertRecordHousehold(context.TODO(), inHousehold)
+	assert.Nil(t, e)
+}
+
+func deleteTestHousehold(t *testing.T, p model.RecordPersister, postID uint32) {
+	e := p.DeleteRecordHouseholdsForPost(context.TODO(), postID)
+	assert.Nil(t, e)
 }

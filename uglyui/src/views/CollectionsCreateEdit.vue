@@ -360,8 +360,8 @@
           <div>
             <strong>Relationship to head:</strong> Column containing the record's relationship to the "head" of the
             household. Leave this blank if the records in the household are not in the same family. If the values in
-            this column are "head", "father", "mother", "spouse", "son", "daughter", "child", then the corresponding
-            relationships will be created when indexing the records.
+            this column are "head", "father", "mother", "spouse", "husband", "wife", "child", "son", "daughter", then
+            the corresponding relationships will be created when indexing the records.
           </div>
           <div>
             <strong>Gender:</strong> Column containing the gender. This is used to determine whether a father or mother

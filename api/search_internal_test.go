@@ -100,6 +100,139 @@ func TestGetPlaceFacets(t *testing.T) {
 	}
 }
 
+func TestGetHouseholdNames(t *testing.T) {
+	relToHeadHeader := "Relationship"
+	genderHeader := "Sex"
+	mappings := []model.CollectionMapping{
+		{
+			Header:  "Given name",
+			IxRole:  "principal",
+			IxField: "given",
+		},
+		{
+			Header:  "Surname",
+			IxRole:  "principal",
+			IxField: "surname",
+		},
+	}
+	records := []*model.Record{
+		{
+			ID: 1,
+			RecordIn: model.RecordIn{
+				RecordBody: model.RecordBody{
+					Data: map[string]string{
+						"Given name":   "Fred",
+						"Surname":      "Flintstone",
+						"Relationship": "head",
+						"Sex":          "M",
+					},
+				},
+			},
+		},
+		{
+			ID: 2,
+			RecordIn: model.RecordIn{
+				RecordBody: model.RecordBody{
+					Data: map[string]string{
+						"Given name":   "Wilma",
+						"Surname":      "Flintstone",
+						"Relationship": "spouse",
+						"Sex":          "F",
+					},
+				},
+			},
+		},
+		{
+			ID: 3,
+			RecordIn: model.RecordIn{
+				RecordBody: model.RecordBody{
+					Data: map[string]string{
+						"Given name":   "Pebbles",
+						"Surname":      "Flintstone",
+						"Relationship": "daughter",
+						"Sex":          "F",
+					},
+				},
+			},
+		},
+		{
+			ID: 4,
+			RecordIn: model.RecordIn{
+				RecordBody: model.RecordBody{
+					Data: map[string]string{
+						"Given name":   "Pearl",
+						"Surname":      "Slaghoople",
+						"Relationship": "mother-in-law",
+						"Sex":          "F",
+					},
+				},
+			},
+		},
+	}
+
+	tests := []struct {
+		relToHead model.HouseholdRelToHead
+		relative  model.Relative
+		recordID  uint32
+		names     []GivenSurname
+	}{
+		{
+			relToHead: model.HeadRelToHead,
+			relative:  model.SpouseRelative,
+			recordID:  1,
+			names:     []GivenSurname{{given: "Wilma", surname: "Flintstone"}},
+		},
+		{
+			relToHead: model.HeadRelToHead,
+			relative:  model.OtherRelative,
+			recordID:  1,
+			names:     []GivenSurname{{given: "Pebbles", surname: "Flintstone"}, {given: "Pearl", surname: "Slaghoople"}},
+		},
+		{
+			relToHead: model.HeadRelToHead,
+			relative:  model.FatherRelative,
+			recordID:  1,
+			names:     []GivenSurname{},
+		},
+		{
+			relToHead: model.WifeRelToHead,
+			relative:  model.SpouseRelative,
+			recordID:  2,
+			names:     []GivenSurname{{given: "Fred", surname: "Flintstone"}},
+		},
+		{
+			relToHead: model.WifeRelToHead,
+			relative:  model.OtherRelative,
+			recordID:  2,
+			names:     []GivenSurname{{given: "Pebbles", surname: "Flintstone"}, {given: "Pearl", surname: "Slaghoople"}},
+		},
+		{
+			relToHead: model.DaughterRelToHead,
+			relative:  model.FatherRelative,
+			recordID:  3,
+			names:     []GivenSurname{{given: "Fred", surname: "Flintstone"}},
+		},
+		{
+			relToHead: model.DaughterRelToHead,
+			relative:  model.MotherRelative,
+			recordID:  3,
+			names:     []GivenSurname{{given: "Wilma", surname: "Flintstone"}},
+		},
+		{
+			relToHead: model.DaughterRelToHead,
+			relative:  model.OtherRelative,
+			recordID:  3,
+			names:     []GivenSurname{{given: "Pearl", surname: "Slaghoople"}},
+		},
+	}
+
+	for _, test := range tests {
+		names := getHouseholdNames(relToHeadHeader, genderHeader, mappings, test.relative,
+			RelativeRelationshipsToHead[test.relToHead][test.relative], test.recordID, records)
+		assert.Equal(t, test.names, names)
+	}
+}
+
 func TestSearchQuery(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping tests in short mode")
