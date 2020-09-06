@@ -309,7 +309,7 @@ func (api API) UpdatePost(ctx context.Context, id uint32, in model.Post) (*model
 			}
 			defer publisherTopic.Shutdown(ctx)
 
-			var action string
+			var action model.PublisherAction
 			if in.RecordsStatus == model.PostPublished {
 				in.RecordsStatus = model.PostPublishing
 				action = model.PublisherActionIndex

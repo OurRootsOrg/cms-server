@@ -19,26 +19,76 @@ type PostPersister interface {
 }
 
 // Post statuses
+// Draft (initial state) -> ToPublish
+//   user can update Draft to ToPublish if RecordsStatus and ImagesStatus are both Default
+//   this causes server to send an Index message to Publisher
+// ToPublish -> Publishing
+//   Publisher updates status to Publishing when starting to index
+// Publishing -> Published or Error
+//   Publisher updates status to Published if successful, or Error otherwise and sets PostError to the error message
+// Published -> ToUnpublish
+//   user can update Published to ToUnpublish
+//   this causes server to send an Unindex message to Publisher
+// ToUnpublish -> Unpublishing
+//   Publisher updates status to Unpublishing when starting to unindex
+// Unpublishing -> Draft or Error
+//   Publisher updates status to to Draft if successful, or Error otherwise and sets PostError to the error message
+// Error -> ToPublish
+//   user can update Error to ToPublish if RecordsStatus and ImagesStatus are both Default
+// Post can be deleted only in Draft or Error states and only when Records/Images statuses are in Default or Error states
+
+type PostStatus string
+
 const (
-	PostLoading           = "Loading"
-	PostLoadComplete      = "LoadComplete"
-	PostDraft             = "Draft"
-	PostPublishing        = "Publishing"
-	PostPublished         = "Published"
-	PostPublishComplete   = "PublishComplete" // set only by publisher
-	PostUnpublishing      = "Unpublishing"
-	PostUnpublishComplete = "UnpublishComplete" // set only by publisher
+	PostStatusDraft        PostStatus = "Draft"
+	PostStatusToPublish               = "Publication Requested"
+	PostStatusPublishing              = "Publishing"
+	PostStatusPublished               = "Published"
+	PostStatusToUnpublish             = "Unpublication Requested"
+	PostStatusUnpublishing            = "Unpublishing"
+	PostStatusError                   = "Error"
+)
+
+// Records and Images statuses
+// Default (initial state) -> ToLoad
+//   when user adds a file to load, server sets status to ToLoad and sends a message to Images/Records Writer
+// ToLoad -> Loading
+//   Images/Records Writer updates status to Loading when starting to load
+// Loading -> Default or Error
+//   Images/Records Writer updates status to Default if successful or Error otherwise and sets Images/Records Error to the error message
+// Error -> ToLoad
+//   when user updates the file to load, server sets status to ToLoad and sends a message to Images/Records Writer
+// Post can be deleted only when Images/Records status is Default or Error
+
+type RecordsStatus string
+
+const (
+	RecordsStatusDefault RecordsStatus = ""
+	RecordsStatusToLoad                = "Load Requested"
+	RecordsStatusLoading               = "Loading"
+	RecordsStatusError                 = "Error"
+)
+
+type ImagesStatus string
+
+const (
+	ImagesStatusDefault ImagesStatus = ""
+	ImagesStatusToLoad               = "Load Requested"
+	ImagesStatusLoading              = "Loading"
+	ImagesStatusError                = "Error"
 )
 
 // Publisher actions
+type PublisherAction string
+
 const (
-	PublisherActionIndex   = "index"
-	PublisherActionUnindex = "unindex"
+	PublisherActionIndex   PublisherAction = "index"
+	PublisherActionUnindex                 = "unindex"
 )
 
-// UserAcceptedPostRecordsStatus returns true if its argument is a valid records status
-func UserAcceptedPostRecordsStatus(status string) bool {
-	for _, s := range []string{PostLoading, PostDraft, PostPublishing, PostPublished, PostUnpublishing} {
+// UserAcceptedPostStatus returns true if status can be submitted by a user
+func UserAcceptedPostStatus(status PostStatus) bool {
+	for _, s := range []PostStatus{PostStatusDraft, PostStatusToPublish, PostStatusPublished, PostStatusToUnpublish, PostStatusError} {
 		if s == status {
 			return true
 		}
@@ -46,9 +96,19 @@ func UserAcceptedPostRecordsStatus(status string) bool {
 	return false
 }
 
-// UserAcceptedPostImagesStatus returns true if its argument is a valid images status
-func UserAcceptedPostImagesStatus(status string) bool {
-	for _, s := range []string{PostLoading, PostDraft} {
+// UserAcceptedPostRecordsStatus returns true if status can be submitted by a user
+func UserAcceptedPostRecordsStatus(status RecordsStatus) bool {
+	for _, s := range []RecordsStatus{RecordsStatusDefault, RecordsStatusError} {
+		if s == status {
+			return true
+		}
+	}
+	return false
+}
+
+// UserAcceptedPostImagesStatus returns true if status can be submitted by a user
+func UserAcceptedPostImagesStatus(status ImagesStatus) bool {
+	for _, s := range []ImagesStatus{ImagesStatusDefault, ImagesStatusError} {
 		if s == status {
 			return true
 		}
@@ -67,10 +127,10 @@ type RecordsWriterMsg struct {
 	PostID uint32 `json:"postId"`
 }
 
-// PublisherMsg represents a message to initiate pulishing of a post
+// PublisherMsg represents a message to initiate publishing of a post
 type PublisherMsg struct {
-	Action string `json:"action"`
-	PostID uint32 `json:"postId"`
+	Action PublisherAction `json:"action"`
+	PostID uint32          `json:"postId"`
 }
 
 // StringSet represents a set of unique strings
@@ -137,16 +197,17 @@ func (ss *StringSet) Equals(ss1 *StringSet) bool {
 }
 
 // PostBody is the JSON body of a Post
-// TODO Consider having a PostStatus which can be draft, publishing, published, or unpublishing
-// TODO and instead of RecordsStatus and ImagesStatus, have RecordsLoading (bool) and ImagesLoading (bool)
-// TODO Also consider having a RecordsLoadingError and ImagesLoadingError with the error result from the last load
 type PostBody struct {
 	Name          string                 `json:"name" validate:"required"`
 	Metadata      map[string]interface{} `json:"metadata"`
+	PostStatus    PostStatus             `json:"postStatus"`
+	PostError     string                 `json:"postError"`
 	RecordsKey    string                 `json:"recordsKey"`
-	RecordsStatus string                 `json:"recordsStatus"`
+	RecordsStatus RecordsStatus          `json:"recordsStatus"`
+	RecordsError  string                 `json:"recordsError"`
 	ImagesKeys    StringSet              `json:"imagesKeys"`
-	ImagesStatus  string                 `json:"imagesStatus"`
+	ImagesStatus  ImagesStatus           `json:"imagesStatus"`
+	ImagesError   string                 `json:"imagesError"`
 }
 
 // Value makes PostBody implement the driver.Valuer interface.

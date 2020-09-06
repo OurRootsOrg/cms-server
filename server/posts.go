@@ -201,6 +201,11 @@ func (app App) PutPost(w http.ResponseWriter, req *http.Request) {
 		ErrorResponse(w, http.StatusBadRequest, msg)
 		return
 	}
+	if !model.UserAcceptedPostStatus(in.PostStatus) {
+		msg := fmt.Sprintf("Invalid records status: %s", in.RecordsStatus)
+		ErrorResponse(w, http.StatusBadRequest, msg)
+		return
+	}
 	if !model.UserAcceptedPostRecordsStatus(in.RecordsStatus) {
 		msg := fmt.Sprintf("Invalid records status: %s", in.RecordsStatus)
 		ErrorResponse(w, http.StatusBadRequest, msg)

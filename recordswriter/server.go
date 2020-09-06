@@ -57,27 +57,7 @@ type recordIndex struct {
 	ix       int
 }
 
-func processMessage(ctx context.Context, ap *api.API, rawMsg []byte) error {
-	var msg model.RecordsWriterMsg
-	err := json.Unmarshal(rawMsg, &msg)
-	if err != nil {
-		log.Printf("[ERROR] Discarding unparsable message '%s': %v", string(rawMsg), err)
-		return nil // Don't return an error, because parsing will never succeed
-	}
-
-	log.Printf("[DEBUG] RecordsWriter Processing PostID: %d", msg.PostID)
-
-	// read post
-	post, errs := ap.GetPost(ctx, msg.PostID)
-	if errs != nil {
-		log.Printf("[ERROR] Error calling GetPost on %d: %v", msg.PostID, errs)
-		return errs
-	}
-	if post.RecordsStatus != model.PostLoading {
-		log.Printf("[ERROR] post %d not Loading, is %s\n", post.ID, post.RecordsStatus)
-		return nil
-	}
-
+func loadRecords(ctx context.Context, ap *api.API, post *model.Post) error {
 	// read collection for post
 	collection, errs := ap.GetCollection(ctx, post.Collection)
 	if errs != nil {
@@ -243,11 +223,45 @@ func processMessage(ctx context.Context, ap *api.API, rawMsg []byte) error {
 		}
 	}
 
-	// TODO we need a better way to notify the user of errors; this doesn't tell the user that anything went wrong
+	return errs
+}
+
+func processMessage(ctx context.Context, ap *api.API, rawMsg []byte) error {
+	var msg model.RecordsWriterMsg
+	err := json.Unmarshal(rawMsg, &msg)
+	if err != nil {
+		log.Printf("[ERROR] Discarding unparsable message '%s': %v", string(rawMsg), err)
+		return nil // Don't return an error, because parsing will never succeed
+	}
+
+	log.Printf("[DEBUG] RecordsWriter Processing PostID: %d", msg.PostID)
+
+	// read post
+	post, errs := ap.GetPost(ctx, msg.PostID)
 	if errs != nil {
-		post.RecordsStatus = model.PostDraft
+		log.Printf("[ERROR] Error calling GetPost on %d: %v", msg.PostID, errs)
+		return errs
+	}
+	if post.RecordsStatus != model.RecordsStatusToLoad && post.RecordsStatus != model.RecordsStatusError {
+		log.Printf("[ERROR] post %d not ToLoad, is %s\n", post.ID, post.RecordsStatus)
+		return nil
+	}
+
+	post.RecordsStatus = model.RecordsStatusLoading
+	post, errs = ap.UpdatePost(ctx, msg.PostID, *post)
+	if errs != nil {
+		log.Printf("[ERROR] Error calling UpdatePost on %d: %v", msg.PostID, errs)
+		return errs
+	}
+
+	// do the work
+	errs = loadRecords(ctx, ap, post)
+
+	if errs != nil {
+		post.RecordsStatus = model.RecordsStatusError
+		post.RecordsError = errs.Error()
 	} else {
-		post.RecordsStatus = model.PostLoadComplete
+		post.RecordsStatus = model.RecordsStatusDefault
 	}
 	_, err = ap.UpdatePost(ctx, post.ID, *post)
 	if err != nil {
