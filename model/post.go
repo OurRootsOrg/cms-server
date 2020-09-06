@@ -86,6 +86,25 @@ const (
 	PublisherActionUnindex                 = "unindex"
 )
 
+// ImageWriter actions
+type ImagesWriterAction string
+
+const (
+	ImagesWriterActionUnzip             ImagesWriterAction = "unzip"
+	ImagesWriterActionGenerateThumbnail                    = "thumb"
+)
+
+const ImageDimensionsSuffix = "__dimensions.json"
+const ImageThumbnailSuffix = "__thumbnail.jpg"
+const ImageThumbnailQuality = 75
+const ImageThumbnailWidth = 160
+const ImageThumbnailHeight = 0
+
+type ImageDimensions struct {
+	Height int `json:"height"`
+	Width  int `json:"width"`
+}
+
 // UserAcceptedPostStatus returns true if status can be submitted by a user
 func UserAcceptedPostStatus(status PostStatus) bool {
 	for _, s := range []PostStatus{PostStatusDraft, PostStatusToPublish, PostStatusPublished, PostStatusToUnpublish, PostStatusError} {
@@ -118,8 +137,10 @@ func UserAcceptedPostImagesStatus(status ImagesStatus) bool {
 
 // ImagesWriterMsg represents a message to initiate processing of an image upload
 type ImagesWriterMsg struct {
-	PostID  uint32   `json:"postId"`
-	NewZips []string `json:"newZips"`
+	PostID    uint32             `json:"postId"`
+	Action    ImagesWriterAction `json:"action"`
+	ImagePath string             `json:"imagePath"`
+	NewZips   []string           `json:"newZips"`
 }
 
 // RecordsWriterMsg represents a message to initiate processing of an uploaded recods CSV

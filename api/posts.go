@@ -9,7 +9,6 @@ import (
 	"log"
 	"time"
 
-	"github.com/disintegration/imaging"
 	"github.com/ourrootsorg/cms-server/model"
 	"gocloud.dev/blob"
 	"gocloud.dev/pubsub"
@@ -58,10 +57,9 @@ func (api API) GetPost(ctx context.Context, id uint32) (*model.Post, error) {
 	return post, nil
 }
 
-const thumbQuality = 75
-
 // GetPostImage returns a signed S3 URL to return an image file
-func (api *API) GetPostImage(ctx context.Context, id uint32, filePath string, expireSeconds, height, width int) (*ImageMetadata, error) {
+func (api *API) GetPostImage(ctx context.Context, id uint32, filePath string, thumbnail bool, expireSeconds int) (*ImageMetadata, error) {
+	// need an external bucket for signing so signed URLs can be used externally
 	signingBucket, err := api.OpenBucket(ctx, true)
 	if err != nil {
 		return nil, NewError(err)
@@ -75,104 +73,37 @@ func (api *API) GetPostImage(ctx context.Context, id uint32, filePath string, ex
 	defer bucket.Close()
 
 	key := fmt.Sprintf(ImagesPrefix, id) + filePath
-
-	// TODO the imaging.Decode operations in this function require *a lot* of memory - an extra 100Mb or so
-	// eventually, we could get around this by:
-	// 1. call image.DecodeConfig, but we'd also need to handle EXIF orientation as described in
-	//    https://github.com/disintegration/imaging/issues/30
-	//    or maybe ImagesWriter should store the dimensions somewhere?
-	// 2. send a message to the images writer queue to generate a thumbnail, return the signed URL, and tell the client to retry until the image appears
-	//    or maybe ImagesWriter should generate thumbnails
-	// the more I think about it, I think ImagesWriter needs to store the dimensions as a file and generate thumbnails
-
-	// return full image?
-	if height == 0 && width == 0 {
-		// kind of a shame to read and decode the entire image just to get the dimensions
-		// we read the image once and could store the dimensions in a separate _dimensions.json file for future use,
-		// but this seems like a case of pre-mature optimization
-		// openseadragon, used by the client, needs the image dimensions in order to function properly
-		reader, err := bucket.NewReader(ctx, key, nil)
-		if err != nil {
-			log.Printf("[ERROR] GetPostImage read image %#v\n", err)
-			return nil, NewError(fmt.Errorf("GetPostImage read image %v", err))
-		}
-		defer reader.Close()
-		img, err := imaging.Decode(reader, imaging.AutoOrientation(true))
-		if err != nil {
-			log.Printf("[ERROR] GetPostImage decode %#v\n", err)
-			return nil, NewError(fmt.Errorf("GetPostImage decode image %v", err))
-		}
-
-		signedURL, err := signingBucket.SignedURL(ctx, key, &blob.SignedURLOptions{
-			Expiry: time.Duration(expireSeconds) * time.Second,
-			Method: "GET",
-		})
-		if err != nil {
-			return nil, NewError(err)
-		}
-		log.Printf("SignedURL %s\n", signedURL)
-		return &ImageMetadata{
-			URL:    signedURL,
-			Height: img.Bounds().Dy(),
-			Width:  img.Bounds().Dx(),
-		}, nil
+	if thumbnail {
+		key += model.ImageThumbnailSuffix
 	}
+	dimensionsKey := key + model.ImageDimensionsSuffix
 
-	// generate and return a thumbnail
-	thumbKey := fmt.Sprintf("%s__thumb_%dx%d", key, height, width)
-
-	// does the thumbnail already exist?
-	exists, err := bucket.Exists(ctx, thumbKey)
+	// read image dimensions
+	reader, err := bucket.NewReader(ctx, dimensionsKey, nil)
 	if err != nil {
-		log.Printf("[ERROR] GetPostImage check thumb exists %#v\n", err)
-		return nil, NewError(fmt.Errorf("GetPostImage exists error %v", err))
+		log.Printf("[ERROR] GetPostImage read image %#v\n", err)
+		return nil, NewError(fmt.Errorf("GetPostImage read image %v", err))
+	}
+	defer reader.Close()
+	dec := json.NewDecoder(reader)
+	var dim model.ImageDimensions
+	if err := dec.Decode(&dim); err != nil {
+		log.Printf("[ERROR] GetPostImage read dimensions %#v\n", err)
+		return nil, NewError(fmt.Errorf("GetPostImage read dimensions %v", err))
 	}
 
-	// generate the thumbnail and save it
-	if !exists {
-		reader, err := bucket.NewReader(ctx, key, nil)
-		if err != nil {
-			log.Printf("[ERROR] GetPostImage read image %#v\n", err)
-			return nil, NewError(fmt.Errorf("GetPostImage read image %v", err))
-		}
-		defer reader.Close()
-		img, err := imaging.Decode(reader, imaging.AutoOrientation(true))
-		if err != nil {
-			log.Printf("[ERROR] GetPostImage decode %#v\n", err)
-			return nil, NewError(fmt.Errorf("GetPostImage decode image %v", err))
-		}
-		// scale image
-		thumb := imaging.Resize(img, width, height, imaging.Box)
-
-		// write image
-		writer, err := bucket.NewWriter(ctx, thumbKey, &blob.WriterOptions{
-			ContentType: "image/jpeg",
-		})
-		if err != nil {
-			log.Printf("[ERROR] GetPostImage start write image %#v\n", err)
-			return nil, NewError(fmt.Errorf("GetPostImage start write image %v", err))
-		}
-		err = imaging.Encode(writer, thumb, imaging.JPEG, imaging.JPEGQuality(thumbQuality))
-		closeErr := writer.Close()
-		if err != nil || closeErr != nil {
-			log.Printf("[ERROR] GetPostImage write image %#v close %#v\n", err, closeErr)
-			return nil, NewError(fmt.Errorf("GetPostImage write image %v close %v", err, closeErr))
-		}
-	}
-
-	// return the thumbnail
-	signedURL, err := signingBucket.SignedURL(ctx, thumbKey, &blob.SignedURLOptions{
+	// generate signed URL and return
+	signedURL, err := signingBucket.SignedURL(ctx, key, &blob.SignedURLOptions{
 		Expiry: time.Duration(expireSeconds) * time.Second,
 		Method: "GET",
 	})
 	if err != nil {
 		return nil, NewError(err)
 	}
-	log.Printf("SignedURL %s\n", signedURL)
 	return &ImageMetadata{
 		URL:    signedURL,
-		Height: height,
-		Width:  width,
+		Height: dim.Height,
+		Width:  dim.Width,
 	}, nil
 }
 
@@ -238,6 +169,7 @@ func (api API) AddPost(ctx context.Context, in model.PostIn) (*model.Post, error
 	if len(in.ImagesKeys) > 0 {
 		// send a message to write the images
 		msg := model.ImagesWriterMsg{
+			Action:  model.ImagesWriterActionUnzip,
 			PostID:  post.ID,
 			NewZips: in.ImagesKeys,
 		}
@@ -353,6 +285,7 @@ func (api API) UpdatePost(ctx context.Context, id uint32, in model.Post) (*model
 
 		in.ImagesStatus = model.PostLoading
 		iwm := model.ImagesWriterMsg{
+			Action: model.ImagesWriterActionUnzip,
 			PostID: id,
 		}
 		for _, ik := range in.ImagesKeys {

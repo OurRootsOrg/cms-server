@@ -57,7 +57,7 @@ func (a *ApiMock) GetPosts(ctx context.Context /* filter/search criteria */) (*P
 func (a *ApiMock) GetPost(ctx context.Context, id uint32) (*model.Post, error) {
 	return a.Result.(*model.Post), a.Errors
 }
-func (a *ApiMock) GetPostImage(ctx context.Context, id uint32, filePath string, expireSeconds, height, width int) (*ImageMetadata, error) {
+func (a *ApiMock) GetPostImage(ctx context.Context, id uint32, filePath string, thumbnail bool, expireSeconds int) (*ImageMetadata, error) {
 	return a.Result.(*ImageMetadata), a.Errors
 }
 func (a *ApiMock) AddPost(ctx context.Context, in model.PostIn) (*model.Post, error) {

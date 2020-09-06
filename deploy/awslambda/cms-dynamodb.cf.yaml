@@ -244,7 +244,7 @@ Resources:
       Handler: server/main.lambda
       CodeUri: main.lambda.zip
       Runtime: go1.x
-      MemorySize: 256
+      MemorySize: 128
       Policies:
         - AWSLambdaBasicExecutionRole
         # S3 CMSBlobStoreBucket
@@ -435,7 +435,7 @@ Resources:
       Handler: imageswriter/imageswriter.lambda
       CodeUri: imageswriter.lambda.zip
       Runtime: go1.x
-      MemorySize: 128
+      MemorySize: 256
       Policies:
         - AWSLambdaBasicExecutionRole
         # S3 CMSBlobStoreBucket

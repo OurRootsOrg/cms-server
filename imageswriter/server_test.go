@@ -133,7 +133,9 @@ func TestImagesWriter(t *testing.T) {
 		assert.NoError(t, err)
 		assert.True(t, strings.HasPrefix(obj.Key, prefix))
 		suffix := strings.TrimPrefix(obj.Key, prefix)
-		assert.True(t, zipNames[suffix])
+		suffix = strings.TrimSuffix(suffix, model.ImageDimensionsSuffix)
+		suffix = strings.TrimSuffix(suffix, model.ImageThumbnailSuffix)
+		assert.True(t, zipNames[suffix], suffix)
 	}
 
 	in = model.PostIn{
@@ -195,6 +197,7 @@ func TestPostImage(t *testing.T) {
 		RecordPersister(p)
 
 	zipBytes, err := ioutil.ReadFile("testdata/test.zip")
+	const zipImageWidth = 212
 	assert.NoError(t, err)
 	t.Logf("len(zipBytes): %d\n", len(zipBytes))
 	ra := bytes.NewReader(zipBytes)
@@ -254,16 +257,32 @@ func TestPostImage(t *testing.T) {
 	}
 	assert.Equal(t, model.PostDraft, post.ImagesStatus, "Expected post to be Draft, got %s", post.ImagesStatus)
 
+	// give some additional time for thumbnails to be generated
+	time.Sleep(3 * time.Second)
+
 	// read images for post
 	for name := range zipNames {
-		imageMetadata, errors := testAPI.GetPostImage(ctx, testPost.ID, name, 3600, 0, 0)
+		// read image
+		imageMetadata, errors := testAPI.GetPostImage(ctx, testPost.ID, name, false, 60)
 		assert.Nil(t, errors, name)
+		assert.Equal(t, zipImageWidth, imageMetadata.Width)
 		resp, err := http.Get(imageMetadata.URL)
 		assert.NoError(t, err)
 		defer resp.Body.Close()
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 		fileBytes, err := ioutil.ReadAll(resp.Body)
 		assert.NoError(t, err)
+
+		thumbMetadata, errors := testAPI.GetPostImage(ctx, testPost.ID, name, true, 60)
+		assert.Nil(t, errors, name)
+		assert.Equal(t, model.ImageThumbnailWidth, thumbMetadata.Width)
+		resp, err = http.Get(thumbMetadata.URL)
+		assert.NoError(t, err)
+		defer resp.Body.Close()
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
+		fileBytes, err = ioutil.ReadAll(resp.Body)
+		assert.NoError(t, err)
+
 		if !strings.HasSuffix(name, "/") {
 			// Don't check directories
 			assert.Less(t, 0, len(fileBytes), "Length of %s should be greater than 0", name)
