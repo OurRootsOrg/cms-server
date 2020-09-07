@@ -6,10 +6,13 @@
     </v-btn>
     <v-row class="d-flex justify-end">
       <v-col cols="12" md="2">
-        <v-select v-model="recordsStatusFilter" :items="recordsStatusOptions" label="Status" multiple></v-select>
+        <v-select v-model="postStatusFilter" :items="postStatusOptions" label="Status" multiple></v-select>
       </v-col>
       <v-col cols="12" md="2">
-        <v-select v-model="hasDataFilter" :items="hasDataOptions" label="Has data?" multiple></v-select>
+        <v-select v-model="recordsStatusFilter" :items="recordsStatusOptions" label="Records" multiple></v-select>
+      </v-col>
+      <v-col cols="12" md="2">
+        <v-select v-model="ImagesStatusFilter" :items="imagesStatusOptions" label="Images" multiple></v-select>
       </v-col>
       <v-col cols="12" md="6">
         <v-text-field v-model="search" append-icon="mdi-magnify" label="Search" single-line hide-details></v-text-field>
@@ -70,13 +73,12 @@ export default {
     return {
       search: "",
       status: "",
+      postStatusFilter: [],
       recordsStatusFilter: [],
-      hasDataFilter: [],
-      recordsStatusOptions: ["Published", "Draft"],
-      hasDataOptions: [
-        { value: true, text: "Has data" },
-        { value: false, text: "No data" }
-      ]
+      imagesStatusFilter: [],
+      postStatusOptions: ["Published", "Draft"],
+      recordsStatusOptions: ["Loaded", "Loading", "Error", "Missing"],
+      imagesStatusOptions: ["Loaded", "Loading", "Error", "Missing", "N/A"]
     };
   },
   computed: mapState(["collections", "posts", "settings"]),
@@ -86,9 +88,13 @@ export default {
         return {
           id: p.id,
           name: p.name,
-          recordsStatus: p.imagesStatus === "Loading" ? p.imagesStatus : p.recordsStatus,
-          hasData: !!p.recordsKey,
-          hasImages: !!p.imagesKeys && p.imagesKeys.length > 0,
+          postStatus: p.postStatus,
+          recordsStatus: p.recordsKey ? p.recordsStatus || "Loaded" : "Missing",
+          imagesStatus: !this.collections.collectionsList.find(coll => coll.id === p.collection).imagePathHeader
+            ? "N/A"
+            : !!p.imagesKeys && p.imagesKeys.length > 0
+            ? p.imagesStatus || "Loaded"
+            : "Missing",
           collectionName: this.collections.collectionsList.find(coll => coll.id === p.collection).name,
           ...p.metadata
         };
@@ -102,23 +108,26 @@ export default {
         },
         {
           text: "Status",
+          value: "postStatus",
+          filter: value => {
+            return this.postStatusFilter.length === 0 || this.postStatusFilter.includes(value);
+          }
+        },
+        {
+          text: "Records",
           value: "recordsStatus",
+          align: "center",
           filter: value => {
             return this.recordsStatusFilter.length === 0 || this.recordsStatusFilter.includes(value);
           }
         },
         {
-          text: "Has Data",
-          value: "hasData",
+          text: "Images",
+          value: "imagesStatus",
           align: "center",
           filter: value => {
-            return this.hasDataFilter.length === 0 || this.hasDataFilter.includes(value);
+            return this.imagesStatusFilter.length === 0 || this.imagesStatusFilter.includes(value);
           }
-        },
-        {
-          text: "Has Images",
-          value: "hasImages",
-          align: "center"
         },
         {
           text: "Collection",
