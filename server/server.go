@@ -172,7 +172,8 @@ func main() {
 			RecordPersister(p).
 			UserPersister(p).
 			SettingsPersister(p).
-			PlacePersister(p)
+			PlacePersister(p).
+			NamePersister(p)
 		log.Print("[INFO] Using PostgresPersister")
 
 	} else {
@@ -191,7 +192,8 @@ func main() {
 			RecordPersister(p).
 			SettingsPersister(p).
 			UserPersister(p).
-			PlacePersister(p)
+			PlacePersister(p).
+			NamePersister(p)
 		log.Print("[INFO] Using DynamoDBPersister")
 	}
 	r := app.NewRouter()

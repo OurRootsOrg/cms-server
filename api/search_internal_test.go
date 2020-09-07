@@ -1,8 +1,15 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
+	"log"
+	"os"
 	"testing"
+
+	"github.com/ourrootsorg/cms-server/model"
+	"github.com/ourrootsorg/cms-server/persist"
+	"gocloud.dev/postgres"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -94,6 +101,47 @@ func TestGetPlaceFacets(t *testing.T) {
 }
 
 func TestSearchQuery(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping tests in short mode")
+	}
+	databaseURL := os.Getenv("DATABASE_URL")
+	if databaseURL != "" {
+		db, err := postgres.Open(context.TODO(), databaseURL)
+		if err != nil {
+			log.Fatalf("Error opening database connection: %v\n  DATABASE_URL: %s",
+				err,
+				databaseURL,
+			)
+		}
+		p := persist.NewPostgresPersister(db)
+		doInternalSearchTests(t, p)
+	}
+	// TODO implement
+	//dynamoDBTableName := os.Getenv("DYNAMODB_TEST_TABLE_NAME")
+	//if dynamoDBTableName != "" {
+	//	config := aws.Config{
+	//		Region:      aws.String("us-east-1"),
+	//		Endpoint:    aws.String("http://localhost:18000"),
+	//		DisableSSL:  aws.Bool(true),
+	//		Credentials: credentials.NewStaticCredentials("ACCESS_KEY", "SECRET", ""),
+	//	}
+	//	sess, err := session.NewSession(&config)
+	//	assert.NoError(t, err)
+	//	p, err := dynamo.NewPersister(sess, dynamoDBTableName)
+	//	assert.NoError(t, err)
+	//	doInternalSearchTests(t, p)
+	//}
+}
+
+func doInternalSearchTests(t *testing.T,
+	nameP model.NamePersister,
+) {
+	ctx := context.TODO()
+	testApi, err := NewAPI()
+	assert.NoError(t, err)
+	defer testApi.Close()
+	testApi = testApi.NamePersister(nameP)
+
 	tests := []struct {
 		req   SearchRequest
 		query string
@@ -110,11 +158,29 @@ func TestSearchQuery(t *testing.T) {
 					  ],"should":[
 						{"dis_max":{"queries":[
 						  {"match":{"given":{"query":"Fred","boost":1}}},
-                      	  {"match":{"given.narrow":{"query":"Fred","boost":0.8}}},
-                      	  {"match":{"given.broad":{"query":"Fred","boost":0.6}}},
-                      	  {"fuzzy":{"given":{"value":"fred","fuzziness":"AUTO","rewrite":"constant_score_boolean","boost":0.2}}},
-                      	  {"match":{"given":{"query":"F","boost":0.4}}}
+						  {"match":{"given":{"query":"freddy","boost":0.7}}},
+                      	  {"match":{"given.narrow":{"query":"Fred","boost":0.6}}},
+                      	  {"match":{"given.broad":{"query":"Fred","boost":0.4}}},
+                      	  {"fuzzy":{"given":{"value":"fred","fuzziness":"AUTO","rewrite":"constant_score_boolean","boost":0.3}}},
+                      	  {"match":{"given":{"query":"F","boost":0.2}}}
                     	]}}
+					  ]}}
+					]}},"from":0,"size":10}`,
+		},
+		{
+			req: SearchRequest{
+				Given:            "Fred",
+				GivenFuzziness:   FuzzyNameExact | FuzzyNameVariants,
+				Surname:          "Flintstone",
+				SurnameFuzziness: FuzzyNameExact,
+			},
+			query: `{"query":{"bool":{"must":[
+					  {"bool":{"must":[
+						{"dis_max":{"queries":[
+						  {"match":{"given":{"query":"Fred","boost":1}}},
+						  {"match":{"given":{"query":"freddy","boost":0.7}}}
+                    	]}},
+						{"match":{"surname":{"query":"Flintstone","boost":1}}}
 					  ]}}
 					]}},"from":0,"size":10}`,
 		},
@@ -129,7 +195,7 @@ func TestSearchQuery(t *testing.T) {
 					  {"bool":{"must":[
 						{"dis_max":{"queries":[
 						  {"match":{"given":{"query":"Fred","boost":1}}},
-                      	  {"match":{"given.narrow":{"query":"Fred","boost":0.8}}}
+                      	  {"match":{"given.narrow":{"query":"Fred","boost":0.6}}}
                     	]}},
 						{"match":{"surname":{"query":"Flintstone","boost":1}}}
 					  ]}}
@@ -238,7 +304,8 @@ func TestSearchQuery(t *testing.T) {
 	for i, test := range tests {
 		var search Search
 		json.Unmarshal([]byte(test.query), &search)
-		result := constructSearchQuery(&test.req)
+		result, err := testApi.constructSearchQuery(ctx, &test.req)
+		assert.NoError(t, err)
 		//bs, _ := json.Marshal(result)
 		//fmt.Printf("%d expected=%s\n", i, test.query)
 		//fmt.Printf("%d actual  =%s\n", i, string(bs))
