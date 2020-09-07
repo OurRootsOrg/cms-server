@@ -257,11 +257,12 @@ func processMessage(ctx context.Context, ap *api.API, rawMsg []byte) error {
 	// do the work
 	errs = loadRecords(ctx, ap, post)
 
+	// update post
 	if errs != nil {
-		post.RecordsStatus = model.RecordsStatusError
+		post.RecordsStatus = model.RecordsStatusLoadError
 		post.RecordsError = errs.Error()
 	} else {
-		post.RecordsStatus = model.RecordsStatusDefault
+		post.RecordsStatus = model.RecordsStatusLoadComplete
 	}
 	_, err = ap.UpdatePost(ctx, post.ID, *post)
 	if err != nil {
@@ -288,6 +289,7 @@ func (h lambdaHandler) handler(ctx context.Context, sqsEvent events.SQSEvent) er
 		err = processMessage(ctx, h.ap, []byte(message.Body))
 		if err != nil {
 			log.Printf("[ERROR] Error processing message %v", err)
+			// TODO shouldn't this be break so we fail as soon as a message fails?
 			continue
 		}
 	}

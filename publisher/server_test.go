@@ -29,6 +29,7 @@ func TestPublisher(t *testing.T) {
 	assert.NoError(t, err)
 	defer testAPI.Close()
 	testAPI = testAPI.
+		BlobStoreConfig("us-east-1", "127.0.0.1:19000", "minioaccess", "miniosecret", "testbucket", true).
 		QueueConfig("publisher", "amqp://guest:guest@localhost:35672/").
 		ElasticsearchConfig("http://localhost:19200", nil).
 		CategoryPersister(p).
@@ -49,15 +50,12 @@ func TestPublisher(t *testing.T) {
 	// create record households
 	createTestRecordHouseholds(t, p, testPost.ID, testRecords)
 	defer deleteTestRecordHouseholds(t, p, testPost.ID)
-	// force post to draft status
-	testPost.RecordsStatus = model.PostDraft
-	testPost.ImagesStatus = model.PostDraft
+	testPost.RecordsKey = "has records"
 	testPost, err = p.UpdatePost(ctx, testPost.ID, *testPost)
 	assert.NoError(t, err, "Error updating test post")
-	assert.Equal(t, model.PostDraft, testPost.RecordsStatus, "Unexpected post recordsStatus")
 
 	// Publish post
-	testPost.RecordsStatus = model.PostPublished
+	testPost.PostStatus = model.PostStatusToPublish
 	testPost, err = testAPI.UpdatePost(ctx, testPost.ID, *testPost)
 	assert.NoError(t, err, "Error setting post to published")
 
@@ -67,13 +65,13 @@ func TestPublisher(t *testing.T) {
 		// read post and look for Ready
 		post, err = testAPI.GetPost(ctx, testPost.ID)
 		assert.NoError(t, err)
-		if post.RecordsStatus == model.PostPublished {
+		if post.PostStatus == model.PostStatusPublished {
 			break
 		}
 		log.Printf("Waiting for publisher %d\n", i)
 		time.Sleep(1 * time.Second)
 	}
-	assert.Equal(t, model.PostPublished, post.RecordsStatus, "Expected post to be Published, got %s", post.RecordsStatus)
+	assert.Equal(t, model.PostStatusPublished, post.PostStatus, "Expected post to be Published, got %s", post.PostStatus)
 
 	// search records by id
 	for _, testRecord := range testRecords {
@@ -112,7 +110,7 @@ func TestPublisher(t *testing.T) {
 
 	// Unpublish post
 	testPost, err = testAPI.GetPost(ctx, testPost.ID)
-	testPost.RecordsStatus = model.PostDraft
+	testPost.PostStatus = model.PostStatusToUnpublish
 	testPost, err = testAPI.UpdatePost(ctx, testPost.ID, *testPost)
 	assert.NoError(t, err, "Error setting post back to draft")
 
@@ -122,13 +120,13 @@ func TestPublisher(t *testing.T) {
 		// read post and look for Draft
 		post, err = testAPI.GetPost(ctx, testPost.ID)
 		assert.NoError(t, err)
-		if post.RecordsStatus == model.PostDraft {
+		if post.PostStatus == model.PostStatusDraft {
 			break
 		}
 		log.Printf("Waiting for publisher %d\n", i)
 		time.Sleep(1 * time.Second)
 	}
-	assert.Equal(t, model.PostDraft, post.RecordsStatus, "Expected post to be Draft, got %s", post.RecordsStatus)
+	assert.Equal(t, model.PostStatusDraft, post.PostStatus, "Expected post to be Draft, got %s", post.PostStatus)
 
 	// verify records no longer searchable
 	for _, testRecord := range testRecords {

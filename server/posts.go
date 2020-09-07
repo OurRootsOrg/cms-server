@@ -194,17 +194,17 @@ func (app App) PutPost(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	if !model.UserAcceptedPostStatus(in.PostStatus) {
+		msg := fmt.Sprintf("Invalid records status: %s", in.PostStatus)
+		ErrorResponse(w, http.StatusBadRequest, msg)
+		return
+	}
+	if !model.UserAcceptedRecordsStatus(in.RecordsStatus) {
 		msg := fmt.Sprintf("Invalid records status: %s", in.RecordsStatus)
 		ErrorResponse(w, http.StatusBadRequest, msg)
 		return
 	}
-	if !model.UserAcceptedPostRecordsStatus(in.RecordsStatus) {
-		msg := fmt.Sprintf("Invalid records status: %s", in.RecordsStatus)
-		ErrorResponse(w, http.StatusBadRequest, msg)
-		return
-	}
-	if !model.UserAcceptedPostImagesStatus(in.ImagesStatus) {
-		msg := fmt.Sprintf("Invalid records status: %s", in.RecordsStatus)
+	if !model.UserAcceptedImagesStatus(in.ImagesStatus) {
+		msg := fmt.Sprintf("Invalid records status: %s", in.ImagesStatus)
 		ErrorResponse(w, http.StatusBadRequest, msg)
 		return
 	}

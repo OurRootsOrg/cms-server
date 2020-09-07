@@ -20,62 +20,93 @@ type PostPersister interface {
 
 // Post statuses
 // Draft (initial state) -> ToPublish
-//   user can update Draft to ToPublish if RecordsStatus and ImagesStatus are both Default
+//   user can update Draft to ToPublish if RecordsStatus and ImagesStatus are both Default and RecordsKey is not empty
 //   this causes server to send an Index message to Publisher
 // ToPublish -> Publishing
 //   Publisher updates status to Publishing when starting to index
-// Publishing -> Published or Error
-//   Publisher updates status to Published if successful, or Error otherwise and sets PostError to the error message
+// Publishing -> PublishComplete or PublishError
+//   Publisher updates status to PublishComplete if successful, or PublishError otherwise and sets PostError to the error message
+//   having intermediate statuses for PublishComplete and PublishError means that user cannot change an Publishing status,
+//     since PublishComplete and PublishError fail UserAcceptedPostStatus()
+// PublishComplete -> Published
+//   when the server gets PublishComplete from Publisher, it sets status to Published
+// PublishError -> Error
+//   when the server gets PublishError from Publisher, it sets status to Error
 // Published -> ToUnpublish
 //   user can update Published to ToUnpublish
 //   this causes server to send an Unindex message to Publisher
 // ToUnpublish -> Unpublishing
 //   Publisher updates status to Unpublishing when starting to unindex
-// Unpublishing -> Draft or Error
-//   Publisher updates status to to Draft if successful, or Error otherwise and sets PostError to the error message
-// Error -> ToPublish
+// Unpublishing -> UnpublishComplete or UnpublishError
+//   Publisher updates status to to UnpublishComplete if successful, or UnpublishError otherwise and sets PostError to the error message
+//   having intermediate statuses for UnpublishComplete and UnpublishError means that user cannot change an Unpublishing status,
+//     since UnpublishComplete and UnpublishError fail UserAcceptedPostStatus()
+// UnpublishComplete -> Draft
+//   when the server gets UnpublishComplete from Publisher, it sets status to Draft
+// UnpublishError -> Error
+//   when the server gets UnpublishError from Publisher, it sets status to Error
+// Error -> ToPublish or Publishing or Unpublishing
 //   user can update Error to ToPublish if RecordsStatus and ImagesStatus are both Default
+//   Publisher can update error to Publishing or Unpublishing when retrying
+// Publisher will process the message only when status is To(Un)Publish or Error (in case the previous invocation failed)
 // Post can be deleted only in Draft or Error states and only when Records/Images statuses are in Default or Error states
 
 type PostStatus string
 
 const (
-	PostStatusDraft        PostStatus = "Draft"
-	PostStatusToPublish               = "Publication Requested"
-	PostStatusPublishing              = "Publishing"
-	PostStatusPublished               = "Published"
-	PostStatusToUnpublish             = "Unpublication Requested"
-	PostStatusUnpublishing            = "Unpublishing"
-	PostStatusError                   = "Error"
+	PostStatusDraft             PostStatus = "Draft"
+	PostStatusToPublish         PostStatus = "Publication Requested"
+	PostStatusPublishing        PostStatus = "Publishing"
+	PostStatusPublishComplete   PostStatus = "PublishComplete"
+	PostStatusPublishError      PostStatus = "PublishError"
+	PostStatusPublished         PostStatus = "Published"
+	PostStatusToUnpublish       PostStatus = "Unpublication Requested"
+	PostStatusUnpublishing      PostStatus = "Unpublishing"
+	PostStatusUnpublishComplete PostStatus = "UnpublishComplete"
+	PostStatusUnpublishError    PostStatus = "UnpublishError"
+	PostStatusError             PostStatus = "Error"
 )
 
 // Records and Images statuses
 // Default (initial state) -> ToLoad
 //   when user adds a file to load, server sets status to ToLoad and sends a message to Images/Records Writer
+//   post status must be Draft or Error
 // ToLoad -> Loading
 //   Images/Records Writer updates status to Loading when starting to load
-// Loading -> Default or Error
-//   Images/Records Writer updates status to Default if successful or Error otherwise and sets Images/Records Error to the error message
-// Error -> ToLoad
+// Loading -> LoadComplete or LoadError
+//   Images/Records Writer updates status to LoadComplete if successful or Error otherwise and sets Images/Records Error to the error message
+//   having intermediate statuses for LoadComplete and LoadError means that user cannot change a Loading status,
+//     since LoadComplete and LoadError fail UserAcceptedRecordsStatus() and UserAcceptedImagesStatus()
+// LoadComplete -> Default
+//   when the server gets LoadComplete from Images/Records Writer, it sets status to Default
+// LoadError -> Error
+//   when the server gets LoadError from Images/Records Writer, it sets status to Error
+// Error -> ToLoad or Loading
 //   when user updates the file to load, server sets status to ToLoad and sends a message to Images/Records Writer
+//   Images/Records Writer updates Error to Loading when retrying
+// Images/Records Writer will process the message only when status is ToLoad or Error (in case the previous invocation failed)
 // Post can be deleted only when Images/Records status is Default or Error
 
 type RecordsStatus string
 
 const (
-	RecordsStatusDefault RecordsStatus = ""
-	RecordsStatusToLoad                = "Load Requested"
-	RecordsStatusLoading               = "Loading"
-	RecordsStatusError                 = "Error"
+	RecordsStatusDefault      RecordsStatus = ""
+	RecordsStatusToLoad       RecordsStatus = "Load Requested"
+	RecordsStatusLoading      RecordsStatus = "Loading"
+	RecordsStatusLoadComplete RecordsStatus = "LoadComplete"
+	RecordsStatusLoadError    RecordsStatus = "LoadError"
+	RecordsStatusError        RecordsStatus = "Error"
 )
 
 type ImagesStatus string
 
 const (
-	ImagesStatusDefault ImagesStatus = ""
-	ImagesStatusToLoad               = "Load Requested"
-	ImagesStatusLoading              = "Loading"
-	ImagesStatusError                = "Error"
+	ImagesStatusDefault      ImagesStatus = ""
+	ImagesStatusToLoad       ImagesStatus = "Load Requested"
+	ImagesStatusLoading      ImagesStatus = "Loading"
+	ImagesStatusLoadComplete ImagesStatus = "LoadComplete"
+	ImagesStatusLoadError    ImagesStatus = "LoadError"
+	ImagesStatusError        ImagesStatus = "Error"
 )
 
 // Publisher actions
@@ -83,7 +114,7 @@ type PublisherAction string
 
 const (
 	PublisherActionIndex   PublisherAction = "index"
-	PublisherActionUnindex                 = "unindex"
+	PublisherActionUnindex PublisherAction = "unindex"
 )
 
 // ImageWriter actions
@@ -91,7 +122,7 @@ type ImagesWriterAction string
 
 const (
 	ImagesWriterActionUnzip             ImagesWriterAction = "unzip"
-	ImagesWriterActionGenerateThumbnail                    = "thumb"
+	ImagesWriterActionGenerateThumbnail ImagesWriterAction = "thumb"
 )
 
 const ImageDimensionsSuffix = "__dimensions.json"
@@ -115,8 +146,8 @@ func UserAcceptedPostStatus(status PostStatus) bool {
 	return false
 }
 
-// UserAcceptedPostRecordsStatus returns true if status can be submitted by a user
-func UserAcceptedPostRecordsStatus(status RecordsStatus) bool {
+// UserAcceptedRecordsStatus returns true if status can be submitted by a user
+func UserAcceptedRecordsStatus(status RecordsStatus) bool {
 	for _, s := range []RecordsStatus{RecordsStatusDefault, RecordsStatusError} {
 		if s == status {
 			return true
@@ -125,8 +156,8 @@ func UserAcceptedPostRecordsStatus(status RecordsStatus) bool {
 	return false
 }
 
-// UserAcceptedPostImagesStatus returns true if status can be submitted by a user
-func UserAcceptedPostImagesStatus(status ImagesStatus) bool {
+// UserAcceptedImagesStatus returns true if status can be submitted by a user
+func UserAcceptedImagesStatus(status ImagesStatus) bool {
 	for _, s := range []ImagesStatus{ImagesStatusDefault, ImagesStatusError} {
 		if s == status {
 			return true
@@ -265,6 +296,7 @@ func NewPostIn(name string, collectionID uint32, recordsKey string) PostIn {
 	pi := PostIn{
 		PostBody: PostBody{
 			Name:       name,
+			PostStatus: PostStatusDraft,
 			RecordsKey: recordsKey,
 		},
 		Collection: collectionID,
