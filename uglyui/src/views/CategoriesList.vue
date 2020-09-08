@@ -1,35 +1,50 @@
 <template>
   <v-container class="categories-list">
-    <v-layout row>
-      <v-flex>
-        <h1>Categories</h1>
-        <v-btn small color="primary" class="mt-2 mb-5" to="/categories/create">
-          Create a new category
-        </v-btn>
-      </v-flex>
-    </v-layout>
-    <v-layout row>
-      <v-flex class="mt-1">
-        <Tabulator
-          :data="getCategories()"
-          :columns="categoryColumns"
-          layout="fitColumns"
-          :header-sort="true"
-          :selectable="true"
-          :resizable-columns="true"
-          @rowClicked="rowClicked"
-        />
-      </v-flex>
-    </v-layout>
+    <h1>Categories</h1>
+    <v-btn small color="primary" class="mt-2" to="/categories/create">
+      Create a new category
+    </v-btn>
+    <v-row fluid>
+      <v-col cols="12" md="5" class="pt-0">
+        <v-text-field
+          v-model="search"
+          append-icon="mdi-magnify"
+          label="Search for a category"
+          single-line
+          hide-details
+        ></v-text-field>
+      </v-col>
+      <v-col cols="12">
+        <v-data-table
+          :items="getCategories()"
+          :headers="headers"
+          sortable
+          sort-by="name"
+          :search="search"
+          :footer-props="{
+            'items-per-page-options': [10, 25, 50]
+          }"
+          :items-per-page="25"
+          @click:row="rowClicked"
+          dense
+          class="rowHover"
+          v-columns-resizable
+        >
+          <template v-slot:[`item.icon`]="{ item }">
+            <v-btn icon small :to="{ name: 'category-edit', params: { cid: item.id } }">
+              <v-icon right>mdi-chevron-right</v-icon>
+            </v-btn>
+          </template>
+        </v-data-table>
+      </v-col>
+    </v-row>
   </v-container>
 </template>
 <script>
 import { mapState } from "vuex";
 import store from "@/store";
-import Tabulator from "../components/Tabulator";
 
 export default {
-  components: { Tabulator },
   beforeRouteEnter(routeTo, routeFrom, next) {
     Promise.all([store.dispatch("categoriesGetAll"), store.dispatch("collectionsGetAll")])
       .then(() => {
@@ -41,20 +56,12 @@ export default {
   },
   data() {
     return {
-      categoryColumns: [
-        {
-          title: "Name",
-          field: "name",
-          headerFilter: "input",
-          sorter: "string"
-        },
-        {
-          title: "# Collections",
-          field: "collectionsCount",
-          headerFilter: "number",
-          sorter: "number"
-        }
-      ]
+      headers: [
+        { text: "Name", value: "name" },
+        { text: "# Collections", value: "collectionsCount" },
+        { text: "", value: "icon", align: "right", width: "15px" }
+      ],
+      search: ""
     };
   },
   computed: mapState(["categories", "collections"]),
@@ -77,13 +84,3 @@ export default {
   }
 };
 </script>
-
-<style scoped>
-.disabled {
-  cursor: not-allowed;
-  color: gray;
-}
-.create {
-  margin-top: 8px;
-}
-</style>

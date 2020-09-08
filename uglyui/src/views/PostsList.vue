@@ -1,26 +1,53 @@
 <template>
   <v-container class="posts-list">
-    <v-layout row>
-      <v-flex>
-        <h1>Posts</h1>
-        <v-btn small color="primary" class="mt-2 mb-5" to="/posts/create">
-          Create a new post
-        </v-btn>
-      </v-flex>
-    </v-layout>
-    <v-layout row>
-      <v-flex class="mt-1">
-        <Tabulator
-          :data="getPosts()"
-          :columns="getPostColumns()"
-          layout="fitColumns"
-          :header-sort="true"
-          :selectable="true"
-          :resizable-columns="true"
-          @rowClicked="rowClicked"
-        />
-      </v-flex>
-    </v-layout>
+    <h1>Posts</h1>
+    <v-btn small color="primary" class="mt-2" to="/posts/create">
+      Create a new post
+    </v-btn>
+    <v-row class="d-flex justify-end">
+      <v-col cols="12" md="2">
+        <v-select v-model="recordsStatusFilter" :items="recordsStatusOptions" label="Status" multiple></v-select>
+      </v-col>
+      <v-col cols="12" md="2">
+        <v-select v-model="hasDataFilter" :items="hasDataOptions" label="Has data?" multiple></v-select>
+      </v-col>
+      <v-col cols="12" md="6">
+        <v-text-field v-model="search" append-icon="mdi-magnify" label="Search" single-line hide-details></v-text-field>
+      </v-col>
+    </v-row>
+    <v-row>
+      <v-col cols="12">
+        <v-data-table
+          :items="getPosts()"
+          :headers="getPostColumns()"
+          sortable
+          sort-by="name"
+          :search="search"
+          :footer-props="{
+            'items-per-page-options': [10, 25, 50]
+          }"
+          :items-per-page="25"
+          @click:row="rowClicked"
+          dense
+          class="rowHover postsTable"
+          v-columns-resizable
+        >
+          <template v-slot:[`item.hasData`]="{ item }">
+            <v-icon v-if="item.hasData" class="green--text">mdi-checkbox-marked</v-icon>
+            <v-icon v-else class="red--text">mdi-close-circle</v-icon>
+          </template>
+          <template v-slot:[`item.hasImages`]="{ item }">
+            <v-icon v-if="item.hasImages" class="green--text">mdi-checkbox-marked</v-icon>
+            <v-icon v-else class="red--text">mdi-close-circle</v-icon>
+          </template>
+          <template v-slot:[`item.icon`]="{ item }">
+            <v-btn icon small :to="{ name: 'post-edit', params: { pid: item.id } }">
+              <v-icon right>mdi-chevron-right</v-icon>
+            </v-btn>
+          </template>
+        </v-data-table>
+      </v-col>
+    </v-row>
   </v-container>
 </template>
 
@@ -28,10 +55,8 @@
 import { mapState } from "vuex";
 import store from "@/store";
 import { getMetadataColumn } from "../utils/metadata";
-import Tabulator from "../components/Tabulator";
 
 export default {
-  components: { Tabulator },
   beforeRouteEnter(routeTo, routeFrom, next) {
     Promise.all([store.dispatch("collectionsGetAll"), store.dispatch("postsGetAll"), store.dispatch("settingsGet")])
       .then(() => {
@@ -40,6 +65,19 @@ export default {
       .catch(() => {
         next("/");
       });
+  },
+  data() {
+    return {
+      search: "",
+      status: "",
+      recordsStatusFilter: [],
+      hasDataFilter: [],
+      recordsStatusOptions: ["Published", "Draft"],
+      hasDataOptions: [
+        { value: true, text: "Has data" },
+        { value: false, text: "No data" }
+      ]
+    };
   },
   computed: mapState(["collections", "posts", "settings"]),
   methods: {
@@ -59,44 +97,36 @@ export default {
     getPostColumns() {
       let cols = [
         {
-          title: "Name",
-          field: "name",
-          headerFilter: "input",
-          sorter: "string"
+          text: "Name",
+          value: "name"
         },
         {
-          title: "Status",
-          field: "recordsStatus",
-          headerFilter: "select",
-          headerFilterParams: {
-            values: true
-          },
-          sorter: "string"
+          text: "Status",
+          value: "recordsStatus",
+          filter: value => {
+            return this.recordsStatusFilter.length === 0 || this.recordsStatusFilter.includes(value);
+          }
         },
         {
-          title: "Has Data",
-          field: "hasData",
-          hozAlign: "center",
-          formatter: "tickCross",
-          headerFilter: "tickCross",
-          sorter: "boolean"
+          text: "Has Data",
+          value: "hasData",
+          align: "center",
+          filter: value => {
+            return this.hasDataFilter.length === 0 || this.hasDataFilter.includes(value);
+          }
         },
         {
-          title: "Has Images",
-          field: "hasImages",
-          hozAlign: "center",
-          formatter: "tickCross",
-          headerFilter: "tickCross",
-          sorter: "boolean"
+          text: "Has Images",
+          value: "hasImages",
+          align: "center"
         },
         {
-          title: "Collection",
-          field: "collectionName",
-          headerFilter: "input",
-          sorter: "string"
+          text: "Collection",
+          value: "collectionName"
         }
       ];
       cols.push(...this.settings.settings.postMetadata.map(pf => getMetadataColumn(pf)));
+      cols.push({ text: "", value: "icon", align: "right" });
       return cols;
     },
     rowClicked(post) {
@@ -110,10 +140,42 @@ export default {
 </script>
 
 <style scoped>
-.tabulator {
-  width: 750px;
+/* freeze the first column (for post name) since we don't know if this will be an overly wide table with custom fields */
+.postsTable >>> table > tbody > tr > td:nth-child(1),
+.postsTable >>> table > thead > tr > th:nth-child(1) {
+  left: 0;
 }
-.create {
-  margin-top: 8px;
+.postsTable >>> table > thead > tr > th:nth-child(1) {
+  position: sticky !important;
+  position: -webkit-sticky !important;
+  /* z-index: 9999; */
+  /* background: white; */
+}
+.postsTable >>> table > tbody > tr > td:nth-child(1) {
+  position: sticky !important;
+  position: -webkit-sticky !important;
+  /* z-index: 9998; */
+  background: white;
+}
+.postsTable >>> table > tbody > tr > td:nth-child(1):hover {
+  background-color: #efefef;
+}
+.postsTable >>> table > tbody > tr > td {
+  padding: 0 8px;
+}
+.postsTable >>> thead .text-start {
+  vertical-align: top;
+  text-align: left;
+  padding-left: 8px;
+}
+.postsTable >>> thead .sortable {
+  vertical-align: top;
+  text-align: left;
+  padding-left: 8px;
+}
+.postsTable >>> .table-header-group {
+  vertical-align: top;
+  text-align: left;
+  padding-left: 8px;
 }
 </style>

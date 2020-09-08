@@ -72,7 +72,7 @@
       <div id="container-wrapper">
         <Notifications />
         <v-container>
-          <v-row class="pa-4">
+          <v-row class="pa-4 pt-0">
             <router-view id="view" :key="$route.fullPath"></router-view>
           </v-row>
         </v-container>
@@ -126,6 +126,18 @@ export default {
 </script>
 
 <style>
+.rowHover {
+  cursor: pointer;
+}
+.v-data-table--dense .v-data-table-header {
+  background: #f1f1f1;
+  padding-top: 5px;
+}
+.columns-resize-bar {
+  border-left: solid 1px #ccc;
+  height: 100px;
+  max-height: 31px;
+}
 .errorMessage {
   color: red;
 }
