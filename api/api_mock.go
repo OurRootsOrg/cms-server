@@ -81,14 +81,14 @@ func (a *ApiMock) RetrieveUser(ctx context.Context, provider OIDCProvider, token
 	return a.Result.(*model.User), a.Errors
 }
 
-func (a *ApiMock) GetRecordsForPost(ctx context.Context, postid uint32) (*RecordResult, error) {
-	return a.Result.(*RecordResult), a.Errors
+func (a *ApiMock) GetRecordsForPost(ctx context.Context, postid uint32) (*RecordsResult, error) {
+	return a.Result.(*RecordsResult), a.Errors
 }
 func (a *ApiMock) GetRecordsByID(ctx context.Context, ids []uint32) ([]model.Record, error) {
 	return a.Result.([]model.Record), a.Errors
 }
-func (a *ApiMock) GetRecord(ctx context.Context, id uint32) (*model.Record, error) {
-	return a.Result.(*model.Record), a.Errors
+func (a *ApiMock) GetRecord(ctx context.Context, includeDetails bool, id uint32) (*RecordDetail, error) {
+	return a.Result.(*RecordDetail), a.Errors
 }
 func (a *ApiMock) AddRecord(ctx context.Context, in model.RecordIn) (*model.Record, error) {
 	return a.Result.(*model.Record), a.Errors

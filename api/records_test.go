@@ -107,9 +107,9 @@ func doRecordsTests(t *testing.T,
 	assert.Equal(t, *created, records[0])
 
 	// GET /records/{id} should now return the created Record
-	ret2, err := testApi.GetRecord(context.TODO(), created.ID)
+	ret2, err := testApi.GetRecord(context.TODO(), false, created.ID)
 	assert.NoError(t, err)
-	assert.Equal(t, created, ret2)
+	assert.Equal(t, created, &ret2.Record)
 
 	// Bad request - no post
 	in.Post = 0
@@ -120,7 +120,7 @@ func doRecordsTests(t *testing.T,
 	}
 
 	// Record not found
-	_, err = testApi.GetRecord(context.TODO(), created.ID+99)
+	_, err = testApi.GetRecord(context.TODO(), false, created.ID+99)
 	assert.Error(t, err)
 	assert.IsType(t, &api.Error{}, err)
 	assert.Len(t, err.(*api.Error).Errs(), 1)
@@ -128,13 +128,13 @@ func doRecordsTests(t *testing.T,
 
 	// Update
 	ret2.Data = map[string]string{"foo": "baz"}
-	updated, err := testApi.UpdateRecord(context.TODO(), ret2.ID, *ret2)
+	updated, err := testApi.UpdateRecord(context.TODO(), ret2.ID, ret2.Record)
 	assert.NoError(t, err)
 	assert.Equal(t, ret2.ID, updated.ID)
 	assert.Equal(t, ret2.Post, updated.Post)
 	assert.Equal(t, ret2.Data, updated.Data, "Expected Name to match")
 
-	// Update non-existant
+	// Update non-existent
 	_, err = testApi.UpdateRecord(context.TODO(), updated.ID+99, *updated)
 	assert.Error(t, err)
 	assert.IsType(t, &api.Error{}, err)
@@ -169,11 +169,25 @@ func doRecordsTests(t *testing.T,
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(emptyHouseholds), "Expected empty slice, got %#v", emptyHouseholds)
 
+	// Add a couple of household members
+	in = model.RecordIn{
+		RecordBody: model.RecordBody{
+			Data: map[string]string{"HouseholdNumber": "H1"},
+		},
+		Post: testPost.ID,
+	}
+	mbr1, err := testApi.AddRecord(context.TODO(), in)
+	assert.NoError(t, err)
+	defer testApi.DeleteRecord(context.TODO(), mbr1.ID)
+	mbr2, err := testApi.AddRecord(context.TODO(), in)
+	assert.NoError(t, err)
+	defer testApi.DeleteRecord(context.TODO(), mbr2.ID)
+
 	// Add a Record Household
 	inHousehold := model.RecordHouseholdIn{
 		Post:      testPost.ID,
 		Household: "H1",
-		Records:   model.Uint32Slice{1, 2, 3},
+		Records:   model.Uint32Slice{mbr1.ID, mbr2.ID},
 	}
 	createdHousehold, err := testApi.AddRecordHousehold(context.TODO(), inHousehold)
 	assert.NoError(t, err)
@@ -192,6 +206,13 @@ func doRecordsTests(t *testing.T,
 	retHh, err := testApi.GetRecordHousehold(context.TODO(), createdHousehold.Post, createdHousehold.Household)
 	assert.NoError(t, err)
 	assert.Equal(t, createdHousehold, retHh)
+
+	// GET record for a household member with include household set should return all household members
+	detail, err := testApi.GetRecord(context.TODO(), true, mbr1.ID)
+	assert.NoError(t, err)
+	assert.Equal(t, 2, len(detail.Household))
+	assert.Equal(t, mbr1.ID, detail.Household[0].ID)
+	assert.Equal(t, mbr2.ID, detail.Household[1].ID)
 
 	// Bad request - no post
 	inHousehold.Post = 0

@@ -187,6 +187,9 @@ func (app App) NewRouter() *mux.Router {
 	r.Handle(app.baseURL.Path+"/records", http.HandlerFunc(app.OptionsNoop)).Methods("OPTIONS")
 	r.Handle(app.baseURL.Path+"/records", app.verifyToken(http.HandlerFunc(app.GetRecords))).Methods("GET")
 
+	r.Handle(app.baseURL.Path+"/records/{id}", http.HandlerFunc(app.OptionsNoop)).Methods("OPTIONS")
+	r.Handle(app.baseURL.Path+"/records/{id}", app.verifyToken(http.HandlerFunc(app.GetRecord))).Methods("GET")
+
 	r.Handle(app.baseURL.Path+"/settings", http.HandlerFunc(app.OptionsNoop)).Methods("OPTIONS")
 	r.Handle(app.baseURL.Path+"/settings", app.verifyToken(http.HandlerFunc(app.GetSettings))).Methods("GET")
 	r.Handle(app.baseURL.Path+"/settings", app.verifyToken(http.HandlerFunc(app.PutSettings))).Methods("PUT")

@@ -12,7 +12,7 @@
         <v-select v-model="recordsStatusFilter" :items="recordsStatusOptions" label="Records" multiple></v-select>
       </v-col>
       <v-col cols="12" md="2">
-        <v-select v-model="ImagesStatusFilter" :items="imagesStatusOptions" label="Images" multiple></v-select>
+        <v-select v-model="imagesStatusFilter" :items="imagesStatusOptions" label="Images" multiple></v-select>
       </v-col>
       <v-col cols="12" md="6">
         <v-text-field v-model="search" append-icon="mdi-magnify" label="Search" single-line hide-details></v-text-field>
@@ -35,14 +35,6 @@
           class="rowHover postsTable"
           v-columns-resizable
         >
-          <template v-slot:[`item.hasData`]="{ item }">
-            <v-icon v-if="item.hasData" class="green--text">mdi-checkbox-marked</v-icon>
-            <v-icon v-else class="red--text">mdi-close-circle</v-icon>
-          </template>
-          <template v-slot:[`item.hasImages`]="{ item }">
-            <v-icon v-if="item.hasImages" class="green--text">mdi-checkbox-marked</v-icon>
-            <v-icon v-else class="red--text">mdi-close-circle</v-icon>
-          </template>
           <template v-slot:[`item.icon`]="{ item }">
             <v-btn icon small :to="{ name: 'post-edit', params: { pid: item.id } }">
               <v-icon right>mdi-chevron-right</v-icon>

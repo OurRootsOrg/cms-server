@@ -82,6 +82,12 @@ const routes = [
     component: () => import(/* webpackChunkName: "about" */ "../views/PostsCreateEdit.vue")
   },
   {
+    path: "/records/:rid",
+    name: "records-view",
+    meta: { requiresAuth: true },
+    component: () => import(/* webpackChunkName: "about" */ "../views/RecordsView.vue")
+  },
+  {
     path: "/search",
     name: "search",
     component: () => import(/* webpackChunkName: "about" */ "../views/Search.vue")
