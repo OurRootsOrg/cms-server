@@ -861,14 +861,16 @@ paths:
       - places
   /posts:
     get:
-      operationId: getSettings
+      operationId: getPosts
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/model.Settings'
+            items:
+              $ref: '#/definitions/model.Post'
+            type: array
         "500":
           description: Server error
           schema:
@@ -884,9 +886,9 @@ paths:
         - openid
         - profile
         - email
-      summary: returns goobal settings
+      summary: returns all posts
       tags:
-      - settings
+      - posts
     post:
       consumes:
       - application/json
@@ -1129,7 +1131,7 @@ paths:
       description: |-
         * Names can include wildcards (* or ?), in which case name fuzziness above Exact is ignored
         * Date searching is limited to passing in a single year; use fuzziness for ranges
-        * Name fuzziness flags (OR'd together): 0: default; 1: exact; 2: alternate spellings; 4: narrow sounds-like; 8: broad sounds-like; 16: fuzzy (levenshtein); 32: initials (applies only to given)
+        * Name fuzziness flags (OR'd together): 0: default; 1: exact; 2: variant spellings; 4: narrow sounds-like; 8: broad sounds-like; 16: fuzzy (levenshtein); 32: initials (applies only to given)
         * Date fuzziness: 0: default; 1: exact to this year; 2: +/- 1 year; 3: +/- 2 years; 4: +/- 5 years; 5: +/- 10 years
         * Places can include wildcards (* or ?) or ~word to fuzzy-match word, in which case place fuzziness above Exact is ignored
         * Place fuzziness flags (OR'd together): 0: default; 1: exact only; 2: include higher-level jurisdictions;
@@ -1169,7 +1171,7 @@ paths:
         type: string
       - description: father surname fuzziness flags
         in: query
-        name: fatherFuzziness
+        name: fatherSurnameFuzziness
         type: integer
       - description: mother given and middle names
         in: query
@@ -1185,7 +1187,7 @@ paths:
         type: string
       - description: mother surname fuzziness flags
         in: query
-        name: motherFuzziness
+        name: motherSurnameFuzziness
         type: integer
       - description: spouse given and middle names
         in: query
@@ -1201,7 +1203,7 @@ paths:
         type: string
       - description: spouse surname fuzziness flags
         in: query
-        name: spouseFuzziness
+        name: spouseSurnameFuzziness
         type: integer
       - description: other person given and middle names
         in: query

@@ -126,7 +126,6 @@
       </p>
 
       <v-row>
-        <<<<<<< HEAD
         <v-col class="d-flex">
           <v-btn type="submit" color="primary" :disabled="$v.$anyError || !$v.$anyDirty">Save </v-btn>
           <v-btn
