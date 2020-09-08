@@ -62,3 +62,9 @@ docker run --rm -v cms_esdata:/volume -v /tmp:/backup alpine tar -cjf /backup/cm
 ```
 docker run --rm -v cms_esdata:/volume -v /tmp:/backup alpine sh -c "rm -rf /volume/* /volume/..?* /volume/.[!.]* ; tar -C /volume/ -xjf /backup/cms_esdata.tar.bz2"
 ```
+
+# Populating database tables
+
+```
+cd db && ./db_load_full.sh <postgres-user> <postgres-password> <postgres-host> <postgres-port>
+```
