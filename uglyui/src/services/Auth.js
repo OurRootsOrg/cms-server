@@ -40,8 +40,9 @@ function authClient() {
         // verify token has not expired
         Server.currentUser().then(
           response => {
-            console.log("currentUser", response);
-            store.dispatch("userSet", provider.standardizeUser(user));
+            let stdUser = Object.assign({}, response.data, provider.standardizeUser(user));
+            console.log("stdUser", stdUser);
+            store.dispatch("userSet", stdUser);
             console.log("currentUser set");
             resolve(true);
             loading = null;
