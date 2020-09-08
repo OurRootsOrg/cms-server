@@ -795,15 +795,18 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "settings"
+                    "posts"
                 ],
-                "summary": "returns goobal settings",
-                "operationId": "getSettings",
+                "summary": "returns all posts",
+                "operationId": "getPosts",
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/model.Settings"
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.Post"
+                            }
                         }
                     },
                     "500": {
@@ -1183,7 +1186,7 @@ var doc = `{
         },
         "/search": {
             "get": {
-                "description": "* Names can include wildcards (* or ?), in which case name fuzziness above Exact is ignored\n* Date searching is limited to passing in a single year; use fuzziness for ranges\n* Name fuzziness flags (OR'd together): 0: default; 1: exact; 2: alternate spellings; 4: narrow sounds-like; 8: broad sounds-like; 16: fuzzy (levenshtein); 32: initials (applies only to given)\n* Date fuzziness: 0: default; 1: exact to this year; 2: +/- 1 year; 3: +/- 2 years; 4: +/- 5 years; 5: +/- 10 years\n* Places can include wildcards (* or ?) or ~word to fuzzy-match word, in which case place fuzziness above Exact is ignored\n* Place fuzziness flags (OR'd together): 0: default; 1: exact only; 2: include higher-level jurisdictions;\n* Category and collection facets: to start set categoryFacet true. If the user selects a value from the returned list, set that value as the category filter and set collectionFacet true\n* Date and place faceting are in a state of flux currently and may not be supported in the future depending upon user interest; do not use\n* Date facets: to start set century faceting to true. If the user selects a value from the returned list, set that value as the century filter and set decade faceting to true. If the user selects a decade, set that value as the decade filter\n* Place facets: to start, set level 1 faceting to true. If the user selects a value from the returned list, set that value as the level 1 filter and set level 2 faceting to true. Continue up to level 3",
+                "description": "* Names can include wildcards (* or ?), in which case name fuzziness above Exact is ignored\n* Date searching is limited to passing in a single year; use fuzziness for ranges\n* Name fuzziness flags (OR'd together): 0: default; 1: exact; 2: variant spellings; 4: narrow sounds-like; 8: broad sounds-like; 16: fuzzy (levenshtein); 32: initials (applies only to given)\n* Date fuzziness: 0: default; 1: exact to this year; 2: +/- 1 year; 3: +/- 2 years; 4: +/- 5 years; 5: +/- 10 years\n* Places can include wildcards (* or ?) or ~word to fuzzy-match word, in which case place fuzziness above Exact is ignored\n* Place fuzziness flags (OR'd together): 0: default; 1: exact only; 2: include higher-level jurisdictions;\n* Category and collection facets: to start set categoryFacet true. If the user selects a value from the returned list, set that value as the category filter and set collectionFacet true\n* Date and place faceting are in a state of flux currently and may not be supported in the future depending upon user interest; do not use\n* Date facets: to start set century faceting to true. If the user selects a value from the returned list, set that value as the century filter and set decade faceting to true. If the user selects a decade, set that value as the decade filter\n* Place facets: to start, set level 1 faceting to true. If the user selects a value from the returned list, set that value as the level 1 filter and set level 2 faceting to true. Continue up to level 3",
                 "produces": [
                     "application/json"
                 ],
@@ -1238,7 +1241,7 @@ var doc = `{
                     {
                         "type": "integer",
                         "description": "father surname fuzziness flags",
-                        "name": "fatherFuzziness",
+                        "name": "fatherSurnameFuzziness",
                         "in": "query"
                     },
                     {
@@ -1262,7 +1265,7 @@ var doc = `{
                     {
                         "type": "integer",
                         "description": "mother surname fuzziness flags",
-                        "name": "motherFuzziness",
+                        "name": "motherSurnameFuzziness",
                         "in": "query"
                     },
                     {
@@ -1286,7 +1289,7 @@ var doc = `{
                     {
                         "type": "integer",
                         "description": "spouse surname fuzziness flags",
-                        "name": "spouseFuzziness",
+                        "name": "spouseSurnameFuzziness",
                         "in": "query"
                     },
                     {

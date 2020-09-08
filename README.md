@@ -65,11 +65,6 @@ docker run --rm -v cms_esdata:/volume -v /tmp:/backup alpine sh -c "rm -rf /volu
 
 # Populating database tables
 
-Download the following files from S3 into a `test_data` directory
-* https://s3.amazonaws.com/public.ourroots.org/givenname_variants.tsv
-* https://s3.amazonaws.com/public.ourroots.org/surname_variants.tsv
-* https://s3.amazonaws.com/public.ourroots.org/place_settings.tsv
-* https://s3.amazonaws.com/public.ourroots.org/place_words.tsv
-* https://s3.amazonaws.com/public.ourroots.org/places.tsv
-
-then run the `db/db_load.sh` script from the parent directory of the `test_data` directory
+```
+cd db && ./db_load_full.sh <postgres-user> <postgres-password> <postgres-host> <postgres-port>
+```
