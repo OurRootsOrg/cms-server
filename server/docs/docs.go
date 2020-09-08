@@ -795,18 +795,15 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "posts"
+                    "settings"
                 ],
-                "summary": "returns all posts",
-                "operationId": "getPosts",
+                "summary": "returns goobal settings",
+                "operationId": "getSettings",
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/model.Post"
-                            }
+                            "$ref": "#/definitions/model.Settings"
                         }
                     },
                     "500": {
@@ -1098,20 +1095,14 @@ var doc = `{
                     },
                     {
                         "type": "boolean",
-                        "description": "return the url as json {url: \u003curl\u003e} if true (optional)",
+                        "description": "return the url as json {url, height, width} if true",
                         "name": "noredirect",
                         "in": "query"
                     },
                     {
-                        "type": "integer",
-                        "description": "height of image thumbnail (optional)",
-                        "name": "height",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "width of image thumbnail (optional)",
-                        "name": "width",
+                        "type": "boolean",
+                        "description": "return thumbnail",
+                        "name": "thumbnail",
                         "in": "query"
                     }
                 ],
@@ -1708,6 +1699,15 @@ var doc = `{
                         "$ref": "#/definitions/model.CollectionField"
                     }
                 },
+                "genderHeader": {
+                    "type": "string"
+                },
+                "householdNumberHeader": {
+                    "type": "string"
+                },
+                "householdRelationshipHeader": {
+                    "type": "string"
+                },
                 "id": {
                     "type": "integer",
                     "example": 999
@@ -1773,6 +1773,15 @@ var doc = `{
                     "items": {
                         "$ref": "#/definitions/model.CollectionField"
                     }
+                },
+                "genderHeader": {
+                    "type": "string"
+                },
+                "householdNumberHeader": {
+                    "type": "string"
+                },
+                "householdRelationshipHeader": {
+                    "type": "string"
                 },
                 "imagePathHeader": {
                     "type": "string"
@@ -1891,6 +1900,9 @@ var doc = `{
                     "type": "integer",
                     "example": 999
                 },
+                "imagesError": {
+                    "type": "string"
+                },
                 "imagesKeys": {
                     "type": "object",
                     "$ref": "#/definitions/model.StringSet"
@@ -1909,6 +1921,15 @@ var doc = `{
                     "additionalProperties": true
                 },
                 "name": {
+                    "type": "string"
+                },
+                "postError": {
+                    "type": "string"
+                },
+                "postStatus": {
+                    "type": "string"
+                },
+                "recordsError": {
                     "type": "string"
                 },
                 "recordsKey": {
@@ -1930,6 +1951,9 @@ var doc = `{
                     "type": "integer",
                     "example": 999
                 },
+                "imagesError": {
+                    "type": "string"
+                },
                 "imagesKeys": {
                     "type": "object",
                     "$ref": "#/definitions/model.StringSet"
@@ -1942,6 +1966,15 @@ var doc = `{
                     "additionalProperties": true
                 },
                 "name": {
+                    "type": "string"
+                },
+                "postError": {
+                    "type": "string"
+                },
+                "postStatus": {
+                    "type": "string"
+                },
+                "recordsError": {
                     "type": "string"
                 },
                 "recordsKey": {
@@ -2043,6 +2076,13 @@ var doc = `{
                 },
                 "collectionName": {
                     "type": "string"
+                },
+                "household": {
+                    "description": "only returned on search by id",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.SearchRecord"
+                    }
                 },
                 "id": {
                     "type": "string"

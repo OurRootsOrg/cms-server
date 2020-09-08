@@ -41,6 +41,12 @@ definitions:
         items:
           $ref: '#/definitions/model.CollectionField'
         type: array
+      genderHeader:
+        type: string
+      householdNumberHeader:
+        type: string
+      householdRelationshipHeader:
+        type: string
       id:
         example: 999
         type: integer
@@ -86,6 +92,12 @@ definitions:
         items:
           $ref: '#/definitions/model.CollectionField'
         type: array
+      genderHeader:
+        type: string
+      householdNumberHeader:
+        type: string
+      householdRelationshipHeader:
+        type: string
       imagePathHeader:
         type: string
       location:
@@ -164,6 +176,8 @@ definitions:
       id:
         example: 999
         type: integer
+      imagesError:
+        type: string
       imagesKeys:
         $ref: '#/definitions/model.StringSet'
         type: object
@@ -177,6 +191,12 @@ definitions:
         additionalProperties: true
         type: object
       name:
+        type: string
+      postError:
+        type: string
+      postStatus:
+        type: string
+      recordsError:
         type: string
       recordsKey:
         type: string
@@ -192,6 +212,8 @@ definitions:
       collection:
         example: 999
         type: integer
+      imagesError:
+        type: string
       imagesKeys:
         $ref: '#/definitions/model.StringSet'
         type: object
@@ -201,6 +223,12 @@ definitions:
         additionalProperties: true
         type: object
       name:
+        type: string
+      postError:
+        type: string
+      postStatus:
+        type: string
+      recordsError:
         type: string
       recordsKey:
         type: string
@@ -272,6 +300,11 @@ definitions:
         type: string
       collectionName:
         type: string
+      household:
+        description: only returned on search by id
+        items:
+          $ref: '#/definitions/model.SearchRecord'
+        type: array
       id:
         type: string
       imagePath:
@@ -861,16 +894,14 @@ paths:
       - places
   /posts:
     get:
-      operationId: getPosts
+      operationId: getSettings
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            items:
-              $ref: '#/definitions/model.Post'
-            type: array
+            $ref: '#/definitions/model.Settings'
         "500":
           description: Server error
           schema:
@@ -886,9 +917,9 @@ paths:
         - openid
         - profile
         - email
-      summary: returns all posts
+      summary: returns goobal settings
       tags:
-      - posts
+      - settings
     post:
       consumes:
       - application/json
@@ -1057,18 +1088,14 @@ paths:
         name: imageFile
         required: true
         type: string
-      - description: 'return the url as json {url: <url>} if true (optional)'
+      - description: return the url as json {url, height, width} if true
         in: query
         name: noredirect
         type: boolean
-      - description: height of image thumbnail (optional)
+      - description: return thumbnail
         in: query
-        name: height
-        type: integer
-      - description: width of image thumbnail (optional)
-        in: query
-        name: width
-        type: integer
+        name: thumbnail
+        type: boolean
       responses:
         "307":
           description: Temporary Redirect
