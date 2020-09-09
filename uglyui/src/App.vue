@@ -141,4 +141,10 @@ export default {
 .errorMessage {
   color: red;
 }
+.no-underline a {
+  text-decoration: none;
+}
+.text-first-caps {
+  text-transform: capitalize;
+}
 </style>
