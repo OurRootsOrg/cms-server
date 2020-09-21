@@ -239,7 +239,7 @@ type ESSearchAggregationBucket struct {
 type HitData struct {
 	ID           string
 	RecordID     uint32
-	Role         string
+	Role         model.Role
 	CollectionID uint32
 }
 
@@ -252,100 +252,159 @@ type GivenSurname struct {
 
 type nameExtractor func(GivenSurname) string
 
-var IndexRoles = map[string]string{
-	"principal":   "",
-	"father":      "f",
-	"mother":      "m",
-	"spouse":      "s",
-	"bride":       "b",
-	"groom":       "g",
-	"brideFather": "bf",
-	"brideMother": "bm",
-	"groomFather": "gf",
-	"groomMother": "gm",
-	"other":       "o",
+var IndexRoles = map[model.Role]string{
+	model.PrincipalRole:   "",
+	model.FatherRole:      "f",
+	model.MotherRole:      "m",
+	model.SpouseRole:      "s",
+	model.BrideRole:       "b",
+	model.GroomRole:       "g",
+	model.BrideFatherRole: "bf",
+	model.BrideMotherRole: "bm",
+	model.GroomFatherRole: "gf",
+	model.GroomMotherRole: "gm",
+	model.OtherRole:       "o",
 }
 
-var IndexRolesReversed = reverseMap(IndexRoles)
+var IndexRolesReversed = reverseRoleMap(IndexRoles)
 
-func reverseMap(m map[string]string) map[string]string {
-	result := map[string]string{}
+func reverseRoleMap(m map[model.Role]string) map[string]model.Role {
+	result := map[string]model.Role{}
 	for k, v := range m {
 		result[v] = k
 	}
 	return result
 }
 
-var EventTypes = []string{"birth", "marriage", "residence", "death", "other"}
+var RelativeRoles = map[model.Role]map[model.Relative][]model.Role{
+	model.PrincipalRole: {
+		model.FatherRelative: {model.FatherRole},
+		model.MotherRelative: {model.MotherRole},
+		model.SpouseRelative: {model.SpouseRole},
+		model.OtherRelative:  {model.BrideRole, model.GroomRole, model.BrideFatherRole, model.BrideMotherRole, model.GroomFatherRole, model.GroomMotherRole, model.OtherRole},
+	},
+	model.FatherRole: {
+		model.FatherRelative: {},
+		model.MotherRelative: {},
+		model.SpouseRelative: {model.MotherRole},
+		model.OtherRelative:  {model.PrincipalRole, model.SpouseRole, model.BrideRole, model.GroomRole, model.BrideFatherRole, model.BrideMotherRole, model.GroomFatherRole, model.GroomMotherRole, model.OtherRole},
+	},
+	model.MotherRole: {
+		model.FatherRelative: {},
+		model.MotherRelative: {},
+		model.SpouseRelative: {model.FatherRole},
+		model.OtherRelative:  {model.PrincipalRole, model.SpouseRole, model.BrideRole, model.GroomRole, model.BrideFatherRole, model.BrideMotherRole, model.GroomFatherRole, model.GroomMotherRole, model.OtherRole},
+	},
+	model.SpouseRole: {
+		model.FatherRelative: {},
+		model.MotherRelative: {},
+		model.SpouseRelative: {model.PrincipalRole},
+		model.OtherRelative:  {model.FatherRole, model.MotherRole, model.BrideRole, model.GroomRole, model.BrideFatherRole, model.BrideMotherRole, model.GroomFatherRole, model.GroomMotherRole, model.OtherRole},
+	},
+	model.BrideRole: {
+		model.FatherRelative: {model.BrideFatherRole},
+		model.MotherRelative: {model.BrideMotherRole},
+		model.SpouseRelative: {model.GroomRole},
+		model.OtherRelative:  {model.PrincipalRole, model.FatherRole, model.MotherRole, model.SpouseRole, model.GroomFatherRole, model.GroomMotherRole, model.OtherRole},
+	},
+	model.GroomRole: {
+		model.FatherRelative: {model.GroomFatherRole},
+		model.MotherRelative: {model.GroomMotherRole},
+		model.SpouseRelative: {model.BrideRole},
+		model.OtherRelative:  {model.PrincipalRole, model.FatherRole, model.MotherRole, model.SpouseRole, model.BrideFatherRole, model.BrideMotherRole, model.OtherRole},
+	},
+	model.BrideFatherRole: {
+		model.FatherRelative: {},
+		model.MotherRelative: {},
+		model.SpouseRelative: {model.BrideMotherRole},
+		model.OtherRelative:  {model.PrincipalRole, model.FatherRole, model.MotherRole, model.SpouseRole, model.BrideRole, model.GroomRole, model.GroomFatherRole, model.GroomMotherRole, model.OtherRole},
+	},
+	model.BrideMotherRole: {
+		model.FatherRelative: {},
+		model.MotherRelative: {},
+		model.SpouseRelative: {model.BrideFatherRole},
+		model.OtherRelative:  {model.PrincipalRole, model.FatherRole, model.MotherRole, model.SpouseRole, model.BrideRole, model.GroomRole, model.GroomFatherRole, model.GroomMotherRole, model.OtherRole},
+	},
+	model.GroomFatherRole: {
+		model.FatherRelative: {},
+		model.MotherRelative: {},
+		model.SpouseRelative: {model.GroomMotherRole},
+		model.OtherRelative:  {model.PrincipalRole, model.FatherRole, model.MotherRole, model.SpouseRole, model.BrideRole, model.GroomRole, model.BrideFatherRole, model.BrideMotherRole, model.OtherRole},
+	},
+	model.GroomMotherRole: {
+		model.FatherRelative: {},
+		model.MotherRelative: {},
+		model.SpouseRelative: {model.GroomFatherRole},
+		model.OtherRelative:  {model.PrincipalRole, model.FatherRole, model.MotherRole, model.SpouseRole, model.BrideRole, model.GroomRole, model.BrideFatherRole, model.BrideMotherRole, model.OtherRole},
+	},
+	model.OtherRole: {
+		model.FatherRelative: {},
+		model.MotherRelative: {},
+		model.SpouseRelative: {},
+		model.OtherRelative:  {model.PrincipalRole, model.FatherRole, model.MotherRole, model.SpouseRole, model.BrideRole, model.GroomRole, model.BrideFatherRole, model.BrideMotherRole, model.GroomFatherRole, model.GroomMotherRole},
+	},
+}
 
-var Relatives = []string{"father", "mother", "spouse", "other"}
-
-var RelativeRoles = map[string]map[string][]string{
-	"principal": {
-		"father": {"father"},
-		"mother": {"mother"},
-		"spouse": {"spouse"},
-		"other":  {"bride", "groom", "brideFather", "brideMother", "groomFather", "groomMother", "other"},
+var RelativeRelationshipsToHead = map[model.HouseholdRelToHead]map[model.Relative][]model.HouseholdRelToHead{
+	model.HeadRelToHead: {
+		model.FatherRelative: {model.FatherRelToHead},
+		model.MotherRelative: {model.MotherRelToHead},
+		model.SpouseRelative: {model.SpouseRelToHead, model.HusbandRelToHead, model.WifeRelToHead},
+		model.OtherRelative:  {model.HeadRelToHead, model.ChildRelToHead, model.SonRelToHead, model.DaughterRelToHead, model.OtherRelToHead},
 	},
-	"father": {
-		"father": {},
-		"mother": {},
-		"spouse": {"mother"},
-		"other":  {"principal", "spouse", "bride", "groom", "brideFather", "brideMother", "groomFather", "groomMother", "other"},
+	model.FatherRelToHead: {
+		model.FatherRelative: {},
+		model.MotherRelative: {},
+		model.SpouseRelative: {model.MotherRelToHead},
+		model.OtherRelative:  {model.HeadRelToHead, model.FatherRelToHead, model.SpouseRelToHead, model.HusbandRelToHead, model.WifeRelToHead, model.ChildRelToHead, model.SonRelToHead, model.DaughterRelToHead, model.OtherRelToHead},
 	},
-	"mother": {
-		"father": {},
-		"mother": {},
-		"spouse": {"father"},
-		"other":  {"principal", "spouse", "bride", "groom", "brideFather", "brideMother", "groomFather", "groomMother", "other"},
+	model.MotherRelToHead: {
+		model.FatherRelative: {},
+		model.MotherRelative: {},
+		model.SpouseRelative: {model.FatherRelToHead},
+		model.OtherRelative:  {model.HeadRelToHead, model.MotherRelToHead, model.SpouseRelToHead, model.HusbandRelToHead, model.WifeRelToHead, model.ChildRelToHead, model.SonRelToHead, model.DaughterRelToHead, model.OtherRelToHead},
 	},
-	"spouse": {
-		"father": {},
-		"mother": {},
-		"spouse": {"principal"},
-		"other":  {"father", "mother", "bride", "groom", "brideFather", "brideMother", "groomFather", "groomMother", "other"},
+	model.SpouseRelToHead: {
+		model.FatherRelative: {},
+		model.MotherRelative: {},
+		model.SpouseRelative: {model.HeadRelToHead},
+		model.OtherRelative:  {model.FatherRelToHead, model.MotherRelToHead, model.SpouseRelToHead, model.HusbandRelToHead, model.WifeRelToHead, model.ChildRelToHead, model.SonRelToHead, model.DaughterRelToHead, model.OtherRelToHead},
 	},
-	"bride": {
-		"father": {"brideFather"},
-		"mother": {"brideMother"},
-		"spouse": {"groom"},
-		"other":  {"principal", "father", "mother", "spouse", "groomFather", "groomMother", "other"},
+	model.HusbandRelToHead: {
+		model.FatherRelative: {},
+		model.MotherRelative: {},
+		model.SpouseRelative: {model.HeadRelToHead},
+		model.OtherRelative:  {model.FatherRelToHead, model.MotherRelToHead, model.SpouseRelToHead, model.HusbandRelToHead, model.WifeRelToHead, model.ChildRelToHead, model.SonRelToHead, model.DaughterRelToHead, model.OtherRelToHead},
 	},
-	"groom": {
-		"father": {"groomFather"},
-		"mother": {"groomMother"},
-		"spouse": {"bride"},
-		"other":  {"principal", "father", "mother", "spouse", "brideFather", "brideMother", "other"},
+	model.WifeRelToHead: {
+		model.FatherRelative: {},
+		model.MotherRelative: {},
+		model.SpouseRelative: {model.HeadRelToHead},
+		model.OtherRelative:  {model.FatherRelToHead, model.MotherRelToHead, model.SpouseRelToHead, model.HusbandRelToHead, model.WifeRelToHead, model.ChildRelToHead, model.SonRelToHead, model.DaughterRelToHead, model.OtherRelToHead},
 	},
-	"brideFather": {
-		"father": {},
-		"mother": {},
-		"spouse": {"brideMother"},
-		"other":  {"principal", "father", "mother", "spouse", "bride", "groom", "groomFather", "groomMother", "other"},
+	model.ChildRelToHead: {
+		model.FatherRelative: {model.HeadRelToHead, model.SpouseRelToHead, model.HusbandRelToHead},
+		model.MotherRelative: {model.HeadRelToHead, model.SpouseRelToHead, model.WifeRelToHead},
+		model.SpouseRelative: {},
+		model.OtherRelative:  {model.FatherRelToHead, model.MotherRelToHead, model.ChildRelToHead, model.SonRelToHead, model.DaughterRelToHead, model.OtherRelToHead},
 	},
-	"brideMother": {
-		"father": {},
-		"mother": {},
-		"spouse": {"brideFather"},
-		"other":  {"principal", "father", "mother", "spouse", "bride", "groom", "groomFather", "groomMother", "other"},
+	model.SonRelToHead: {
+		model.FatherRelative: {model.HeadRelToHead, model.SpouseRelToHead, model.HusbandRelToHead},
+		model.MotherRelative: {model.HeadRelToHead, model.SpouseRelToHead, model.WifeRelToHead},
+		model.SpouseRelative: {},
+		model.OtherRelative:  {model.FatherRelToHead, model.MotherRelToHead, model.ChildRelToHead, model.SonRelToHead, model.DaughterRelToHead, model.OtherRelToHead},
 	},
-	"groomFather": {
-		"father": {},
-		"mother": {},
-		"spouse": {"groomMother"},
-		"other":  {"principal", "father", "mother", "spouse", "bride", "groom", "brideFather", "brideMother", "other"},
+	model.DaughterRelToHead: {
+		model.FatherRelative: {model.HeadRelToHead, model.SpouseRelToHead, model.HusbandRelToHead},
+		model.MotherRelative: {model.HeadRelToHead, model.SpouseRelToHead, model.WifeRelToHead},
+		model.SpouseRelative: {},
+		model.OtherRelative:  {model.FatherRelToHead, model.MotherRelToHead, model.ChildRelToHead, model.SonRelToHead, model.DaughterRelToHead, model.OtherRelToHead},
 	},
-	"groomMother": {
-		"father": {},
-		"mother": {},
-		"spouse": {"groomFather"},
-		"other":  {"principal", "father", "mother", "spouse", "bride", "groom", "brideFather", "brideMother", "other"},
-	},
-	"other": {
-		"father": {},
-		"mother": {},
-		"spouse": {},
-		"other":  {"principal", "father", "mother", "spouse", "bride", "groom", "brideFather", "brideMother", "groomFather", "groomMother"},
+	model.OtherRelToHead: {
+		model.FatherRelative: {},
+		model.MotherRelative: {},
+		model.SpouseRelative: {},
+		model.OtherRelative:  {model.HeadRelToHead, model.FatherRelToHead, model.MotherRelToHead, model.SpouseRelToHead, model.HusbandRelToHead, model.WifeRelToHead, model.ChildRelToHead, model.SonRelToHead, model.DaughterRelToHead, model.OtherRelToHead},
 	},
 }
 
@@ -374,6 +433,16 @@ func (api API) IndexPost(ctx context.Context, post *model.Post) error {
 		return errs
 	}
 
+	// read record households for post
+	var recordHouseholds []model.RecordHousehold
+	if collection.HouseholdNumberHeader != "" {
+		recordHouseholds, errs = api.GetRecordHouseholdsForPost(ctx, post.ID)
+		if errs != nil {
+			log.Printf("[ERROR] GetRecordHouseholdsForPost %v\n", errs)
+			return errs
+		}
+	}
+
 	// create the bulk indexer
 	bi, err := esutil.NewBulkIndexer(esutil.BulkIndexerConfig{
 		Index:      "records",  // The default index name
@@ -391,8 +460,17 @@ func (api API) IndexPost(ctx context.Context, post *model.Post) error {
 		}
 	}()
 
+	householdRecordsMap := map[string][]*model.Record{}
+	if collection.HouseholdNumberHeader != "" {
+		householdRecordsMap = getHouseholdRecordsMap(recordHouseholds, records.Records)
+	}
+
 	for _, record := range records.Records {
-		err = indexRecord(&record, post, collection, categories, lastModified, &countSuccessful, bi)
+		var householdRecords []*model.Record
+		if collection.HouseholdNumberHeader != "" {
+			householdRecords = householdRecordsMap[record.Data[collection.HouseholdNumberHeader]]
+		}
+		err = indexRecord(&record, householdRecords, post, collection, categories, lastModified, &countSuccessful, bi)
 		if err != nil {
 			log.Printf("[ERROR] Unexpected error %d: %v", record.ID, err)
 			return err
@@ -416,8 +494,27 @@ func (api API) IndexPost(ctx context.Context, post *model.Post) error {
 	return nil
 }
 
-func indexRecord(record *model.Record, post *model.Post, collection *model.Collection, categories []model.Category,
-	lastModified string, countSuccessful *uint64, bi esutil.BulkIndexer) error {
+func getHouseholdRecordsMap(recordHouseholds []model.RecordHousehold, records []model.Record) map[string][]*model.Record {
+	recordsMap := map[uint32]*model.Record{}
+	for ix := range records {
+		recordsMap[records[ix].ID] = &records[ix]
+	}
+	result := map[string][]*model.Record{}
+	for _, recordHousehold := range recordHouseholds {
+		if recordHousehold.Household == "" {
+			continue // should never happen
+		}
+		var records []*model.Record
+		for _, recordID := range recordHousehold.Records {
+			records = append(records, recordsMap[recordID])
+		}
+		result[recordHousehold.Household] = records
+	}
+	return result
+}
+
+func indexRecord(record *model.Record, householdRecords []*model.Record, post *model.Post, collection *model.Collection,
+	categories []model.Category, lastModified string, countSuccessful *uint64, bi esutil.BulkIndexer) error {
 
 	for role, suffix := range IndexRoles {
 		if suffix != "" {
@@ -431,47 +528,58 @@ func indexRecord(record *model.Record, post *model.Post, collection *model.Colle
 		ixRecord["given"] = data["given"]
 		ixRecord["surname"] = data["surname"]
 		if ixRecord["given"] == "" && ixRecord["surname"] == "" {
-			log.Printf("[DEBUG] No given name or surname found for record %#v, mappings %#v, role %s",
-				record, collection.Mappings, role)
+			if role == "principal" {
+				log.Printf("[DEBUG] No given name or surname found for record %#v, mappings %#v, role %s",
+					record, collection.Mappings, role)
+			}
 			continue
 		}
 
 		// get relatives' names
-		for _, relative := range Relatives {
+		for _, relative := range model.Relatives {
 			names := getNames(collection.Mappings, record, RelativeRoles[role][relative])
-			givens := getNameParts(names, func(name GivenSurname) string { return name.given })
-			surnames := getNameParts(names, func(name GivenSurname) string { return name.surname })
+			// include relatives' names from household
+			if role == model.PrincipalRole && collection.HouseholdRelationshipHeader != "" && len(householdRecords) > 0 {
+				relToHead := stdRelToHead(record.Data[collection.HouseholdRelationshipHeader])
+				householdNames := getHouseholdNames(collection.HouseholdRelationshipHeader, collection.GenderHeader,
+					collection.Mappings, relative, RelativeRelationshipsToHead[relToHead][relative], record.ID, householdRecords)
+				if len(householdNames) > 0 {
+					names = append(names, householdNames...)
+				}
+			}
+			givens := unique(getNameParts(names, func(name GivenSurname) string { return name.given }))
+			surnames := unique(getNameParts(names, func(name GivenSurname) string { return name.surname }))
 			if len(givens) > 0 {
-				ixRecord[relative+"Given"] = strings.Join(givens, " ")
+				ixRecord[string(relative)+"Given"] = strings.Join(givens, " ")
 			}
 			if len(surnames) > 0 {
-				ixRecord[relative+"Surname"] = strings.Join(surnames, " ")
+				ixRecord[string(relative)+"Surname"] = strings.Join(surnames, " ")
 			}
 		}
 
 		// get events
-		for _, eventType := range EventTypes {
-			if data[eventType+"Date"] != "" {
-				dates, years, valid := getDatesYears(data[eventType+"Date_std"])
+		for _, eventType := range model.EventTypes {
+			if data[string(eventType)+"Date"] != "" {
+				dates, years, valid := getDatesYears(data[string(eventType)+"Date_std"])
 				if valid {
-					ixRecord[eventType+"DateStd"] = dates
-					ixRecord[eventType+"Year"] = years
+					ixRecord[string(eventType)+"DateStd"] = dates
+					ixRecord[string(eventType)+"Year"] = years
 				}
 			}
-			if data[eventType+"Place"] != "" {
-				placeLevels := getPlaceLevels(data[eventType+"Place_std"])
+			if data[string(eventType)+"Place"] != "" {
+				placeLevels := getPlaceLevels(data[string(eventType)+"Place_std"])
 				if len(placeLevels) > 0 {
-					ixRecord[eventType+"Place"] = data[eventType+"Place"]
-					ixRecord[eventType+"Place1"] = placeLevels[0]
+					ixRecord[string(eventType)+"Place"] = data[string(eventType)+"Place"]
+					ixRecord[string(eventType)+"Place1"] = placeLevels[0]
 				}
 				if len(placeLevels) > 1 {
-					ixRecord[eventType+"Place2"] = placeLevels[1]
+					ixRecord[string(eventType)+"Place2"] = placeLevels[1]
 				}
 				if len(placeLevels) > 2 {
-					ixRecord[eventType+"Place3"] = placeLevels[2]
+					ixRecord[string(eventType)+"Place3"] = placeLevels[2]
 				}
 				if len(placeLevels) > 3 {
-					ixRecord[eventType+"Place4"] = placeLevels[3]
+					ixRecord[string(eventType)+"Place4"] = placeLevels[3]
 				}
 			}
 		}
@@ -598,6 +706,29 @@ func (api API) SearchByID(ctx context.Context, id string) (*model.SearchHit, err
 		return nil, errs
 	}
 
+	// read household
+	householdRecords := []model.SearchRecord{}
+	if collection.HouseholdNumberHeader != "" {
+		recordHousehold, errs := api.GetRecordHousehold(ctx, record.Post, record.Data[collection.HouseholdNumberHeader])
+		if errs != nil || recordHousehold == nil || len(recordHousehold.Records) == 0 {
+			log.Printf("[ERROR] recordHousehold not found for record %d err=%v\n", record.ID, errs)
+			return nil, errs
+		}
+		recs, errs := api.GetRecordsByID(ctx, recordHousehold.Records)
+		if errs != nil {
+			log.Printf("[ERROR] household records not found for record %d err=%v\n", record.ID, errs)
+			return nil, errs
+		}
+		// add household records in order
+		for _, recordID := range recordHousehold.Records {
+			for _, rec := range recs {
+				if rec.ID == recordID {
+					householdRecords = append(householdRecords, constructSearchRecord(collection.Mappings, &rec))
+					break
+				}
+			}
+		}
+	}
 	return &model.SearchHit{
 		ID:                 hitData.ID,
 		Person:             constructSearchPerson(collection.Mappings, hitData.Role, record),
@@ -608,6 +739,7 @@ func (api API) SearchByID(ctx context.Context, id string) (*model.SearchHit, err
 		Citation:           record.GetCitation(collection.CitationTemplate),
 		PostID:             record.Post,
 		ImagePath:          record.Data[collection.ImagePathHeader],
+		Household:          householdRecords,
 	}, nil
 }
 
@@ -1373,7 +1505,7 @@ func addTermsAgg(aggs map[string]Agg, label string, cond bool) {
 
 func getHitData(r ESSearchHit) (*HitData, error) {
 	idParts := strings.Split(r.ID, "_")
-	role := "principal"
+	role := model.PrincipalRole
 	if len(idParts) > 1 {
 		role = IndexRolesReversed[idParts[1]]
 	}
@@ -1395,24 +1527,24 @@ func getHitData(r ESSearchHit) (*HitData, error) {
 	}, nil
 }
 
-func constructSearchPerson(mappings []model.CollectionMapping, role string, record *model.Record) model.SearchPerson {
+func constructSearchPerson(mappings []model.CollectionMapping, role model.Role, record *model.Record) model.SearchPerson {
 	data := getDataForRole(mappings, record, role)
 
 	// populate events
 	events := []model.SearchEvent{}
-	for _, eventType := range EventTypes {
-		if data[eventType+"Date"] != "" || data[eventType+"Place"] != "" {
+	for _, eventType := range model.EventTypes {
+		if data[string(eventType)+"Date"] != "" || data[string(eventType)+"Place"] != "" {
 			events = append(events, model.SearchEvent{
 				Type:  eventType,
-				Date:  data[eventType+"Date"],
-				Place: data[eventType+"Place"],
+				Date:  data[string(eventType)+"Date"],
+				Place: data[string(eventType)+"Place"],
 			})
 		}
 	}
 
 	// populate relationships
 	relationships := []model.SearchRelationship{}
-	for _, relative := range Relatives {
+	for _, relative := range model.Relatives {
 		names := getNames(mappings, record, RelativeRoles[role][relative])
 		if len(names) > 0 {
 			relationships = append(relationships, model.SearchRelationship{
@@ -1444,13 +1576,13 @@ func constructSearchRecord(mappings []model.CollectionMapping, record *model.Rec
 	return lvs
 }
 
-func getDataForRole(mappings []model.CollectionMapping, record *model.Record, role string) map[string]string {
+func getDataForRole(mappings []model.CollectionMapping, record *model.Record, role model.Role) map[string]string {
 	data := map[string]string{}
 
 	for _, mapping := range mappings {
 		// get marriage data for spouse too
 		if record.Data[mapping.Header] != "" &&
-			(mapping.IxRole == role || (isSpouseRole(mapping.IxRole, role) && isMarriageField(mapping.IxField))) {
+			(mapping.IxRole == string(role) || (isSpouseRole(mapping.IxRole, role) && isMarriageField(mapping.IxField))) {
 			data[mapping.IxField] = record.Data[mapping.Header]
 			if strings.HasSuffix(mapping.IxField, "Date") {
 				data[mapping.IxField+stddate.StdSuffix] = record.Data[mapping.Header+stddate.StdSuffix]
@@ -1466,55 +1598,126 @@ func isMarriageField(field string) bool {
 	return field == "marriageDate" || field == "marriagePlace"
 }
 
-func isSpouseRole(role1, role2 string) bool {
+func isSpouseRole(role1 string, role2 model.Role) bool {
 	switch role1 {
-	case "principal":
-		return role2 == "spouse"
-	case "spouse":
-		return role2 == "principal"
-	case "father":
-		return role2 == "mother"
-	case "mother":
-		return role2 == "father"
-	case "bride":
-		return role2 == "groom"
-	case "groom":
-		return role2 == "bride"
-	case "brideFather":
-		return role2 == "brideMother"
-	case "brideMother":
-		return role2 == "brideFather"
-	case "groomFather":
-		return role2 == "groomMother"
-	case "groomMother":
-		return role2 == "groomFather"
+	case string(model.PrincipalRole):
+		return role2 == model.SpouseRole
+	case string(model.SpouseRole):
+		return role2 == model.PrincipalRole
+	case string(model.FatherRole):
+		return role2 == model.MotherRole
+	case string(model.MotherRole):
+		return role2 == model.FatherRole
+	case string(model.BrideRole):
+		return role2 == model.GroomRole
+	case string(model.GroomRole):
+		return role2 == model.BrideRole
+	case string(model.BrideFatherRole):
+		return role2 == model.BrideMotherRole
+	case string(model.BrideMotherRole):
+		return role2 == model.BrideFatherRole
+	case string(model.GroomFatherRole):
+		return role2 == model.GroomMotherRole
+	case string(model.GroomMotherRole):
+		return role2 == model.GroomFatherRole
 	}
 	return false
 }
 
-func getNames(mappings []model.CollectionMapping, record *model.Record, roles []string) []GivenSurname {
+func getNames(mappings []model.CollectionMapping, record *model.Record, roles []model.Role) []GivenSurname {
 	names := []GivenSurname{}
 
 	for _, role := range roles {
-		var givens []string
-		var surnames []string
-		for _, mapping := range mappings {
-			if mapping.IxRole == role {
-				if mapping.IxField == "given" && record.Data[mapping.Header] != "" {
-					givens = append(givens, record.Data[mapping.Header])
-				} else if mapping.IxField == "surname" {
-					surnames = append(surnames, record.Data[mapping.Header])
-				}
-			}
-		}
-		if len(givens) > 0 || len(surnames) > 0 {
-			names = append(names, GivenSurname{
-				given:   strings.Join(givens, " "),
-				surname: strings.Join(surnames, " "),
-			})
-		}
+		names = append(names, getNamesForRole(role, mappings, record)...)
 	}
 	return names
+}
+
+func getNamesForRole(role model.Role, mappings []model.CollectionMapping, record *model.Record) []GivenSurname {
+	var names []GivenSurname
+
+	var givens []string
+	var surnames []string
+	for _, mapping := range mappings {
+		if mapping.IxRole == string(role) {
+			if mapping.IxField == "given" && record.Data[mapping.Header] != "" {
+				givens = append(givens, record.Data[mapping.Header])
+			}
+			if mapping.IxField == "surname" && record.Data[mapping.Header] != "" {
+				surnames = append(surnames, record.Data[mapping.Header])
+			}
+		}
+	}
+	if len(givens) > 0 || len(surnames) > 0 {
+		givens = unique(givens)
+		surnames = unique(surnames)
+		names = append(names, GivenSurname{
+			given:   strings.Join(givens, " "),
+			surname: strings.Join(surnames, " "),
+		})
+	}
+	return names
+}
+
+func getHouseholdNames(relToHeadHeader, genderHeader string, mappings []model.CollectionMapping, relative model.Relative,
+	relsToHead []model.HouseholdRelToHead, recordID uint32, householdRecords []*model.Record) []GivenSurname {
+
+	names := []GivenSurname{}
+
+	// for each record in household that is not this record
+	for _, record := range householdRecords {
+		if record.ID == recordID {
+			continue
+		}
+
+		// if the record's relationship to head is in relsToHead, get the names
+		recordRelToHead := stdRelToHead(record.Data[relToHeadHeader])
+		found := false
+		for _, relToHead := range relsToHead {
+			if recordRelToHead == relToHead {
+				found = true
+				break
+			}
+		}
+		if !found {
+			continue
+		}
+
+		// if the relative is father or mother and the relationship is head or spouse, make sure the gender doesn't disagree
+		if (relative == model.FatherRelative || relative == model.MotherRelative) &&
+			(recordRelToHead == model.HeadRelToHead || recordRelToHead == model.SpouseRelToHead) {
+			recordGender := stdGender(record.Data[genderHeader])
+			if (relative == model.FatherRelative && recordGender == model.GenderFemale) ||
+				(relative == model.MotherRelative && recordGender == model.GenderMale) {
+				continue
+			}
+		}
+
+		// get names
+		names = append(names, getNamesForRole(model.PrincipalRole, mappings, record)...)
+	}
+	return names
+}
+
+func stdRelToHead(relToHead string) model.HouseholdRelToHead {
+	relToHead = strings.ToLower(relToHead)
+	for _, stdRelToHead := range model.HouseholdRelsToHead {
+		if relToHead == string(stdRelToHead) {
+			return stdRelToHead
+		}
+	}
+	return model.OtherRelToHead
+}
+
+func stdGender(gender string) model.Gender {
+	gender = strings.ToLower(gender)
+	if strings.HasPrefix(gender, "f") {
+		return model.GenderFemale
+	}
+	if strings.HasPrefix(gender, "m") {
+		return model.GenderMale
+	}
+	return model.GenderOther
 }
 
 func getNameParts(names []GivenSurname, extractor nameExtractor) []string {
@@ -1642,4 +1845,18 @@ func reverse(s []string) {
 	for i, j := 0, len(s)-1; i < j; i, j = i+1, j-1 {
 		s[i], s[j] = s[j], s[i]
 	}
+}
+
+func unique(arr []string) []string {
+	var result []string
+OUTER:
+	for _, s := range arr {
+		for _, res := range result {
+			if res == s {
+				continue OUTER
+			}
+		}
+		result = append(result, s)
+	}
+	return result
 }

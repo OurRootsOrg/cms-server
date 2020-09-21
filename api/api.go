@@ -59,6 +59,16 @@ type LocalAPI interface {
 	GetContent(ctx context.Context, key string) ([]byte, error)
 	RetrieveUser(ctx context.Context, provider OIDCProvider, token *oidc.IDToken, rawToken string) (*model.User, error)
 	GetRecordsForPost(ctx context.Context, postid uint32) (*RecordResult, error)
+	GetRecordsByID(ctx context.Context, ids []uint32) ([]model.Record, error)
+	GetRecord(ctx context.Context, id uint32) (*model.Record, error)
+	AddRecord(ctx context.Context, in model.RecordIn) (*model.Record, error)
+	UpdateRecord(ctx context.Context, id uint32, in model.Record) (*model.Record, error)
+	DeleteRecord(ctx context.Context, id uint32) error
+	DeleteRecordsForPost(ctx context.Context, postID uint32) error
+	GetRecordHouseholdsForPost(ctx context.Context, postid uint32) ([]model.RecordHousehold, error)
+	GetRecordHousehold(ctx context.Context, postID uint32, householdID string) (*model.RecordHousehold, error)
+	AddRecordHousehold(ctx context.Context, in model.RecordHouseholdIn) (*model.RecordHousehold, error)
+	DeleteRecordHouseholdsForPost(ctx context.Context, postID uint32) error
 	Search(ctx context.Context, req *SearchRequest) (*model.SearchResult, error)
 	SearchByID(ctx context.Context, id string) (*model.SearchHit, error)
 	SearchDeleteByID(ctx context.Context, id string) error

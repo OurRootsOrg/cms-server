@@ -87,3 +87,46 @@ func (api API) DeleteRecordsForPost(ctx context.Context, postID uint32) error {
 	}
 	return nil
 }
+
+// GetRecordHouseholdsForPost holds the business logic around getting all Record Households for a post
+func (api API) GetRecordHouseholdsForPost(ctx context.Context, postID uint32) ([]model.RecordHousehold, error) {
+	recordHouseholds, err := api.recordPersister.SelectRecordHouseholdsForPost(ctx, postID)
+	if err != nil {
+		return nil, NewError(err)
+	}
+	return recordHouseholds, nil
+}
+
+// GetRecordHousehold holds the business logic around getting a Record Household
+func (api API) GetRecordHousehold(ctx context.Context, postID uint32, householdID string) (*model.RecordHousehold, error) {
+	recordHousehold, err := api.recordPersister.SelectOneRecordHousehold(ctx, postID, householdID)
+	if err != nil {
+		return nil, NewError(err)
+	}
+	return recordHousehold, nil
+}
+
+// AddRecordHousehold holds the business logic around adding a Record Household
+func (api API) AddRecordHousehold(ctx context.Context, in model.RecordHouseholdIn) (*model.RecordHousehold, error) {
+	err := api.validate.Struct(in)
+	if err != nil {
+		log.Printf("[ERROR] Invalid record household%v", err)
+		return nil, NewError(err)
+	}
+	// insert
+	recordHousehold, e := api.recordPersister.InsertRecordHousehold(ctx, in)
+	if e != nil {
+		return nil, NewError(e)
+	}
+	log.Printf("[DEBUG] Added record Household post=%d household=%s\n", recordHousehold.Post, recordHousehold.Household)
+	return recordHousehold, nil
+}
+
+// DeleteRecordHouseholdsForPost holds the business logic around deleting the Record Households for a Post
+func (api API) DeleteRecordHouseholdsForPost(ctx context.Context, postID uint32) error {
+	err := api.recordPersister.DeleteRecordHouseholdsForPost(ctx, postID)
+	if err != nil {
+		return NewError(err)
+	}
+	return nil
+}

@@ -46,6 +46,9 @@ func TestPublisher(t *testing.T) {
 	// create records
 	testRecords := createTestRecords(t, p, testPost.ID)
 	defer deleteTestRecords(t, p, testRecords)
+	// create record households
+	createTestRecordHouseholds(t, p, testPost.ID, testRecords)
+	defer deleteTestRecordHouseholds(t, p, testPost.ID)
 	// force post to draft status
 	testPost.RecordsStatus = model.PostDraft
 	testPost.ImagesStatus = model.PostDraft
@@ -170,6 +173,15 @@ func createTestCollection(t *testing.T, p model.CollectionPersister, categoryID 
 		{
 			Header: "birthplace",
 		},
+		{
+			Header: "household",
+		},
+		{
+			Header: "reltohead",
+		},
+		{
+			Header: "gender",
+		},
 	}
 	in.Mappings = []model.CollectionMapping{
 		{
@@ -193,6 +205,9 @@ func createTestCollection(t *testing.T, p model.CollectionPersister, categoryID 
 			IxField: "birthPlace",
 		},
 	}
+	in.HouseholdNumberHeader = "household"
+	in.HouseholdRelationshipHeader = "reltohead"
+	in.GenderHeader = "gender"
 	created, e := p.InsertCollection(context.TODO(), in)
 	assert.NoError(t, e)
 	return created
@@ -217,6 +232,9 @@ func deleteTestPost(t *testing.T, p model.PostPersister, post *model.Post) {
 
 var recordData = []map[string]string{
 	{
+		"household":      "H1",
+		"reltohead":      "head",
+		"gender":         "male",
 		"given":          "Fred",
 		"surname":        "Flintstone",
 		"birthdate":      "19 March 1900",
@@ -225,12 +243,29 @@ var recordData = []map[string]string{
 		"birthplace_std": "Autaugaville, Autauga, Alabama, United States",
 	},
 	{
+		"household":      "H1",
+		"reltohead":      "wife",
+		"gender":         "female",
 		"given":          "Wilma",
 		"surname":        "Slaghoople",
 		"birthdate":      "Abt 1900",
 		"birthdate_std":  "19000000,18990101-19011231",
 		"birthplace":     "AL",
 		"birthplace_std": "Alabama, United States",
+	},
+	{
+		"household": "H1",
+		"reltohead": "child",
+		"gender":    "female",
+		"given":     "Pebbles",
+		"surname":   "Flintstone",
+	},
+	{
+		"household": "H2",
+		"reltohead": "head",
+		"gender":    "male",
+		"given":     "Barney",
+		"surname":   "Rubble",
 	},
 }
 
@@ -250,4 +285,27 @@ func deleteTestRecords(t *testing.T, p model.RecordPersister, records []model.Re
 		e := p.DeleteRecord(context.TODO(), record.ID)
 		assert.NoError(t, e)
 	}
+}
+
+func createTestRecordHouseholds(t *testing.T, p model.RecordPersister, postID uint32, records []model.Record) {
+	households := map[string][]uint32{}
+	for _, record := range records {
+		households[record.Data["household"]] = append(households[record.Data["household"]], record.ID)
+	}
+	assert.Equal(t, 2, len(households))
+
+	for householdID, recordIDs := range households {
+		in := model.RecordHouseholdIn{
+			Post:      postID,
+			Household: householdID,
+			Records:   recordIDs,
+		}
+		_, e := p.InsertRecordHousehold(context.TODO(), in)
+		assert.NoError(t, e)
+	}
+}
+
+func deleteTestRecordHouseholds(t *testing.T, p model.RecordPersister, postID uint32) {
+	e := p.DeleteRecordHouseholdsForPost(context.TODO(), postID)
+	assert.NoError(t, e)
 }

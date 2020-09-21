@@ -20,12 +20,15 @@ type CollectionPersister interface {
 
 // CollectionBody is the JSON body of a Collection
 type CollectionBody struct {
-	Name             string              `json:"name" validate:"required" dynamodbav:"altSort"`
-	Location         string              `json:"location,omitempty"`
-	Fields           []CollectionField   `json:"fields"`
-	Mappings         []CollectionMapping `json:"mappings"`
-	CitationTemplate string              `json:"citation_template,omitempty"`
-	ImagePathHeader  string              `json:"imagePathHeader,omitempty"`
+	Name                        string              `json:"name" validate:"required" dynamodbav:"altSort"`
+	Location                    string              `json:"location,omitempty"`
+	Fields                      []CollectionField   `json:"fields"`
+	Mappings                    []CollectionMapping `json:"mappings"`
+	CitationTemplate            string              `json:"citation_template,omitempty"`
+	ImagePathHeader             string              `json:"imagePathHeader,omitempty"`
+	HouseholdNumberHeader       string              `json:"householdNumberHeader,omitempty"`
+	HouseholdRelationshipHeader string              `json:"householdRelationshipHeader,omitempty"`
+	GenderHeader                string              `json:"genderHeader,omitempty"`
 }
 
 type CollectionField struct {

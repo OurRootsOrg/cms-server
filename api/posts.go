@@ -446,6 +446,10 @@ func (api API) DeletePost(ctx context.Context, id uint32) error {
 		return NewError(fmt.Errorf("post(%d).RecordsStatus must be Draft; is %s", post.ID, post.RecordsStatus))
 	}
 	log.Printf("[DEBUG] deleting records for %d", id)
+	// delete record households for post first so we don't have referential integrity errors
+	if err := api.DeleteRecordHouseholdsForPost(ctx, id); err != nil {
+		return err
+	}
 	// delete records for post first so we don't have referential integrity errors
 	if err := api.DeleteRecordsForPost(ctx, id); err != nil {
 		return err
