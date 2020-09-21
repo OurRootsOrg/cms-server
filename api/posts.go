@@ -3,10 +3,11 @@ package api
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"log"
+	"net/http"
+	"strings"
 	"time"
 
 	"github.com/ourrootsorg/cms-server/model"
@@ -35,12 +36,6 @@ func (api API) GetPosts(ctx context.Context /* filter/search criteria */) (*Post
 	if err != nil {
 		return nil, NewError(err)
 	}
-	// default ImagesStatus, but see the comment about ImagesLoading in model/post.go
-	for i := range posts {
-		if posts[i].ImagesStatus == "" {
-			posts[i].ImagesStatus = model.PostDraft
-		}
-	}
 	return &PostResult{Posts: posts}, nil
 }
 
@@ -49,10 +44,6 @@ func (api API) GetPost(ctx context.Context, id uint32) (*model.Post, error) {
 	post, err := api.postPersister.SelectOnePost(ctx, id)
 	if err != nil {
 		return nil, NewError(err)
-	}
-	// default ImagesStatus, but see the comment about ImagesLoading in model/post.go
-	if post.ImagesStatus == "" {
-		post.ImagesStatus = model.PostDraft
 	}
 	return post, nil
 }
@@ -115,32 +106,34 @@ func (api API) AddPost(ctx context.Context, in model.PostIn) (*model.Post, error
 		return nil, NewError(err)
 	}
 	log.Printf("[DEBUG] Starting post %#v", in)
-	log.Printf("[DEBUG] Open recordswriter topic")
-	// prepare to send a RecordsWriter message
-	recordsWriterTopic, err := api.OpenTopic(ctx, "recordswriter")
-	if err != nil {
-		log.Printf("[ERROR] Can't open recordswriter topic %v", err)
-		return nil, NewError(err)
-	}
-	defer recordsWriterTopic.Shutdown(ctx)
-	log.Printf("[DEBUG] Open imageswriter topic")
-	// prepare to send a ImagesWriter message
-	imagesWriterTopic, err := api.OpenTopic(ctx, "imageswriter")
-	if err != nil {
-		log.Printf("[ERROR] Can't open imageswriter topic %v", err)
-		return nil, NewError(err)
-	}
-	defer imagesWriterTopic.Shutdown(ctx)
-	// set records status
-	in.RecordsStatus = model.PostDraft
+	in.PostStatus = model.PostStatusDraft
+	in.RecordsStatus = model.RecordsStatusDefault
+	in.ImagesStatus = model.ImagesStatusDefault
+
+	var recordsWriterTopic, imagesWriterTopic *pubsub.Topic
 	if in.RecordsKey != "" {
-		in.RecordsStatus = model.PostLoading
+		log.Printf("[DEBUG] Open recordswriter topic")
+		// prepare to send a RecordsWriter message
+		recordsWriterTopic, err = api.OpenTopic(ctx, "recordswriter")
+		if err != nil {
+			log.Printf("[ERROR] Can't open recordswriter topic %v", err)
+			return nil, NewError(err)
+		}
+		defer recordsWriterTopic.Shutdown(ctx)
+		in.RecordsStatus = model.RecordsStatusToLoad
 	}
-	// set images status
-	in.ImagesStatus = model.PostDraft
 	if len(in.ImagesKeys) > 0 {
-		in.ImagesStatus = model.PostLoading
+		log.Printf("[DEBUG] Open imageswriter topic")
+		// prepare to send a ImagesWriter message
+		imagesWriterTopic, err = api.OpenTopic(ctx, "imageswriter")
+		if err != nil {
+			log.Printf("[ERROR] Can't open imageswriter topic %v", err)
+			return nil, NewError(err)
+		}
+		defer imagesWriterTopic.Shutdown(ctx)
+		in.ImagesStatus = model.ImagesStatusToLoad
 	}
+
 	// insert
 	post, e := api.postPersister.InsertPost(ctx, in)
 	if e != nil {
@@ -207,10 +200,49 @@ func (api API) UpdatePost(ctx context.Context, id uint32, in model.Post) (*model
 	var recordsWriterTopic, imagesWriterTopic, publisherTopic *pubsub.Topic
 	var recordsMsg, imagesMsg, publisherMsg []byte
 
+	// validate records status change
+	switch {
+	case currPost.RecordsStatus == in.RecordsStatus:
+		// continue
+	case (currPost.RecordsStatus == model.RecordsStatusToLoad || currPost.RecordsStatus == model.RecordsStatusError) && in.RecordsStatus == model.RecordsStatusLoading:
+		// continue
+	case currPost.RecordsStatus == model.RecordsStatusLoading && in.RecordsStatus == model.RecordsStatusLoadComplete:
+		in.RecordsStatus = model.RecordsStatusDefault
+	case currPost.RecordsStatus == model.RecordsStatusLoading && in.RecordsStatus == model.RecordsStatusLoadError:
+		in.RecordsStatus = model.RecordsStatusError
+	default:
+		err := fmt.Errorf("post %d cannot be updated from records status %s to status %s", currPost.ID, currPost.RecordsStatus, in.RecordsStatus)
+		log.Printf("[DEBUG] %s", err.Error())
+		return nil, NewHTTPError(err, http.StatusBadRequest)
+	}
+
+	// validate images status change
+	switch {
+	case currPost.ImagesStatus == in.ImagesStatus:
+		// continue
+	case (currPost.ImagesStatus == model.ImagesStatusToLoad || currPost.ImagesStatus == model.ImagesStatusError) && in.ImagesStatus == model.ImagesStatusLoading:
+		// continue
+	case currPost.ImagesStatus == model.ImagesStatusLoading && in.ImagesStatus == model.ImagesStatusLoadComplete:
+		in.ImagesStatus = model.ImagesStatusDefault
+	case currPost.ImagesStatus == model.ImagesStatusLoading && in.ImagesStatus == model.ImagesStatusLoadError:
+		in.ImagesStatus = model.ImagesStatusError
+	default:
+		err := fmt.Errorf("post %d cannot be updated from images status %s to status %s", currPost.ID, currPost.ImagesStatus, in.ImagesStatus)
+		log.Printf("[DEBUG] %s", err.Error())
+		return nil, NewHTTPError(err, http.StatusBadRequest)
+	}
+
+	// handle records key change
 	if currPost.RecordsKey != in.RecordsKey {
-		// handle records key change
-		if currPost.RecordsStatus != in.RecordsStatus || in.RecordsStatus != model.PostDraft {
-			return nil, NewError(fmt.Errorf("cannot change recordsKey unless recordsStatus is Draft; status is %s", currPost.RecordsStatus))
+		if currPost.PostStatus != model.PostStatusDraft && currPost.PostStatus != model.PostStatusError {
+			err := fmt.Errorf("cannot upload records for post %d unless post status is Draft or Error; status is %s", currPost.ID, currPost.PostStatus)
+			log.Printf("[DEBUG] %s", err.Error())
+			return nil, NewHTTPError(err, http.StatusBadRequest)
+		}
+		if currPost.RecordsStatus != model.RecordsStatusDefault && currPost.RecordsStatus != model.RecordsStatusError {
+			err := fmt.Errorf("cannot upload records for post %d unless records status is empty or Error; status is %s", currPost.ID, currPost.RecordsStatus)
+			log.Printf("[DEBUG] %s", err.Error())
+			return nil, NewHTTPError(err, http.StatusBadRequest)
 		}
 		// prepare to send a message
 		recordsWriterTopic, err = api.OpenTopic(ctx, "recordswriter")
@@ -220,7 +252,8 @@ func (api API) UpdatePost(ctx context.Context, id uint32, in model.Post) (*model
 		}
 		defer recordsWriterTopic.Shutdown(ctx)
 
-		in.RecordsStatus = model.PostLoading
+		in.RecordsStatus = model.RecordsStatusToLoad
+		in.RecordsError = ""
 		recordsMsg, err = json.Marshal(model.RecordsWriterMsg{
 			PostID: id,
 		})
@@ -228,52 +261,20 @@ func (api API) UpdatePost(ctx context.Context, id uint32, in model.Post) (*model
 			log.Printf("[ERROR] Can't marshal message %v", err)
 			return nil, NewError(err)
 		}
-	} else if currPost.RecordsStatus != in.RecordsStatus {
-		// handle records status change
-		switch {
-		case (currPost.RecordsStatus == model.PostDraft && in.RecordsStatus == model.PostPublished) ||
-			(currPost.RecordsStatus == model.PostPublished && in.RecordsStatus == model.PostDraft):
-			// prepare to send a message
-			publisherTopic, err = api.OpenTopic(ctx, "publisher")
-			if err != nil {
-				log.Printf("[ERROR] Can't open publisher topic %v", err)
-				return nil, NewError(err)
-			}
-			defer publisherTopic.Shutdown(ctx)
-
-			var action model.PublisherAction
-			if in.RecordsStatus == model.PostPublished {
-				in.RecordsStatus = model.PostPublishing
-				action = model.PublisherActionIndex
-			} else {
-				in.RecordsStatus = model.PostUnpublishing
-				action = model.PublisherActionUnindex
-			}
-			publisherMsg, err = json.Marshal(model.PublisherMsg{
-				Action: action,
-				PostID: id,
-			})
-			if err != nil {
-				log.Printf("[ERROR] Can't marshal message %v", err)
-				return nil, NewError(err)
-			}
-		case currPost.RecordsStatus == model.PostPublishing && in.RecordsStatus == model.PostPublishComplete:
-			in.RecordsStatus = model.PostPublished
-		case currPost.RecordsStatus == model.PostUnpublishing && in.RecordsStatus == model.PostUnpublishComplete:
-			in.RecordsStatus = model.PostDraft
-		case currPost.RecordsStatus == model.PostLoading && in.RecordsStatus == model.PostLoadComplete:
-			in.RecordsStatus = model.PostDraft
-		default:
-			msg := fmt.Sprintf("[ERROR] cannot change records status from %s to %s", currPost.RecordsStatus, in.RecordsStatus)
-			log.Println(msg)
-			return nil, NewError(errors.New(msg))
-		}
 	}
 
+	// handle images key change
 	if !currPost.ImagesKeys.Equals(&in.ImagesKeys) {
-		// handle images key change
-		if currPost.ImagesStatus != in.ImagesStatus || in.ImagesStatus != model.PostDraft {
-			return nil, NewError(fmt.Errorf("cannot change imagesKey unless imagesStatus is Draft; status is %s", currPost.ImagesStatus))
+		if currPost.PostStatus != model.PostStatusDraft && currPost.PostStatus != model.PostStatusError {
+			err := fmt.Errorf("cannot upload images for post %d unless post status is Draft or Error; status is %s", currPost.ID, currPost.PostStatus)
+			log.Printf("[DEBUG] %s", err.Error())
+			return nil, NewHTTPError(err, http.StatusBadRequest)
+
+		}
+		if currPost.ImagesStatus != model.ImagesStatusDefault && currPost.ImagesStatus != model.ImagesStatusError {
+			err := fmt.Errorf("cannot upload images for post %d unless images status is empty or Error; status is %s", currPost.ID, currPost.ImagesStatus)
+			log.Printf("[DEBUG] %s", err.Error())
+			return nil, NewHTTPError(err, http.StatusBadRequest)
 		}
 		// prepare to send a message
 		imagesWriterTopic, err = api.OpenTopic(ctx, "imageswriter")
@@ -283,7 +284,8 @@ func (api API) UpdatePost(ctx context.Context, id uint32, in model.Post) (*model
 		}
 		defer imagesWriterTopic.Shutdown(ctx)
 
-		in.ImagesStatus = model.PostLoading
+		in.ImagesStatus = model.ImagesStatusToLoad
+		in.ImagesError = ""
 		iwm := model.ImagesWriterMsg{
 			Action: model.ImagesWriterActionUnzip,
 			PostID: id,
@@ -298,17 +300,64 @@ func (api API) UpdatePost(ctx context.Context, id uint32, in model.Post) (*model
 			log.Printf("[ERROR] Can't marshal message %v", err)
 			return nil, NewError(err)
 		}
-	} else if currPost.ImagesStatus != in.ImagesStatus {
-		// handle images status change
-		switch {
-		// images don't need to be published; only loaded
-		case currPost.ImagesStatus == model.PostLoading && in.ImagesStatus == model.PostLoadComplete:
-			in.ImagesStatus = model.PostDraft
-		default:
-			msg := fmt.Sprintf("[ERROR] cannot change images status from %s to %s", currPost.ImagesStatus, in.ImagesStatus)
-			log.Println(msg)
-			return nil, NewError(errors.New(msg))
+	}
+
+	// validate post status change
+	switch {
+	case currPost.PostStatus == in.PostStatus:
+		// continue
+	case ((currPost.PostStatus == model.PostStatusDraft || currPost.PostStatus == model.PostStatusError) && in.PostStatus == model.PostStatusToPublish) ||
+		(currPost.PostStatus == model.PostStatusPublished && in.PostStatus == model.PostStatusToUnpublish):
+		if currPost.RecordsStatus != model.RecordsStatusDefault || currPost.ImagesStatus != model.ImagesStatusDefault {
+			err := fmt.Errorf("post %d status can be Publication or Unpublication Requested only when records and images "+
+				"statuses are empty; records status is %s and images status is %s", currPost.ID, currPost.RecordsStatus, currPost.ImagesStatus)
+			log.Printf("[DEBUG] %s", err.Error())
+			return nil, NewHTTPError(err, http.StatusBadRequest)
 		}
+		if in.RecordsKey == "" {
+			err := fmt.Errorf("post %d status can be Publication Requested only when post has records; records key is empty", currPost.ID)
+			log.Printf("[DEBUG] %s", err.Error())
+			return nil, NewHTTPError(err, http.StatusBadRequest)
+		}
+		// prepare to send a message
+		publisherTopic, err = api.OpenTopic(ctx, "publisher")
+		if err != nil {
+			log.Printf("[ERROR] Can't open publisher topic %v", err)
+			return nil, NewError(err)
+		}
+		defer publisherTopic.Shutdown(ctx)
+
+		in.PostError = ""
+		var action model.PublisherAction
+		if in.PostStatus == model.PostStatusToPublish {
+			action = model.PublisherActionIndex
+		} else {
+			action = model.PublisherActionUnindex
+		}
+		publisherMsg, err = json.Marshal(model.PublisherMsg{
+			Action: action,
+			PostID: id,
+		})
+		if err != nil {
+			log.Printf("[ERROR] Can't marshal message %v", err)
+			return nil, NewError(err)
+		}
+	case (currPost.PostStatus == model.PostStatusToPublish || currPost.PostStatus == model.PostStatusError) && in.PostStatus == model.PostStatusPublishing:
+		// continue
+	case currPost.PostStatus == model.PostStatusPublishing && in.PostStatus == model.PostStatusPublishComplete:
+		in.PostStatus = model.PostStatusPublished
+	case currPost.PostStatus == model.PostStatusPublishing && in.PostStatus == model.PostStatusPublishError:
+		in.PostStatus = model.PostStatusError
+	case (currPost.PostStatus == model.PostStatusToUnpublish || currPost.PostStatus == model.PostStatusError) && in.PostStatus == model.PostStatusUnpublishing:
+		// continue
+	case currPost.PostStatus == model.PostStatusUnpublishing && in.PostStatus == model.PostStatusUnpublishComplete:
+		in.PostStatus = model.PostStatusDraft
+	case currPost.PostStatus == model.PostStatusUnpublishing && in.PostStatus == model.PostStatusUnpublishError:
+		in.PostStatus = model.PostStatusError
+	default:
+		err := fmt.Errorf("post %d cannot be updated from status %s to status %s", currPost.ID, currPost.PostStatus, in.PostStatus)
+		log.Printf("[DEBUG] %s", err.Error())
+		return nil, NewHTTPError(err, http.StatusBadRequest)
 	}
 
 	// update post
@@ -329,10 +378,6 @@ func (api API) UpdatePost(ctx context.Context, id uint32, in model.Post) (*model
 		}
 	}
 
-	if currPost.RecordsKey != "" && currPost.RecordsKey != in.RecordsKey {
-		api.deleteReferencedContent(ctx, currPost.RecordsKey)
-	}
-
 	// send message to images writer
 	if imagesWriterTopic != nil && imagesMsg != nil {
 		// send the message
@@ -345,13 +390,7 @@ func (api API) UpdatePost(ctx context.Context, id uint32, in model.Post) (*model
 		}
 	}
 
-	for _, ik := range currPost.ImagesKeys {
-		if !in.ImagesKeys.Contains(ik) {
-			// Delete the ZIP file
-			api.deleteReferencedContent(ctx, ik)
-		}
-	}
-
+	// send message to publisher
 	if publisherTopic != nil && publisherMsg != nil {
 		// send the message
 		err = publisherTopic.Send(ctx, &pubsub.Message{Body: publisherMsg})
@@ -360,6 +399,25 @@ func (api API) UpdatePost(ctx context.Context, id uint32, in model.Post) (*model
 			// undo the update
 			_, _ = api.postPersister.UpdatePost(ctx, id, *currPost)
 			return nil, NewError(err)
+		}
+	}
+
+	// remove old records if any
+	if currPost.RecordsKey != "" && currPost.RecordsKey != in.RecordsKey {
+		if err := api.deleteReferencedContent(ctx, currPost.RecordsKey); err != nil {
+			// log the error but don't undo the update
+			log.Printf("[ERROR] deleting records %s when updating post %d %v", currPost.RecordsKey, currPost.ID, err)
+		}
+	}
+
+	// remove old image zips if any
+	for _, ik := range currPost.ImagesKeys {
+		if !in.ImagesKeys.Contains(ik) {
+			// Delete the ZIP file
+			if err := api.deleteReferencedContent(ctx, ik); err != nil {
+				// log the error but don't undo the update
+				log.Printf("[ERROR] deleting zip file %s when updating post %d %v", ik, currPost.ID, err)
+			}
 		}
 	}
 
@@ -374,10 +432,14 @@ func (api API) DeletePost(ctx context.Context, id uint32) error {
 		log.Printf("[ERROR] reading post %d error=%v", id, err)
 		return NewError(err)
 	}
-	// allow deleting posts where the records or images are stuck in loading status
-	if post.RecordsStatus == model.PostPublished || post.RecordsStatus == model.PostPublishing || post.RecordsStatus == model.PostUnpublishing {
-		return NewError(fmt.Errorf("post(%d).RecordsStatus must be Draft; is %s", post.ID, post.RecordsStatus))
+	// allow deleting posts only when post is draft or error, and when records and images are default or error
+	if (post.PostStatus != model.PostStatusDraft && post.PostStatus != model.PostStatusError) ||
+		(post.RecordsStatus != model.RecordsStatusDefault && post.RecordsStatus != model.RecordsStatusError) ||
+		(post.ImagesStatus != model.ImagesStatusDefault && post.ImagesStatus != model.ImagesStatusError) {
+		return NewError(fmt.Errorf("post %d status must be Draft or Error, and records and images statuses must be empty or Error; "+
+			"post status is %s, records status is %s, and images status is %s", post.ID, post.PostStatus, post.RecordsStatus, post.ImagesStatus))
 	}
+
 	log.Printf("[DEBUG] deleting records for %d", id)
 	// delete record households for post first so we don't have referential integrity errors
 	if err := api.DeleteRecordHouseholdsForPost(ctx, id); err != nil {
@@ -387,66 +449,78 @@ func (api API) DeletePost(ctx context.Context, id uint32) error {
 	if err := api.DeleteRecordsForPost(ctx, id); err != nil {
 		return err
 	}
+
 	log.Printf("[DEBUG] deleting post %d", id)
 	if err := api.postPersister.DeletePost(ctx, id); err != nil {
 		return NewError(err)
 	}
+
 	log.Printf("[DEBUG] deleting content for %d", id)
 	if post.RecordsKey != "" {
-		api.deleteReferencedContent(ctx, post.RecordsKey)
+		if err := api.deleteReferencedContent(ctx, post.RecordsKey); err != nil {
+			// log the error but don't undo the delete
+			log.Printf("[ERROR] deleting records %s when deleting post %d %v", post.RecordsKey, post.ID, err)
+		}
 	}
 	if len(post.ImagesKeys) > 0 {
 		log.Printf("[DEBUG] deleting images for %d", id)
 		if err := api.deleteImages(ctx, id); err != nil {
-			log.Printf("[ERROR] deleting images for %d error=%v", id, err)
-			return NewError(err)
+			// log the error but don't undo the delete
+			log.Printf("[ERROR] deleting images when deleting post %d %v", post.ID, err)
 		}
 		// Delete ZIP files
 		for _, ik := range post.ImagesKeys {
-			api.deleteReferencedContent(ctx, ik)
+			if err := api.deleteReferencedContent(ctx, ik); err != nil {
+				// log the error but don't undo the delete
+				log.Printf("[ERROR] deleting zip file %s when deleting post %d %v", ik, post.ID, err)
+			}
 		}
 	}
+
 	return nil
 }
 
-func (api API) deleteReferencedContent(ctx context.Context, key string) {
+func (api API) deleteReferencedContent(ctx context.Context, key string) error {
 	// delete records data
 	bucket, err := api.OpenBucket(ctx, false)
 	if err != nil {
-		log.Printf("[INFO] Error calling OpenBucket while deleting content %v: %v", key, err)
+		return err
 	}
 	defer bucket.Close()
 	if err := bucket.Delete(ctx, key); err != nil {
-		log.Printf("[INFO] error deleting content %v: %v\n", key, err)
+		return err
 	}
+	return nil
 }
 
 // deleteImagesForPost holds the business logic around deleting the images for a Post
 func (api API) deleteImages(ctx context.Context, postID uint32) error {
 	bucket, err := api.OpenBucket(ctx, false)
 	if err != nil {
-		log.Printf("[ERROR] OpenBucket %#v\n", err)
-		return NewError(err)
+		return err
 	}
 	defer bucket.Close()
 	prefix := fmt.Sprintf(ImagesPrefix, postID)
 	li := bucket.List(&blob.ListOptions{
 		Prefix: prefix,
 	})
+	var errs []string
 	for {
-		obj, err := li.Next(ctx)
-		if err == io.EOF {
+		obj, e := li.Next(ctx)
+		if e == io.EOF {
 			break
-		} else if err != nil {
-			log.Printf("[ERROR] Error getting next object with prefix %s: %#v", prefix, err)
-			return NewError(err)
+		} else if e != nil {
+			errs = append(errs, fmt.Sprintf("error getting next object with prefix %s: %v", prefix, e))
+		} else {
+			log.Printf("[DEBUG] Deleting key %s", obj.Key)
+			e = bucket.Delete(ctx, obj.Key)
+			if e != nil {
+				errs = append(errs, fmt.Sprintf("error deleting key %s: %v", obj.Key, e))
+			}
 		}
-		log.Printf("[DEBUG] Deleting key %s", obj.Key)
-		err = bucket.Delete(ctx, obj.Key)
-		if err != nil {
-			log.Printf("[ERROR] Error deleting key %s: %#v", obj.Key, err)
-			return NewError(err)
-		}
+	}
+	if len(errs) > 0 {
+		return fmt.Errorf("error(s) deleting images: %s", strings.Join(errs, "; "))
 	}
 	return nil
 }

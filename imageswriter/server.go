@@ -128,20 +128,7 @@ func processThumbnailMessage(ctx context.Context, ap *api.API, msg model.ImagesW
 	return nil
 }
 
-func processUnzipMessage(ctx context.Context, ap *api.API, msg model.ImagesWriterMsg) error {
-	log.Printf("[DEBUG] ImagesWriter Unzipping PostID: %d", msg.PostID)
-
-	// read post
-	post, errs := ap.GetPost(ctx, msg.PostID)
-	if errs != nil {
-		log.Printf("[ERROR] Error calling GetPost on %d: %v", msg.PostID, errs)
-		return errs
-	}
-	if post.ImagesStatus != model.PostLoading {
-		log.Printf("[ERROR] post %d not Loading, is %s\n", post.ID, post.ImagesStatus)
-		return nil
-	}
-
+func unzipImages(ctx context.Context, ap *api.API, msg model.ImagesWriterMsg) error {
 	// open bucket
 	bucket, err := ap.OpenBucket(ctx, false)
 	if err != nil {
@@ -164,7 +151,7 @@ func processUnzipMessage(ctx context.Context, ap *api.API, msg model.ImagesWrite
 	for i := 0; i < numWorkers; i++ {
 		go func(in chan *zip.File, out chan error) {
 			for f := range in {
-				errs = nil
+				var errs error
 				if f.UncompressedSize == 0 {
 					// skip directories and empty files
 					out <- errs
@@ -199,7 +186,7 @@ func processUnzipMessage(ctx context.Context, ap *api.API, msg model.ImagesWrite
 				// send a message to generate a thumbnail
 				msg := model.ImagesWriterMsg{
 					Action:    model.ImagesWriterActionGenerateThumbnail,
-					PostID:    post.ID,
+					PostID:    msg.PostID,
 					ImagePath: name,
 				}
 				body, errs := json.Marshal(msg)
@@ -241,7 +228,7 @@ func processUnzipMessage(ctx context.Context, ap *api.API, msg model.ImagesWrite
 		fileCount += len(zr.File)
 	}
 	// wait for workers to complete
-	errs = nil
+	var errs error
 	for i := 0; i < fileCount; i++ {
 		if e := <-out; e != nil {
 			log.Printf("[ERROR] Error saving image file: %#v", e)
@@ -251,13 +238,41 @@ func processUnzipMessage(ctx context.Context, ap *api.API, msg model.ImagesWrite
 	close(in)
 	close(out)
 
-	// TODO we need a better way to notify the user of errors; this doesn't tell the user that anything went wrong
+	return errs
+}
+
+func processUnzipMessage(ctx context.Context, ap *api.API, msg model.ImagesWriterMsg) error {
+	log.Printf("[DEBUG] ImagesWriter Unzipping PostID: %d", msg.PostID)
+
+	// read post
+	post, errs := ap.GetPost(ctx, msg.PostID)
 	if errs != nil {
-		post.ImagesStatus = model.PostDraft
-	} else {
-		post.ImagesStatus = model.PostLoadComplete
+		log.Printf("[ERROR] Error calling GetPost on %d: %v", msg.PostID, errs)
+		return errs
 	}
-	_, err = ap.UpdatePost(ctx, post.ID, *post)
+	if post.ImagesStatus != model.ImagesStatusToLoad && post.ImagesStatus != model.ImagesStatusError {
+		log.Printf("[ERROR] post %d not Loading, is %s\n", post.ID, post.ImagesStatus)
+		return nil
+	}
+
+	post.ImagesStatus = model.ImagesStatusLoading
+	post, errs = ap.UpdatePost(ctx, msg.PostID, *post)
+	if errs != nil {
+		log.Printf("[ERROR] Error calling UpdatePost on %d: %v", msg.PostID, errs)
+		return errs
+	}
+
+	// do the work
+	errs = unzipImages(ctx, ap, msg)
+
+	// update post
+	if errs != nil {
+		post.ImagesStatus = model.ImagesStatusLoadError
+		post.ImagesError = errs.Error()
+	} else {
+		post.ImagesStatus = model.ImagesStatusLoadComplete
+	}
+	_, err := ap.UpdatePost(ctx, post.ID, *post)
 	if err != nil {
 		log.Printf("[ERROR] UpdatePost %v\n", err)
 		return err
@@ -301,6 +316,7 @@ func (h lambdaHandler) handler(ctx context.Context, sqsEvent events.SQSEvent) er
 		err = processMessage(ctx, h.ap, []byte(message.Body))
 		if err != nil {
 			log.Printf("[ERROR] Error processing message %v", err)
+			// TODO shouldn't this be break so we fail as soon as a message fails?
 			continue
 		}
 	}

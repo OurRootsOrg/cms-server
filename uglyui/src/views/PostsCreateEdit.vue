@@ -41,15 +41,20 @@
           </p>
         </template>
       </div>
-      <div v-if="post.id">
+      <div v-if="post.id" class="postStatusWrapper">
         <h3>Post status</h3>
-        <p>
-          <span>{{ post.recordsStatus }}</span
-          ><span v-if="post.imagesStatus === 'Loading'"> - loading images</span>
-          <span v-if="!!post.imagesKeys && post.imagesKeys.length > 0 && post.imagesStatus === 'Draft'">
-            - with images</span
-          >
-        </p>
+        <div class="postStatus">
+          <strong>{{ post.postStatus }}:</strong>
+          <span> Records {{ !post.recordsKey ? "Missing" : post.recordsStatus || "Loaded" }}</span>
+          <span v-if="post.recordsError"> &ndash; {{ post.recordsError }}</span>
+          <span v-if="this.collections.collection.imagePathHeader">
+            <span
+              >; Images
+              {{ !post.imagesKeys || post.imagesKeys.length === 0 ? "Missing" : post.imagesStatus || "Loaded" }}</span
+            >
+            <span v-if="post.imagesError"> &ndash; {{ post.imagesError }}</span>
+          </span>
+        </div>
       </div>
       <div v-if="settings.settings.postMetadata.length > 0">
         <h3>
@@ -133,7 +138,6 @@
             @click="publish"
             color="primary"
             title="Publish the post to make it searchable"
-            :disabled="post.imagesStatus !== 'Draft'"
             class="ml-4"
             >Publish Post</v-btn
           >
@@ -146,7 +150,7 @@
             >Unpublish Post</v-btn
           >
           <v-btn
-            v-if="isImportable"
+            v-if="isRecordsImportable"
             id="importData"
             @click="importData"
             color="primary"
@@ -155,14 +159,9 @@
           >
             {{ post.recordsKey ? "Replace data" : "Import data" }}
           </v-btn>
-          <v-dialog
-            v-if="isImportable && collections.collection.imagePathHeader"
-            v-model="importImagesDlg"
-            persistent
-            max-width="320"
-          >
+          <v-dialog v-if="isImagesImportable" v-model="importImagesDlg" persistent max-width="320">
             <template v-slot:activator="{ on, attrs }">
-              <v-btn color="primary" v-bind="attrs" v-on="on" class="ml-4" :disabled="post.imagesStatus !== 'Draft'">
+              <v-btn color="primary" v-bind="attrs" v-on="on" class="ml-4">
                 {{ !!post.imagesKeys && post.imagesKeys.length > 0 ? "Replace images" : "Import images" }}
               </v-btn>
             </template>
@@ -219,11 +218,10 @@
       </v-row>
     </v-form>
 
-    <v-row class="pt-5">
+    <v-row class="pt-5" v-if="post.id && post.recordsKey && post.recordsStatus === ''">
       <v-col>
-        <h3 v-if="post.id && post.recordsKey && post.recordsStatus !== 'Loading'" class="pl-1">Post data</h3>
+        <h3 class="pl-1">Post data</h3>
         <v-data-table
-          v-if="post.id && post.recordsKey && post.recordsStatus !== 'Loading'"
           :items="records.recordsList.map(r => r.data)"
           :headers="getRecordColumns()"
           dense
@@ -298,7 +296,16 @@ export default {
   },
   data() {
     return {
-      post: { id: null, name: null, collection: null, recordsStatus: null, recordsKey: null, metadata: {} },
+      post: {
+        id: null,
+        name: null,
+        collection: null,
+        postStatus: "Draft",
+        recordsStatus: "",
+        imagesStatus: "",
+        recordsKey: null,
+        metadata: {}
+      },
       showPicker: false,
       importImagesDlg: false,
       imageFiles: [],
@@ -307,17 +314,46 @@ export default {
     };
   },
   computed: {
-    isImportable() {
-      return this.post.id && this.post.recordsStatus === "Draft";
+    isRecordsImportable() {
+      return (
+        this.post.id &&
+        (this.post.recordsStatus === "" || this.post.recordsStatus === "Error") &&
+        (this.post.postStatus === "Draft" || this.post.postStatus === "Error")
+      );
+    },
+    isImagesImportable() {
+      return (
+        this.post.id &&
+        this.collections.collection.imagePathHeader &&
+        (this.post.imagesStatus === "" || this.post.imagesStatus === "Error") &&
+        (this.post.postStatus === "Draft" || this.post.postStatus === "Error")
+      );
     },
     isDeletable() {
-      return !this.post.id || this.post.recordsStatus === "Draft";
+      return (
+        this.post.id &&
+        (this.post.recordsStatus === "" || this.post.recordsStatus === "Error") &&
+        (this.post.imagesStatus === "" || this.post.imagesStatus === "Error") &&
+        (this.post.postStatus === "Draft" || this.post.postStatus === "Error")
+      );
     },
     isPublishable() {
-      return this.post.id && this.post.recordsStatus === "Draft" && this.post.recordsKey;
+      return (
+        this.post.id &&
+        this.post.recordsKey &&
+        this.post.recordsStatus === "" &&
+        this.post.imagesStatus === "" &&
+        (this.post.postStatus === "Draft" || this.post.postStatus === "Error")
+      );
     },
     isUnpublishable() {
-      return this.post.id && this.post.recordsStatus === "Published";
+      return (
+        this.post.id &&
+        this.post.recordsKey &&
+        this.post.recordsStatus === "" &&
+        this.post.imagesStatus === "" &&
+        this.post.postStatus === "Published"
+      );
     },
     ...mapState(["collections", "posts", "records", "settings", "user"])
   },
@@ -325,7 +361,6 @@ export default {
     post: {
       name: { required },
       collection: { required },
-      recordsStatus: { required },
       metadata: {}
     }
   },
@@ -366,12 +401,12 @@ export default {
     },
     publish() {
       let post = this.getPostFromForm();
-      post.recordsStatus = "Published";
+      post.postStatus = "Publication Requested";
       this.update(post);
     },
     unpublish() {
       let post = this.getPostFromForm();
-      post.recordsStatus = "Draft";
+      post.postStatus = "Unpublication Requested";
       this.update(post);
     },
     imagesInputFilter(newFile, oldFile, prevent) {
@@ -501,3 +536,12 @@ export default {
   }
 };
 </script>
+
+<style scoped>
+.postStatusWrapper {
+  margin-bottom: 16px;
+}
+.postStatus {
+  margin: 8px 0;
+}
+</style>

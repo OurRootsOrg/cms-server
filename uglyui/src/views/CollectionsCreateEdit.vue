@@ -710,9 +710,13 @@ export default {
           return {
             id: p.id,
             name: p.name,
-            recordsStatus: p.imagesStatus === "Loading" ? p.imagesStatus : p.recordsStatus,
-            hasData: !!p.recordsKey,
-            hasImages: !!p.imagesKeys && p.imagesKeys.length > 0,
+            postStatus: p.postStatus,
+            recordsStatus: p.recordsKey ? p.recordsStatus || "Loaded" : "Missing",
+            imagesStatus: !this.collection.imagePathHeader
+              ? "N/A"
+              : !!p.imagesKeys && p.imagesKeys.length > 0
+              ? p.imagesStatus || "Loaded"
+              : "Missing",
             collectionName: this.collections.collectionsList.find(coll => coll.id === p.collection).name,
             ...p.metadata
           };
@@ -803,23 +807,25 @@ export default {
         },
         {
           text: "Status",
-          value: "recordsStatus"
+          value: "postStatus"
         },
         {
-          text: "Has Data",
-          value: "hasData",
+          text: "Records",
+          value: "recordsStatus",
           align: "center"
-        },
-        {
-          title: "Has Images",
-          field: "hasImages",
-          align: "center"
-        },
-        {
-          title: "Collection",
-          field: "collectionName"
         }
       ];
+      if (this.collection.imagePathHeader) {
+        cols.push({
+          text: "Images",
+          value: "imagesStatus",
+          align: "center"
+        });
+      }
+      cols.push({
+        title: "Collection",
+        field: "collectionName"
+      });
       cols.push(...this.settings.settings.postMetadata.map(pf => getMetadataColumn(pf)));
       return cols;
     },

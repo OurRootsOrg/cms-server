@@ -4,16 +4,16 @@ type Role string
 
 const (
 	PrincipalRole   Role = "principal"
-	FatherRole           = "father"
-	MotherRole           = "mother"
-	SpouseRole           = "spouse"
-	BrideRole            = "bride"
-	GroomRole            = "groom"
-	BrideFatherRole      = "brideFather"
-	BrideMotherRole      = "brideMother"
-	GroomFatherRole      = "groomFather"
-	GroomMotherRole      = "groomMother"
-	OtherRole            = "other"
+	FatherRole      Role = "father"
+	MotherRole      Role = "mother"
+	SpouseRole      Role = "spouse"
+	BrideRole       Role = "bride"
+	GroomRole       Role = "groom"
+	BrideFatherRole Role = "brideFather"
+	BrideMotherRole Role = "brideMother"
+	GroomFatherRole Role = "groomFather"
+	GroomMotherRole Role = "groomMother"
+	OtherRole       Role = "other"
 )
 
 // supported relationships to head: head, father, mother, spouse, husband, wife, child, son, daughter
@@ -22,15 +22,15 @@ type HouseholdRelToHead string
 
 const (
 	HeadRelToHead     HouseholdRelToHead = "head"
-	FatherRelToHead                      = "father"
-	MotherRelToHead                      = "mother"
-	SpouseRelToHead                      = "spouse"
-	HusbandRelToHead                     = "husband"
-	WifeRelToHead                        = "wife"
-	ChildRelToHead                       = "child"
-	SonRelToHead                         = "son"
-	DaughterRelToHead                    = "daughter"
-	OtherRelToHead                       = "other"
+	FatherRelToHead   HouseholdRelToHead = "father"
+	MotherRelToHead   HouseholdRelToHead = "mother"
+	SpouseRelToHead   HouseholdRelToHead = "spouse"
+	HusbandRelToHead  HouseholdRelToHead = "husband"
+	WifeRelToHead     HouseholdRelToHead = "wife"
+	ChildRelToHead    HouseholdRelToHead = "child"
+	SonRelToHead      HouseholdRelToHead = "son"
+	DaughterRelToHead HouseholdRelToHead = "daughter"
+	OtherRelToHead    HouseholdRelToHead = "other"
 )
 
 var HouseholdRelsToHead = []HouseholdRelToHead{
@@ -52,18 +52,18 @@ type Gender string
 
 const (
 	GenderMale   Gender = "male"
-	GenderFemale        = "female"
-	GenderOther         = "other"
+	GenderFemale Gender = "female"
+	GenderOther  Gender = "other"
 )
 
 type EventType string
 
 const (
 	BirthEvent     EventType = "birth"
-	MarriageEvent            = "marriage"
-	ResidenceEvent           = "residence"
-	DeathEvent               = "death"
-	OtherEvent               = "other"
+	MarriageEvent  EventType = "marriage"
+	ResidenceEvent EventType = "residence"
+	DeathEvent     EventType = "death"
+	OtherEvent     EventType = "other"
 )
 
 var EventTypes = []EventType{BirthEvent, MarriageEvent, ResidenceEvent, DeathEvent, OtherEvent}
@@ -72,9 +72,9 @@ type Relative string
 
 const (
 	FatherRelative Relative = "father"
-	MotherRelative          = "mother"
-	SpouseRelative          = "spouse"
-	OtherRelative           = "other"
+	MotherRelative Relative = "mother"
+	SpouseRelative Relative = "spouse"
+	OtherRelative  Relative = "other"
 )
 
 var Relatives = []Relative{FatherRelative, MotherRelative, SpouseRelative, OtherRelative}

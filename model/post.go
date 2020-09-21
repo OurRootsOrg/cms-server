@@ -19,15 +19,94 @@ type PostPersister interface {
 }
 
 // Post statuses
+// Draft (initial state) -> ToPublish
+//   user can update Draft to ToPublish if RecordsStatus and ImagesStatus are both Default and RecordsKey is not empty
+//   this causes server to send an Index message to Publisher
+// ToPublish -> Publishing
+//   Publisher updates status to Publishing when starting to index
+// Publishing -> PublishComplete or PublishError
+//   Publisher updates status to PublishComplete if successful, or PublishError otherwise and sets PostError to the error message
+//   having intermediate statuses for PublishComplete and PublishError means that user cannot change an Publishing status,
+//     since PublishComplete and PublishError fail UserAcceptedPostStatus()
+// PublishComplete -> Published
+//   when the server gets PublishComplete from Publisher, it sets status to Published
+// PublishError -> Error
+//   when the server gets PublishError from Publisher, it sets status to Error
+// Published -> ToUnpublish
+//   user can update Published to ToUnpublish
+//   this causes server to send an Unindex message to Publisher
+// ToUnpublish -> Unpublishing
+//   Publisher updates status to Unpublishing when starting to unindex
+// Unpublishing -> UnpublishComplete or UnpublishError
+//   Publisher updates status to to UnpublishComplete if successful, or UnpublishError otherwise and sets PostError to the error message
+//   having intermediate statuses for UnpublishComplete and UnpublishError means that user cannot change an Unpublishing status,
+//     since UnpublishComplete and UnpublishError fail UserAcceptedPostStatus()
+// UnpublishComplete -> Draft
+//   when the server gets UnpublishComplete from Publisher, it sets status to Draft
+// UnpublishError -> Error
+//   when the server gets UnpublishError from Publisher, it sets status to Error
+// Error -> ToPublish or Publishing or Unpublishing
+//   user can update Error to ToPublish if RecordsStatus and ImagesStatus are both Default
+//   Publisher can update error to Publishing or Unpublishing when retrying
+// Publisher will process the message only when status is To(Un)Publish or Error (in case the previous invocation failed)
+// Post can be deleted only in Draft or Error states and only when Records/Images statuses are in Default or Error states
+
+type PostStatus string
+
 const (
-	PostLoading           = "Loading"
-	PostLoadComplete      = "LoadComplete"
-	PostDraft             = "Draft"
-	PostPublishing        = "Publishing"
-	PostPublished         = "Published"
-	PostPublishComplete   = "PublishComplete" // set only by publisher
-	PostUnpublishing      = "Unpublishing"
-	PostUnpublishComplete = "UnpublishComplete" // set only by publisher
+	PostStatusDraft             PostStatus = "Draft"
+	PostStatusToPublish         PostStatus = "Publication Requested"
+	PostStatusPublishing        PostStatus = "Publishing"
+	PostStatusPublishComplete   PostStatus = "PublishComplete"
+	PostStatusPublishError      PostStatus = "PublishError"
+	PostStatusPublished         PostStatus = "Published"
+	PostStatusToUnpublish       PostStatus = "Unpublication Requested"
+	PostStatusUnpublishing      PostStatus = "Unpublishing"
+	PostStatusUnpublishComplete PostStatus = "UnpublishComplete"
+	PostStatusUnpublishError    PostStatus = "UnpublishError"
+	PostStatusError             PostStatus = "Error"
+)
+
+// Records and Images statuses
+// Default (initial state) -> ToLoad
+//   when user adds a file to load, server sets status to ToLoad and sends a message to Images/Records Writer
+//   post status must be Draft or Error
+// ToLoad -> Loading
+//   Images/Records Writer updates status to Loading when starting to load
+// Loading -> LoadComplete or LoadError
+//   Images/Records Writer updates status to LoadComplete if successful or Error otherwise and sets Images/Records Error to the error message
+//   having intermediate statuses for LoadComplete and LoadError means that user cannot change a Loading status,
+//     since LoadComplete and LoadError fail UserAcceptedRecordsStatus() and UserAcceptedImagesStatus()
+// LoadComplete -> Default
+//   when the server gets LoadComplete from Images/Records Writer, it sets status to Default
+// LoadError -> Error
+//   when the server gets LoadError from Images/Records Writer, it sets status to Error
+// Error -> ToLoad or Loading
+//   when user updates the file to load, server sets status to ToLoad and sends a message to Images/Records Writer
+//   Images/Records Writer updates Error to Loading when retrying
+// Images/Records Writer will process the message only when status is ToLoad or Error (in case the previous invocation failed)
+// Post can be deleted only when Images/Records status is Default or Error
+
+type RecordsStatus string
+
+const (
+	RecordsStatusDefault      RecordsStatus = ""
+	RecordsStatusToLoad       RecordsStatus = "Load Requested"
+	RecordsStatusLoading      RecordsStatus = "Loading"
+	RecordsStatusLoadComplete RecordsStatus = "LoadComplete"
+	RecordsStatusLoadError    RecordsStatus = "LoadError"
+	RecordsStatusError        RecordsStatus = "Error"
+)
+
+type ImagesStatus string
+
+const (
+	ImagesStatusDefault      ImagesStatus = ""
+	ImagesStatusToLoad       ImagesStatus = "Load Requested"
+	ImagesStatusLoading      ImagesStatus = "Loading"
+	ImagesStatusLoadComplete ImagesStatus = "LoadComplete"
+	ImagesStatusLoadError    ImagesStatus = "LoadError"
+	ImagesStatusError        ImagesStatus = "Error"
 )
 
 // Publisher actions
@@ -35,7 +114,7 @@ type PublisherAction string
 
 const (
 	PublisherActionIndex   PublisherAction = "index"
-	PublisherActionUnindex                 = "unindex"
+	PublisherActionUnindex PublisherAction = "unindex"
 )
 
 // ImageWriter actions
@@ -43,7 +122,7 @@ type ImagesWriterAction string
 
 const (
 	ImagesWriterActionUnzip             ImagesWriterAction = "unzip"
-	ImagesWriterActionGenerateThumbnail                    = "thumb"
+	ImagesWriterActionGenerateThumbnail ImagesWriterAction = "thumb"
 )
 
 const ImageDimensionsSuffix = "__dimensions.json"
@@ -57,9 +136,9 @@ type ImageDimensions struct {
 	Width  int `json:"width"`
 }
 
-// UserAcceptedPostRecordsStatus returns true if its argument is a valid records status
-func UserAcceptedPostRecordsStatus(status string) bool {
-	for _, s := range []string{PostLoading, PostDraft, PostPublishing, PostPublished, PostUnpublishing} {
+// UserAcceptedPostStatus returns true if status can be submitted by a user
+func UserAcceptedPostStatus(status PostStatus) bool {
+	for _, s := range []PostStatus{PostStatusDraft, PostStatusToPublish, PostStatusPublished, PostStatusToUnpublish, PostStatusError} {
 		if s == status {
 			return true
 		}
@@ -67,9 +146,19 @@ func UserAcceptedPostRecordsStatus(status string) bool {
 	return false
 }
 
-// UserAcceptedPostImagesStatus returns true if its argument is a valid images status
-func UserAcceptedPostImagesStatus(status string) bool {
-	for _, s := range []string{PostLoading, PostDraft} {
+// UserAcceptedRecordsStatus returns true if status can be submitted by a user
+func UserAcceptedRecordsStatus(status RecordsStatus) bool {
+	for _, s := range []RecordsStatus{RecordsStatusDefault, RecordsStatusError} {
+		if s == status {
+			return true
+		}
+	}
+	return false
+}
+
+// UserAcceptedImagesStatus returns true if status can be submitted by a user
+func UserAcceptedImagesStatus(status ImagesStatus) bool {
+	for _, s := range []ImagesStatus{ImagesStatusDefault, ImagesStatusError} {
 		if s == status {
 			return true
 		}
@@ -90,7 +179,7 @@ type RecordsWriterMsg struct {
 	PostID uint32 `json:"postId"`
 }
 
-// PublisherMsg represents a message to initiate pulishing of a post
+// PublisherMsg represents a message to initiate publishing of a post
 type PublisherMsg struct {
 	Action PublisherAction `json:"action"`
 	PostID uint32          `json:"postId"`
@@ -160,16 +249,17 @@ func (ss *StringSet) Equals(ss1 *StringSet) bool {
 }
 
 // PostBody is the JSON body of a Post
-// TODO Consider having a PostStatus which can be draft, publishing, published, or unpublishing
-// TODO and instead of RecordsStatus and ImagesStatus, have RecordsLoading (bool) and ImagesLoading (bool)
-// TODO Also consider having a RecordsLoadingError and ImagesLoadingError with the error result from the last load
 type PostBody struct {
 	Name          string                 `json:"name" validate:"required"`
 	Metadata      map[string]interface{} `json:"metadata"`
+	PostStatus    PostStatus             `json:"postStatus"`
+	PostError     string                 `json:"postError"`
 	RecordsKey    string                 `json:"recordsKey"`
-	RecordsStatus string                 `json:"recordsStatus"`
+	RecordsStatus RecordsStatus          `json:"recordsStatus"`
+	RecordsError  string                 `json:"recordsError"`
 	ImagesKeys    StringSet              `json:"imagesKeys"`
-	ImagesStatus  string                 `json:"imagesStatus"`
+	ImagesStatus  ImagesStatus           `json:"imagesStatus"`
+	ImagesError   string                 `json:"imagesError"`
 }
 
 // Value makes PostBody implement the driver.Valuer interface.
@@ -206,6 +296,7 @@ func NewPostIn(name string, collectionID uint32, recordsKey string) PostIn {
 	pi := PostIn{
 		PostBody: PostBody{
 			Name:       name,
+			PostStatus: PostStatusDraft,
 			RecordsKey: recordsKey,
 		},
 		Collection: collectionID,

@@ -105,20 +105,21 @@ func TestImagesWriter(t *testing.T) {
 	log.Printf("[DEBUG] Adding post %#v", in)
 	testPost, errors := testAPI.AddPost(ctx, in)
 	assert.Nil(t, errors)
+	assert.Equal(t, model.ImagesStatusToLoad, testPost.ImagesStatus)
 
 	var post *model.Post
 	// wait up to 10 seconds
 	for i := 0; i < 10; i++ {
-		// read post and look for Draft
+		// read post and look for Default (empty)
 		post, errors = testAPI.GetPost(ctx, testPost.ID)
 		assert.Nil(t, errors)
-		if post.ImagesStatus == model.PostDraft {
+		if post.ImagesStatus == model.ImagesStatusDefault {
 			break
 		}
 		log.Printf("Waiting for imageswriter %d\n", i)
 		time.Sleep(1 * time.Second)
 	}
-	assert.Equal(t, model.PostDraft, post.ImagesStatus, "Expected post to be Draft, got %s", post.ImagesStatus)
+	assert.Equal(t, model.ImagesStatusDefault, post.ImagesStatus, "Expected images status to be empty, got %s", post.ImagesStatus)
 
 	prefix := fmt.Sprintf(api.ImagesPrefix, post.ID)
 	// read images for post
@@ -148,19 +149,20 @@ func TestImagesWriter(t *testing.T) {
 	log.Printf("[DEBUG] Adding post %#v", in)
 	testPost2, errors := testAPI.AddPost(ctx, in)
 	assert.Nil(t, errors)
+	assert.Equal(t, model.ImagesStatusToLoad, testPost2.ImagesStatus)
 
 	// wait up to 10 seconds
 	for i := 0; i < 10; i++ {
-		// read post and look for Draft
+		// read post and look for Default (empty)
 		post, errors = testAPI.GetPost(ctx, testPost2.ID)
 		assert.Nil(t, errors)
-		if post.ImagesStatus == model.PostDraft {
+		if post.ImagesStatus == model.ImagesStatusDefault {
 			break
 		}
 		log.Printf("Waiting for imageswriter %d\n", i)
 		time.Sleep(1 * time.Second)
 	}
-	assert.Equal(t, model.PostDraft, post.ImagesStatus, "Expected post to be Draft, got %s", post.ImagesStatus)
+	assert.Equal(t, model.ImagesStatusDefault, post.ImagesStatus, "Expected images status to be empty, got %s", post.ImagesStatus)
 
 	// delete posts
 	errors = testAPI.DeletePost(ctx, testPost.ID)
@@ -249,13 +251,13 @@ func TestPostImage(t *testing.T) {
 		// read post and look for Draft
 		post, errors = testAPI.GetPost(ctx, testPost.ID)
 		assert.Nil(t, errors)
-		if post.ImagesStatus == model.PostDraft {
+		if post.ImagesStatus == model.ImagesStatusDefault {
 			break
 		}
 		log.Printf("Waiting for imageswriter %d\n", i)
 		time.Sleep(1 * time.Second)
 	}
-	assert.Equal(t, model.PostDraft, post.ImagesStatus, "Expected post to be Draft, got %s", post.ImagesStatus)
+	assert.Equal(t, model.ImagesStatusDefault, post.ImagesStatus, "Expected images status to be empty, got %s", post.ImagesStatus)
 
 	// give some additional time for thumbnails to be generated
 	time.Sleep(3 * time.Second)

@@ -40,7 +40,7 @@ func TestGetAllCollections(t *testing.T) {
 
 	// Non-empty result
 	now := time.Now().Truncate(0) // Truncate(0) truncates monotonic time
-	ci, _ := makeCollectionIn(t)
+	ci, _ := makeCollectionIn(t, 1)
 	cr = api.CollectionResult{
 		Collections: []model.Collection{
 			{
@@ -93,7 +93,7 @@ func TestGetCollection(t *testing.T) {
 	app.authDisabled = true
 	r := app.NewRouter()
 
-	ci, _ := makeCollectionIn(t)
+	ci, _ := makeCollectionIn(t, 1)
 	collection := &model.Collection{
 		ID:           1,
 		CollectionIn: ci,
@@ -139,7 +139,7 @@ func TestPostCollection(t *testing.T) {
 	app.authDisabled = true
 	r := app.NewRouter()
 
-	in, buf := makeCollectionIn(t)
+	in, buf := makeCollectionIn(t, 1)
 	now := time.Now().Truncate(0) // Truncate(0) truncates monotonic time
 	am.Result = &model.Collection{
 		ID:             1,
@@ -177,7 +177,7 @@ func TestPutCollection(t *testing.T) {
 	app.authDisabled = true
 	r := app.NewRouter()
 
-	in, buf := makeCollectionIn(t)
+	in, buf := makeCollectionIn(t, 1)
 	now := time.Now().Truncate(0) // Truncate(0) truncates monotonic time
 	coll := model.Collection{
 		ID:             1,
@@ -225,12 +225,15 @@ func TestDeleteCollection(t *testing.T) {
 	assert.Equal(t, http.StatusNoContent, response.Code, "Response: %s", string(response.Body.Bytes()))
 }
 
-func makeCollectionIn(t *testing.T) (model.CollectionIn, *bytes.Buffer) {
+func makeCollectionIn(t *testing.T, categoryID uint32) (model.CollectionIn, *bytes.Buffer) {
 	in := model.CollectionIn{
 		CollectionBody: model.CollectionBody{
 			Name: "First",
 		},
-		Categories: []uint32{1},
+		Categories: []uint32{},
+	}
+	if categoryID > 0 {
+		in.Categories = []uint32{categoryID}
 	}
 	buf := new(bytes.Buffer)
 	enc := json.NewEncoder(buf)

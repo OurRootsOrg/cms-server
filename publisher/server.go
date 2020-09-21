@@ -38,22 +38,33 @@ func indexPost(ctx context.Context, ap *api.API, msg model.PublisherMsg) error {
 		log.Printf("[ERROR] Error calling GetPost on %d: %v", msg.PostID, errs)
 		return errs
 	}
-	if post.RecordsStatus != model.PostPublishing {
-		log.Printf("[ERROR] post not publishing %d -> %s", post.ID, post.RecordsStatus)
+	if post.PostStatus != model.PostStatusToPublish && post.PostStatus != model.PostStatusError {
+		log.Printf("[ERROR] post not ToPublish %d -> %s", post.ID, post.PostStatus)
 		return nil
 	}
 
-	// index post
-	if err := ap.IndexPost(ctx, post); err != nil {
-		log.Printf("[ERROR] Error calling IndexPost on %d: %v", post.ID, err)
-		return api.NewError(err)
+	post.PostStatus = model.PostStatusPublishing
+	post, errs = ap.UpdatePost(ctx, msg.PostID, *post)
+	if errs != nil {
+		log.Printf("[ERROR] Error calling UpdatePost on %d: %v", msg.PostID, errs)
+		return errs
 	}
 
-	// update post.recordsStatus = Published
-	post.RecordsStatus = model.PostPublishComplete
-	_, errs = ap.UpdatePost(ctx, post.ID, *post)
+	// do the work
+	errs = ap.IndexPost(ctx, post)
 	if errs != nil {
-		log.Printf("[ERROR] Error calling UpdatePost on %d: %v", post.ID, errs)
+		log.Printf("[ERROR] Error calling IndexPost on %d: %v", post.ID, errs)
+		post.PostStatus = model.PostStatusPublishError
+		post.PostError = errs.Error()
+	} else {
+		post.PostStatus = model.PostStatusPublishComplete
+	}
+
+	// update post
+	_, err := ap.UpdatePost(ctx, post.ID, *post)
+	if err != nil {
+		log.Printf("[ERROR] Error calling UpdatePost on %d: %v", post.ID, err)
+		return err
 	}
 
 	return errs
@@ -66,21 +77,33 @@ func unindexPost(ctx context.Context, ap *api.API, msg model.PublisherMsg) error
 		log.Printf("[ERROR] Error calling GetPost on %d: %v", msg.PostID, errs)
 		return errs
 	}
-	if post.RecordsStatus != model.PostUnpublishing {
-		log.Printf("[ERROR] post not unpublishing %d -> %s", post.ID, post.RecordsStatus)
+	if post.PostStatus != model.PostStatusToUnpublish && post.PostStatus != model.PostStatusError {
+		log.Printf("[ERROR] post not ToUnpublish %d -> %s", post.ID, post.PostStatus)
 		return nil
 	}
 
-	if err := ap.SearchDeleteByPost(ctx, msg.PostID); err != nil {
-		log.Printf("[ERROR] Error calling SearchDeleteByPost on %d: %v", msg.PostID, err)
-		return api.NewError(err)
+	post.PostStatus = model.PostStatusUnpublishing
+	post, errs = ap.UpdatePost(ctx, msg.PostID, *post)
+	if errs != nil {
+		log.Printf("[ERROR] Error calling UpdatePost on %d: %v", msg.PostID, errs)
+		return errs
 	}
 
-	// update post.recordsStatus = Draft
-	post.RecordsStatus = model.PostUnpublishComplete
-	_, errs = ap.UpdatePost(ctx, post.ID, *post)
+	// do the work
+	errs = ap.SearchDeleteByPost(ctx, msg.PostID)
 	if errs != nil {
+		log.Printf("[ERROR] Error calling SearchDeleteByPost on %d: %v", msg.PostID, errs)
+		post.PostStatus = model.PostStatusUnpublishError
+		post.PostError = errs.Error()
+	} else {
+		post.PostStatus = model.PostStatusUnpublishComplete
+	}
+
+	// update post
+	_, err := ap.UpdatePost(ctx, post.ID, *post)
+	if err != nil {
 		log.Printf("[ERROR] Error calling UpdatePost on %d: %v", post.ID, errs)
+		return err
 	}
 
 	return errs
@@ -117,6 +140,7 @@ func (h lambdaHandler) handler(ctx context.Context, sqsEvent events.SQSEvent) er
 		err = processMessage(ctx, h.ap, []byte(message.Body))
 		if err != nil {
 			log.Printf("[ERROR] Error processing message %v", err)
+			// TODO shouldn't this be break so we fail as soon as a message fails?
 			continue
 		}
 	}
