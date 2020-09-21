@@ -1,6 +1,8 @@
 <template>
   <v-container>
-    <a @click="$router.go(-1)">Back</a>
+    <v-btn text class="pl-0 ml-0 primary--text" @click="$router.go(-1)"
+      ><v-icon>mdi-chevron-left</v-icon> Back to record details</v-btn
+    >
     <div class="wrapper">
       <div id="openseadragonToolbar" class="toolbar"></div>
       <div id="openseadragon" class="openseadragon"></div>

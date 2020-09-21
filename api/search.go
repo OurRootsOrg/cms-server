@@ -900,12 +900,12 @@ func (api API) Search(ctx context.Context, req *SearchRequest) (*model.SearchRes
 
 		// construct search hit
 		hits = append(hits, model.SearchHit{
-			ID:     hitData.ID,
-			Person: constructSearchPerson(collection.Mappings, hitData.Role, &record),
-			//Record:         constructSearchRecord(&record), // only return record in search by id
+			ID:             hitData.ID,
+			Person:         constructSearchPerson(collection.Mappings, hitData.Role, &record),
 			CollectionName: collection.Name,
 			CollectionID:   collection.ID,
-			//Location:       collection.Location, // only return location in search by id
+			PostID:         record.Post,
+			ImagePath:      record.Data[collection.ImagePathHeader],
 		})
 	}
 

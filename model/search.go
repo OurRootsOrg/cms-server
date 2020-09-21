@@ -92,10 +92,10 @@ type SearchHit struct {
 	Record             SearchRecord   `json:"record,omitempty"` // only returned on search by id
 	CollectionID       uint32         `json:"collection"`
 	CollectionName     string         `json:"collectionName"`
+	ImagePath          string         `json:"imagePath,omitempty"`
+	PostID             uint32         `json:"post,omitempty"`
 	CollectionLocation string         `json:"collectionLocation,omitempty"` // only returned on search by id
 	Citation           string         `json:"citation,omitempty"`           // only returned on search by id
-	PostID             uint32         `json:"post,omitempty"`               // only returned on search by id
-	ImagePath          string         `json:"imagePath,omitempty"`          // only returned on search by id
 	Household          []SearchRecord `json:"household,omitempty"`          // only returned on search by id
 }
 type SearchPerson struct {
