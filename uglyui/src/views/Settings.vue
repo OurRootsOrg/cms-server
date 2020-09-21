@@ -86,7 +86,6 @@
                   </v-toolbar>
                 </template>
               </v-data-table>
-              <!--end draggable-->
             </v-col>
           </v-row>
           <v-row class="pl-3">
