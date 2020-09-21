@@ -17,6 +17,11 @@ import (
 	"strings"
 	"time"
 
+	"gocloud.dev/pubsub"
+
+	"github.com/disintegration/imaging"
+	"gocloud.dev/blob"
+
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -38,15 +43,93 @@ const (
 
 const numWorkers = 10
 
-func processMessage(ctx context.Context, ap *api.API, rawMsg []byte) error {
-	var msg model.ImagesWriterMsg
-	err := json.Unmarshal(rawMsg, &msg)
+func processThumbnailMessage(ctx context.Context, ap *api.API, msg model.ImagesWriterMsg) error {
+	log.Printf("[DEBUG] ImagesWriter Generating Thumbnail PostID: %d Path %s", msg.PostID, msg.ImagePath)
+
+	dimensionsKey := msg.ImagePath + model.ImageDimensionsSuffix
+	thumbKey := msg.ImagePath + model.ImageThumbnailSuffix
+	thumbDimensionsKey := thumbKey + model.ImageDimensionsSuffix
+
+	// open bucket
+	bucket, err := ap.OpenBucket(ctx, false)
 	if err != nil {
-		log.Printf("[ERROR] Discarding unparsable message '%s': %v", string(rawMsg), err)
-		return nil // Don't return an error, because parsing will never succeed
+		log.Printf("[ERROR] OpenBucket %v\n", err)
+		return api.NewError(err)
+	}
+	defer bucket.Close()
+
+	// read image
+	reader, err := bucket.NewReader(ctx, msg.ImagePath, nil)
+	if err != nil {
+		log.Printf("[ERROR] processThumbnailMessage read image %#v\n", err)
+		return api.NewError(fmt.Errorf("processThumbnailMessage read image %v", err))
+	}
+	defer reader.Close()
+	img, err := imaging.Decode(reader, imaging.AutoOrientation(true))
+	if err != nil {
+		log.Printf("[ERROR] processThumbnailMessage decode %#v\n", err)
+		return api.NewError(fmt.Errorf("processThumbnailMessage decode image %v", err))
+	}
+	imgWidth := img.Bounds().Dx()
+	imgHeight := img.Bounds().Dy()
+
+	// generate thumbnail
+	thumb := imaging.Resize(img, model.ImageThumbnailWidth, model.ImageThumbnailHeight, imaging.Box)
+	thumbWidth := thumb.Bounds().Dx()
+	thumbHeight := thumb.Bounds().Dy()
+
+	// write thumbnail
+	writer, err := bucket.NewWriter(ctx, thumbKey, &blob.WriterOptions{
+		ContentType: "image/jpeg",
+	})
+	if err != nil {
+		log.Printf("[ERROR] processThumbnailMessage start write image %v\n", err)
+		return api.NewError(fmt.Errorf("processThumbnailMessage start write image %v", err))
+	}
+	err = imaging.Encode(writer, thumb, imaging.JPEG, imaging.JPEGQuality(model.ImageThumbnailQuality))
+	closeErr := writer.Close()
+	if err != nil || closeErr != nil {
+		log.Printf("[ERROR] processThumbnailMessage write image %v close %v\n", err, closeErr)
+		return api.NewError(fmt.Errorf("processThumbnailMessage write image %v close %v", err, closeErr))
 	}
 
-	log.Printf("[DEBUG] ImagesWriter Processing PostID: %d", msg.PostID)
+	// write image dimensions
+	writer, err = bucket.NewWriter(ctx, dimensionsKey, &blob.WriterOptions{
+		ContentType: "application/json",
+	})
+	if err != nil {
+		log.Printf("[ERROR] processThumbnailMessage start write image dimensions %v\n", err)
+		return api.NewError(fmt.Errorf("processThumbnailMessage start write image dimensions %v", err))
+	}
+	enc := json.NewEncoder(writer)
+	err = enc.Encode(model.ImageDimensions{Height: imgHeight, Width: imgWidth})
+	closeErr = writer.Close()
+	if err != nil || closeErr != nil {
+		log.Printf("[ERROR] processThumbnailMessage write image dimensions %v close %v\n", err, closeErr)
+		return api.NewError(fmt.Errorf("processThumbnailMessage write image dimensions %v close %v", err, closeErr))
+	}
+
+	// write thumbnail dimensions
+	writer, err = bucket.NewWriter(ctx, thumbDimensionsKey, &blob.WriterOptions{
+		ContentType: "application/json",
+	})
+	if err != nil {
+		log.Printf("[ERROR] processThumbnailMessage start write thumb dimensions %v\n", err)
+		return api.NewError(fmt.Errorf("processThumbnailMessage start write thumb dimensions %v", err))
+	}
+	enc = json.NewEncoder(writer)
+	err = enc.Encode(model.ImageDimensions{Height: thumbHeight, Width: thumbWidth})
+	closeErr = writer.Close()
+	if err != nil || closeErr != nil {
+		log.Printf("[ERROR] processThumbnailMessage write thumb dimensions %v close %v\n", err, closeErr)
+		return api.NewError(fmt.Errorf("processThumbnailMessage write thumb dimensions %v close %v", err, closeErr))
+	}
+
+	return nil
+}
+
+func processUnzipMessage(ctx context.Context, ap *api.API, msg model.ImagesWriterMsg) error {
+	log.Printf("[DEBUG] ImagesWriter Unzipping PostID: %d", msg.PostID)
 
 	// read post
 	post, errs := ap.GetPost(ctx, msg.PostID)
@@ -66,6 +149,15 @@ func processMessage(ctx context.Context, ap *api.API, rawMsg []byte) error {
 		return api.NewError(err)
 	}
 	defer bucket.Close()
+
+	// prepare to send ImagesWriter messages to generate thumbnails
+	imagesWriterTopic, err := ap.OpenTopic(ctx, "imageswriter")
+	if err != nil {
+		log.Printf("[ERROR] Can't open imageswriter topic %v", err)
+		return api.NewError(err)
+	}
+	defer imagesWriterTopic.Shutdown(ctx)
+
 	// set up workers
 	in := make(chan *zip.File)
 	out := make(chan error)
@@ -100,6 +192,28 @@ func processMessage(ctx context.Context, ap *api.API, rawMsg []byte) error {
 				}
 				name := fmt.Sprintf(api.ImagesPrefix, msg.PostID) + f.Name
 				errs = bucket.WriteAll(ctx, name, fileBytes, nil)
+				if errs != nil {
+					out <- errs
+					continue
+				}
+				// send a message to generate a thumbnail
+				msg := model.ImagesWriterMsg{
+					Action:    model.ImagesWriterActionGenerateThumbnail,
+					PostID:    post.ID,
+					ImagePath: name,
+				}
+				body, errs := json.Marshal(msg)
+				if errs != nil {
+					out <- errs
+					continue
+				}
+				errs = imagesWriterTopic.Send(ctx, &pubsub.Message{Body: body})
+				if errs != nil {
+					log.Printf("[ERROR] Can't send message %v", err)
+					out <- errs
+					continue
+				}
+
 				out <- errs
 			}
 		}(in, out)
@@ -150,6 +264,25 @@ func processMessage(ctx context.Context, ap *api.API, rawMsg []byte) error {
 	}
 
 	return errs
+}
+
+func processMessage(ctx context.Context, ap *api.API, rawMsg []byte) error {
+	var msg model.ImagesWriterMsg
+	err := json.Unmarshal(rawMsg, &msg)
+	if err != nil {
+		log.Printf("[ERROR] Discarding unparsable message '%s': %v", string(rawMsg), err)
+		return nil // Don't return an error, because parsing will never succeed
+	}
+
+	switch msg.Action {
+	case model.ImagesWriterActionUnzip:
+		return processUnzipMessage(ctx, ap, msg)
+	case model.ImagesWriterActionGenerateThumbnail:
+		return processThumbnailMessage(ctx, ap, msg)
+	default:
+		log.Printf("[ERROR] Discarding message with unknown action '%s': %v", string(rawMsg), err)
+		return nil // Don't return an error, because parsing will never succeed
+	}
 }
 
 func isRetryable(err error) bool {
