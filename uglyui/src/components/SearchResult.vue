@@ -29,13 +29,19 @@
         </div>
       </v-col>
       <v-col cols="1" class="d-flex justify-center">
-        <v-btn icon x-small class="primary--text" :to="{ name: 'search-detail', params: { rid: result.id } }"
-          ><v-icon>mdi-file-document</v-icon></v-btn
-        >
-        <!--TODO - need "has image" logic if there is an image associated with the record
-        <v-row no-gutters class="ml-5">
-          <router-link :to="{ name: 'search-detail', params: { rid: result.id } }">View image</router-link>
-        </v-row>-->
+        <div class="view-column">
+          <v-btn icon x-small class="primary--text" :to="{ name: 'search-detail', params: { rid: result.id } }"
+            ><v-icon title="View record details">mdi-file-document</v-icon></v-btn
+          >
+          <v-btn
+            v-if="result.imagePath"
+            icon
+            x-small
+            class="primary--text view-camera"
+            :to="{ name: 'image', params: { pid: result.post, path: result.imagePath } }"
+            ><v-icon title="View image">mdi-camera</v-icon></v-btn
+          >
+        </div>
       </v-col>
     </v-row>
   </v-col>
@@ -50,6 +56,13 @@ export default {
 </script>
 
 <style scoped>
+.view-camera {
+  margin-left: 4px;
+}
+.view-column {
+  margin-left: 4px;
+  min-width: 48px;
+}
 .resultRole {
   font-size: 75%;
   color: #666;
