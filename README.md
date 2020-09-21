@@ -49,11 +49,11 @@ tilt down                       # clean up docker images when done
                                   # alternatively, run docker-compose down
 ```
 
-# Building 
+## Building 
 
 In the `ourroots` directory, run `make` to run unit tests and build.
 
-# Saving and restoring elasticsearch volume data
+## Saving and restoring elasticsearch volume data
 ### creates /tmp/cms_esdata.tar.bz2 from cms_esdata
 ```
 docker run --rm -v cms_esdata:/volume -v /tmp:/backup alpine tar -cjf /backup/cms_esdata.tar.bz2 -C /volume ./
@@ -63,8 +63,18 @@ docker run --rm -v cms_esdata:/volume -v /tmp:/backup alpine tar -cjf /backup/cm
 docker run --rm -v cms_esdata:/volume -v /tmp:/backup alpine sh -c "rm -rf /volume/* /volume/..?* /volume/.[!.]* ; tar -C /volume/ -xjf /backup/cms_esdata.tar.bz2"
 ```
 
-# Populating database tables
+## Configuration
 
+### Populating the database tables
+
+To populate the place and name-variants dictionaries, run the following script:
 ```
 cd db && ./db_load_full.sh <postgres-user> <postgres-password> <postgres-host> <postgres-port>
 ```
+
+### Customizing the search index
+
+By default, the narrow name coder is NYSIIS, and the broad name coder is Soundex. You can change this by editing 
+`elasticsearch/elasticsearch_schema.json` and modifying the encoder values on lines 39 and 43 before running the 
+`es_setup.sh` script. Possible values are: nysiis, metaphone, double_metaphone, beider_morse, soundex, refined_soundex, 
+daitch_mokotoff, caverphone1, caverphone2, cologne, koelnerphonetik, and haasephonetik. 

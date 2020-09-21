@@ -18,27 +18,27 @@
               "asciifolding"
             ]
           },
-          "refined_soundex": {
+          "broad_coder": {
             "tokenizer": "lowercase",
             "filter": [
               "asciifolding",
-              "refined_soundex_filter"
+              "broad_filter"
             ]
           },
-          "nysiis": {
+          "narrow_coder": {
             "tokenizer": "lowercase",
             "filter": [
               "asciifolding",
-              "nysiis_filter"
+              "narrow_filter"
             ]
           }
         },
         "filter": {
-          "refined_soundex_filter": {
+          "broad_filter": {
             "type": "phonetic",
-            "encoder": "refined_soundex"
+            "encoder": "soundex"
           },
-          "nysiis_filter": {
+          "narrow_filter": {
             "type": "phonetic",
             "encoder": "nysiis"
           }
@@ -65,7 +65,7 @@
         "fields": {
           "narrow": {
             "type": "text",
-            "analyzer": "nysiis",
+            "analyzer": "narrow_coder",
             "doc_values": false,
             "index_options": "docs",
             "norms": false,
@@ -73,7 +73,7 @@
           },
           "broad": {
             "type": "text",
-            "analyzer": "refined_soundex",
+            "analyzer": "broad_coder",
             "doc_values": false,
             "index_options": "docs",
             "norms": false,
@@ -91,7 +91,7 @@
         "fields": {
           "narrow": {
             "type": "text",
-            "analyzer": "nysiis",
+            "analyzer": "narrow_coder",
             "doc_values": false,
             "index_options": "docs",
             "norms": false,
@@ -99,7 +99,7 @@
           },
           "broad": {
             "type": "text",
-            "analyzer": "refined_soundex",
+            "analyzer": "broad_coder",
             "doc_values": false,
             "index_options": "docs",
             "norms": false,
@@ -118,7 +118,7 @@
         "fields": {
           "narrow": {
             "type": "text",
-            "analyzer": "nysiis",
+            "analyzer": "narrow_coder",
             "doc_values": false,
             "index_options": "docs",
             "norms": false,
@@ -126,7 +126,7 @@
           },
           "broad": {
             "type": "text",
-            "analyzer": "refined_soundex",
+            "analyzer": "broad_coder",
             "doc_values": false,
             "index_options": "docs",
             "norms": false,
@@ -144,7 +144,7 @@
         "fields": {
           "narrow": {
             "type": "text",
-            "analyzer": "nysiis",
+            "analyzer": "narrow_coder",
             "doc_values": false,
             "index_options": "docs",
             "norms": false,
@@ -152,7 +152,7 @@
           },
           "broad": {
             "type": "text",
-            "analyzer": "refined_soundex",
+            "analyzer": "broad_coder",
             "doc_values": false,
             "index_options": "docs",
             "norms": false,
@@ -171,7 +171,7 @@
         "fields": {
           "narrow": {
             "type": "text",
-            "analyzer": "nysiis",
+            "analyzer": "narrow_coder",
             "doc_values": false,
             "index_options": "docs",
             "norms": false,
@@ -179,7 +179,7 @@
           },
           "broad": {
             "type": "text",
-            "analyzer": "refined_soundex",
+            "analyzer": "broad_coder",
             "doc_values": false,
             "index_options": "docs",
             "norms": false,
@@ -197,7 +197,7 @@
         "fields": {
           "narrow": {
             "type": "text",
-            "analyzer": "nysiis",
+            "analyzer": "narrow_coder",
             "doc_values": false,
             "index_options": "docs",
             "norms": false,
@@ -205,7 +205,7 @@
           },
           "broad": {
             "type": "text",
-            "analyzer": "refined_soundex",
+            "analyzer": "broad_coder",
             "doc_values": false,
             "index_options": "docs",
             "norms": false,
@@ -224,7 +224,7 @@
         "fields": {
           "narrow": {
             "type": "text",
-            "analyzer": "nysiis",
+            "analyzer": "narrow_coder",
             "doc_values": false,
             "index_options": "docs",
             "norms": false,
@@ -232,7 +232,7 @@
           },
           "broad": {
             "type": "text",
-            "analyzer": "refined_soundex",
+            "analyzer": "broad_coder",
             "doc_values": false,
             "index_options": "docs",
             "norms": false,
@@ -250,7 +250,7 @@
         "fields": {
           "narrow": {
             "type": "text",
-            "analyzer": "nysiis",
+            "analyzer": "narrow_coder",
             "doc_values": false,
             "index_options": "docs",
             "norms": false,
@@ -258,7 +258,7 @@
           },
           "broad": {
             "type": "text",
-            "analyzer": "refined_soundex",
+            "analyzer": "broad_coder",
             "doc_values": false,
             "index_options": "docs",
             "norms": false,
@@ -277,7 +277,7 @@
         "fields": {
           "narrow": {
             "type": "text",
-            "analyzer": "nysiis",
+            "analyzer": "narrow_coder",
             "doc_values": false,
             "index_options": "docs",
             "norms": false,
@@ -285,7 +285,7 @@
           },
           "broad": {
             "type": "text",
-            "analyzer": "refined_soundex",
+            "analyzer": "broad_coder",
             "doc_values": false,
             "index_options": "docs",
             "norms": false,
@@ -303,7 +303,7 @@
         "fields": {
           "narrow": {
             "type": "text",
-            "analyzer": "nysiis",
+            "analyzer": "narrow_coder",
             "doc_values": false,
             "index_options": "docs",
             "norms": false,
@@ -311,7 +311,7 @@
           },
           "broad": {
             "type": "text",
-            "analyzer": "refined_soundex",
+            "analyzer": "broad_coder",
             "doc_values": false,
             "index_options": "docs",
             "norms": false,
