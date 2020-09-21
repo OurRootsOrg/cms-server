@@ -14,7 +14,7 @@ import (
 // @tags records
 // @id getRecords
 // @produce application/json
-// @success 200 {array} model.Record "OK"
+// @success 200 {array} api.RecordsResult "OK"
 // @failure 500 {object} api.Error "Server error"
 // @Security OAuth2Implicit[cms,openid,profile,email]
 // @Security OAuth2AuthCode[cms,openid,profile,email]
@@ -34,6 +34,40 @@ func (app App) GetRecords(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	err = enc.Encode(cols)
+	if err != nil {
+		serverError(w, err)
+		return
+	}
+}
+
+// GetRecord gets a Record from the database
+// @summary gets a Record with optional detail including household records and image path
+// @router /records/{id} [get]
+// @tags posts
+// @id getRecord
+// @Param id path integer true "Record ID"
+// @produce application/json
+// @param details query bool false "include labels, citation, household, and imagePath"
+// @success 200 {object} api.RecordDetail "OK"
+// @failure 404 {object} api.Error "Not found"
+// @failure 500 {object} api.Error "Server error"
+// @Security OAuth2Implicit[cms,openid,profile,email]
+// @Security OAuth2AuthCode[cms,openid,profile,email]
+func (app App) GetRecord(w http.ResponseWriter, req *http.Request) {
+	recordID, errors := getIDFromRequest(req)
+	if errors != nil {
+		ErrorsResponse(w, errors)
+		return
+	}
+	details, _ := strconv.ParseBool(req.URL.Query().Get("details"))
+	enc := json.NewEncoder(w)
+	w.Header().Set("Content-Type", contentType)
+	record, errors := app.api.GetRecord(req.Context(), details, recordID)
+	if errors != nil {
+		ErrorsResponse(w, errors)
+		return
+	}
+	err := enc.Encode(record)
 	if err != nil {
 		serverError(w, err)
 		return

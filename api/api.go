@@ -58,9 +58,9 @@ type LocalAPI interface {
 	PostContentRequest(ctx context.Context, contentRequest ContentRequest) (*ContentResult, error)
 	GetContent(ctx context.Context, key string) ([]byte, error)
 	RetrieveUser(ctx context.Context, provider OIDCProvider, token *oidc.IDToken, rawToken string) (*model.User, error)
-	GetRecordsForPost(ctx context.Context, postid uint32) (*RecordResult, error)
+	GetRecordsForPost(ctx context.Context, postid uint32) (*RecordsResult, error)
 	GetRecordsByID(ctx context.Context, ids []uint32) ([]model.Record, error)
-	GetRecord(ctx context.Context, id uint32) (*model.Record, error)
+	GetRecord(ctx context.Context, includeDetails bool, id uint32) (*RecordDetail, error)
 	AddRecord(ctx context.Context, in model.RecordIn) (*model.Record, error)
 	UpdateRecord(ctx context.Context, id uint32, in model.Record) (*model.Record, error)
 	DeleteRecord(ctx context.Context, id uint32) error

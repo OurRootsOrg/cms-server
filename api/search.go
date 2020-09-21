@@ -695,7 +695,8 @@ func (api API) SearchByID(ctx context.Context, id string) (*model.SearchHit, err
 	}
 
 	// read record and collection
-	record, errs := api.GetRecord(ctx, hitData.RecordID)
+	// don't include household because we can get the household here more efficiently (we don't have to re-read post and collection)
+	recordDetail, errs := api.GetRecord(ctx, false, hitData.RecordID)
 	if errs != nil {
 		log.Printf("[ERROR] record not found %d\n", hitData.RecordID)
 		return nil, errs
@@ -709,14 +710,14 @@ func (api API) SearchByID(ctx context.Context, id string) (*model.SearchHit, err
 	// read household
 	householdRecords := []model.SearchRecord{}
 	if collection.HouseholdNumberHeader != "" {
-		recordHousehold, errs := api.GetRecordHousehold(ctx, record.Post, record.Data[collection.HouseholdNumberHeader])
+		recordHousehold, errs := api.GetRecordHousehold(ctx, recordDetail.Post, recordDetail.Data[collection.HouseholdNumberHeader])
 		if errs != nil || recordHousehold == nil || len(recordHousehold.Records) == 0 {
-			log.Printf("[ERROR] recordHousehold not found for record %d err=%v\n", record.ID, errs)
+			log.Printf("[ERROR] recordHousehold not found for record %d err=%v\n", recordDetail.ID, errs)
 			return nil, errs
 		}
 		recs, errs := api.GetRecordsByID(ctx, recordHousehold.Records)
 		if errs != nil {
-			log.Printf("[ERROR] household records not found for record %d err=%v\n", record.ID, errs)
+			log.Printf("[ERROR] household records not found for record %d err=%v\n", recordDetail.ID, errs)
 			return nil, errs
 		}
 		// add household records in order
@@ -731,14 +732,14 @@ func (api API) SearchByID(ctx context.Context, id string) (*model.SearchHit, err
 	}
 	return &model.SearchHit{
 		ID:                 hitData.ID,
-		Person:             constructSearchPerson(collection.Mappings, hitData.Role, record),
-		Record:             constructSearchRecord(collection.Mappings, record),
+		Person:             constructSearchPerson(collection.Mappings, hitData.Role, &recordDetail.Record),
+		Record:             constructSearchRecord(collection.Mappings, &recordDetail.Record),
 		CollectionName:     collection.Name,
 		CollectionID:       collection.ID,
 		CollectionLocation: collection.Location,
-		Citation:           record.GetCitation(collection.CitationTemplate),
-		PostID:             record.Post,
-		ImagePath:          record.Data[collection.ImagePathHeader],
+		Citation:           recordDetail.GetCitation(collection.CitationTemplate),
+		PostID:             recordDetail.Post,
+		ImagePath:          recordDetail.Data[collection.ImagePathHeader],
 		Household:          householdRecords,
 	}, nil
 }

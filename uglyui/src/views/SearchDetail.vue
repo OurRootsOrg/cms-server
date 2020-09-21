@@ -38,7 +38,7 @@
               }
             }"
           >
-            <v-img :contain="true" :src="thumbURL" :max-width="thumbWidth"></v-img>
+            <v-img :contain="true" :src="thumbURL" max-width="160"></v-img>
           </router-link>
           <router-link
             :to="{
@@ -99,11 +99,9 @@ export default {
     console.log("searchResult", this.search.searchResult);
     // get image path
     if (this.search.searchResult.imagePath) {
-      Server.postsGetImage(this.search.searchResult.post, this.search.searchResult.imagePath, 0, this.thumbWidth).then(
-        result => {
-          this.thumbURL = result.data.url;
-        }
-      );
+      Server.postsGetImage(this.search.searchResult.post, this.search.searchResult.imagePath, true).then(result => {
+        this.thumbURL = result.data.url;
+      });
     }
     // get household headers
     if (this.search.searchResult.household && this.search.searchResult.household.length > 0) {
@@ -119,7 +117,6 @@ export default {
   },
   data() {
     return {
-      thumbWidth: 160,
       thumbURL: "",
       householdHeaders: []
     };

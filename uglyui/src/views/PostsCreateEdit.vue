@@ -222,16 +222,27 @@
       <v-col>
         <h3 class="pl-1">Post data</h3>
         <v-data-table
-          :items="records.recordsList.map(r => r.data)"
+          :items="
+            records.recordsList.map(r => {
+              return { __id: r.id, ...r.data };
+            })
+          "
           :headers="getRecordColumns()"
           dense
+          @click:row="rowClicked"
           sortable
           :footer-props="{
             'items-per-page-options': [10, 25, 50]
           }"
           :items-per-page="25"
           v-columns-resizable
+          class="rowHover"
         >
+          <template v-slot:[`item.icon`]="{ item }">
+            <v-btn icon small :to="{ name: 'records-view', params: { rid: item.__id } }">
+              <v-icon right>mdi-chevron-right</v-icon>
+            </v-btn>
+          </template>
         </v-data-table>
       </v-col>
     </v-row>
@@ -388,7 +399,15 @@ export default {
           cols.push({ text: f.header + "_std", value: f.header + "_std" });
         }
       }
+      cols.push({ text: "", value: "icon", align: "right" });
       return cols;
+    },
+    rowClicked(record) {
+      console.log("roeClicked", record);
+      this.$router.push({
+        name: "records-view",
+        params: { rid: record.__id }
+      });
     },
     getPostFromForm() {
       let post = Object.assign({}, this.post);

@@ -20,7 +20,7 @@ func TestGetRecordsForPost(t *testing.T) {
 	r := app.NewRouter()
 
 	// Empty result
-	cr := api.RecordResult{}
+	cr := api.RecordsResult{}
 	am.Result = &cr
 	am.Errors = nil
 
@@ -28,7 +28,7 @@ func TestGetRecordsForPost(t *testing.T) {
 	response := httptest.NewRecorder()
 	r.ServeHTTP(response, request)
 	assert.Equal(t, 200, response.Code, "OK response is expected")
-	var empty api.RecordResult
+	var empty api.RecordsResult
 	err := json.NewDecoder(response.Body).Decode(&empty)
 	if err != nil {
 		t.Errorf("Error parsing JSON: %v", err)
@@ -41,7 +41,7 @@ func TestGetRecordsForPost(t *testing.T) {
 	// Non-empty result
 	now := time.Now().Truncate(0) // Truncate(0) truncates monotonic time
 	ci, _ := makeRecordIn(t)
-	cr = api.RecordResult{
+	cr = api.RecordsResult{
 		Records: []model.Record{
 			{
 				ID:             1,
@@ -60,7 +60,7 @@ func TestGetRecordsForPost(t *testing.T) {
 	assert.Equal(t,
 		contentType,
 		response.Result().Header["Content-Type"][0])
-	var ret api.RecordResult
+	var ret api.RecordsResult
 	err = json.NewDecoder(response.Body).Decode(&ret)
 	if err != nil {
 		t.Errorf("Error parsing JSON: %v", err)
@@ -69,7 +69,7 @@ func TestGetRecordsForPost(t *testing.T) {
 	assert.Equal(t, cr.Records[0], ret.Records[0])
 
 	// error result
-	am.Result = (*api.RecordResult)(nil)
+	am.Result = (*api.RecordsResult)(nil)
 	am.Errors = api.NewError(assert.AnError)
 	request, _ = http.NewRequest("GET", "/records?post=1", nil)
 	response = httptest.NewRecorder()

@@ -56,11 +56,12 @@ export default {
   postsGetOne(id) {
     return get(`/posts/${id}`);
   },
-  postsGetImage(postId, imagePath, height, width) {
-    if (height > 0 || width > 0) {
-      return get(`/posts/${postId}/images/${imagePath}?noredirect=true&height=${height}&width=${width}`);
+  postsGetImage(postId, imagePath, thumbnail) {
+    let url = `/posts/${postId}/images/${imagePath}?noredirect=true`;
+    if (thumbnail) {
+      url += `&thumbnail=${thumbnail}`;
     }
-    return get(`/posts/${postId}/images/${imagePath}?noredirect=true`);
+    return get(url);
   },
   postsCreate(pst) {
     return post("/posts", pst);
@@ -70,6 +71,9 @@ export default {
   },
   postsDelete(id) {
     return del(`/posts/${id}`);
+  },
+  recordsGetDetail(id) {
+    return get(`/records/${id}?details=true`);
   },
   recordsGetForPost(postId) {
     return get("/records", {

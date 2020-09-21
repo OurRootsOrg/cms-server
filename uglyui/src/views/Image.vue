@@ -22,7 +22,7 @@ export default {
   },
   mounted() {
     if (this.$route.params && this.$route.params.pid && this.$route.params.path) {
-      Server.postsGetImage(this.$route.params.pid, this.$route.params.path, 0, 0).then(result => {
+      Server.postsGetImage(this.$route.params.pid, this.$route.params.path, false).then(result => {
         let pyramid = {
           type: "legacy-image-pyramid",
           levels: [
