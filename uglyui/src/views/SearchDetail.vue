@@ -1,34 +1,11 @@
 <template>
-  <div class="search-detail">
-    <v-row>
-      <v-col>
-        <h1>Record detail</h1>
-      </v-col>
-    </v-row>
-    <v-row>
-      <v-col cols="8">
-        <v-row v-if="search.searchResult.person.role !== 'principal'">
-          <v-col>
-            <div>Name: {{ search.searchResult.person.name }}</div>
-            <div>Role: {{ search.searchResult.person.role }}</div>
-          </v-col>
-        </v-row>
-        <v-row>
-          <v-col>
-            <h4>
-              {{ search.searchResult.collectionName }}
-              {{ search.searchResult.collectionLocation ? "in " + search.searchResult.collectionLocation : "" }}
-            </h4>
-          </v-col>
-        </v-row>
-        <v-row>
-          <v-col>
-            <div v-for="(lv, $ix) in search.searchResult.record" :key="$ix">{{ lv.label }}: {{ lv.value }}</div>
-          </v-col>
-        </v-row>
-      </v-col>
-      <v-col>
-        <div v-if="thumbURL">
+  <v-col class="search-detail" cols="12">
+    <h1>Record detail for</h1>
+    <h2>{{ search.searchResult.person.name }} in {{ search.searchResult.collectionName }}</h2>
+    <v-row class="recordDetail d-flex">
+      <!--image-->
+      <v-col cols="12" md="3" class="" v-if="thumbURL">
+        <div class="" no-gutters>
           <router-link
             :to="{
               name: 'image',
@@ -40,51 +17,80 @@
           >
             <v-img :contain="true" :src="thumbURL" :max-width="thumbWidth"></v-img>
           </router-link>
-          <router-link
+          <v-btn
+            text
+            class="primary--text mx-5"
             :to="{
               name: 'image',
               params: { pid: search.searchResult.post, path: search.searchResult.imagePath }
             }"
           >
-            Larger image
-          </router-link>
+            Larger image<v-icon right>mdi-chevron-right</v-icon>
+          </v-btn>
         </div>
       </v-col>
-    </v-row>
-    <v-row v-if="search.searchResult.citation">
-      <v-col>
-        <h4>Citation</h4>
-        <div>{{ search.searchResult.citation }}</div>
+      <!--individual transcript-->
+      <v-col cols="12" md="8">
+        <v-row v-if="search.searchResult.person.role !== 'principal'" no-gutters>
+          <v-col>
+            <div>Name: {{ search.searchResult.person.name }}</div>
+            <div>Role: {{ search.searchResult.person.role }}</div>
+          </v-col>
+        </v-row>
+        <v-row no-gutters>
+          <v-col>
+            <h4>Collection: {{ search.searchResult.collectionName }}</h4>
+            <h4>{{ search.searchResult.collectionLocation ? "In: " + search.searchResult.collectionLocation : "" }}</h4>
+          </v-col>
+        </v-row>
+        <v-row no-gutters class="mt-5 d-flex">
+          <v-col cols="12">
+            <h4 class="recordDetailSectionHead">Record Details</h4>
+          </v-col>
+          <v-col cols="3" class="d-flex justify-right flex-column">
+            <div v-for="(lv, $ix) in search.searchResult.record" :key="$ix">{{ lv.label }}:</div>
+          </v-col>
+          <v-col cols="9">
+            <div v-for="(lv, $ix) in search.searchResult.record" :key="$ix">{{ lv.value }}</div>
+          </v-col>
+        </v-row>
       </v-col>
     </v-row>
+    <!--household transcript table-->
     <v-row v-if="search.searchResult.household && search.searchResult.household.length > 0">
       <v-col>
-        <h3>Household</h3>
-        <table>
-          <thead>
-            <td v-for="(header, ix) in householdHeaders" :key="ix">
-              {{ header }}
-            </td>
-          </thead>
-          <tbody>
-            <tr v-for="(record, i) in search.searchResult.household" :key="i">
-              <td v-for="(header, j) in householdHeaders" :key="j">
-                {{ getRecordValue(record, header) }}
-              </td>
-            </tr>
-          </tbody>
-        </table>
+        <h4 class="recordDetailSectionHead">Household Details</h4>
+        <v-data-table
+          :headers="householdHeaders"
+          :items="householdRecords"
+          :disable-pagination="true"
+          dense
+          v-columns-resizable
+          hide-default-footer
+        >
+        </v-data-table>
       </v-col>
     </v-row>
-  </div>
+    <!--citation-->
+    <v-row v-if="search.searchResult.citation">
+      <v-col cols="12">
+        <v-card class="pa-5">
+          <h4 class="recordDetailSectionHead mb-3">How to cite this record</h4>
+          <div>{{ search.searchResult.citation }}</div>
+        </v-card>
+      </v-col>
+    </v-row>
+  </v-col>
 </template>
 
 <script>
 import { mapState } from "vuex";
 import store from "@/store";
 import Server from "@/services/Server.js";
+// import draggable from "vuedraggable";
 
 export default {
+  // components: { draggable },
   beforeRouteEnter(routeTo, routeFrom, next) {
     store
       .dispatch("searchGetResult", routeTo.params.rid)
@@ -109,19 +115,29 @@ export default {
     if (this.search.searchResult.household && this.search.searchResult.household.length > 0) {
       for (let record of this.search.searchResult.household) {
         for (let lv of record) {
-          if (!this.householdHeaders.includes(lv.label)) {
-            this.householdHeaders.push(lv.label);
+          if (this.householdHeaders.findIndex(header => header.text === lv.label) === -1) {
+            this.householdHeaders.push({ text: lv.label, value: lv.label });
           }
         }
       }
     }
     console.log("householdHeaders", this.householdHeaders);
+    this.householdRecords = this.search.searchResult.household.map(record => {
+      let result = {};
+      for (let header of this.householdHeaders) {
+        result[header.text] = this.getRecordValue(record, header.text);
+      }
+      console.log(result);
+      return result;
+    });
+    console.log("householdRecords", this.householdRecords);
   },
   data() {
     return {
-      thumbWidth: 160,
+      thumbWidth: "200px",
       thumbURL: "",
-      householdHeaders: []
+      householdHeaders: [],
+      householdRecords: []
     };
   },
   computed: mapState(["search"]),
@@ -134,4 +150,12 @@ export default {
 };
 </script>
 
-<style scoped></style>
+<style scoped>
+.recordDetail {
+  border-top: solid 1px #cccccc;
+  margin-top: 12px;
+}
+.recordDetailSectionHead {
+  text-transform: uppercase;
+}
+</style>

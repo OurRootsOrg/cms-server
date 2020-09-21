@@ -1,5 +1,3 @@
-<!--TODO Heather: on change for exactness options, close the div and show the selected option styled as a chip next to the v-menu activator -->
-<!--TODO Heather: search results page for mobile-->
 <template>
   <!--if the results move to a new page, take out the wrapper row as it won't be needed to provide the single template element anymore-->
   <v-row>
@@ -19,58 +17,43 @@
                 placeholder="First &amp; Middle Name(s)"
               ></v-text-field>
             </v-row>
-            <!-- <v-row no-gutters class="mt-n5">
-              <v-menu offset-x :close-on-content-click="false">
+            <v-row no-gutters class="mt-n5" v-if="query.given">
+              <v-menu offset-x :close-on-content-click="false" v-model="givenOptionsMenu">
                 <template v-slot:activator="{ on, attrs }">
-                  <v-btn color="primary" text x-small v-bind="attrs" v-on="on" class="pa-0 mt-n1">
-                    Spelling options
-                  </v-btn>
-                </template>
-                <v-select
-                  :multiple="true"
-                  :items="givenFuzzinessLevels"
-                  v-model="fuzziness.given"
-                  :change="nameFuzzinessChanged('given')"
-                  label="First &amp; middle name(s) exactness"
-                  class="exactnessOptions"
-                ></v-select>
-              </v-menu>
-            </v-row> -->
-            <v-row no-gutters class="mt-n5">
-              <v-menu offset-x :close-on-content-click="false">
-                <template v-slot:activator="{ on, attrs }">
-                  <v-btn color="primary" text x-small v-bind="attrs" v-on="on" class="pa-0 mt-n1">
-                    Spelling options
-                  </v-btn>
-                  <v-tooltip slot="append" bottom>
-                    <template v-slot:activator="{ on }">
-                      <v-icon v-on="on" x-small class="mt-n1" right>mdi-information-outline</v-icon>
-                    </template>
-                    <span
-                      >Options for finding records with similar names, but with alternate spellings to this one</span
+                  <v-btn
+                    color="primary"
+                    text
+                    x-small
+                    v-bind="attrs"
+                    v-on="on"
+                    class="pa-0 mt-n1"
+                    @click="openNameFuzziness('given')"
+                  >
+                    <v-icon v-if="fuzziness.given.length === 1 && fuzziness.given[0] === 0" small class="mr-1"
+                      >mdi-checkbox-blank-outline</v-icon
                     >
-                  </v-tooltip>
+                    <v-icon v-else small class="mr-1">mdi-checkbox-marked</v-icon>
+                    <span class="displayChosenOptions">{{ givenSpellingOptions }}</span>
+                  </v-btn>
                 </template>
-                <!-- <v-select
-                  :multiple="true"
-                  :items="givenFuzzinessLevels"
-                  v-model="fuzziness.given"
-                  :change="nameFuzzinessChanged('given')"
-                  label="First &amp; middle name(s) exactness"
-                  class="exactnessOptions"
-                ></v-select> -->
                 <div class="exactnessOptions">
                   <v-checkbox
                     v-for="(item, index) in givenFuzzinessLevels"
                     :key="index"
-                    v-model="fuzziness.given[item.text]"
+                    v-model="fuzziness.dlg"
+                    :value="item.value"
                     :label="item.text"
-                    @change="nameFuzzinessChanged('given')"
+                    @change="nameFuzzinessChecked(item.value)"
                     class="ma-0 pa-0"
                     dense
                   >
                   </v-checkbox>
                 </div>
+                <v-card-actions class="exactnessActions">
+                  <v-btn text @click="givenOptionsMenu = false">Cancel</v-btn>
+                  <v-spacer></v-spacer>
+                  <v-btn class="primary" @click="nameFuzzinessChanged('given')">Apply</v-btn>
+                </v-card-actions>
               </v-menu>
             </v-row>
           </v-col>
@@ -79,33 +62,43 @@
             <v-row no-gutters>
               <v-text-field dense outlined v-model="query.surname" type="text" placeholder="Surname"></v-text-field>
             </v-row>
-            <v-row no-gutters class="mt-n5">
-              <v-menu offset-x :close-on-content-click="false">
+            <v-row no-gutters class="mt-n5" v-if="query.surname">
+              <v-menu offset-x :close-on-content-click="false" v-model="surnameOptionsMenu">
                 <template v-slot:activator="{ on, attrs }">
-                  <v-btn color="primary" text x-small v-bind="attrs" v-on="on" class="pa-0 mt-n1">
-                    Spelling options
+                  <v-btn
+                    color="primary"
+                    text
+                    x-small
+                    v-bind="attrs"
+                    v-on="on"
+                    class="pa-0 mt-n1"
+                    @click="openNameFuzziness('surname')"
+                  >
+                    <v-icon v-if="fuzziness.surname.length === 1 && fuzziness.surname[0] === 0" small class="mr-1"
+                      >mdi-checkbox-blank-outline</v-icon
+                    >
+                    <v-icon v-else small class="mr-1">mdi-checkbox-marked</v-icon>
+                    <span class="displayChosenOptions">{{ surnameSpellingOptions }}</span>
                   </v-btn>
                 </template>
-                <!-- <v-select
-                  :multiple="true"
-                  :items="surnameFuzzinessLevels"
-                  v-model="fuzziness.surname"
-                  :change="nameFuzzinessChanged('surname')"
-                  label="Surname exactness"
-                  class="exactnessOptions"
-                ></v-select> -->
                 <div class="exactnessOptions">
                   <v-checkbox
                     v-for="(item, index) in surnameFuzzinessLevels"
                     :key="index"
-                    v-model="fuzziness.surname[item.text]"
+                    v-model="fuzziness.dlg"
+                    :value="item.value"
                     :label="item.text"
-                    @change="nameFuzzinessChanged('surname')"
+                    @change="nameFuzzinessChecked(item.value)"
                     class="ma-0 pa-0"
                     dense
                   >
                   </v-checkbox>
                 </div>
+                <v-card-actions class="exactnessActions">
+                  <v-btn text @click="surnameOptionsMenu = false">Cancel</v-btn>
+                  <v-spacer></v-spacer>
+                  <v-btn class="primary" @click="nameFuzzinessChanged('surname')">Apply</v-btn>
+                </v-card-actions>
               </v-menu>
             </v-row>
           </v-col>
@@ -132,45 +125,19 @@
                 @change="anyPlaceChanged()"
               ></v-autocomplete>
             </v-row>
-            <v-row no-gutters>
-              <v-menu offset-x :close-on-content-click="false">
-                <template v-slot:activator="{ on, attrs }">
-                  <v-btn color="primary" text x-small v-bind="attrs" v-on="on" class="pa-0 mt-0">
-                    Exactness
-                  </v-btn>
-                  <v-tooltip slot="append" bottom max-width="600px">
-                    <template v-slot:activator="{ on }">
-                      <v-icon v-on="on" x-small class="mt-1" right>mdi-information-outline</v-icon>
-                    </template>
-                    <span
-                      >Tip: include records with a broader geography by selecting "Exact and higher-level places." For
-                      example searching "Miami" with exact and higher level places" will also include records for the
-                      state of Florida without a specific city name.</span
-                    >
-                  </v-tooltip>
-                </template>
-                <!-- <v-select
-                  :items="placeFuzzinessLevels"
+            <v-row no-gutters v-if="query.anyPlace">
+              <v-col cols="12" class="exactCheck d-flex flex-row">
+                <v-checkbox
                   v-model="query.anyPlaceFuzziness"
-                  label="Place exactness"
-                  class="exactnessOptions"
-                ></v-select> -->
-                <!--TODO Heather: what is the @change here (is there one?) -->
-                <div class="exactnessOptions">
-                  <v-checkbox
-                    v-for="(item, index) in placeFuzzinessLevels"
-                    :key="index"
-                    v-model="query.anyPlaceFuzziness[item.text]"
-                    :label="item.text"
-                    class="ma-0 pa-0"
-                    dense
-                  >
-                  </v-checkbox>
-                </div>
-              </v-menu>
+                  :value="1"
+                  class="mt-0 mr-1 ml-n1 primary--text shrink smallCheckbox"
+                >
+                </v-checkbox>
+                <span class="mt-2 ml-n3 primary--text">Exact location</span>
+              </v-col>
             </v-row>
           </v-col>
-          <v-col cols="3" md="2" class="mt-3">
+          <v-col cols="6" md="2" class="mt-3">
             <h4>Birth year</h4>
             <v-row no-gutters>
               <v-text-field
@@ -182,30 +149,29 @@
                 @change="birthYearChanged()"
               ></v-text-field>
             </v-row>
-            <v-row no-gutters class="mt-n5">
-              <v-menu offset-x :close-on-content-click="false">
+            <v-row no-gutters class="mt-n5" v-if="query.birthDate">
+              <v-menu offset-x :close-on-content-click="false" v-model="birthOptionsMenu">
                 <template v-slot:activator="{ on, attrs }">
-                  <v-btn color="primary" text x-small v-bind="attrs" v-on="on" class="pa-0 mt-n2">
-                    Exactness
+                  <v-btn color="primary" text x-small v-bind="attrs" v-on="on" class="pa-0 mt-0">
+                    <v-icon v-if="query.birthDateFuzziness === 0" small class="mr-1">mdi-checkbox-blank-outline</v-icon>
+                    <v-icon v-if="query.birthDateFuzziness > 0" small class="mr-1">mdi-checkbox-marked</v-icon>
+                    <span class="ml-1">{{
+                      query.birthDateFuzziness === 0
+                        ? "Exactness"
+                        : dateRanges.find(d => d.value === query.birthDateFuzziness).text
+                    }}</span>
                   </v-btn>
                 </template>
-                <!-- <v-select
-                  :items="dateRanges"
-                  v-model="query.birthDateFuzziness"
-                  label="Date exactness"
-                  class="exactnessOptions"
-                ></v-select> -->
-                <div class="exactnessOptions">
-                  <!--TODO Heather - what is the @change here? (is there one?)-->
-                  <v-checkbox
+                <div class="exactnessOptions mt-2 pb-0">
+                  <v-radio-group
                     v-for="(item, index) in dateRanges"
                     :key="index"
-                    v-model="query.birthDateFuzziness[item.text]"
-                    :label="item.text"
+                    v-model="query.birthDateFuzziness"
                     class="ma-0 pa-0"
-                    dense
+                    @change="birthOptionsMenu = false"
                   >
-                  </v-checkbox>
+                    <v-radio :label="item.text" :value="item.value"></v-radio>
+                  </v-radio-group>
                 </div>
               </v-menu>
             </v-row>
@@ -255,19 +221,30 @@
                 placeholder="Birth date"
               ></v-text-field>
             </v-row>
-            <v-row no-gutters class="mt-n5">
-              <v-menu offset-x :close-on-content-click="false">
+            <v-row no-gutters class="mt-n5" v-if="query.birthDate">
+              <v-menu offset-x :close-on-content-click="false" v-model="birthOptionsMenu2">
                 <template v-slot:activator="{ on, attrs }">
-                  <v-btn color="primary" text x-small v-bind="attrs" v-on="on" class="pa-0 mt-n2">
-                    Exactness
+                  <v-btn color="primary" text x-small v-bind="attrs" v-on="on" class="pa-0 mt-0">
+                    <v-icon v-if="query.birthDateFuzziness === 0" small class="mr-1">mdi-checkbox-blank-outline</v-icon>
+                    <v-icon v-if="query.birthDateFuzziness > 0" small class="mr-1">mdi-checkbox-marked</v-icon>
+                    <span class="ml-1">{{
+                      query.birthDateFuzziness === 0
+                        ? "Exactness"
+                        : dateRanges.find(d => d.value === query.birthDateFuzziness).text
+                    }}</span>
                   </v-btn>
                 </template>
-                <v-select
-                  :items="dateRanges"
-                  v-model="query.birthDateFuzziness"
-                  label="Birth date exactness"
-                  class="exactnessOptions"
-                ></v-select>
+                <div class="exactnessOptions mt-2 pb-0">
+                  <v-radio-group
+                    v-for="(item, index) in dateRanges"
+                    :key="index"
+                    v-model="query.birthDateFuzziness"
+                    class="ma-0 pa-0"
+                    @change="birthOptionsMenu = false"
+                  >
+                    <v-radio :label="item.text" :value="item.value"></v-radio>
+                  </v-radio-group>
+                </div>
               </v-menu>
             </v-row>
           </v-col>
@@ -289,20 +266,18 @@
                 placeholder="Birth place"
               ></v-autocomplete>
             </v-row>
-            <v-row no-gutters class="mt-0">
-              <v-menu offset-x :close-on-content-click="false">
-                <template v-slot:activator="{ on, attrs }">
-                  <v-btn color="primary" text x-small v-bind="attrs" v-on="on" class="pa-0 mt-0">
-                    Exactness
-                  </v-btn>
-                </template>
-                <v-select
-                  :items="placeFuzzinessLevels"
+            <v-row no-gutters class="mt-0" v-if="query.birthPlace">
+              <v-col cols="12" class="exactCheck d-flex flex-row">
+                <v-checkbox
                   v-model="query.birthPlaceFuzziness"
-                  label="Birth place exactness"
-                  class="exactnessOptions"
-                ></v-select>
-              </v-menu>
+                  :value="1"
+                  class="shrink mr-2 mt-0 smallCheckbox"
+                  dense
+                  primary
+                >
+                </v-checkbox
+                ><span class="mt-2 ml-n3 primary--text">Exact location</span>
+              </v-col>
             </v-row>
           </v-col>
           <v-col cols="1" class="ma-0">
@@ -326,19 +301,32 @@
                 placeholder="Marriage date"
               ></v-text-field>
             </v-row>
-            <v-row no-gutters class="mt-n5">
-              <v-menu offset-x :close-on-content-click="false">
+            <v-row no-gutters class="mt-n5" v-if="query.marriageDate">
+              <v-menu offset-x :close-on-content-click="false" v-model="marriageOptionsMenu">
                 <template v-slot:activator="{ on, attrs }">
-                  <v-btn color="primary" text x-small v-bind="attrs" v-on="on" class="pa-0 mt-n2">
-                    Exactness
+                  <v-btn color="primary" text x-small v-bind="attrs" v-on="on" class="pa-0 mt-0">
+                    <v-icon v-if="query.marriageDateFuzziness === 0" small class="mr-1"
+                      >mdi-checkbox-blank-outline</v-icon
+                    >
+                    <v-icon v-if="query.marriageDateFuzziness > 0" small class="mr-1">mdi-checkbox-marked</v-icon>
+                    <span class="ml-1">{{
+                      query.marriageDateFuzziness === 0
+                        ? "Exactness"
+                        : dateRanges.find(d => d.value === query.marriageDateFuzziness).text
+                    }}</span>
                   </v-btn>
                 </template>
-                <v-select
-                  :items="dateRanges"
-                  v-model="query.marriageDateFuzziness"
-                  label="Marriage date exactness"
-                  class="exactnessOptions"
-                ></v-select>
+                <div class="exactnessOptions mt-2 pb-0">
+                  <v-radio-group
+                    v-for="(item, index) in dateRanges"
+                    :key="index"
+                    v-model="query.marriageDateFuzziness"
+                    class="ma-0 pa-0"
+                    @change="marriageOptionsMenu = false"
+                  >
+                    <v-radio :label="item.text" :value="item.value"></v-radio>
+                  </v-radio-group>
+                </div>
               </v-menu>
             </v-row>
           </v-col>
@@ -360,20 +348,16 @@
                 placeholder="Marriage place"
               ></v-autocomplete>
             </v-row>
-            <v-row no-gutters class="mt-0">
-              <v-menu offset-x :close-on-content-click="false">
-                <template v-slot:activator="{ on, attrs }">
-                  <v-btn color="primary" text x-small v-bind="attrs" v-on="on" class="pa-0 mt-0">
-                    Exactness
-                  </v-btn>
-                </template>
-                <v-select
-                  :items="placeFuzzinessLevels"
-                  v-model="query.marriagePlaceFuzziness"
-                  label="Marriage place exactness"
-                  class="exactnessOptions"
-                ></v-select>
-              </v-menu>
+            <v-row no-gutters class="mt-0 exactCheck" v-if="query.marriagePlace">
+              <v-checkbox
+                v-model="query.marriagePlaceFuzziness"
+                :value="1"
+                class="shrink mr-2 mt-0 smallCheckbox"
+                dense
+                primary
+              >
+              </v-checkbox
+              ><span class="mt-2 ml-n3 primary--text">Exact location</span>
             </v-row>
           </v-col>
           <v-col cols="1" class="ma-0">
@@ -397,19 +381,30 @@
                 placeholder="Death date"
               ></v-text-field>
             </v-row>
-            <v-row no-gutters class="mt-n5">
-              <v-menu offset-x :close-on-content-click="false">
+            <v-row no-gutters class="mt-n5" v-if="query.deathDate">
+              <v-menu offset-x :close-on-content-click="false" v-model="deathOptionsMenu">
                 <template v-slot:activator="{ on, attrs }">
-                  <v-btn color="primary" text x-small v-bind="attrs" v-on="on" class="pa-0 mt-n2">
-                    Exactness
+                  <v-btn color="primary" text x-small v-bind="attrs" v-on="on" class="pa-0 mt-0">
+                    <v-icon v-if="query.deathDateFuzziness === 0" small class="mr-1">mdi-checkbox-blank-outline</v-icon>
+                    <v-icon v-if="query.deathDateFuzziness > 0" small class="mr-1">mdi-checkbox-marked</v-icon>
+                    <span class="ml-1">{{
+                      query.deathDateFuzziness === 0
+                        ? "Exactness"
+                        : dateRanges.find(d => d.value === query.deathDateFuzziness).text
+                    }}</span>
                   </v-btn>
                 </template>
-                <v-select
-                  :items="dateRanges"
-                  v-model="query.deathDateFuzziness"
-                  label="Death date exactness"
-                  class="exactnessOptions"
-                ></v-select>
+                <div class="exactnessOptions mt-2 pb-0">
+                  <v-radio-group
+                    v-for="(item, index) in dateRanges"
+                    :key="index"
+                    v-model="query.deathDateFuzziness"
+                    class="ma-0 pa-0"
+                    @change="deathOptionsMenu = false"
+                  >
+                    <v-radio :label="item.text" :value="item.value"></v-radio>
+                  </v-radio-group>
+                </div>
               </v-menu>
             </v-row>
           </v-col>
@@ -431,20 +426,16 @@
                 placeholder="Death place"
               ></v-autocomplete>
             </v-row>
-            <v-row no-gutters class="mt-0">
-              <v-menu offset-x :close-on-content-click="false">
-                <template v-slot:activator="{ on, attrs }">
-                  <v-btn color="primary" text x-small v-bind="attrs" v-on="on" class="pa-0 mt-0">
-                    Exactness
-                  </v-btn>
-                </template>
-                <v-select
-                  :items="placeFuzzinessLevels"
-                  v-model="query.deathPlaceFuzziness"
-                  label="Death place exactness"
-                  class="exactnessOptions"
-                ></v-select>
-              </v-menu>
+            <v-row no-gutters class="mt-0 exactCheck" v-if="query.deathPlace">
+              <v-checkbox
+                v-model="query.deathPlaceFuzziness"
+                :value="1"
+                class="shrink mr-2 mt-0 smallCheckbox"
+                dense
+                primary
+              >
+              </v-checkbox
+              ><span class="mt-2 ml-n3 primary--text">Exact location</span>
             </v-row>
           </v-col>
           <v-col cols="1" class="ma-0">
@@ -468,19 +459,32 @@
                 placeholder="Residence date"
               ></v-text-field>
             </v-row>
-            <v-row no-gutters class="mt-n5">
-              <v-menu offset-x :close-on-content-click="false">
+            <v-row no-gutters class="mt-n5" v-if="query.residenceDate">
+              <v-menu offset-x :close-on-content-click="false" v-model="residenceOptionsMenu">
                 <template v-slot:activator="{ on, attrs }">
-                  <v-btn color="primary" text x-small v-bind="attrs" v-on="on" class="pa-0 mt-n2">
-                    Exactness
+                  <v-btn color="primary" text x-small v-bind="attrs" v-on="on" class="pa-0 mt-0">
+                    <v-icon v-if="query.residenceDateFuzziness === 0" small class="mr-1"
+                      >mdi-checkbox-blank-outline</v-icon
+                    >
+                    <v-icon v-if="query.residenceDateFuzziness > 0" small class="mr-1">mdi-checkbox-marked</v-icon>
+                    <span class="ml-1">{{
+                      query.residenceDateFuzziness === 0
+                        ? "Exactness"
+                        : dateRanges.find(d => d.value === query.residenceDateFuzziness).text
+                    }}</span>
                   </v-btn>
                 </template>
-                <v-select
-                  :items="dateRanges"
-                  v-model="query.residenceDateFuzziness"
-                  label="Residence date exactness"
-                  class="exactnessOptions"
-                ></v-select>
+                <div class="exactnessOptions mt-2 pb-0">
+                  <v-radio-group
+                    v-for="(item, index) in dateRanges"
+                    :key="index"
+                    v-model="query.residenceDateFuzziness"
+                    class="ma-0 pa-0"
+                    @change="residenceOptionsMenu = false"
+                  >
+                    <v-radio :label="item.text" :value="item.value"></v-radio>
+                  </v-radio-group>
+                </div>
               </v-menu>
             </v-row>
           </v-col>
@@ -502,20 +506,16 @@
                 placeholder="Residence place"
               ></v-autocomplete>
             </v-row>
-            <v-row no-gutters class="mt-0">
-              <v-menu offset-x :close-on-content-click="false">
-                <template v-slot:activator="{ on, attrs }">
-                  <v-btn color="primary" text x-small v-bind="attrs" v-on="on" class="pa-0 mt-0">
-                    Exactness
-                  </v-btn>
-                </template>
-                <v-select
-                  :items="placeFuzzinessLevels"
-                  v-model="query.residencePlaceFuzziness"
-                  label="Residence place exactness"
-                  class="exactnessOptions"
-                ></v-select>
-              </v-menu>
+            <v-row no-gutters class="mt-0 exactCheck" v-if="query.residencePlace">
+              <v-checkbox
+                v-model="query.residencePlaceFuzziness"
+                :value="1"
+                class="shrink mr-2 mt-0 smallCheckbox"
+                dense
+                primary
+              >
+              </v-checkbox
+              ><span class="mt-2 ml-n3 primary--text">Exact location</span>
             </v-row>
           </v-col>
           <v-col cols="1" class="ma-0">
@@ -539,19 +539,30 @@
                 placeholder="Any event date"
               ></v-text-field>
             </v-row>
-            <v-row no-gutters class="mt-n5">
-              <v-menu offset-x :close-on-content-click="false">
+            <v-row no-gutters class="mt-n5" v-if="query.anyDate">
+              <v-menu offset-x :close-on-content-click="false" v-model="anyOptionsMenu">
                 <template v-slot:activator="{ on, attrs }">
-                  <v-btn color="primary" text x-small v-bind="attrs" v-on="on" class="pa-0 mt-n2">
-                    Exactness
+                  <v-btn color="primary" text x-small v-bind="attrs" v-on="on" class="pa-0 mt-0">
+                    <v-icon v-if="query.anyDateFuzziness === 0" small class="mr-1">mdi-checkbox-blank-outline</v-icon>
+                    <v-icon v-if="query.anyDateFuzziness > 0" small class="mr-1">mdi-checkbox-marked</v-icon>
+                    <span class="ml-1">{{
+                      query.anyDateFuzziness === 0
+                        ? "Exactness"
+                        : dateRanges.find(d => d.value === query.anyDateFuzziness).text
+                    }}</span>
                   </v-btn>
                 </template>
-                <v-select
-                  :items="dateRanges"
-                  v-model="query.anyDateFuzziness"
-                  label="Any event date exactness"
-                  class="exactnessOptions"
-                ></v-select>
+                <div class="exactnessOptions mt-2 pb-0">
+                  <v-radio-group
+                    v-for="(item, index) in dateRanges"
+                    :key="index"
+                    v-model="query.anyDateFuzziness"
+                    class="ma-0 pa-0"
+                    @change="anyOptionsMenu = false"
+                  >
+                    <v-radio :label="item.text" :value="item.value"></v-radio>
+                  </v-radio-group>
+                </div>
               </v-menu>
             </v-row>
           </v-col>
@@ -573,20 +584,18 @@
                 placeholder="Any event place"
               ></v-autocomplete>
             </v-row>
-            <v-row no-gutters class="mt-0">
-              <v-menu offset-x :close-on-content-click="false">
-                <template v-slot:activator="{ on, attrs }">
-                  <v-btn color="primary" text x-small v-bind="attrs" v-on="on" class="pa-0 mt-0">
-                    Exactness
-                  </v-btn>
-                </template>
-                <v-select
-                  :items="placeFuzzinessLevels"
-                  v-model="query.anyPlaceFuzziness"
-                  label="Any event place exactness"
-                  class="exactnessOptions"
-                ></v-select>
-              </v-menu>
+            <v-row no-gutters class="mt-0 exactCheck" v-if="query.anyPlace">
+              <v-checkbox
+                v-bind="attrs"
+                v-on="on"
+                v-model="query.anyPlaceFuzziness"
+                :value="1"
+                class="shrink mr-2 mt-0 smallCheckbox"
+                dense
+                primary
+              >
+              </v-checkbox
+              ><span class="mt-2 ml-n3 primary--text">Exact location</span>
             </v-row>
           </v-col>
           <v-col cols="1" class="ma-0">
@@ -647,22 +656,18 @@
                 class="ma-0 mb-n2"
               ></v-text-field>
             </v-row>
-            <v-row no-gutters class="mt-n5">
-              <v-menu offset-x :close-on-content-click="false">
-                <template v-slot:activator="{ on, attrs }">
-                  <v-btn color="primary" text x-small v-bind="attrs" v-on="on" class="pa-0 mt-0">
-                    Exactness
-                  </v-btn>
-                </template>
-                <v-select
-                  :multiple="true"
-                  :items="givenFuzzinessLevels"
+            <v-row no-gutters class="mt-n5" v-if="query.fatherGiven">
+              <v-col cols="12" class="exactCheck d-flex flex-row">
+                <v-checkbox
                   v-model="fuzziness.fatherGiven"
-                  :change="nameFuzzinessChanged('fatherGiven')"
-                  label="Father's given name exactness"
-                  class="exactnessOptions"
-                ></v-select>
-              </v-menu>
+                  :value="1"
+                  class="shrink mr-2 mt-0 smallCheckbox"
+                  dense
+                  primary
+                >
+                </v-checkbox
+                ><span class="mt-2 ml-n3 primary--text">Exact spelling</span>
+              </v-col>
             </v-row>
           </v-col>
           <v-col>
@@ -676,22 +681,18 @@
                 class="ma-0 mb-n2"
               ></v-text-field>
             </v-row>
-            <v-row no-gutters class="mt-n5">
-              <v-menu offset-x :close-on-content-click="false">
-                <template v-slot:activator="{ on, attrs }">
-                  <v-btn color="primary" text x-small v-bind="attrs" v-on="on" class="pa-0 mt-0">
-                    Exactness
-                  </v-btn>
-                </template>
-                <v-select
-                  :multiple="true"
-                  :items="surnameFuzzinessLevels"
+            <v-row no-gutters class="mt-n5" v-if="query.fatherSurname">
+              <v-col cols="12" class="exactCheck d-flex flex-row">
+                <v-checkbox
                   v-model="fuzziness.fatherSurname"
-                  :change="nameFuzzinessChanged('fatherSurname')"
-                  label="Father's surname exactness"
-                  class="exactnessOptions"
-                ></v-select>
-              </v-menu>
+                  :value="1"
+                  class="shrink mr-2 mt-0 smallCheckbox"
+                  dense
+                  primary
+                >
+                </v-checkbox
+                ><span class="mt-2 ml-n3 primary--text">Exact spelling</span>
+              </v-col>
             </v-row>
           </v-col>
           <v-col cols="1">
@@ -716,22 +717,18 @@
                 class="ma-0 mb-n2"
               ></v-text-field>
             </v-row>
-            <v-row no-gutters class="mt-n5">
-              <v-menu offset-x :close-on-content-click="false">
-                <template v-slot:activator="{ on, attrs }">
-                  <v-btn color="primary" text x-small v-bind="attrs" v-on="on" class="pa-0 mt-0">
-                    Exactness
-                  </v-btn>
-                </template>
-                <v-select
-                  :multiple="true"
-                  :items="givenFuzzinessLevels"
+            <v-row no-gutters class="mt-n5" v-if="query.motherGiven">
+              <v-col cols="12" class="exactCheck d-flex flex-row">
+                <v-checkbox
                   v-model="fuzziness.motherGiven"
-                  :change="nameFuzzinessChanged('motherGiven')"
-                  label="Mother's given name exactness"
-                  class="exactnessOptions"
-                ></v-select>
-              </v-menu>
+                  :value="1"
+                  class="shrink mr-2 mt-0 smallCheckbox"
+                  dense
+                  primary
+                >
+                </v-checkbox
+                ><span class="mt-2 ml-n3 primary--text">Exact spelling</span>
+              </v-col>
             </v-row>
           </v-col>
           <v-col>
@@ -745,22 +742,18 @@
                 class="ma-0 mb-n2"
               ></v-text-field>
             </v-row>
-            <v-row no-gutters class="mt-n5">
-              <v-menu offset-x :close-on-content-click="false">
-                <template v-slot:activator="{ on, attrs }">
-                  <v-btn color="primary" text x-small v-bind="attrs" v-on="on" class="pa-0 mt-0">
-                    Exactness
-                  </v-btn>
-                </template>
-                <v-select
-                  :multiple="true"
-                  :items="surnameFuzzinessLevels"
+            <v-row no-gutters class="mt-n5" v-if="query.motherSurname">
+              <v-col cols="12" class="exactCheck d-flex flex-row">
+                <v-checkbox
                   v-model="fuzziness.motherSurname"
-                  :change="nameFuzzinessChanged('motherSurname')"
-                  label="Mother's surname exactness"
-                  class="exactnessOptions"
-                ></v-select>
-              </v-menu>
+                  :value="1"
+                  class="shrink mr-2 mt-0 smallCheckbox"
+                  dense
+                  primary
+                >
+                </v-checkbox
+                ><span class="mt-2 ml-n3 primary--text">Exact spelling</span>
+              </v-col>
             </v-row>
           </v-col>
           <v-col cols="1">
@@ -785,22 +778,18 @@
                 class="ma-0 mb-n2"
               ></v-text-field>
             </v-row>
-            <v-row no-gutters class="mt-n5">
-              <v-menu offset-x :close-on-content-click="false">
-                <template v-slot:activator="{ on, attrs }">
-                  <v-btn color="primary" text x-small v-bind="attrs" v-on="on" class="pa-0 mt-0">
-                    Exactness
-                  </v-btn>
-                </template>
-                <v-select
-                  :multiple="true"
-                  :items="givenFuzzinessLevels"
+            <v-row no-gutters class="mt-n5" v-if="query.spouseGiven">
+              <v-col cols="12" class="exactCheck d-flex flex-row">
+                <v-checkbox
                   v-model="fuzziness.spouseGiven"
-                  :change="nameFuzzinessChanged('spouseGiven')"
-                  label="Spouse's given name exactness"
-                  class="exactnessOptions"
-                ></v-select>
-              </v-menu>
+                  :value="1"
+                  class="shrink mr-2 mt-0 smallCheckbox"
+                  dense
+                  primary
+                >
+                </v-checkbox
+                ><span class="mt-2 ml-n3 primary--text">Exact spelling</span>
+              </v-col>
             </v-row>
           </v-col>
           <v-col>
@@ -814,22 +803,18 @@
                 class="ma-0 mb-n2"
               ></v-text-field>
             </v-row>
-            <v-row no-gutters class="mt-n5">
-              <v-menu offset-x :close-on-content-click="false">
-                <template v-slot:activator="{ on, attrs }">
-                  <v-btn color="primary" text x-small v-bind="attrs" v-on="on" class="pa-0 mt-0">
-                    Exactness
-                  </v-btn>
-                </template>
-                <v-select
-                  :multiple="true"
-                  :items="surnameFuzzinessLevels"
+            <v-row no-gutters class="mt-n5" v-if="query.spouseSurname">
+              <v-col cols="12" class="exactCheck d-flex flex-row">
+                <v-checkbox
                   v-model="fuzziness.spouseSurname"
-                  :change="nameFuzzinessChanged('spouseSurname')"
-                  label="Spouse's surname exactness"
-                  class="exactnessOptions"
-                ></v-select>
-              </v-menu>
+                  :value="1"
+                  class="shrink mr-2 mt-0 smallCheckbox"
+                  dense
+                  primary
+                >
+                </v-checkbox
+                ><span class="mt-2 ml-n3 primary--text">Exact spelling</span>
+              </v-col>
             </v-row>
           </v-col>
           <v-col cols="1">
@@ -854,22 +839,18 @@
                 class="ma-0 mb-n2"
               ></v-text-field>
             </v-row>
-            <v-row no-gutters class="mt-n5">
-              <v-menu offset-x :close-on-content-click="false">
-                <template v-slot:activator="{ on, attrs }">
-                  <v-btn color="primary" text x-small v-bind="attrs" v-on="on" class="pa-0 mt-0">
-                    Exactness
-                  </v-btn>
-                </template>
-                <v-select
-                  :multiple="true"
-                  :items="givenFuzzinessLevels"
+            <v-row no-gutters class="mt-n5" v-if="query.otherGiven">
+              <v-col cols="12" class="exactCheck d-flex flex-row">
+                <v-checkbox
                   v-model="fuzziness.otherGiven"
-                  :change="nameFuzzinessChanged('otherGiven')"
-                  label="Other person's given name exactness"
-                  class="exactnessOptions"
-                ></v-select>
-              </v-menu>
+                  :value="1"
+                  class="shrink mr-2 mt-0 smallCheckbox"
+                  dense
+                  primary
+                >
+                </v-checkbox
+                ><span class="mt-2 ml-n3 primary--text">Exact spelling</span>
+              </v-col>
             </v-row>
           </v-col>
           <v-col>
@@ -883,22 +864,18 @@
                 class="ma-0 mb-n2"
               ></v-text-field>
             </v-row>
-            <v-row no-gutters class="mt-n5">
-              <v-menu offset-x :close-on-content-click="false">
-                <template v-slot:activator="{ on, attrs }">
-                  <v-btn color="primary" text x-small v-bind="attrs" v-on="on" class="pa-0 mt-0">
-                    Exactness
-                  </v-btn>
-                </template>
-                <v-select
-                  :multiple="true"
-                  :items="surnameFuzzinessLevels"
+            <v-row no-gutters class="mt-n5" v-if="query.otherSurname">
+              <v-col cols="12" class="exactCheck d-flex flex-row">
+                <v-checkbox
                   v-model="fuzziness.otherSurname"
-                  :change="nameFuzzinessChanged('otherSurname')"
-                  label="Other person's surname exactness"
-                  class="exactnessOptions"
-                ></v-select>
-              </v-menu>
+                  :value="1"
+                  class="shrink mr-2 mt-0 smallCheckbox"
+                  dense
+                  primary
+                >
+                </v-checkbox
+                ><span class="mt-2 ml-n3 primary--text">Exact spelling</span>
+              </v-col>
             </v-row>
           </v-col>
           <v-col cols="1">
@@ -907,7 +884,6 @@
             >
           </v-col>
         </v-row>
-
         <!--Keywords-->
         <v-row no-gutters class="mt-5">
           <h4 class="mt-2 mr-2">Keyword:</h4>
@@ -920,7 +896,6 @@
             class="ma-0 mb-n2"
           ></v-text-field>
         </v-row>
-
         <v-btn class="mt-2 mb-4" type="submit" color="primary">Go</v-btn>
       </v-form>
     </v-col>
@@ -1080,16 +1055,16 @@
           </v-row>
           <v-card>
             <v-row no-gutters class="no-underline pl-3 resultsHeader">
-              <v-col cols="6" md="4">
+              <v-col cols="12" md="4">
                 Name
               </v-col>
-              <v-col cols="6" md="3">
+              <v-col cols="12" md="3">
                 Events
               </v-col>
-              <v-col cols="6" md="4">
+              <v-col cols="12" md="4">
                 Relationship
               </v-col>
-              <v-col cols="1">
+              <v-col cols="12" md="1">
                 View
               </v-col>
             </v-row>
@@ -1205,6 +1180,7 @@ export default {
         anyPlaceFuzziness: 0
       },
       fuzziness: {
+        dlg: [],
         given: [0],
         surname: [0],
         fatherGiven: [0],
@@ -1219,7 +1195,7 @@ export default {
       dateRanges: [
         { value: 0, text: "Default" },
         { value: 1, text: "Exact to this year" },
-        { value: 2, text: "+/- 1 years" },
+        { value: 2, text: "+/- 1 year" },
         { value: 3, text: "+/- 2 years" },
         { value: 4, text: "+/- 5 years" },
         { value: 5, text: "+/- 10 years" }
@@ -1262,7 +1238,13 @@ export default {
       marriagePlaceLoading: false,
       residencePlaceLoading: false,
       deathPlaceLoading: false,
-      anyPlaceLoading: false
+      anyPlaceLoading: false,
+      //option menus
+      givenOptionsMenu: false,
+      surnameOptionsMenu: false,
+      placeOptionsMenu: false,
+      birthOptionsMenu: false,
+      birthOptionsMenu2: false
     };
   },
   computed: {
@@ -1288,6 +1270,23 @@ export default {
         key = "collection";
       }
       return key ? { key, buckets: this.search.searchFacets[key].buckets } : null;
+    },
+    givenSpellingOptions() {
+      if (this.fuzziness.given.length === 1 && this.fuzziness.given[0] === 0) {
+        return "Spelling Options";
+      }
+      return this.fuzziness.given.map(f => this.givenFuzzinessLevels.find(l => l.value === f).text).join(" & ");
+    },
+    surnameSpellingOptions() {
+      if (this.fuzziness.surname.length === 1 && this.fuzziness.surname[0] === 0) {
+        return "Spelling Options";
+      }
+      return this.fuzziness.surname.map(f => this.surnameFuzzinessLevels.find(l => l.value === f).text).join(" & ");
+    },
+    birthDateFuzzinessText() {
+      return this.query.birthDateFuzziness === 0
+        ? "Exactness"
+        : this.dateRanges.find(d => d.value === this.query.birthDateFuzziness).text;
     },
     ...mapState(["search"])
   },
@@ -1329,6 +1328,7 @@ export default {
       } else if (!this.query.anyPlace && !this.query.anyDate && this.showEvent.any) {
         this.showEvent.any = false;
       }
+      this.placeOptionsMenu = false;
     },
     birthYearChanged() {
       if (this.query.birthDate && !this.showEvent.birth) {
@@ -1336,6 +1336,8 @@ export default {
       } else if (!this.query.birthPlace && !this.query.birthDate && this.showEvent.birth) {
         this.showEvent.birth = false;
       }
+      this.birthOptionsMenu = false;
+      this.birthOptionsMenu2 = false;
     },
     placeSearch(text, prefix) {
       if (this.placeTimeout) {
@@ -1358,17 +1360,22 @@ export default {
         }
       }, 400);
     },
-    nameFuzzinessChanged(fuzziness) {
-      if (this.fuzziness[fuzziness].length === 0) {
-        this.fuzziness[fuzziness] = [0];
-      } else if (
-        this.fuzziness[fuzziness].length > 1 &&
-        this.fuzziness[fuzziness].indexOf(0) === this.fuzziness[fuzziness].length - 1
-      ) {
-        this.fuzziness[fuzziness] = [0];
-      } else if (this.fuzziness[fuzziness].length > 1 && this.fuzziness[fuzziness].indexOf(0) >= 0) {
-        this.fuzziness[fuzziness].splice(this.fuzziness[fuzziness].indexOf(0), 1);
+    nameFuzzinessChecked(value) {
+      if (this.fuzziness.dlg.length === 0) {
+        this.fuzziness.dlg = [0];
+      } else if (this.fuzziness.dlg.length > 1 && this.fuzziness.dlg.indexOf(0) >= 0 && value === 0) {
+        this.fuzziness.dlg = [0];
+      } else if (this.fuzziness.dlg.length > 1 && this.fuzziness.dlg.indexOf(0) >= 0) {
+        this.fuzziness.dlg.splice(this.fuzziness.dlg.indexOf(0), 1);
       }
+    },
+    nameFuzzinessChanged(nameType) {
+      this.fuzziness[nameType] = this.fuzziness.dlg.slice(0);
+      this.givenOptionsMenu = false;
+      this.surnameOptionsMenu = false;
+    },
+    openNameFuzziness(nameType) {
+      this.fuzziness.dlg = this.fuzziness[nameType].slice(0);
     },
     getQuery(facetKey, facetValue) {
       let query = Object.assign({}, this.query);
@@ -1480,9 +1487,24 @@ export default {
 .v-checkbox label {
   font-size: 50%;
 } */
+.displayChosenOptions {
+  max-width: 370px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.exactCheck {
+  font-size: 0.625rem;
+  text-transform: uppercase;
+  font-weight: 500;
+  letter-spacing: 0.0892857143em;
+}
 .exactnessOptions {
   background: #ffffff;
-  padding: 16px 8px 0 8px;
+  padding: 16px;
+}
+.exactnessActions {
+  background: #fff;
+  margin-top: -16px;
 }
 .eventButton {
   margin-top: -6px;
@@ -1499,6 +1521,11 @@ export default {
 .result a {
   text-decoration: none;
 }
+.smallCheckbox i {
+  font-size: 8px !important;
+  color: #0097a7 !important;
+}
+
 /* .result:nth-child(odd) {
   background-color: #f7f7f7;
 }

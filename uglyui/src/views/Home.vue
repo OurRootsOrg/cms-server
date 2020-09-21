@@ -1,6 +1,5 @@
 <template>
   <v-container fluid class="home">
-    <!--    <img alt="Vue logo" src="../assets/logo.png" />-->
     <h1>Home</h1>
     <p>
       Select an option to the left. If you have not registered or logged in, do that first.

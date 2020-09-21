@@ -83,8 +83,8 @@
         ></v-textarea>
       </div>
 
-      <v-row no-gutters class="mt-5">
-        <v-col cols="12" class="mb-0">
+      <v-row no-gutters>
+        <v-col cols="12">
           <h3>
             Define spreadsheet columns
             <v-tooltip bottom maxWidth="600px">
@@ -322,7 +322,7 @@
         </v-col>
       </v-row>
 
-      <h3 class="mt-4">
+      <h3 class="my-4">
         Column containing image file names
         <v-tooltip bottom maxWidth="600px">
           <template v-slot:activator="{ on, attrs }">
@@ -338,12 +338,13 @@
         v-model="collection.imagePathHeader"
         :items="headers"
         @change="touch('imagePathHeader')"
+        dense
       ></v-select>
       <div v-if="!isHeader(collection.imagePathHeader)" class="errorMessage">
         Column containing image file names no longer appears in the list of spreadsheet columns.
       </div>
 
-      <h3 class="mt-4">
+      <h3 class="my-4">
         Columns containing household information
         <v-tooltip bottom maxWidth="600px">
           <template v-slot:activator="{ on, attrs }">
@@ -376,6 +377,7 @@
         v-model="collection.householdNumberHeader"
         :items="headers"
         @change="householdNumberChanged"
+        dense
       ></v-select>
       <div v-if="!isHeader(collection.householdNumberHeader)" class="errorMessage">
         Column containing household numbers no longer appears in the list of spreadsheet columns.
@@ -387,6 +389,7 @@
         :items="headers"
         @change="touch('householdRelationshipHeader')"
         :disabled="!collection.householdNumberHeader"
+        dense
       ></v-select>
       <div v-if="!isHeader(collection.householdRelationshipHeader)" class="errorMessage">
         Column containing relationship to head no longer appears in the list of spreadsheet columns.
@@ -398,6 +401,7 @@
         :items="headers"
         @change="touch('genderHeader')"
         :disabled="!collection.householdNumberHeader"
+        dense
       ></v-select>
       <div v-if="!isHeader(collection.genderHeader)" class="errorMessage">
         Column containing gender no longer appears in the list of spreadsheet columns.
@@ -601,7 +605,7 @@ export default {
         { value: "otherPlace", text: "Other Place" }
       ],
       spreadsheetColumnOptions: [{ value: "get this from the columns", text: "Spreadsheet column" }],
-      //end of data for experimental table; keep everything after this
+      //end of data for table
       collection: {
         id: null,
         name: null,
@@ -1043,4 +1047,3 @@ export default {
   margin-bottom: 24px;
 }
 </style>
-<!--the original green hex #41b883 change to cyan lighten-3 #80DEEA or cyan lighten-4 #B2EBF2-->

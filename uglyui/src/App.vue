@@ -147,4 +147,13 @@ export default {
 .text-first-caps {
   text-transform: capitalize;
 }
+.smallCheckbox .v-checkbox {
+  color: #0097a7 !important;
+}
+
+.smallCheckbox i {
+  font-size: 17px !important;
+  color: #0097a7 !important;
+  margin-top: -3px;
+}
 </style>
