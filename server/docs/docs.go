@@ -1162,8 +1162,73 @@ var doc = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/model.Record"
+                                "$ref": "#/definitions/api.RecordsResult"
                             }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/records/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "OAuth2Implicit": [
+                            "cms",
+                            "openid",
+                            "profile",
+                            "email"
+                        ]
+                    },
+                    {
+                        "OAuth2AuthCode": [
+                            "cms",
+                            "openid",
+                            "profile",
+                            "email"
+                        ]
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "posts"
+                ],
+                "summary": "gets a Record with optional detail including household records and image path",
+                "operationId": "getRecord",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Record ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "include labels, citation, household, and imagePath",
+                        "name": "details",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.RecordDetail"
+                        }
+                    },
+                    "404": {
+                        "description": "Not found",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
                         }
                     },
                     "500": {
@@ -1643,6 +1708,82 @@ var doc = `{
         "api.Error": {
             "type": "object"
         },
+        "api.HeaderLabel": {
+            "type": "object",
+            "properties": {
+                "header": {
+                    "type": "string"
+                },
+                "label": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.RecordDetail": {
+            "type": "object",
+            "required": [
+                "data",
+                "id",
+                "post"
+            ],
+            "properties": {
+                "citation": {
+                    "type": "string"
+                },
+                "data": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "household": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.Record"
+                    }
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 999
+                },
+                "imagePath": {
+                    "type": "string"
+                },
+                "insert_time": {
+                    "type": "string"
+                },
+                "ix_hash": {
+                    "type": "string"
+                },
+                "labels": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.HeaderLabel"
+                    }
+                },
+                "last_update_time": {
+                    "type": "string"
+                },
+                "post": {
+                    "type": "integer",
+                    "example": 999
+                }
+            }
+        },
+        "api.RecordsResult": {
+            "type": "object",
+            "properties": {
+                "next_page": {
+                    "type": "string"
+                },
+                "records": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.Record"
+                    }
+                }
+            }
+        },
         "model.Category": {
             "type": "object",
             "required": [
@@ -2088,7 +2229,6 @@ var doc = `{
                     "type": "string"
                 },
                 "imagePath": {
-                    "description": "only returned on search by id",
                     "type": "string"
                 },
                 "person": {
@@ -2096,7 +2236,6 @@ var doc = `{
                     "$ref": "#/definitions/model.SearchPerson"
                 },
                 "post": {
-                    "description": "only returned on search by id",
                     "type": "integer"
                 },
                 "record": {

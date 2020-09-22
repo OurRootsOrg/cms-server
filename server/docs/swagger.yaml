@@ -7,6 +7,57 @@ definitions:
     type: object
   api.Error:
     type: object
+  api.HeaderLabel:
+    properties:
+      header:
+        type: string
+      label:
+        type: string
+    type: object
+  api.RecordDetail:
+    properties:
+      citation:
+        type: string
+      data:
+        additionalProperties:
+          type: string
+        type: object
+      household:
+        items:
+          $ref: '#/definitions/model.Record'
+        type: array
+      id:
+        example: 999
+        type: integer
+      imagePath:
+        type: string
+      insert_time:
+        type: string
+      ix_hash:
+        type: string
+      labels:
+        items:
+          $ref: '#/definitions/api.HeaderLabel'
+        type: array
+      last_update_time:
+        type: string
+      post:
+        example: 999
+        type: integer
+    required:
+    - data
+    - id
+    - post
+    type: object
+  api.RecordsResult:
+    properties:
+      next_page:
+        type: string
+      records:
+        items:
+          $ref: '#/definitions/model.Record'
+        type: array
+    type: object
   model.Category:
     properties:
       id:
@@ -308,13 +359,11 @@ definitions:
       id:
         type: string
       imagePath:
-        description: only returned on search by id
         type: string
       person:
         $ref: '#/definitions/model.SearchPerson'
         type: object
       post:
-        description: only returned on search by id
         type: integer
       record:
         $ref: '#/definitions/model.SearchRecord'
@@ -1133,7 +1182,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/model.Record'
+              $ref: '#/definitions/api.RecordsResult'
             type: array
         "500":
           description: Server error
@@ -1153,6 +1202,49 @@ paths:
       summary: returns all records
       tags:
       - records
+  /records/{id}:
+    get:
+      operationId: getRecord
+      parameters:
+      - description: Record ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: include labels, citation, household, and imagePath
+        in: query
+        name: details
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.RecordDetail'
+        "404":
+          description: Not found
+          schema:
+            $ref: '#/definitions/api.Error'
+        "500":
+          description: Server error
+          schema:
+            $ref: '#/definitions/api.Error'
+      security:
+      - OAuth2Implicit:
+        - cms
+        - openid
+        - profile
+        - email
+      - OAuth2AuthCode:
+        - cms
+        - openid
+        - profile
+        - email
+      summary: gets a Record with optional detail including household records and
+        image path
+      tags:
+      - posts
   /search:
     get:
       description: |-

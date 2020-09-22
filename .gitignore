@@ -12,7 +12,8 @@ deploy/awslambda/*.lambda.zip
 *.dylib
 uglyui/dist/
 output-*.cf.yaml
-uglyui/dist/
+client/dist/
+search-client/dist/
 
 # Test binary, built with `go test -c`
 *.test
@@ -22,14 +23,18 @@ uglyui/dist/
 
 # Dependency directories (remove the comment below to include it)
 # vendor/
-uglyui/node_modules/
+client/node_modules/
+search-client/node_modules/
 
 # IDEs
 .idea/
-uglyui/.idea/
+client/.idea/
+search-client/.idea/
 .vscode/
 .DS_Store
-uglyui/src/.DS_Store
+client/src/.DS_Store
+search-client/src/.DS_Store
 
 #ignore local env
-uglyui/.env.development.local
+client/.env.development.local
+search-client/.env.development.local

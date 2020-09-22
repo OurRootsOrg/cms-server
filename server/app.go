@@ -182,7 +182,7 @@ func (app App) NewRouter() *mux.Router {
 	r.Handle(app.baseURL.Path+"/posts/{id}", app.verifyToken(http.HandlerFunc(app.DeletePost))).Methods("DELETE")
 
 	r.Handle(app.baseURL.Path+"/posts/{id}/images/{filePath:.*}", http.HandlerFunc(app.OptionsNoop)).Methods("OPTIONS")
-	r.Handle(app.baseURL.Path+"/posts/{id}/images/{filePath:.*}", app.verifyToken(http.HandlerFunc(app.GetPostImage))).Methods("GET")
+	r.HandleFunc(app.baseURL.Path+"/posts/{id}/images/{filePath:.*}", app.GetPostImage).Methods("GET")
 
 	r.Handle(app.baseURL.Path+"/records", http.HandlerFunc(app.OptionsNoop)).Methods("OPTIONS")
 	r.Handle(app.baseURL.Path+"/records", app.verifyToken(http.HandlerFunc(app.GetRecords))).Methods("GET")

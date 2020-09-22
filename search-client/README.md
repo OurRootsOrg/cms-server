@@ -1,4 +1,4 @@
-# uglyui
+# search client
 
 ## Project setup
 ```

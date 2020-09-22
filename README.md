@@ -9,7 +9,7 @@ Clone the repo:
 git clone https://github.com/ourrootsorg/cms-server.git
 ```
 
-## Instructions for running server and uglyui client 
+## Instructions for running server and client 
 #### requires docker-compose, tilt, psql, npm, vue, and a few other things
 
 ```
@@ -24,7 +24,7 @@ install tilt                    # https://tilt.dev/
 install npm                     # https://nodejs.org/en/ 
                                   # node includes npm
 install psql                    # https://blog.timescale.com/tutorials/how-to-install-psql-on-mac-ubuntu-debian-windows/
-npm install -g @vue/cli         # the uglyui client uses vue
+npm install -g @vue/cli         # the client uses vue
 
 docker volume create cms_pgdata # do this once to create a persistent database volume
 docker volume create cms_s3data # do this once to create a persistent blob store volume
@@ -41,9 +41,9 @@ tilt down                       # now that everything is set up, take everything
 
 tilt up                         # restart everything once it has been set up above
                                   # alternatively, run docker-compose down && docker-compose up --build
-cd uglyui                       # the directory for the uglyui client
+cd client                       # the directory for the client
 npm install                     # do this once, and again if you get a missing dependency error
-npm run serve                   # run the ugly client
+npm run serve                   # run the client
                                 # make changes to either the server or client, everything reloads automatically
 tilt down                       # clean up docker images when done
                                   # alternatively, run docker-compose down
