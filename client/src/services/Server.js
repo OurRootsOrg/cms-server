@@ -80,14 +80,6 @@ export default {
       params: { post: postId }
     });
   },
-  search(query) {
-    return get("/search", {
-      params: query
-    });
-  },
-  searchGetResult(id) {
-    return get(`/search/${id}`);
-  },
   settingsGet() {
     return get(`/settings`);
   },

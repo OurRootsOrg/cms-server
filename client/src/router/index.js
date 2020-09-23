@@ -88,16 +88,6 @@ const routes = [
     component: () => import(/* webpackChunkName: "about" */ "../views/RecordsView.vue")
   },
   {
-    path: "/search",
-    name: "search",
-    component: () => import(/* webpackChunkName: "about" */ "../views/Search.vue")
-  },
-  {
-    path: "/search/:rid",
-    name: "search-detail",
-    component: () => import(/* webpackChunkName: "about" */ "../views/SearchDetail.vue")
-  },
-  {
     path: "/settings",
     name: "settings",
     meta: { requiresAuth: true },

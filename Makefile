@@ -13,11 +13,15 @@ RABBIT_PORT=35672
 ES_PORT=19200
 
 all: clean test build package
-build:
+build: build-server build-clients
+build-server:
 	cd server && go generate && $(GOBUILD) && GOOS=linux $(GOBUILD) -o $(BINARY_NAME)
 	cd publisher && $(GOBUILD) && GOOS=linux $(GOBUILD) -o $(PUBLISHER_BINARY)
 	cd recordswriter && $(GOBUILD) && GOOS=linux $(GOBUILD) -o $(RECORDSWRITER_BINARY)
 	cd imageswriter && $(GOBUILD) && GOOS=linux $(GOBUILD) -o $(IMAGESWRITER_BINARY)
+build-clients:
+	cd client && npm run build
+	cd search-client && npm run build
 package:
 	zip -r deploy/awslambda/$(BINARY_NAME).zip server/$(BINARY_NAME) db/migrations/*
 	zip -r deploy/awslambda/${PUBLISHER_BINARY}.zip publisher/$(PUBLISHER_BINARY)
@@ -41,7 +45,8 @@ test-exec:
 	# $(GOTEST) -v -race -p=1 ./...
 test-teardown:
 	docker-compose -f docker-compose-dependencies.yaml down --volumes
-clean:
+clean: clean-server clean-clients
+clean-server:
 	rm -f server/$(BINARY_NAME)
 	rm -f publisher/$(PUBLISHER_BINARY)
 	rm -f recordswriter/$(RECORDSWRITER_BINARY)
@@ -54,3 +59,6 @@ clean:
 	rm -f deploy/awslambda/${PUBLISHER_BINARY}.zip
 	rm -f deploy/awslambda/${RECORDSWRITER_BINARY}.zip
 	rm -f deploy/awslambda/${IMAGESWRITER_BINARY}.zip
+clean-clients:
+	rm -rf client/dist
+	rm -rf search-client/dist
