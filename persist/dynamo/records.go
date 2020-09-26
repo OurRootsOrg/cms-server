@@ -41,7 +41,7 @@ func (p Persister) SelectRecords(ctx context.Context) ([]model.Record, error) {
 	return records, nil
 }
 
-// SelectRecordsByID selects many records
+// SelectRecordsByID selects many records from a slice of IDs
 func (p Persister) SelectRecordsByID(ctx context.Context, ids []uint32) ([]model.Record, error) {
 	records := make([]model.Record, 0)
 	if len(ids) == 0 {
@@ -108,7 +108,7 @@ func (p Persister) SelectRecordsForPost(ctx context.Context, postID uint32) ([]m
 	return records, nil
 }
 
-// SelectOneRecord selects a single record
+// SelectOneRecord selects a single record by ID
 func (p Persister) SelectOneRecord(ctx context.Context, id uint32) (*model.Record, error) {
 	var record model.Record
 	gii := &dynamodb.GetItemInput{

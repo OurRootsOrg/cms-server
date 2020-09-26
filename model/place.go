@@ -24,12 +24,14 @@ type Uint32Slice []uint32
 // Place holds information about a place
 type Place struct {
 	ID               uint32      `json:"id" dynamodbav:"pk,string"`
+	Type             string      `json:"-" dynamodbav:"sk"`
+	AltSort          string      `json:"-" dynamodbav:"altSort"`
 	Name             string      `json:"name"`
-	FullName         string      `json:"fullName"`
-	AltNames         StringSlice `json:"altNames"`
-	Types            StringSlice `json:"types"`
+	FullName         string      `json:"fullName" dynamodbav:"fullName"`
+	AltNames         StringSlice `json:"altNames" dynamodbav:"altNames"`
+	Types            StringSlice `json:"types" dynamodbav:"types"`
 	LocatedInID      uint32      `json:"locatedInId"`
-	AlsoLocatedInIDs Uint32Slice `json:"alsoLocatedInIds"`
+	AlsoLocatedInIDs Uint32Slice `json:"alsoLocatedInIds" dynamodbav:"alsoLocatedInIds"`
 	Level            int         `json:"level"`
 	CountryID        uint32      `json:"countryId"`
 	Latitude         float32     `json:"latitude"`
@@ -41,8 +43,10 @@ type Place struct {
 
 // PlaceWord holds the IDs of all places that have that word in their name or alt name
 type PlaceWord struct {
-	Word           string      `json:"word" dynamodbav:"pk"`
-	IDs            Uint32Slice `json:"ids"`
+	Pk             string      `json:"-" dynamodbav:"pk"`
+	Type           string      `json:"-" dynamodbav:"sk"`
+	Word           string      `json:"word" dynamodbav:"-"`
+	IDs            Uint32Slice `json:"ids" dynamodbav:"ids"`
 	InsertTime     time.Time   `json:"insert_time,omitempty"`
 	LastUpdateTime time.Time   `json:"last_update_time,omitempty"`
 }
@@ -50,13 +54,13 @@ type PlaceWord struct {
 // PlaceSettingsBody is the JSON body of a PlaceSettings object
 type PlaceSettingsBody struct {
 	Abbreviations             map[string]string `json:"abbreviations"`
-	TypeWords                 []string          `json:"typeWords"`
-	NoiseWords                []string          `json:"noiseWords"`
-	LargeCountries            []uint32          `json:"largeCountries"`
-	MediumCountries           []uint32          `json:"mediumCountries"`
-	LargeCountryLevelWeights  []int             `json:"largeCountryLevelWeights"`
-	MediumCountryLevelWeights []int             `json:"mediumCountryLevelWeights"`
-	SmallCountryLevelWeights  []int             `json:"smallCountryLevelWeights"`
+	TypeWords                 []string          `json:"typeWords" dynamodbav:"typeWords"`
+	NoiseWords                []string          `json:"noiseWords" dynamodbav:"noiseWords"`
+	LargeCountries            []uint32          `json:"largeCountries" dynamodbav:"largeCountries"`
+	MediumCountries           []uint32          `json:"mediumCountries" dynamodbav:"mediumCountries"`
+	LargeCountryLevelWeights  []int             `json:"largeCountryLevelWeights" dynamodbav:"largeCountryLevelWeights"`
+	MediumCountryLevelWeights []int             `json:"mediumCountryLevelWeights" dynamodbav:"mediumCountryLevelWeights"`
+	SmallCountryLevelWeights  []int             `json:"smallCountryLevelWeights" dynamodbav:"smallCountryLevelWeights"`
 	PrimaryMatchWeight        int               `json:"primaryMatchWeight"`
 	USCountryID               uint32            `json:"USCountryId"`
 }
@@ -110,8 +114,10 @@ type PlaceSettingsIn struct {
 
 // PlaceSettings represents global placeSettings
 type PlaceSettings struct {
-	ID int    `json:"-" dynamodbav:"pk,string"`
-	Sk string `json:"-" dynamodbav:"sk"`
+	ID      int    `json:"-" dynamodbav:"-"`
+	Pk      string `json:"-" dynamodbav:"pk"`
+	Sk      string `json:"-" dynamodbav:"sk"`
+	AltSort string `json:"-" dynamodbav:"altSort"`
 	PlaceSettingsIn
 	InsertTime     time.Time `json:"insert_time,omitempty"`
 	LastUpdateTime time.Time `json:"last_update_time,omitempty"`

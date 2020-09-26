@@ -87,6 +87,7 @@ func (p PostgresPersister) SelectPlacesByID(ctx context.Context, ids []uint32) (
 
 var placeRegexp = regexp.MustCompile("\\s*,\\s*")
 
+// SelectPlacesByFullNamePrefix selects multiple Place objects by a prefix
 func (p PostgresPersister) SelectPlacesByFullNamePrefix(ctx context.Context, prefix string, count int) ([]model.Place, error) {
 	places := make([]model.Place, 0)
 	if prefix == "" {
@@ -140,7 +141,7 @@ func (p PostgresPersister) SelectPlaceWord(ctx context.Context, word string) (*m
 	return &placeWord, translateError(err, nil, nil, "")
 }
 
-// SelectPlaceWordsByID selects multiple PlaceWord objects by word
+// SelectPlaceWordsByWord selects multiple PlaceWord objects by word
 func (p PostgresPersister) SelectPlaceWordsByWord(ctx context.Context, words []string) ([]model.PlaceWord, error) {
 	placeWords := make([]model.PlaceWord, 0)
 	if len(words) == 0 {

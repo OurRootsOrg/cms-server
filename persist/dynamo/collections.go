@@ -50,7 +50,7 @@ func (p Persister) SelectCollections(ctx context.Context) ([]model.Collection, e
 	return colls, nil
 }
 
-// SelectCollectionsByID selects many collections
+// SelectCollectionsByID selects many collections from a slice of IDs
 func (p Persister) SelectCollectionsByID(ctx context.Context, ids []uint32) ([]model.Collection, error) {
 	colls := make([]model.Collection, 0)
 	if len(ids) == 0 {

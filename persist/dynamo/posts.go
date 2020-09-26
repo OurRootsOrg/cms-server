@@ -55,7 +55,7 @@ func (p Persister) SelectPosts(ctx context.Context) ([]model.Post, error) {
 	// }
 }
 
-// SelectOnePost selects a single post
+// SelectOnePost selects a single post by ID
 func (p Persister) SelectOnePost(ctx context.Context, id uint32) (*model.Post, error) {
 	var post model.Post
 	gii := &dynamodb.GetItemInput{

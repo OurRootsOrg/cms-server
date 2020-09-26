@@ -3,6 +3,7 @@ server/server
 publisher/publisher
 recordswriter/recordswriter
 imageswriter/imageswriter
+db/dynamo/ddbloader/ddbloader
 *.lambda
 deploy/awslambda/*.lambda.zip
 *.exe

@@ -11,6 +11,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
+	"github.com/ourrootsorg/cms-server/model"
 )
 
 const (
@@ -32,6 +33,7 @@ const (
 
 // Persister persists the model objects to DynammoDB
 type Persister struct {
+	session   *session.Session
 	svc       *dynamodb.DynamoDB
 	tableName *string
 }
@@ -83,6 +85,98 @@ func (p *Persister) GetMultipleSequenceValues(cnt int) ([]uint32, error) {
 		ret[i] = uint32(v) - uint32(cnt) + i + 1
 	}
 	return ret, err
+}
+
+func (p Persister) truncateEntity(name string) error {
+	log.Printf("[DEBUG] Truncating entity '%s'", name)
+	qi := &dynamodb.QueryInput{
+		TableName:              p.tableName,
+		IndexName:              aws.String(gsiName),
+		KeyConditionExpression: aws.String(skName + " = :sk"),
+		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
+			":sk": {
+				S: aws.String(name),
+			},
+		},
+	}
+	qo, err := p.svc.Query(qi)
+	if err != nil {
+		log.Printf("[ERROR] Failed to get entity type '%s'. err: %v", name, err)
+		return model.NewError(model.ErrOther, err.Error())
+	}
+	var batchCount, count int
+	batch := make([]map[string]*dynamodb.AttributeValue, 0)
+	for {
+		// Process results
+		for _, item := range qo.Items {
+			batch = append(batch, map[string]*dynamodb.AttributeValue{
+				pkName: {
+					S: item["pk"].S,
+				},
+				skName: {
+					S: item["sk"].S,
+				},
+			})
+			batchCount++
+			count++
+			if batchCount >= batchSize {
+				err = p.deleteBatch(batch)
+				if err != nil {
+					return err
+				}
+				batchCount = 0
+				batch = make([]map[string]*dynamodb.AttributeValue, 0)
+			}
+		}
+		if qo.LastEvaluatedKey == nil {
+			break
+		}
+		qi.ExclusiveStartKey = qo.LastEvaluatedKey
+		qo, err = p.svc.Query(qi)
+		if err != nil {
+			log.Printf("[ERROR] Failed to get entity type '%s'. err: %v", name, err)
+			return model.NewError(model.ErrOther, err.Error())
+		}
+	}
+	if batchCount > 0 {
+		err = p.deleteBatch(batch)
+		if err != nil {
+			return err
+		}
+	}
+	log.Printf("[INFO] Removed %d records for entity '%s'", count, name)
+	return nil
+}
+
+func (p Persister) deleteBatch(batch []map[string]*dynamodb.AttributeValue) error {
+	ris := map[string][]*dynamodb.WriteRequest{}
+	for _, key := range batch {
+		ris[*p.tableName] = append(ris[*p.tableName],
+			&dynamodb.WriteRequest{
+				DeleteRequest: &dynamodb.DeleteRequest{
+					Key: key,
+				},
+			},
+		)
+	}
+	bwii := &dynamodb.BatchWriteItemInput{
+		RequestItems: ris,
+	}
+	var bwio *dynamodb.BatchWriteItemOutput
+	var err error
+	for bwio == nil || (len(bwio.UnprocessedItems) > 0 && err == nil) {
+		if bwio != nil && len(bwio.UnprocessedItems) > 0 {
+			bwii.RequestItems = bwio.UnprocessedItems
+		}
+		bwio, err = p.svc.BatchWriteItem(bwii)
+	}
+	if err != nil {
+		msg := fmt.Sprintf("[ERROR] Failed to delete batch %#v: %v", bwii, err)
+		log.Printf("[ERROR] " + msg)
+		return errors.New(msg)
+	}
+	log.Printf("[DEBUG] Deleted batch of %d items", len(batch))
+	return nil
 }
 
 func ensureTableExists(svc *dynamodb.DynamoDB, tableName string) error {
@@ -188,7 +282,6 @@ func waitForTable(svc *dynamodb.DynamoDB, tableName string) error {
 		}
 		cnt++
 	}
-
 }
 
 func compareToAWSError(err error, awsErrorCode string) bool {

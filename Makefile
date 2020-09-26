@@ -27,6 +27,7 @@ test: test-setup test-exec test-teardown
 test-setup:
 	docker-compose -f docker-compose-dependencies.yaml up --detach --build
 	cd db && ./wait-for-db.sh $(PG_PORT) && ./db_setup.sh $(PG_PORT) && ./db_load_test.sh $(PG_PORT)
+	cd db/dynamo/ddbloader && go build . && ./ddb_load_test.sh
 	cd elasticsearch && ./wait-for-es.sh $(ES_PORT) && ./es_setup.sh $(ES_PORT)
 	cd rabbitmq && ./wait-for-rabbitmq.sh ${RABBIT_PORT}
 test-exec:

@@ -33,6 +33,7 @@ func (p Persister) SelectCategories(ctx context.Context) ([]model.Category, erro
 		log.Printf("[ERROR] Failed to get categories. qi: %#v err: %v", qi, err)
 		return cats, model.NewError(model.ErrOther, err.Error())
 	}
+	// TODO: Check qo.LastEvaluatedKey
 	err = dynamodbattribute.UnmarshalListOfMaps(qo.Items, &cats)
 	if err != nil {
 		log.Printf("[ERROR] Failed to unmarshal categories. qo: %#v err: %v", qo, err)
@@ -41,7 +42,7 @@ func (p Persister) SelectCategories(ctx context.Context) ([]model.Category, erro
 	return cats, nil
 }
 
-// SelectCategoriesByID selects many categories
+// SelectCategoriesByID selects many categories using a list of IDs
 func (p Persister) SelectCategoriesByID(ctx context.Context, ids []uint32) ([]model.Category, error) {
 	cats := make([]model.Category, 0)
 	if len(ids) == 0 {
