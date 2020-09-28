@@ -11,7 +11,7 @@ Vue.use(VueRouter);
 
 const routes = [
   {
-    path: "/search2",
+    path: "/",
     name: "search",
     component: Search
   },
