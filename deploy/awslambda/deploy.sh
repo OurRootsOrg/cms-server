@@ -20,6 +20,5 @@ aws cloudformation deploy --template-file output-cms.cf.yaml --stack-name "${ENV
 
 # echo Uploading static site content...
 aws s3 sync "${scriptdir}/../../client/dist/" "s3://${ENVIRONMENT_NAME}-site/" --delete
-# where should the search client go?
-#aws s3 sync "${scriptdir}/../../search-client/dist/" "s3://${ENVIRONMENT_NAME}-search-site/" --delete
+aws s3 sync "${scriptdir}/../../search-client/dist/" "s3://${ENVIRONMENT_NAME}-site/search/" --delete
 echo Done
