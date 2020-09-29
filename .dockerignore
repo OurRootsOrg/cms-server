@@ -22,5 +22,6 @@ output-ourroots.cf.yaml
 .vscode/
 .idea/
 
-# Ugly UI
-uglyui/
+# UI
+client/
+search-client/

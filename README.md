@@ -78,3 +78,7 @@ By default, the narrow name coder is NYSIIS, and the broad name coder is Soundex
 `elasticsearch/elasticsearch_schema.json` and modifying the encoder values on lines 39 and 43 before running the 
 `es_setup.sh` script. Possible values are: nysiis, metaphone, double_metaphone, beider_morse, soundex, refined_soundex, 
 daitch_mokotoff, caverphone1, caverphone2, cologne, koelnerphonetik, and haasephonetik. 
+
+## Deploying
+
+See deploy/awslambda/README.md to deploy the server and client, and search-client/README.md to deploy the search client

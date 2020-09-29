@@ -11,7 +11,7 @@ Vue.use(VueRouter);
 
 const routes = [
   {
-    path: "/",
+    path: "/search",
     name: "search",
     component: Search
   },
@@ -44,8 +44,8 @@ const routes = [
 ];
 
 const router = new VueRouter({
-  mode: "history",
-  base: process.env.BASE_URL,
+  mode: "hash",
+  base: window.location.pathname, //process.env.BASE_URL,
   routes
 });
 

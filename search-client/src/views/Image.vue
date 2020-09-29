@@ -40,7 +40,7 @@ export default {
           id: "openseadragon",
           toolbar: "openseadragonToolbar",
           tileSources: pyramid,
-          prefixUrl: "/img/seadragon/",
+          prefixUrl: (window.ourroots_image_directory || "") + "/img/seadragon/",
           autoHideControls: false,
           showRotationControl: true //ROTATION
         });
