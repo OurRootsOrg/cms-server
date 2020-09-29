@@ -276,7 +276,7 @@
                 ></v-text-field>
               </v-row>
               <v-row no-gutters class="mt-n5" v-if="query.birthDate">
-                <v-menu offset-x :close-on-content-click="false" v-model="birthOptionsMenu">
+                <v-menu offset-x :close-on-content-click="true" v-model="birthOptionsMenu">
                   <template v-slot:activator="{ on, attrs }">
                     <v-btn color="primary" text x-small v-bind="attrs" v-on="on" class="pa-0 mt-0">
                       <v-icon v-if="query.birthDateFuzziness === 0" small class="mr-1"
@@ -378,8 +378,8 @@
                   hide-details="true"
                 ></v-text-field>
               </v-col>
-              <v-col :class="!searchPerformed ? 'ma-0 pa-0 mt-1' : 'ma-0 pa-0 mt-n5'" v-if="query.birthDate">
-                <v-menu offset-x :close-on-content-click="false" v-model="birthOptionsMenu2">
+              <v-col :class="!searchPerformed ? 'ma-0 pa-0 mt-1' : 'ma-0 pa-0 mt-2'" v-if="query.birthDate">
+                <v-menu offset-x :close-on-content-click="true" v-model="birthOptionsMenu2">
                   <template v-slot:activator="{ on, attrs }">
                     <v-btn
                       color="primary"
@@ -387,7 +387,7 @@
                       x-small
                       v-bind="attrs"
                       v-on="on"
-                      :class="searchPerformed ? 'mt-5 pt-5' : 'pa-0 mt-n2'"
+                      :class="searchPerformed ? '' : 'pa-0 mt-n2'"
                     >
                       <v-icon v-if="query.birthDateFuzziness === 0" small class="mr-1"
                         >mdi-checkbox-blank-outline</v-icon
@@ -414,12 +414,8 @@
                 </v-menu>
               </v-col>
             </v-col>
-            <v-col
-              cols="12"
-              :md="searchPerformed ? 12 : 6"
-              :class="searchPerformed ? 'order-4 mt-2 d-flex flex-row' : 'order-3 mb-0'"
-            >
-              <v-col :md="searchPerformed ? 10 : 12" class="ma-0 pa-0">
+            <v-col :class="searchPerformed ? 'order-4 mt-2 d-flex flex-row' : 'order-3 mb-0'">
+              <v-col :cols="searchPerformed ? 10 : 12" class="ma-0 pa-0">
                 <v-autocomplete
                   outlined
                   dense
@@ -455,15 +451,10 @@
               </v-col>
             </v-col>
             <v-col
-              cols="1"
-              :md="searchPerformed ? 12 : 1"
-              :class="searchPerformed ? 'order-2 pr-0 mr-0 text-right mt-n4 mb-n1' : 'ma-0 order-4'"
+              :cols="searchPerformed ? 10 : 1"
+              :class="searchPerformed ? 'order-2 pr-0 mr-0 text-right mb-n1' : 'ma-0 order-4'"
             >
-              <v-btn
-                text
-                @click="clearEvent('birth')"
-                class="grey--text"
-                :class="searchPerformed ? 'mt-n4 mr-n5' : 'mt-0'"
+              <v-btn text @click="clearEvent('birth')" class="grey--text" :class="searchPerformed ? 'mr-n5' : 'mt-0'"
                 ><v-icon class="pa-0 ma-0">mdi-close-circle-outline</v-icon></v-btn
               >
             </v-col>
@@ -488,8 +479,8 @@
                   hide-details="true"
                 ></v-text-field>
               </v-col>
-              <v-col :class="!searchPerformed ? 'ma-0 pa-0 mt-1' : 'ma-0 pa-0 mt-n5'" v-if="query.marriageDate">
-                <v-menu offset-x :close-on-content-click="false" v-model="marriageOptionsMenu2">
+              <v-col :class="!searchPerformed ? 'ma-0 pa-0 mt-1' : 'ma-0 pa-0 mt-2'" v-if="query.marriageDate">
+                <v-menu offset-x :close-on-content-click="true" v-model="marriageOptionsMenu2">
                   <template v-slot:activator="{ on, attrs }">
                     <v-btn
                       color="primary"
@@ -497,7 +488,7 @@
                       x-small
                       v-bind="attrs"
                       v-on="on"
-                      :class="searchPerformed ? 'mt-5 pt-5' : 'pa-0 mt-n2'"
+                      :class="searchPerformed ? '' : 'pa-0 mt-n2'"
                     >
                       <v-icon v-if="query.marriageDateFuzziness === 0" small class="mr-1"
                         >mdi-checkbox-blank-outline</v-icon
@@ -524,12 +515,8 @@
                 </v-menu>
               </v-col>
             </v-col>
-            <v-col
-              cols="12"
-              :md="searchPerformed ? 12 : 6"
-              :class="searchPerformed ? 'order-4 mt-2 d-flex flex-row' : 'order-3 mb-0'"
-            >
-              <v-col :md="searchPerformed ? 10 : 12" class="ma-0 pa-0">
+            <v-col :class="searchPerformed ? 'order-4 mt-2 d-flex flex-row' : 'order-3 mb-0'">
+              <v-col :cols="searchPerformed ? 10 : 12" class="ma-0 pa-0">
                 <v-autocomplete
                   outlined
                   dense
@@ -565,15 +552,10 @@
               </v-col>
             </v-col>
             <v-col
-              cols="1"
-              :md="searchPerformed ? 12 : 1"
-              :class="searchPerformed ? 'order-2 pr-0 mr-0 text-right mt-n4 mb-n1' : 'ma-0 order-4'"
+              :cols="searchPerformed ? 10 : 1"
+              :class="searchPerformed ? 'order-2 pr-0 mr-0 text-right mb-n1' : 'ma-0 order-4'"
             >
-              <v-btn
-                text
-                @click="clearEvent('marriage')"
-                class="grey--text"
-                :class="searchPerformed ? 'mt-n4 mr-n5' : 'mt-0'"
+              <v-btn text @click="clearEvent('marriage')" class="grey--text" :class="searchPerformed ? 'mr-n5' : 'mt-0'"
                 ><v-icon class="pa-0 ma-0">mdi-close-circle-outline</v-icon></v-btn
               >
             </v-col>
@@ -598,8 +580,8 @@
                   hide-details="true"
                 ></v-text-field>
               </v-col>
-              <v-col :class="!searchPerformed ? 'ma-0 pa-0 mt-1' : 'ma-0 pa-0 mt-n5'" v-if="query.deathDate">
-                <v-menu offset-x :close-on-content-click="false" v-model="deathOptionsMenu2">
+              <v-col :class="!searchPerformed ? 'ma-0 pa-0 mt-1' : 'ma-0 pa-0 mt-2'" v-if="query.deathDate">
+                <v-menu offset-x :close-on-content-click="true" v-model="deathOptionsMenu2">
                   <template v-slot:activator="{ on, attrs }">
                     <v-btn
                       color="primary"
@@ -607,7 +589,7 @@
                       x-small
                       v-bind="attrs"
                       v-on="on"
-                      :class="searchPerformed ? 'mt-5 pt-5' : 'pa-0 mt-n2'"
+                      :class="searchPerformed ? '' : 'pa-0 mt-n2'"
                     >
                       <v-icon v-if="query.deathDateFuzziness === 0" small class="mr-1"
                         >mdi-checkbox-blank-outline</v-icon
@@ -634,12 +616,8 @@
                 </v-menu>
               </v-col>
             </v-col>
-            <v-col
-              cols="12"
-              :md="searchPerformed ? 12 : 6"
-              :class="searchPerformed ? 'order-4 mt-2 d-flex flex-row' : 'order-3 mb-0'"
-            >
-              <v-col :md="searchPerformed ? 10 : 12" class="ma-0 pa-0">
+            <v-col :class="searchPerformed ? 'order-4 mt-2 d-flex flex-row' : 'order-3 mb-0'">
+              <v-col :cols="searchPerformed ? 10 : 12" class="ma-0 pa-0">
                 <v-autocomplete
                   outlined
                   dense
@@ -675,15 +653,10 @@
               </v-col>
             </v-col>
             <v-col
-              cols="1"
-              :md="searchPerformed ? 12 : 1"
-              :class="searchPerformed ? 'order-2 pr-0 mr-0 text-right mt-n4 mb-n1' : 'ma-0 order-4'"
+              :cols="searchPerformed ? 10 : 1"
+              :class="searchPerformed ? 'order-2 pr-0 mr-0 text-right mb-n1' : 'ma-0 order-4'"
             >
-              <v-btn
-                text
-                @click="clearEvent('death')"
-                class="grey--text"
-                :class="searchPerformed ? 'mt-n4 mr-n5' : 'mt-0'"
+              <v-btn text @click="clearEvent('death')" class="grey--text" :class="searchPerformed ? 'mr-n5' : 'mt-0'"
                 ><v-icon class="pa-0 ma-0">mdi-close-circle-outline</v-icon></v-btn
               >
             </v-col>
@@ -708,8 +681,8 @@
                   hide-details="true"
                 ></v-text-field>
               </v-col>
-              <v-col :class="!searchPerformed ? 'ma-0 pa-0 mt-1' : 'ma-0 pa-0 mt-n5'" v-if="query.residenceDate">
-                <v-menu offset-x :close-on-content-click="false" v-model="residenceOptionsMenu2">
+              <v-col :class="!searchPerformed ? 'ma-0 pa-0 mt-1' : 'ma-0 pa-0 mt-2'" v-if="query.residenceDate">
+                <v-menu offset-x :close-on-content-click="true" v-model="residenceOptionsMenu2">
                   <template v-slot:activator="{ on, attrs }">
                     <v-btn
                       color="primary"
@@ -717,7 +690,7 @@
                       x-small
                       v-bind="attrs"
                       v-on="on"
-                      :class="searchPerformed ? 'mt-5 pt-5' : 'pa-0 mt-n2'"
+                      :class="searchPerformed ? '' : 'pa-0 mt-n2'"
                     >
                       <v-icon v-if="query.residenceDateFuzziness === 0" small class="mr-1"
                         >mdi-checkbox-blank-outline</v-icon
@@ -744,12 +717,8 @@
                 </v-menu>
               </v-col>
             </v-col>
-            <v-col
-              cols="12"
-              :md="searchPerformed ? 12 : 6"
-              :class="searchPerformed ? 'order-4 mt-2 d-flex flex-row' : 'order-3 mb-0'"
-            >
-              <v-col :md="searchPerformed ? 10 : 12" class="ma-0 pa-0">
+            <v-col :class="searchPerformed ? 'order-4 mt-2 d-flex flex-row' : 'order-3 mb-0'">
+              <v-col :cols="searchPerformed ? 10 : 12" class="ma-0 pa-0">
                 <v-autocomplete
                   outlined
                   dense
@@ -785,15 +754,14 @@
               </v-col>
             </v-col>
             <v-col
-              cols="1"
-              :md="searchPerformed ? 12 : 1"
-              :class="searchPerformed ? 'order-2 pr-0 mr-0 text-right mt-n4 mb-n1' : 'ma-0 order-4'"
+              :cols="searchPerformed ? 10 : 1"
+              :class="searchPerformed ? 'order-2 pr-0 mr-0 text-right mb-n1' : 'ma-0 order-4'"
             >
               <v-btn
                 text
                 @click="clearEvent('residence')"
                 class="grey--text"
-                :class="searchPerformed ? 'mt-n4 mr-n5' : 'mt-0'"
+                :class="searchPerformed ? 'mr-n5' : 'mt-0'"
                 ><v-icon class="pa-0 ma-0">mdi-close-circle-outline</v-icon></v-btn
               >
             </v-col>
@@ -818,8 +786,8 @@
                   hide-details="true"
                 ></v-text-field>
               </v-col>
-              <v-col :class="!searchPerformed ? 'ma-0 pa-0 mt-1' : 'ma-0 pa-0 mt-n5'" v-if="query.anyDate">
-                <v-menu offset-x :close-on-content-click="false" v-model="anyOptionsMenu2">
+              <v-col :class="!searchPerformed ? 'ma-0 pa-0 mt-1' : 'ma-0 pa-0 mt-2'" v-if="query.anyDate">
+                <v-menu offset-x :close-on-content-click="true" v-model="anyOptionsMenu2">
                   <template v-slot:activator="{ on, attrs }">
                     <v-btn
                       color="primary"
@@ -827,7 +795,7 @@
                       x-small
                       v-bind="attrs"
                       v-on="on"
-                      :class="searchPerformed ? 'mt-5 pt-5' : 'pa-0 mt-n2'"
+                      :class="searchPerformed ? '' : 'pa-0 mt-n2'"
                     >
                       <v-icon v-if="query.anyDateFuzziness === 0" small class="mr-1">mdi-checkbox-blank-outline</v-icon>
                       <v-icon v-if="query.anyDateFuzziness > 0" small class="mr-1">mdi-checkbox-marked</v-icon>
@@ -852,12 +820,8 @@
                 </v-menu>
               </v-col>
             </v-col>
-            <v-col
-              cols="12"
-              :md="searchPerformed ? 12 : 6"
-              :class="searchPerformed ? 'order-4 mt-2 d-flex flex-row' : 'order-3 mb-0'"
-            >
-              <v-col :md="searchPerformed ? 10 : 12" class="ma-0 pa-0">
+            <v-col :class="searchPerformed ? 'order-4 mt-2 d-flex flex-row' : 'order-3 mb-0'">
+              <v-col :cols="searchPerformed ? 10 : 12" class="ma-0 pa-0">
                 <v-autocomplete
                   outlined
                   dense
@@ -893,15 +857,10 @@
               </v-col>
             </v-col>
             <v-col
-              cols="1"
-              :md="searchPerformed ? 12 : 1"
-              :class="searchPerformed ? 'order-2 pr-0 mr-0 text-right mt-n4 mb-n1' : 'ma-0 order-4'"
+              :cols="searchPerformed ? 9 : 1"
+              :class="searchPerformed ? 'order-2 pr-0 mr-0 text-right mb-n1' : 'ma-0 order-4'"
             >
-              <v-btn
-                text
-                @click="clearEvent('any')"
-                class="grey--text"
-                :class="searchPerformed ? 'mt-n4 mr-n5' : 'mt-0'"
+              <v-btn text @click="clearEvent('any')" class="grey--text" :class="searchPerformed ? 'mr-n5' : 'mt-0'"
                 ><v-icon class="pa-0 ma-0">mdi-close-circle-outline</v-icon></v-btn
               >
             </v-col>
@@ -952,7 +911,7 @@
           </v-row>
           <!--Father-->
           <v-row no-gutters :class="searchPerformed ? 'ma-0 pa-0 d-flex' : 'my-3'" v-if="showRelative.father">
-            <v-col :cols="searchPerformed ? 2 : 2" class="order-1" :class="searchPerformed ? 'pt-2' : 'pl-5 pt-3'">
+            <v-col cols="2" class="order-1" :class="searchPerformed ? 'pt-2' : 'pl-5 pt-3'">
               <h4 class="mb-1">Father</h4>
             </v-col>
             <v-col
@@ -987,20 +946,20 @@
               </v-row>
             </v-col>
             <v-col :class="searchPerformed ? 'order-4 d-flex flex-row' : 'order-3'" class="ma-0 pa-0">
-              <v-col :md="searchPerformed ? 9 : 12" class="ma-0 pa-0">
+              <v-col :cols="searchPerformed ? 9 : 12" class="ma-0 pa-0">
                 <v-text-field
                   outlined
                   dense
                   v-model="query.fatherSurname"
                   type="text"
                   placeholder="Father's surname"
-                  class="ma-0 mb-n2"
+                  class="ma-0"
                   hide-details="true"
                 ></v-text-field>
               </v-col>
               <v-col
                 v-if="query.fatherSurname"
-                :cols="searchPerformed ? 2 : 12"
+                :cols="searchPerformed ? 3 : 12"
                 class="exactCheck d-flex flex-row mt-1"
                 :class="searchPerformed ? 'mt-n2 ml-n3' : 'mt-n4 ml-n3'"
               >
@@ -1013,26 +972,25 @@
                   hide-details="true"
                 >
                 </v-checkbox
-                ><span class="mt-2 ml-n3 primary--text">Exact</span>
+                ><span v-show="query.fatherSurname" class="mt-2 ml-n3 primary--text">Exact</span>
               </v-col>
             </v-col>
             <v-col
-              cols="1"
-              :md="searchPerformed ? 12 : 1"
-              :class="searchPerformed ? 'order-2 pr-0 mr-0 text-right mt-n4 mb-n1' : 'ma-0 order-4'"
+              :cols="searchPerformed ? 10 : 1"
+              :class="searchPerformed ? 'order-2 pr-0 mr-0 text-right mb-n1' : 'ma-0 order-4'"
             >
               <v-btn
                 text
                 @click="clearRelative('father')"
                 class="grey--text mt-0"
-                :class="searchPerformed ? 'mt-n4 mr-n5' : 'mt-0'"
+                :class="searchPerformed ? 'mr-n5' : 'mt-0'"
                 ><v-icon>mdi-close-circle-outline</v-icon></v-btn
               >
             </v-col>
           </v-row>
           <!--Mother-->
           <v-row no-gutters :class="searchPerformed ? 'ma-0 pa-0 d-flex' : 'my-3'" v-if="showRelative.mother">
-            <v-col :cols="searchPerformed ? 2 : 2" class="order-1" :class="searchPerformed ? 'pt-2' : 'pl-5 pt-3'">
+            <v-col cols="2" class="order-1" :class="searchPerformed ? 'pt-2' : 'pl-5 pt-3'">
               <h4 class="mb-1">Mother</h4>
             </v-col>
             <v-col
@@ -1067,20 +1025,20 @@
               </v-row>
             </v-col>
             <v-col :class="searchPerformed ? 'order-4 d-flex flex-row' : 'order-3'" class="ma-0 pa-0">
-              <v-col :md="searchPerformed ? 9 : 12" class="ma-0 pa-0">
+              <v-col :cols="searchPerformed ? 9 : 12" class="ma-0 pa-0">
                 <v-text-field
                   outlined
                   dense
                   v-model="query.motherSurname"
                   type="text"
                   placeholder="Mother's surname"
-                  class="ma-0 mb-n2"
+                  class="ma-0"
                   hide-details="true"
                 ></v-text-field>
               </v-col>
               <v-col
                 v-if="query.motherSurname"
-                :cols="searchPerformed ? 2 : 12"
+                :cols="searchPerformed ? 3 : 12"
                 class="exactCheck d-flex flex-row mt-1"
                 :class="searchPerformed ? 'mt-n2 ml-n3' : 'mt-n4 ml-n3'"
               >
@@ -1097,22 +1055,21 @@
               </v-col>
             </v-col>
             <v-col
-              cols="1"
-              :md="searchPerformed ? 12 : 1"
-              :class="searchPerformed ? 'order-2 pr-0 mr-0 text-right mt-n4 mb-n1' : 'ma-0 order-4'"
+              :cols="searchPerformed ? 10 : 1"
+              :class="searchPerformed ? 'order-2 pr-0 mr-0 text-right mb-n1' : 'ma-0 order-4'"
             >
               <v-btn
                 text
                 @click="clearRelative('mother')"
                 class="grey--text mt-0"
-                :class="searchPerformed ? 'mt-n4 mr-n5' : 'mt-0'"
+                :class="searchPerformed ? 'mr-n5' : 'mt-0'"
                 ><v-icon>mdi-close-circle-outline</v-icon></v-btn
               >
             </v-col>
           </v-row>
           <!--Spouse-->
           <v-row no-gutters :class="searchPerformed ? 'ma-0 pa-0 d-flex' : 'my-3'" v-if="showRelative.spouse">
-            <v-col :cols="searchPerformed ? 2 : 2" class="order-1" :class="searchPerformed ? 'pt-2' : 'pl-5 pt-3'">
+            <v-col cols="2" class="order-1" :class="searchPerformed ? 'pt-2' : 'pl-5 pt-3'">
               <h4 class="mb-1">Spouse</h4>
             </v-col>
             <v-col
@@ -1147,20 +1104,20 @@
               </v-row>
             </v-col>
             <v-col :class="searchPerformed ? 'order-4 d-flex flex-row' : 'order-3'" class="ma-0 pa-0">
-              <v-col :md="searchPerformed ? 9 : 12" class="ma-0 pa-0">
+              <v-col :cols="searchPerformed ? 9 : 12" class="ma-0 pa-0">
                 <v-text-field
                   outlined
                   dense
                   v-model="query.spouseSurname"
                   type="text"
                   placeholder="Spouse's surname"
-                  class="ma-0 mb-n2"
+                  class="ma-0"
                   hide-details="true"
                 ></v-text-field>
               </v-col>
               <v-col
                 v-if="query.spouseSurname"
-                :cols="searchPerformed ? 2 : 12"
+                :cols="searchPerformed ? 3 : 12"
                 class="exactCheck d-flex flex-row mt-1"
                 :class="searchPerformed ? 'mt-n2 ml-n3' : 'mt-n4 ml-n3'"
               >
@@ -1177,15 +1134,14 @@
               </v-col>
             </v-col>
             <v-col
-              cols="1"
-              :md="searchPerformed ? 12 : 1"
-              :class="searchPerformed ? 'order-2 pr-0 mr-0 text-right mt-n4 mb-n1' : 'ma-0 order-4'"
+              :cols="searchPerformed ? 10 : 1"
+              :class="searchPerformed ? 'order-2 pr-0 mr-0 text-right mb-n1' : 'ma-0 order-4'"
             >
               <v-btn
                 text
                 @click="clearRelative('spouse')"
                 class="grey--text mt-0"
-                :class="searchPerformed ? 'mt-n4 mr-n5' : 'mt-0'"
+                :class="searchPerformed ? 'mr-n5' : 'mt-0'"
                 ><v-icon>mdi-close-circle-outline</v-icon></v-btn
               >
             </v-col>
@@ -1227,20 +1183,20 @@
               </v-row>
             </v-col>
             <v-col :class="searchPerformed ? 'order-4 d-flex flex-row' : 'order-3'" class="ma-0 pa-0">
-              <v-col :md="searchPerformed ? 9 : 12" class="ma-0 pa-0">
+              <v-col :cols="searchPerformed ? 9 : 12" class="ma-0 pa-0">
                 <v-text-field
                   outlined
                   dense
                   v-model="query.otherSurname"
                   type="text"
                   placeholder="Other's surname"
-                  class="ma-0 mb-n2"
+                  class="ma-0"
                   hide-details="true"
                 ></v-text-field>
               </v-col>
               <v-col
                 v-if="query.otherSurname"
-                :cols="searchPerformed ? 2 : 12"
+                :cols="searchPerformed ? 3 : 12"
                 class="exactCheck d-flex flex-row mt-1"
                 :class="searchPerformed ? 'mt-n2 ml-n3' : 'mt-n4 ml-n3'"
               >
@@ -1257,15 +1213,14 @@
               </v-col>
             </v-col>
             <v-col
-              cols="1"
-              :md="searchPerformed ? 12 : 1"
-              :class="searchPerformed ? 'order-2 pr-0 mr-0 text-right mt-n4 mb-n1' : 'ma-0 order-4'"
+              :cols="searchPerformed ? 8 : 1"
+              :class="searchPerformed ? 'order-2 pr-0 mr-0 text-right mb-n1' : 'ma-0 order-4'"
             >
               <v-btn
                 text
                 @click="clearRelative('other')"
                 class="grey--text mt-0"
-                :class="searchPerformed ? 'mt-n4 mr-n5' : 'mt-0'"
+                :class="searchPerformed ? 'mr-n5' : 'mt-0'"
                 ><v-icon>mdi-close-circle-outline</v-icon></v-btn
               >
             </v-col>
@@ -1432,6 +1387,34 @@ export default {
       },
       searchPerformed: false,
       query: {
+        category: "",
+        collection: "",
+        collectionPlace1: "",
+        collectionPlace2: "",
+        collectionPlace3: "",
+        given: "",
+        surname: "",
+        birthDate: "",
+        birthPlace: "",
+        deathDate: "",
+        deathPlace: "",
+        marriageDate: "",
+        marriagePlace: "",
+        residenceDate: "",
+        residencePlace: "",
+        anyDate: "",
+        anyPlace: "",
+        fatherGiven: "",
+        fatherSurname: "",
+        motherGiven: "",
+        motherSurname: "",
+        spouseGiven: "",
+        spouseSurname: "",
+        otherGiven: "",
+        otherSurname: "",
+        keywords: "",
+        from: 0,
+        size: 0,
         birthDateFuzziness: 0,
         marriageDateFuzziness: 0,
         residenceDateFuzziness: 0,
