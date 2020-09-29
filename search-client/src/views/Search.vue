@@ -20,8 +20,8 @@
               <span>{{ query.category }}</span>
             </v-col>
           </v-row>
-          <v-row v-if="query.collection">
-            <v-col cols="12">
+          <v-row v-if="query.collection" no-gutters>
+            <v-col cols="11" class="offset-md-1">
               <v-btn :to="{ name: 'search', query: getQuery('collection', null) }" x-small icon class="grey--text pr-2">
                 <v-icon>mdi-chevron-down</v-icon>
               </v-btn>
@@ -32,9 +32,9 @@
             <v-col v-for="(bucket, $ix) in categoryFacet.buckets" :key="$ix" cols="12">
               <v-row no-gutters>
                 <v-col
-                  :cols="query.category ? 9 : 10"
+                  :cols="!query.category ? 12 : 11"
                   class="d-flex flex-row"
-                  :class="query.category ? 'offset-md-1' : ''"
+                  :class="!query.category ? '' : 'offset-md-1'"
                 >
                   <v-btn
                     :to="{ name: 'search', query: getQuery(categoryFacet.key, bucket.label) }"
@@ -85,7 +85,7 @@
             </v-col>
           </v-row>
           <v-row v-if="query.collectionPlace3" no-gutters>
-            <v-col cols="9" class="offset-md-2">
+            <v-col cols="10" class="offset-md-2">
               <v-btn
                 :to="{ name: 'search', query: getQuery('collectionPlace3', null) }"
                 x-small
@@ -101,8 +101,8 @@
             <v-col v-for="(bucket, $ix) in placeFacet.buckets" :key="$ix" cols="12">
               <v-row no-gutters>
                 <v-col
-                  :cols="query.collectionPlace2 ? 8 : 10"
-                  :class="query.collectionPlace2 ? 'offset-md-2' : ''"
+                  :cols="!query.collectionPlace1 ? 12 : !query.collectionPlace2 ? 11 : 10"
+                  :class="!query.collectionPlace1 ? '' : !query.collectionPlace2 ? 'offset-md-1' : 'offset-md-2'"
                   class="d-flex flex-row"
                 >
                   <v-btn
