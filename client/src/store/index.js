@@ -5,7 +5,6 @@ import * as collections from "./modules/collections.js";
 import * as notifications from "./modules/notifications.js";
 import * as posts from "./modules/posts.js";
 import * as records from "./modules/records.js";
-import * as search from "./modules/search.js";
 import * as settings from "./modules/settings.js";
 import * as user from "./modules/user.js";
 
@@ -18,7 +17,6 @@ export default new Vuex.Store({
     notifications,
     posts,
     records,
-    search,
     settings,
     user
   },

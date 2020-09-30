@@ -191,10 +191,118 @@ Resources:
       IntegrationMethod: GET
       PayloadFormatVersion: "1.0"
 
+  SearchCSSRoute:
+    Type: "AWS::ApiGatewayV2::Route"
+    Properties:
+      ApiId: !Ref OurRootsCMSApi
+      RouteKey: "GET /search/css/{proxy+}"
+      AuthorizationType: NONE
+      Target: !Join
+        - /
+        - - integrations
+          - !Ref SearchCSSIntegration
+
+  SearchCSSIntegration:
+    Type: "AWS::ApiGatewayV2::Integration"
+    Properties:
+      ApiId: !Ref OurRootsCMSApi
+      Description: Site Bucket CSS Integration
+      IntegrationType: HTTP_PROXY
+      IntegrationUri: !Join [ '/', [ !Ref CMSSiteBucketURL , 'search', 'css', '{proxy}' ] ]
+      IntegrationMethod: GET
+      PayloadFormatVersion: "1.0"
+
+  SearchIMGRoute:
+    Type: "AWS::ApiGatewayV2::Route"
+    Properties:
+      ApiId: !Ref OurRootsCMSApi
+      RouteKey: "GET /search/img/{proxy+}"
+      AuthorizationType: NONE
+      Target: !Join
+        - /
+        - - integrations
+          - !Ref SearchIMGIntegration
+
+  SearchIMGIntegration:
+    Type: "AWS::ApiGatewayV2::Integration"
+    Properties:
+      ApiId: !Ref OurRootsCMSApi
+      Description: Site Bucket IMG Integration
+      IntegrationType: HTTP_PROXY
+      IntegrationUri: !Join [ '/', [ !Ref CMSSiteBucketURL , 'search', 'img', '{proxy}' ] ]
+      IntegrationMethod: GET
+      PayloadFormatVersion: "1.0"
+
+  SearchJSRoute:
+    Type: "AWS::ApiGatewayV2::Route"
+    Properties:
+      ApiId: !Ref OurRootsCMSApi
+      RouteKey: "GET /search/js/{proxy+}"
+      AuthorizationType: NONE
+      Target: !Join
+        - /
+        - - integrations
+          - !Ref SearchJSIntegration
+
+  SearchJSIntegration:
+    Type: "AWS::ApiGatewayV2::Integration"
+    Properties:
+      ApiId: !Ref OurRootsCMSApi
+      Description: Site Bucket JS Integration
+      IntegrationType: HTTP_PROXY
+      IntegrationUri: !Join [ '/', [ !Ref CMSSiteBucketURL , 'search', 'js', '{proxy}' ] ]
+      IntegrationMethod: GET
+      PayloadFormatVersion: "1.0"
+
+  # GETs to /search and /search/* go to index.html in the search bucket root
+  SearchPlainUIRoute:
+    Type: "AWS::ApiGatewayV2::Route"
+    # Attempt to workaround case where most-specific matching didn't seem to work on initial deploy
+    DependsOn:
+      - ApiRoute
+      - SearchCSSRoute
+      - SearchIMGRoute
+      - SearchJSRoute
+    Properties:
+      ApiId: !Ref OurRootsCMSApi
+      RouteKey: "GET /search"
+      AuthorizationType: NONE
+      Target: !Join
+        - /
+        - - integrations
+          - !Ref SearchUIIntegration
+
+  SearchUIRoute:
+    Type: "AWS::ApiGatewayV2::Route"
+    # Attempt to workaround case where most-specific matching didn't seem to work on initial deploy
+    DependsOn:
+      - ApiRoute
+      - SearchCSSRoute
+      - SearchIMGRoute
+      - SearchJSRoute
+    Properties:
+      ApiId: !Ref OurRootsCMSApi
+      RouteKey: "GET /search/{proxy+}"
+      AuthorizationType: NONE
+      Target: !Join
+        - /
+        - - integrations
+          - !Ref SearchUIIntegration
+
+  SearchUIIntegration:
+    Type: "AWS::ApiGatewayV2::Integration"
+    Properties:
+      ApiId: !Ref OurRootsCMSApi
+      Description: Site Bucket Integration
+      IntegrationType: HTTP_PROXY
+      IntegrationUri: !Join [ '/', [ !Ref CMSSiteBucketURL , 'search', 'index.html' ] ]
+      IntegrationMethod: GET
+      PayloadFormatVersion: "1.0"
+
   # GETs to /* go to index.html in the bucket root
   UIRoute:
     Type: "AWS::ApiGatewayV2::Route"
-    # Attempt to workaround case where most-specfic matching didn't seem to work on initial deploy
+    # Attempt to workaround case where most-specific matching didn't seem to work on initial deploy
     DependsOn:
       - ApiRoute
       - CSSRoute

@@ -41,6 +41,14 @@
               </v-list-item-content>
             </v-list-item>
           </v-list-group>
+          <v-list-item v-else-if="item.external" :key="item.text" :href="item.link" target="_blank">
+            <v-list-item-action>
+              <v-icon :title="item.text">{{ item.icon }}</v-icon>
+            </v-list-item-action>
+            <v-list-item-content>
+              <v-list-item-title>{{ item.text }}</v-list-item-title>
+            </v-list-item-content>
+          </v-list-item>
           <v-list-item v-else :key="item.text" :to="item.link" link>
             <v-list-item-action>
               <v-icon :title="item.text">{{ item.icon }}</v-icon>
@@ -113,7 +121,7 @@ export default {
       { icon: "mdi-book-open-variant", text: "Collections", link: "/collections", authRequired: true },
       { icon: "mdi-cloud-upload", text: "Posts", link: "/posts", authRequired: true },
       { icon: "mdi-account-circle", text: "Users", link: "/users", authRequired: true },
-      { icon: "mdi-open-in-new", text: "Search", link: "/search" },
+      { icon: "mdi-open-in-new", text: "Search", link: process.env.VUE_APP_SEARCH_URL, external: true },
       { icon: "mdi-cog", text: "Settings", link: "/settings", authRequired: true }
     ]
   }),
