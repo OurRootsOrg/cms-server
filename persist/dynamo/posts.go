@@ -28,16 +28,26 @@ func (p Persister) SelectPosts(ctx context.Context) ([]model.Post, error) {
 		},
 	}
 	posts := make([]model.Post, 0)
-	qo, err := p.svc.Query(qi)
-	if err != nil {
-		log.Printf("[ERROR] Failed to get posts. qi: %#v err: %v", qi, err)
-		return posts, model.NewError(model.ErrOther, err.Error())
+	for {
+		batch := make([]model.Post, 0)
+		qo, err := p.svc.Query(qi)
+		if err != nil {
+			log.Printf("[ERROR] Failed to get posts. qi: %#v err: %v", qi, err)
+			return posts, model.NewError(model.ErrOther, err.Error())
+		}
+
+		err = dynamodbattribute.UnmarshalListOfMaps(qo.Items, &posts)
+		if err != nil {
+			log.Printf("[ERROR] Failed to unmarshal posts. qo: %#v err: %v", qo, err)
+			return posts, model.NewError(model.ErrOther, err.Error())
+		}
+		posts = append(posts, batch...)
+		if qo.LastEvaluatedKey == nil {
+			break
+		}
+		qi.ExclusiveStartKey = qo.LastEvaluatedKey
 	}
-	err = dynamodbattribute.UnmarshalListOfMaps(qo.Items, &posts)
-	if err != nil {
-		log.Printf("[ERROR] Failed to unmarshal posts. qo: %#v err: %v", qo, err)
-		return posts, model.NewError(model.ErrOther, err.Error())
-	}
+
 	return posts, nil
 	// rows, err := p.db.QueryContext(ctx, "SELECT id, post_id, body, insert_time, last_update_time FROM post")
 	// if err != nil {

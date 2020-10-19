@@ -114,10 +114,10 @@ type PlaceSettingsIn struct {
 
 // PlaceSettings represents global placeSettings
 type PlaceSettings struct {
-	ID      int    `json:"-" dynamodbav:"-"`
-	Pk      string `json:"-" dynamodbav:"pk"`
-	Sk      string `json:"-" dynamodbav:"sk"`
-	AltSort string `json:"-" dynamodbav:"altSort"`
+	ID int    `json:"-" dynamodbav:"-"`
+	Pk string `json:"-" dynamodbav:"pk"`
+	Sk string `json:"-" dynamodbav:"sk"`
+	// AltSort string `json:"-" dynamodbav:"altSort"`
 	PlaceSettingsIn
 	InsertTime     time.Time `json:"insert_time,omitempty"`
 	LastUpdateTime time.Time `json:"last_update_time,omitempty"`

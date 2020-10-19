@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -13,67 +14,25 @@ import (
 	"github.com/ourrootsorg/cms-server/model"
 )
 
-const recordType = "record"
-
-// SelectRecords selects all records
-func (p Persister) SelectRecords(ctx context.Context) ([]model.Record, error) {
-	qi := &dynamodb.QueryInput{
-		TableName:              p.tableName,
-		IndexName:              aws.String(gsiName),
-		KeyConditionExpression: aws.String(skName + " = :sk"),
-		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
-			":sk": {
-				S: aws.String(recordType),
-			},
-		},
-	}
-	records := make([]model.Record, 0)
-	qo, err := p.svc.Query(qi)
-	if err != nil {
-		log.Printf("[ERROR] Failed to get records. qi: %#v err: %v", qi, err)
-		return records, model.NewError(model.ErrOther, err.Error())
-	}
-	err = dynamodbattribute.UnmarshalListOfMaps(qo.Items, &records)
-	if err != nil {
-		log.Printf("[ERROR] Failed to unmarshal records. qo: %#v err: %v", qo, err)
-		return records, model.NewError(model.ErrOther, err.Error())
-	}
-	return records, nil
-}
+const (
+	recordType       = "record"
+	recordPostPrefix = recordType + "_" + postType + "#"
+)
 
 // SelectRecordsByID selects many records from a slice of IDs
 func (p Persister) SelectRecordsByID(ctx context.Context, ids []uint32) ([]model.Record, error) {
-	records := make([]model.Record, 0)
-	if len(ids) == 0 {
-		return records, nil
-	}
-	keys := make([]map[string]*dynamodb.AttributeValue, len(ids))
-	for i, id := range ids {
-		keys[i] = map[string]*dynamodb.AttributeValue{
-			pkName: {
-				S: aws.String(strconv.FormatInt(int64(id), 10)),
-			},
-			skName: {
-				S: aws.String(recordType),
-			},
+	// We can't do a query to select multiple Records, so just call SelectPlace in a loop
+	var records []model.Record
+	for _, id := range ids {
+		p, err := p.SelectOneRecord(ctx, id)
+		if err != nil {
+			e, ok := err.(model.Error)
+			if ok && e.Code == model.ErrNotFound {
+				continue
+			}
+			return nil, err
 		}
-	}
-	bgii := &dynamodb.BatchGetItemInput{
-		RequestItems: map[string]*dynamodb.KeysAndAttributes{
-			*p.tableName: {
-				Keys: keys,
-			},
-		},
-	}
-	bgio, err := p.svc.BatchGetItem(bgii)
-	if err != nil {
-		log.Printf("[ERROR] Failed to get records. bgii: %#v err: %v", bgii, err)
-		return nil, model.NewError(model.ErrOther, err.Error())
-	}
-	err = dynamodbattribute.UnmarshalListOfMaps(bgio.Responses[*p.tableName], &records)
-	if err != nil {
-		log.Printf("[ERROR] Failed to unmarshal. bgio: %#v err: %v", bgio, err)
-		return nil, model.NewError(model.ErrOther, err.Error())
+		records = append(records, *p)
 	}
 	return records, nil
 }
@@ -84,13 +43,52 @@ func (p Persister) SelectRecordsForPost(ctx context.Context, postID uint32) ([]m
 	qi := &dynamodb.QueryInput{
 		TableName:              p.tableName,
 		IndexName:              aws.String(gsiName),
-		KeyConditionExpression: aws.String(skName + " = :sk and " + gsiSkName + " = :gsiSk"),
+		KeyConditionExpression: aws.String(skName + " = :sk"),
 		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
 			":sk": {
-				S: aws.String(recordType),
+				S: aws.String(recordPostPrefix + strconv.FormatInt(int64(postID), 10)),
 			},
-			":gsiSk": {
-				S: aws.String(strconv.FormatInt(int64(postID), 10)),
+		},
+	}
+	records := make([]model.Record, 0)
+	for {
+		batch := make([]model.Record, 0)
+		qo, err := p.svc.Query(qi)
+		if err != nil {
+			log.Printf("[ERROR] Failed to get records. qi: %#v err: %v", qi, err)
+			return records, model.NewError(model.ErrOther, err.Error())
+		}
+
+		err = dynamodbattribute.UnmarshalListOfMaps(qo.Items, &records)
+		if err != nil {
+			log.Printf("[ERROR] Failed to unmarshal records. qo: %#v err: %v", qo, err)
+			return records, model.NewError(model.ErrOther, err.Error())
+		}
+		records = append(records, batch...)
+		if qo.LastEvaluatedKey == nil {
+			break
+		}
+		qi.ExclusiveStartKey = qo.LastEvaluatedKey
+	}
+
+	for _, r := range records {
+		r.Post = postID
+	}
+	return records, nil
+}
+
+// SelectOneRecord selects a single record by ID
+func (p Persister) SelectOneRecord(ctx context.Context, id uint32) (*model.Record, error) {
+	ids := strconv.FormatInt(int64(id), 10)
+	qi := &dynamodb.QueryInput{
+		TableName:              p.tableName,
+		KeyConditionExpression: aws.String(pkName + " = :pk and begins_with(" + skName + ", :sk)"),
+		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
+			":pk": {
+				S: aws.String(ids),
+			},
+			":sk": {
+				S: aws.String(recordPostPrefix),
 			},
 		},
 	}
@@ -98,54 +96,28 @@ func (p Persister) SelectRecordsForPost(ctx context.Context, postID uint32) ([]m
 	qo, err := p.svc.Query(qi)
 	if err != nil {
 		log.Printf("[ERROR] Failed to get records. qi: %#v err: %v", qi, err)
-		return records, model.NewError(model.ErrOther, err.Error())
+		return nil, model.NewError(model.ErrOther, err.Error())
 	}
 	err = dynamodbattribute.UnmarshalListOfMaps(qo.Items, &records)
 	if err != nil {
 		log.Printf("[ERROR] Failed to unmarshal records. qo: %#v err: %v", qo, err)
-		return records, model.NewError(model.ErrOther, err.Error())
+		return nil, model.NewError(model.ErrOther, err.Error())
 	}
-	return records, nil
-}
+	if len(records) > 1 {
+		log.Printf("[ERROR] Unexpectedly found more than one record. qo: %#v err: %v", qo, err)
+		return nil, fmt.Errorf("Unexpectedly found more than one record for id %d", id)
+	} else if len(records) == 0 {
+		return nil, model.NewError(model.ErrNotFound, ids)
+	}
+	pid := strings.TrimPrefix(records[0].Type, recordPostPrefix)
+	postID, err := strconv.ParseUint(pid, 10, 32)
+	if err != nil {
+		log.Printf("[ERROR] Failed to unmarshal post ID %s: %v", pid, err)
+		return nil, model.NewError(model.ErrOther, err.Error())
+	}
+	records[0].Post = uint32(postID)
 
-// SelectOneRecord selects a single record by ID
-func (p Persister) SelectOneRecord(ctx context.Context, id uint32) (*model.Record, error) {
-	var record model.Record
-	gii := &dynamodb.GetItemInput{
-		TableName: p.tableName,
-		Key: map[string]*dynamodb.AttributeValue{
-			pkName: {
-				S: aws.String(strconv.FormatInt(int64(id), 10)),
-			},
-			skName: {
-				S: aws.String(recordType),
-			},
-		},
-	}
-	gio, err := p.svc.GetItem(gii)
-	if err != nil {
-		log.Printf("[ERROR] Failed to get record. qi: %#v err: %v", gio, err)
-		return nil, model.NewError(model.ErrOther, err.Error())
-	}
-	if gio.Item == nil {
-		return nil, model.NewError(model.ErrNotFound, strconv.Itoa(int(id)))
-	}
-	err = dynamodbattribute.UnmarshalMap(gio.Item, &record)
-	if err != nil {
-		log.Printf("[ERROR] Failed to unmarshal. qo: %#v err: %v", gio, err)
-		return nil, model.NewError(model.ErrOther, err.Error())
-	}
-	return &record, nil
-	// err := p.db.QueryRowContext(ctx, "SELECT id, record_id, body, insert_time, last_update_time FROM record WHERE id=$1", id).Scan(
-	// 	&record.ID,
-	// 	&record.Record,
-	// 	&record.RecordBody,
-	// 	&record.InsertTime,
-	// 	&record.LastUpdateTime,
-	// )
-	// if err != nil {
-	// 	return nil, model.NewError(model.ErrOther, err.Error())
-	// }
+	return &records[0], nil
 }
 
 // InsertRecord inserts a RecordBody into the database and returns the inserted Record
@@ -156,7 +128,7 @@ func (p Persister) InsertRecord(ctx context.Context, in model.RecordIn) (*model.
 	if err != nil {
 		return nil, model.NewError(model.ErrOther, err.Error())
 	}
-	record.Type = recordType
+	record.Type = recordPostPrefix + strconv.FormatInt(int64(in.Post), 10)
 	record.RecordIn = in
 	now := time.Now().Truncate(0)
 	record.InsertTime = now
@@ -231,12 +203,25 @@ func (p Persister) InsertRecord(ctx context.Context, in model.RecordIn) (*model.
 
 // UpdateRecord updates a Record in the database and returns the updated Record
 func (p Persister) UpdateRecord(ctx context.Context, id uint32, in model.Record) (*model.Record, error) {
+	current, err := p.SelectOneRecord(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	if in.LastUpdateTime != current.LastUpdateTime {
+		return nil, model.NewError(model.ErrConcurrentUpdate, current.LastUpdateTime.Format(time.RFC3339Nano), in.LastUpdateTime.Format(time.RFC3339Nano))
+	}
+
 	var record model.Record
-	var err error
 	record = in
 	record.ID = id
-	record.Type = recordType
+	record.Type = recordPostPrefix + strconv.FormatInt(int64(in.Post), 10)
+	// Client shouldn't change it
+	record.InsertTime = current.InsertTime
 	record.LastUpdateTime = time.Now().Truncate(0)
+	if record.Post != current.Post {
+		log.Printf("[ERROR] Update of record %d post ID from %d to %d not supported", record.ID, current.Post, record.Post)
+		return nil, model.NewError(model.ErrOther, err.Error())
+	}
 
 	avs, err := dynamodbattribute.MarshalMap(record)
 	if err != nil {
@@ -318,14 +303,21 @@ func (p Persister) UpdateRecord(ctx context.Context, id uint32, in model.Record)
 
 // DeleteRecord deletes a Record
 func (p Persister) DeleteRecord(ctx context.Context, id uint32) error {
+	current, err := p.SelectOneRecord(ctx, id)
+	if err != nil {
+		if e, ok := err.(model.Error); ok && e.Code == model.ErrNotFound {
+			return nil
+		}
+		return err
+	}
 	dii := &dynamodb.DeleteItemInput{
 		TableName: p.tableName,
 		Key: map[string]*dynamodb.AttributeValue{
 			pkName: {S: aws.String(strconv.FormatInt(int64(id), 10))},
-			skName: {S: aws.String(recordType)},
+			skName: {S: &current.Type},
 		},
 	}
-	_, err := p.svc.DeleteItem(dii)
+	_, err = p.svc.DeleteItem(dii)
 	if err != nil {
 		return model.NewError(model.ErrOther, err.Error())
 	}
@@ -346,7 +338,7 @@ func (p Persister) DeleteRecordsForPost(ctx context.Context, postID uint32) erro
 				DeleteRequest: &dynamodb.DeleteRequest{
 					Key: map[string]*dynamodb.AttributeValue{
 						pkName: {S: aws.String(strconv.FormatInt(int64(r.ID), 10))},
-						skName: {S: aws.String(recordType)},
+						skName: {S: &r.Type},
 					},
 				},
 			},

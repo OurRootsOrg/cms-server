@@ -28,16 +28,23 @@ func (p Persister) SelectCategories(ctx context.Context) ([]model.Category, erro
 		},
 	}
 	cats := make([]model.Category, 0)
-	qo, err := p.svc.Query(qi)
-	if err != nil {
-		log.Printf("[ERROR] Failed to get categories. qi: %#v err: %v", qi, err)
-		return cats, model.NewError(model.ErrOther, err.Error())
-	}
-	// TODO: Check qo.LastEvaluatedKey
-	err = dynamodbattribute.UnmarshalListOfMaps(qo.Items, &cats)
-	if err != nil {
-		log.Printf("[ERROR] Failed to unmarshal categories. qo: %#v err: %v", qo, err)
-		return cats, model.NewError(model.ErrOther, err.Error())
+	for {
+		batch := make([]model.Category, 0)
+		qo, err := p.svc.Query(qi)
+		if err != nil {
+			log.Printf("[ERROR] Failed to get categories. qi: %#v err: %v", qi, err)
+			return cats, model.NewError(model.ErrOther, err.Error())
+		}
+		err = dynamodbattribute.UnmarshalListOfMaps(qo.Items, &batch)
+		if err != nil {
+			log.Printf("[ERROR] Failed to unmarshal categories. qo: %#v err: %v", qo, err)
+			return cats, model.NewError(model.ErrOther, err.Error())
+		}
+		cats = append(cats, batch...)
+		if qo.LastEvaluatedKey == nil {
+			break
+		}
+		qi.ExclusiveStartKey = qo.LastEvaluatedKey
 	}
 	return cats, nil
 }

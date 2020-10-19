@@ -48,7 +48,7 @@ func (cb *RecordBody) Scan(value interface{}) error {
 // RecordIn is the payload to create or update a Record
 type RecordIn struct {
 	RecordBody
-	Post uint32 `json:"post" example:"999" validate:"required" dynamodbav:"altSort,string"`
+	Post uint32 `json:"post" example:"999" validate:"required" dynamodbav:"-"`
 }
 
 // Record represents a set of related Records

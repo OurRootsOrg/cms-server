@@ -95,40 +95,20 @@ func (p Persister) SelectPlace(ctx context.Context, id uint32) (*model.Place, er
 
 // SelectPlacesByID selects multiple Place objects by ID
 func (p Persister) SelectPlacesByID(ctx context.Context, ids []uint32) ([]model.Place, error) {
-	return nil, fmt.Errorf("SelectPlaceSettings not implemented")
-	// places := make([]model.Place, 0)
-	// if len(ids) == 0 {
-	// 	return places, nil
-	// }
-	// keys := make([]map[string]*dynamodb.AttributeValue, len(ids))
-	// for i, id := range ids {
-	// 	keys[i] = map[string]*dynamodb.AttributeValue{
-	// 		pkName: {
-	// 			S: aws.String(strconv.FormatInt(int64(id), 10)),
-	// 		},
-	// 		skName: {
-	// 			S: aws.String(placeType),
-	// 		},
-	// 	}
-	// }
-	// bgii := &dynamodb.BatchGetItemInput{
-	// 	RequestItems: map[string]*dynamodb.KeysAndAttributes{
-	// 		*p.tableName: {
-	// 			Keys: keys,
-	// 		},
-	// 	},
-	// }
-	// bgio, err := p.svc.BatchGetItem(bgii)
-	// if err != nil {
-	// 	log.Printf("[ERROR] Failed to get places. bgii: %#v err: %v", bgii, err)
-	// 	return nil, model.NewError(model.ErrOther, err.Error())
-	// }
-	// err = dynamodbattribute.UnmarshalListOfMaps(bgio.Responses[*p.tableName], &places)
-	// if err != nil {
-	// 	log.Printf("[ERROR] Failed to unmarshal. bgio: %#v err: %v", bgio, err)
-	// 	return nil, model.NewError(model.ErrOther, err.Error())
-	// }
-	// return places, nil
+	// We can't do a query to select multiple Places, so just call SelectPlace in a loop
+	var places []model.Place
+	for _, id := range ids {
+		p, err := p.SelectPlace(ctx, id)
+		if err != nil {
+			e, ok := err.(model.Error)
+			if ok && e.Code == model.ErrNotFound {
+				continue
+			}
+			return nil, err
+		}
+		places = append(places, *p)
+	}
+	return places, nil
 }
 
 // SelectPlaceWord selects a PlaceWord object by word
@@ -241,16 +221,27 @@ func (p Persister) SelectPlacesByFullNamePrefix(ctx context.Context, prefix stri
 			},
 		},
 	}
-	qo, err := p.svc.Query(qi)
-	if err != nil {
-		log.Printf("[ERROR] Failed to get places. qi: %#v err: %v", qi, err)
-		return nil, model.NewError(model.ErrOther, err.Error())
+
+	for {
+		batch := make([]model.Place, 0)
+		qo, err := p.svc.Query(qi)
+		if err != nil {
+			log.Printf("[ERROR] Failed to get places. qi: %#v err: %v", qi, err)
+			return nil, model.NewError(model.ErrOther, err.Error())
+		}
+
+		err = dynamodbattribute.UnmarshalListOfMaps(qo.Items, &places)
+		if err != nil {
+			log.Printf("[ERROR] Failed to unmarshal places. qo: %#v err: %v", qo, err)
+			return nil, model.NewError(model.ErrOther, err.Error())
+		}
+		places = append(places, batch...)
+		if qo.LastEvaluatedKey == nil {
+			break
+		}
+		qi.ExclusiveStartKey = qo.LastEvaluatedKey
 	}
-	err = dynamodbattribute.UnmarshalListOfMaps(qo.Items, &places)
-	if err != nil {
-		log.Printf("[ERROR] Failed to unmarshal places. qo: %#v err: %v", qo, err)
-		return nil, model.NewError(model.ErrOther, err.Error())
-	}
+
 	filteredPlaces := make([]model.Place, 0)
 	for _, p := range places {
 		if searchRegex.MatchString(p.FullName) {
@@ -304,7 +295,7 @@ func (p Persister) LoadPlaceSettingsData(rd io.Reader) error {
 	}
 	ps.Pk = placeSettingsType
 	ps.Sk = placeSettingsType
-	ps.AltSort = placeSettingsType
+	// ps.AltSort = placeSettingsType
 	now := time.Now().Truncate(0)
 	ps.InsertTime = now
 	ps.LastUpdateTime = now

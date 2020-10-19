@@ -47,9 +47,6 @@ func setupTestCase(t *testing.T) (dynamo.Persister, func(t *testing.T)) {
 			_, err := p.SelectOnePost(context.TODO(), post.ID)
 			assert.Error(t, err)
 		}
-		records, err := p.SelectRecords(context.TODO())
-		assert.NoError(t, err)
-		assert.Len(t, records, 0)
 
 		colls, err := p.SelectCollections(context.TODO())
 		assert.NoError(t, err)
