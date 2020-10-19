@@ -8,12 +8,7 @@
           }}</router-link></strong
         >
         <span class="text-first-caps resultRole">{{ result.person.role }}</span>
-        <span
-          >In {{ result.collectionName }}
-          <v-btn icon x-small class="primary--text" :to="{ name: 'search-detail', params: { rid: result.id } }"
-            ><v-icon>mdi-chevron-right</v-icon></v-btn
-          ></span
-        >
+        <span>In {{ result.collectionName }} </span>
       </v-col>
       <v-col cols="12" md="3">
         <div v-for="(event, $ix) in result.person.events" :key="$ix">
