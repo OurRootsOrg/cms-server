@@ -943,14 +943,16 @@ paths:
       - places
   /posts:
     get:
-      operationId: getSettings
+      operationId: getPosts
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/model.Settings'
+            items:
+              $ref: '#/definitions/model.Post'
+            type: array
         "500":
           description: Server error
           schema:
@@ -966,9 +968,9 @@ paths:
         - openid
         - profile
         - email
-      summary: returns goobal settings
+      summary: returns all posts
       tags:
-      - settings
+      - posts
     post:
       consumes:
       - application/json

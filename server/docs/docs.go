@@ -795,15 +795,18 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "settings"
+                    "posts"
                 ],
-                "summary": "returns goobal settings",
-                "operationId": "getSettings",
+                "summary": "returns all posts",
+                "operationId": "getPosts",
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/model.Settings"
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.Post"
+                            }
                         }
                     },
                     "500": {
