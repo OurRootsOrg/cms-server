@@ -3,7 +3,6 @@ package dynamo
 import (
 	"context"
 	"log"
-	"strconv"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -21,7 +20,7 @@ func (p Persister) SelectSettings(ctx context.Context) (*model.Settings, error) 
 		TableName: p.tableName,
 		Key: map[string]*dynamodb.AttributeValue{
 			pkName: {
-				N: aws.String(strconv.Itoa(settingsID)),
+				S: aws.String(settingsType),
 			},
 			skName: {
 				S: aws.String(settingsType),
@@ -36,7 +35,7 @@ func (p Persister) SelectSettings(ctx context.Context) (*model.Settings, error) 
 		return nil, model.NewError(model.ErrOther, err.Error())
 	}
 	if gio.Item == nil {
-		return nil, model.NewError(model.ErrNotFound, strconv.Itoa(settingsID))
+		return nil, model.NewError(model.ErrNotFound, settingsType)
 	}
 	err = dynamodbattribute.UnmarshalMap(gio.Item, &settings)
 	if err != nil {
@@ -44,17 +43,11 @@ func (p Persister) SelectSettings(ctx context.Context) (*model.Settings, error) 
 		return nil, model.NewError(model.ErrOther, err.Error())
 	}
 	return &settings, nil
-
-	// err := p.db.QueryRowContext(ctx, "SELECT body, insert_time, last_update_time FROM settings WHERE id=$1", SettingsID).Scan(
-	// 	&settings.SettingsBody,
-	// 	&settings.InsertTime,
-	// 	&settings.LastUpdateTime,
-	// )
 }
 
 // UpsertSettings updates or inserts a Settings object in the database and returns the updated Settings
 func (p Persister) UpsertSettings(ctx context.Context, in model.Settings) (*model.Settings, error) {
-	in.ID = settingsID
+	in.ID = settingsType
 	in.Sk = settingsType
 	settings := in
 	now := time.Now().Truncate(0)
@@ -87,11 +80,6 @@ func (p Persister) UpsertSettings(ctx context.Context, in model.Settings) (*mode
 		log.Printf("[ERROR] Failed to update settings %#v. pii: %#v err: %v", settings, pii, err)
 		return nil, model.NewError(model.ErrOther, err.Error())
 	}
-	// err = dynamodbattribute.UnmarshalMap(pio.Attributes, &settings)
-	// if err != nil {
-	// 	return nil, model.NewError(model.ErrOther, err.Error())
-	// }
-	// return &settings, nil
 	return p.SelectSettings(ctx)
 	// err := p.db.QueryRowContext(ctx,
 	// 	`UPDATE settings SET body = $1, last_update_time = CURRENT_TIMESTAMP

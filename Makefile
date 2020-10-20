@@ -11,6 +11,7 @@ IMAGESWRITER_BINARY=imageswriter.lambda
 PG_PORT=15432
 RABBIT_PORT=35672
 ES_PORT=19200
+AWS_REGION=us-east-1
 
 all: clean test build package
 build: build-server build-clients
@@ -20,8 +21,8 @@ build-server:
 	cd recordswriter && $(GOBUILD) && GOOS=linux $(GOBUILD) -o $(RECORDSWRITER_BINARY)
 	cd imageswriter && $(GOBUILD) && GOOS=linux $(GOBUILD) -o $(IMAGESWRITER_BINARY)
 build-clients:
-	cd client && npm run build
-	cd search-client && npm run build
+	cd client && npm install && npm run build
+	cd search-client && npm install && npm run build
 package:
 	zip -r deploy/awslambda/$(BINARY_NAME).zip server/$(BINARY_NAME) db/migrations/*
 	zip -r deploy/awslambda/${PUBLISHER_BINARY}.zip publisher/$(PUBLISHER_BINARY)
@@ -31,6 +32,7 @@ test: test-setup test-exec test-teardown
 test-setup:
 	docker-compose -f docker-compose-dependencies.yaml up --detach --build
 	cd db && ./wait-for-db.sh $(PG_PORT) && ./db_setup.sh $(PG_PORT) && ./db_load_test.sh $(PG_PORT)
+	cd db/dynamo/ddbloader && go build . && AWS_REGION=$(AWS_REGION) ./ddb_load_test.sh
 	cd elasticsearch && ./wait-for-es.sh $(ES_PORT) && ./es_setup.sh $(ES_PORT)
 	cd rabbitmq && ./wait-for-rabbitmq.sh ${RABBIT_PORT}
 test-exec:

@@ -20,7 +20,7 @@ const (
 )
 
 type collectionCategory struct {
-	ID uint32 `dynamodbav:"pk"`
+	ID uint32 `dynamodbav:"pk,string"`
 	SK string `dynamodbav:"sk"`
 }
 
@@ -37,20 +37,28 @@ func (p Persister) SelectCollections(ctx context.Context) ([]model.Collection, e
 		},
 	}
 	colls := make([]model.Collection, 0)
-	qo, err := p.svc.Query(qi)
-	if err != nil {
-		log.Printf("[ERROR] Failed to get collections. qi: %#v err: %v", qi, err)
-		return nil, model.NewError(model.ErrOther, err.Error())
-	}
-	err = dynamodbattribute.UnmarshalListOfMaps(qo.Items, &colls)
-	if err != nil {
-		log.Printf("[ERROR] Failed to unmarshal collections. qo: %#v err: %v", qo, err)
-		return nil, model.NewError(model.ErrOther, err.Error())
+	for {
+		batch := make([]model.Collection, 0)
+		qo, err := p.svc.Query(qi)
+		if err != nil {
+			log.Printf("[ERROR] Failed to get collections. qi: %#v err: %v", qi, err)
+			return nil, model.NewError(model.ErrOther, err.Error())
+		}
+		err = dynamodbattribute.UnmarshalListOfMaps(qo.Items, &colls)
+		if err != nil {
+			log.Printf("[ERROR] Failed to unmarshal collections. qo: %#v err: %v", qo, err)
+			return nil, model.NewError(model.ErrOther, err.Error())
+		}
+		colls = append(colls, batch...)
+		if qo.LastEvaluatedKey == nil {
+			break
+		}
+		qi.ExclusiveStartKey = qo.LastEvaluatedKey
 	}
 	return colls, nil
 }
 
-// SelectCollectionsByID selects many collections
+// SelectCollectionsByID selects many collections from a slice of IDs
 func (p Persister) SelectCollectionsByID(ctx context.Context, ids []uint32) ([]model.Collection, error) {
 	colls := make([]model.Collection, 0)
 	if len(ids) == 0 {
@@ -60,7 +68,7 @@ func (p Persister) SelectCollectionsByID(ctx context.Context, ids []uint32) ([]m
 	for i, id := range ids {
 		keys[i] = map[string]*dynamodb.AttributeValue{
 			pkName: {
-				N: aws.String(strconv.FormatInt(int64(id), 10)),
+				S: aws.String(strconv.FormatInt(int64(id), 10)),
 			},
 			skName: {
 				S: aws.String(collectionType),
@@ -96,7 +104,7 @@ func (p Persister) SelectOneCollection(ctx context.Context, id uint32) (*model.C
 		KeyConditionExpression: aws.String(pkName + "= :pk and begins_with(" + skName + ", :sk)"),
 		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
 			":pk": {
-				N: aws.String(sid),
+				S: aws.String(sid),
 			},
 			":sk": {
 				S: aws.String(collectionType),
@@ -128,18 +136,31 @@ func (p Persister) SelectOneCollection(ctx context.Context, id uint32) (*model.C
 	// they're working correctly, but to avoid getting two copies of each, we null out the slice here.
 	itemCategories := coll.Categories
 	coll.Categories = nil
-	for _, item := range qo.Items {
-		if strings.HasPrefix(*item[skName].S, collectionCategoryPrefix) {
-			id := strings.TrimPrefix(*item[skName].S, collectionCategoryPrefix)
-			categoryID, err := strconv.ParseUint(id, 10, 32)
-			if err != nil {
-				log.Printf("[ERROR] Failed to unmarshal category ID %s: %v", id, err)
-				return nil, model.NewError(model.ErrOther, err.Error())
+
+	for {
+		for _, item := range qo.Items {
+			if strings.HasPrefix(*item[skName].S, collectionCategoryPrefix) {
+				id := strings.TrimPrefix(*item[skName].S, collectionCategoryPrefix)
+				categoryID, err := strconv.ParseUint(id, 10, 32)
+				if err != nil {
+					log.Printf("[ERROR] Failed to unmarshal category ID %s: %v", id, err)
+					return nil, model.NewError(model.ErrOther, err.Error())
+				}
+				// log.Printf("[DEBUG] Category ID %s", id)
+				coll.Categories = append(coll.Categories, uint32(categoryID))
 			}
-			// log.Printf("[DEBUG] Category ID %s", id)
-			coll.Categories = append(coll.Categories, uint32(categoryID))
+		}
+		if qo.LastEvaluatedKey == nil {
+			break
+		}
+		qi.ExclusiveStartKey = qo.LastEvaluatedKey
+		qo, err = p.svc.Query(qi)
+		if err != nil {
+			log.Printf("[ERROR] Failed to get collection. qi: %#v err: %v", qi, err)
+			return nil, model.NewError(model.ErrOther, err.Error())
 		}
 	}
+
 	// Compare the category slices
 	if !compareIDs(itemCategories, coll.Categories) {
 		return nil, model.NewError(model.ErrOther, fmt.Sprintf("Internal error: DynamoDB categories don't match for collection ID %d.\n %#v != %#v",
@@ -202,7 +223,7 @@ func (p Persister) InsertCollection(ctx context.Context, in model.CollectionIn) 
 				TableName: p.tableName,
 				Key: map[string]*dynamodb.AttributeValue{
 					pkName: {
-						N: aws.String(strconv.FormatInt(int64(catID), 10)),
+						S: aws.String(strconv.FormatInt(int64(catID), 10)),
 					},
 					skName: {
 						S: aws.String(categoryType),
@@ -230,8 +251,9 @@ func (p Persister) InsertCollection(ctx context.Context, in model.CollectionIn) 
 			Put: &dynamodb.Put{
 				TableName: p.tableName,
 				Item: map[string]*dynamodb.AttributeValue{
-					pkName: {N: aws.String(strconv.FormatInt(int64(coll.ID), 10))},
-					skName: {S: aws.String(collectionCategoryPrefix + strconv.FormatInt(int64(catID), 10))},
+					pkName:    {S: aws.String(strconv.FormatInt(int64(coll.ID), 10))},
+					skName:    {S: aws.String(collectionCategoryPrefix + strconv.FormatInt(int64(catID), 10))},
+					gsiSkName: {S: aws.String(strconv.FormatInt(int64(coll.ID), 10))},
 				},
 				ConditionExpression: aws.String("attribute_not_exists(" + pkName + ") AND attribute_not_exists(" + skName + ")"), // Make duplicate insert fail
 			},
@@ -341,7 +363,7 @@ func (p Persister) UpdateCollection(ctx context.Context, id uint32, in model.Col
 				TableName: p.tableName,
 				Key: map[string]*dynamodb.AttributeValue{
 					pkName: {
-						N: aws.String(strconv.FormatInt(int64(catID), 10)),
+						S: aws.String(strconv.FormatInt(int64(catID), 10)),
 					},
 					skName: {
 						S: aws.String(categoryType),
@@ -370,7 +392,7 @@ func (p Persister) UpdateCollection(ctx context.Context, id uint32, in model.Col
 			Delete: &dynamodb.Delete{
 				TableName: p.tableName,
 				Key: map[string]*dynamodb.AttributeValue{
-					pkName: {N: aws.String(strconv.FormatInt(int64(coll.ID), 10))},
+					pkName: {S: aws.String(strconv.FormatInt(int64(coll.ID), 10))},
 					skName: {S: aws.String(collectionCategoryPrefix + strconv.FormatInt(int64(catID), 10))},
 				},
 			},
@@ -384,8 +406,9 @@ func (p Persister) UpdateCollection(ctx context.Context, id uint32, in model.Col
 			Put: &dynamodb.Put{
 				TableName: p.tableName,
 				Item: map[string]*dynamodb.AttributeValue{
-					pkName: {N: aws.String(strconv.FormatInt(int64(coll.ID), 10))},
-					skName: {S: aws.String(collectionCategoryPrefix + strconv.FormatInt(int64(catID), 10))},
+					pkName:    {S: aws.String(strconv.FormatInt(int64(coll.ID), 10))},
+					skName:    {S: aws.String(collectionCategoryPrefix + strconv.FormatInt(int64(catID), 10))},
+					gsiSkName: {S: aws.String(strconv.FormatInt(int64(coll.ID), 10))},
 				},
 			},
 		}
@@ -449,7 +472,7 @@ func (p Persister) DeleteCollection(ctx context.Context, id uint32) error {
 			Delete: &dynamodb.Delete{
 				TableName: p.tableName,
 				Key: map[string]*dynamodb.AttributeValue{
-					pkName: {N: aws.String(strconv.FormatInt(int64(id), 10))},
+					pkName: {S: aws.String(strconv.FormatInt(int64(id), 10))},
 					skName: {S: aws.String(collectionCategoryPrefix + strconv.FormatInt(int64(catID), 10))},
 				},
 			},
@@ -460,7 +483,7 @@ func (p Persister) DeleteCollection(ctx context.Context, id uint32) error {
 		Delete: &dynamodb.Delete{
 			TableName: p.tableName,
 			Key: map[string]*dynamodb.AttributeValue{
-				pkName: {N: aws.String(strconv.FormatInt(int64(id), 10))},
+				pkName: {S: aws.String(strconv.FormatInt(int64(id), 10))},
 				skName: {S: aws.String(collectionType)},
 			},
 		},

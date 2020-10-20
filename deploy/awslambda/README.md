@@ -18,10 +18,20 @@ Then run the following commands from the `deploy/awslambda` directory:
 * `<domain-name>` is the domain name where the application will run. (See above.) Example: `app.ourroots.org`
 * `<cert-arn>` is the ARN for the certificate you configured above. Example: `arn:aws:acm:us-east-1:123456789012:certificate/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx`.
 
+To deploy to AWS using Serverless RDS Postgres as a database, execute the following commands:
 ```
 ENVIRONMENT_NAME=<env-name> ./deploy-infra.sh
 AWS_REGION=<aws-region> go run dbconfig/dbconfig.go <env-name>
 ENVIRONMENT_NAME=<env-name> DOMAIN_NAME="<domain-name>" CERTIFICATE_ARN="<cert-arn>" ./deploy.sh
+# TODO: Add instructions for db_load_full.sh against the EDS instance
+```
+
+To deploy to AWS using DynamoDB as a database, execute the following commands:
+```
+USE_POSTGRES=false ENVIRONMENT_NAME=<env-name> ./deploy-infra.sh
+USE_POSTGRES=false ENVIRONMENT_NAME=<env-name> DOMAIN_NAME="<domain-name>" CERTIFICATE_ARN="<cert-arn>" ./deploy.sh
+cd ../../db/dynamo/ddbloader
+AWS_REGION=<aws-region> ENVIRONMENT_NAME=<env-name> ./ddb_load_full.sh
 ```
 
 After those commands complete without errors, you will need to configure a DNS CNAME. Go to [https://console.aws.amazon.com/apigateway/main/publish/domain-names] and select the entry for the domain name you selected above. Make a record of the "API Gateway domain name" on the details page. It should look like `x-xxxxxxxxxx.execute-api.us-east-1.amazonaws.com`. At your DNS provider, create a CNAME record pointing your domain name (i.e. `app.ourroots.org`) to the API Gateway domain name. Once that is done and the DNS has propagated, you should be able to see the home page of the app at your domain. (Example: `https://app.ourroots.org`).

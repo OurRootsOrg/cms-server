@@ -28,16 +28,26 @@ func (p Persister) SelectPosts(ctx context.Context) ([]model.Post, error) {
 		},
 	}
 	posts := make([]model.Post, 0)
-	qo, err := p.svc.Query(qi)
-	if err != nil {
-		log.Printf("[ERROR] Failed to get posts. qi: %#v err: %v", qi, err)
-		return posts, model.NewError(model.ErrOther, err.Error())
+	for {
+		batch := make([]model.Post, 0)
+		qo, err := p.svc.Query(qi)
+		if err != nil {
+			log.Printf("[ERROR] Failed to get posts. qi: %#v err: %v", qi, err)
+			return posts, model.NewError(model.ErrOther, err.Error())
+		}
+
+		err = dynamodbattribute.UnmarshalListOfMaps(qo.Items, &posts)
+		if err != nil {
+			log.Printf("[ERROR] Failed to unmarshal posts. qo: %#v err: %v", qo, err)
+			return posts, model.NewError(model.ErrOther, err.Error())
+		}
+		posts = append(posts, batch...)
+		if qo.LastEvaluatedKey == nil {
+			break
+		}
+		qi.ExclusiveStartKey = qo.LastEvaluatedKey
 	}
-	err = dynamodbattribute.UnmarshalListOfMaps(qo.Items, &posts)
-	if err != nil {
-		log.Printf("[ERROR] Failed to unmarshal posts. qo: %#v err: %v", qo, err)
-		return posts, model.NewError(model.ErrOther, err.Error())
-	}
+
 	return posts, nil
 	// rows, err := p.db.QueryContext(ctx, "SELECT id, post_id, body, insert_time, last_update_time FROM post")
 	// if err != nil {
@@ -55,14 +65,14 @@ func (p Persister) SelectPosts(ctx context.Context) ([]model.Post, error) {
 	// }
 }
 
-// SelectOnePost selects a single post
+// SelectOnePost selects a single post by ID
 func (p Persister) SelectOnePost(ctx context.Context, id uint32) (*model.Post, error) {
 	var post model.Post
 	gii := &dynamodb.GetItemInput{
 		TableName: p.tableName,
 		Key: map[string]*dynamodb.AttributeValue{
 			pkName: {
-				N: aws.String(strconv.FormatInt(int64(id), 10)),
+				S: aws.String(strconv.FormatInt(int64(id), 10)),
 			},
 			skName: {
 				S: aws.String(postType),
@@ -121,7 +131,7 @@ func (p Persister) InsertPost(ctx context.Context, in model.PostIn) (*model.Post
 			TableName: p.tableName,
 			Key: map[string]*dynamodb.AttributeValue{
 				pkName: {
-					N: aws.String(strconv.FormatInt(int64(post.Collection), 10)),
+					S: aws.String(strconv.FormatInt(int64(post.Collection), 10)),
 				},
 				skName: {
 					S: aws.String(collectionType),
@@ -209,7 +219,7 @@ func (p Persister) UpdatePost(ctx context.Context, id uint32, in model.Post) (*m
 			TableName: p.tableName,
 			Key: map[string]*dynamodb.AttributeValue{
 				pkName: {
-					N: aws.String(strconv.FormatInt(int64(post.Collection), 10)),
+					S: aws.String(strconv.FormatInt(int64(post.Collection), 10)),
 				},
 				skName: {
 					S: aws.String(collectionType),
@@ -280,7 +290,7 @@ func (p Persister) DeletePost(ctx context.Context, id uint32) error {
 	dii := &dynamodb.DeleteItemInput{
 		TableName: p.tableName,
 		Key: map[string]*dynamodb.AttributeValue{
-			pkName: {N: aws.String(strconv.FormatInt(int64(id), 10))},
+			pkName: {S: aws.String(strconv.FormatInt(int64(id), 10))},
 			skName: {S: aws.String(postType)},
 		},
 	}

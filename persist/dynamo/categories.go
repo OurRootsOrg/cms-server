@@ -28,20 +28,28 @@ func (p Persister) SelectCategories(ctx context.Context) ([]model.Category, erro
 		},
 	}
 	cats := make([]model.Category, 0)
-	qo, err := p.svc.Query(qi)
-	if err != nil {
-		log.Printf("[ERROR] Failed to get categories. qi: %#v err: %v", qi, err)
-		return cats, model.NewError(model.ErrOther, err.Error())
-	}
-	err = dynamodbattribute.UnmarshalListOfMaps(qo.Items, &cats)
-	if err != nil {
-		log.Printf("[ERROR] Failed to unmarshal categories. qo: %#v err: %v", qo, err)
-		return cats, model.NewError(model.ErrOther, err.Error())
+	for {
+		batch := make([]model.Category, 0)
+		qo, err := p.svc.Query(qi)
+		if err != nil {
+			log.Printf("[ERROR] Failed to get categories. qi: %#v err: %v", qi, err)
+			return cats, model.NewError(model.ErrOther, err.Error())
+		}
+		err = dynamodbattribute.UnmarshalListOfMaps(qo.Items, &batch)
+		if err != nil {
+			log.Printf("[ERROR] Failed to unmarshal categories. qo: %#v err: %v", qo, err)
+			return cats, model.NewError(model.ErrOther, err.Error())
+		}
+		cats = append(cats, batch...)
+		if qo.LastEvaluatedKey == nil {
+			break
+		}
+		qi.ExclusiveStartKey = qo.LastEvaluatedKey
 	}
 	return cats, nil
 }
 
-// SelectCategoriesByID selects many categories
+// SelectCategoriesByID selects many categories using a list of IDs
 func (p Persister) SelectCategoriesByID(ctx context.Context, ids []uint32) ([]model.Category, error) {
 	cats := make([]model.Category, 0)
 	if len(ids) == 0 {
@@ -51,7 +59,7 @@ func (p Persister) SelectCategoriesByID(ctx context.Context, ids []uint32) ([]mo
 	for i, id := range ids {
 		keys[i] = map[string]*dynamodb.AttributeValue{
 			pkName: {
-				N: aws.String(strconv.FormatInt(int64(id), 10)),
+				S: aws.String(strconv.FormatInt(int64(id), 10)),
 			},
 			skName: {
 				S: aws.String(categoryType),
@@ -85,7 +93,7 @@ func (p Persister) SelectOneCategory(ctx context.Context, id uint32) (*model.Cat
 		TableName: p.tableName,
 		Key: map[string]*dynamodb.AttributeValue{
 			pkName: {
-				N: aws.String(strconv.FormatInt(int64(id), 10)),
+				S: aws.String(strconv.FormatInt(int64(id), 10)),
 			},
 			skName: {
 				S: aws.String(categoryType),
@@ -127,6 +135,7 @@ func (p Persister) InsertCategory(ctx context.Context, in model.CategoryIn) (*mo
 		log.Printf("[ERROR] Failed to marshal category %#v: %v", cat, err)
 		return nil, model.NewError(model.ErrOther, err.Error())
 	}
+	log.Printf("[DEBUG] avs = %#v", avs)
 
 	pii := &dynamodb.PutItemInput{
 		TableName:           p.tableName,
@@ -198,7 +207,7 @@ func (p Persister) DeleteCategory(ctx context.Context, id uint32) error {
 	dii := &dynamodb.DeleteItemInput{
 		TableName: p.tableName,
 		Key: map[string]*dynamodb.AttributeValue{
-			pkName: {N: aws.String(strconv.FormatInt(int64(id), 10))},
+			pkName: {S: aws.String(strconv.FormatInt(int64(id), 10))},
 			skName: {S: aws.String(categoryType)},
 		},
 	}

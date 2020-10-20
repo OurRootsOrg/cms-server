@@ -284,7 +284,7 @@ type PostIn struct {
 
 // Post represents a set of related Records
 type Post struct {
-	ID   uint32 `json:"id,omitempty" example:"999" validate:"required" dynamodbav:"pk"`
+	ID   uint32 `json:"id,omitempty" example:"999" validate:"required" dynamodbav:"pk,string"`
 	Type string `json:"-" dynamodbav:"sk"`
 	PostIn
 	InsertTime     time.Time `json:"insert_time,omitempty"`

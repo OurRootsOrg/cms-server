@@ -11,6 +11,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
+	"github.com/ourrootsorg/cms-server/model"
 )
 
 const (
@@ -22,16 +23,22 @@ const (
 	gsiName   = "gsi_" + skName + "_" + gsiSkName
 
 	idSeparator = "#"
+
+	initialReadThroughput  = 200
+	initialWriteThroughput = 200
+	readThroughput         = 5
+	writeThroughput        = 5
 )
 
 // Reserved non-sequential IDs
-const (
-	sequenceID = -1
-	settingsID = -2
-)
+// const (
+// 	sequenceID = -1
+// 	settingsID = -2
+// )
 
 // Persister persists the model objects to DynammoDB
 type Persister struct {
+	session   *session.Session
 	svc       *dynamodb.DynamoDB
 	tableName *string
 }
@@ -61,7 +68,7 @@ func (p *Persister) GetMultipleSequenceValues(cnt int) ([]uint32, error) {
 	uii := &dynamodb.UpdateItemInput{
 		TableName: p.tableName,
 		Key: map[string]*dynamodb.AttributeValue{
-			pkName: {N: aws.String(strconv.FormatInt(sequenceID, 10))},
+			pkName: {S: aws.String("sequence")},
 			skName: {S: aws.String("sequence")},
 		},
 		UpdateExpression: aws.String("ADD sequenceValue :i"),
@@ -83,6 +90,129 @@ func (p *Persister) GetMultipleSequenceValues(cnt int) ([]uint32, error) {
 		ret[i] = uint32(v) - uint32(cnt) + i + 1
 	}
 	return ret, err
+}
+
+// SetFinalThroughput updates the Dynamo table throughput values to their final values
+// after initial data loads are complete
+func (p Persister) SetFinalThroughput() error {
+	cti := &dynamodb.UpdateTableInput{
+		TableName: p.tableName,
+		GlobalSecondaryIndexUpdates: []*dynamodb.GlobalSecondaryIndexUpdate{
+			{
+				Update: &dynamodb.UpdateGlobalSecondaryIndexAction{
+					IndexName: aws.String(gsiName),
+					// TODO: How should these values be set/modified?
+					ProvisionedThroughput: &dynamodb.ProvisionedThroughput{
+						ReadCapacityUnits:  aws.Int64(readThroughput),
+						WriteCapacityUnits: aws.Int64(writeThroughput),
+					},
+				},
+			},
+		},
+		// TODO: How should these values be set/modified?
+		ProvisionedThroughput: &dynamodb.ProvisionedThroughput{
+			ReadCapacityUnits:  aws.Int64(readThroughput),
+			WriteCapacityUnits: aws.Int64(writeThroughput),
+		},
+	}
+	_, err := p.svc.UpdateTable(cti)
+	if err != nil {
+		log.Printf("[ERROR] Failed to create table %s: %v", *p.tableName, err)
+		return err
+	}
+	return nil
+}
+
+func (p Persister) truncateEntity(name string) error {
+	log.Printf("[DEBUG] Truncating entity '%s'", name)
+	qi := &dynamodb.QueryInput{
+		TableName:              p.tableName,
+		IndexName:              aws.String(gsiName),
+		KeyConditionExpression: aws.String(skName + " = :sk"),
+		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
+			":sk": {
+				S: aws.String(name),
+			},
+		},
+	}
+	qo, err := p.svc.Query(qi)
+	if err != nil {
+		log.Printf("[ERROR] Failed to get entity type '%s'. err: %v", name, err)
+		return model.NewError(model.ErrOther, err.Error())
+	}
+	var batchCount, count int
+	batch := make([]map[string]*dynamodb.AttributeValue, 0)
+	for {
+		// Process results
+		for _, item := range qo.Items {
+			batch = append(batch, map[string]*dynamodb.AttributeValue{
+				pkName: {
+					S: item["pk"].S,
+				},
+				skName: {
+					S: item["sk"].S,
+				},
+			})
+			batchCount++
+			count++
+			if batchCount >= batchSize {
+				err = p.deleteBatch(batch)
+				if err != nil {
+					return err
+				}
+				batchCount = 0
+				batch = make([]map[string]*dynamodb.AttributeValue, 0)
+			}
+		}
+		if qo.LastEvaluatedKey == nil {
+			break
+		}
+		qi.ExclusiveStartKey = qo.LastEvaluatedKey
+		qo, err = p.svc.Query(qi)
+		if err != nil {
+			log.Printf("[ERROR] Failed to get entity type '%s'. err: %v", name, err)
+			return model.NewError(model.ErrOther, err.Error())
+		}
+	}
+	if batchCount > 0 {
+		err = p.deleteBatch(batch)
+		if err != nil {
+			return err
+		}
+	}
+	log.Printf("[INFO] Removed %d records for entity '%s'", count, name)
+	return nil
+}
+
+func (p Persister) deleteBatch(batch []map[string]*dynamodb.AttributeValue) error {
+	ris := map[string][]*dynamodb.WriteRequest{}
+	for _, key := range batch {
+		ris[*p.tableName] = append(ris[*p.tableName],
+			&dynamodb.WriteRequest{
+				DeleteRequest: &dynamodb.DeleteRequest{
+					Key: key,
+				},
+			},
+		)
+	}
+	bwii := &dynamodb.BatchWriteItemInput{
+		RequestItems: ris,
+	}
+	var bwio *dynamodb.BatchWriteItemOutput
+	var err error
+	for bwio == nil || (len(bwio.UnprocessedItems) > 0 && err == nil) {
+		if bwio != nil && len(bwio.UnprocessedItems) > 0 {
+			bwii.RequestItems = bwio.UnprocessedItems
+		}
+		bwio, err = p.svc.BatchWriteItem(bwii)
+	}
+	if err != nil {
+		msg := fmt.Sprintf("[ERROR] Failed to delete batch %#v: %v", bwii, err)
+		log.Printf("[ERROR] " + msg)
+		return errors.New(msg)
+	}
+	log.Printf("[DEBUG] Deleted batch of %d items", len(batch))
+	return nil
 }
 
 func ensureTableExists(svc *dynamodb.DynamoDB, tableName string) error {
@@ -107,7 +237,7 @@ func ensureTableExists(svc *dynamodb.DynamoDB, tableName string) error {
 		AttributeDefinitions: []*dynamodb.AttributeDefinition{
 			{
 				AttributeName: aws.String(pkName),
-				AttributeType: aws.String("N"),
+				AttributeType: aws.String("S"),
 			},
 			{
 				AttributeName: aws.String(skName),
@@ -146,15 +276,15 @@ func ensureTableExists(svc *dynamodb.DynamoDB, tableName string) error {
 				},
 				// TODO: How should these values be set/modified?
 				ProvisionedThroughput: &dynamodb.ProvisionedThroughput{
-					ReadCapacityUnits:  aws.Int64(5),
-					WriteCapacityUnits: aws.Int64(5),
+					ReadCapacityUnits:  aws.Int64(initialReadThroughput),
+					WriteCapacityUnits: aws.Int64(initialWriteThroughput),
 				},
 			},
 		},
 		// TODO: How should these values be set/modified?
 		ProvisionedThroughput: &dynamodb.ProvisionedThroughput{
-			ReadCapacityUnits:  aws.Int64(5),
-			WriteCapacityUnits: aws.Int64(5),
+			ReadCapacityUnits:  aws.Int64(initialReadThroughput),
+			WriteCapacityUnits: aws.Int64(initialWriteThroughput),
 		},
 	}
 	_, err = svc.CreateTable(cti)
@@ -188,7 +318,6 @@ func waitForTable(svc *dynamodb.DynamoDB, tableName string) error {
 		}
 		cnt++
 	}
-
 }
 
 func compareToAWSError(err error, awsErrorCode string) bool {

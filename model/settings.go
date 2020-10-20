@@ -45,7 +45,7 @@ type SettingsIn struct {
 
 // Settings represents global settings
 type Settings struct {
-	ID int    `json:"-" dynamodbav:"pk"`
+	ID string `json:"-" dynamodbav:"pk,string"`
 	Sk string `json:"-" dynamodbav:"sk"`
 	SettingsIn
 	InsertTime     time.Time `json:"insert_time,omitempty"`

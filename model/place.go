@@ -23,7 +23,9 @@ type Uint32Slice []uint32
 
 // Place holds information about a place
 type Place struct {
-	ID               uint32      `json:"id" dynamodbav:"pk"`
+	ID               uint32      `json:"id" dynamodbav:"pk,string"`
+	Type             string      `json:"-" dynamodbav:"sk"`
+	AltSort          string      `json:"-" dynamodbav:"altSort"`
 	Name             string      `json:"name"`
 	FullName         string      `json:"fullName"`
 	AltNames         StringSlice `json:"altNames"`
@@ -41,7 +43,9 @@ type Place struct {
 
 // PlaceWord holds the IDs of all places that have that word in their name or alt name
 type PlaceWord struct {
-	Word           string      `json:"word" dynamodbav:"pk"`
+	Pk             string      `json:"-" dynamodbav:"pk"`
+	Type           string      `json:"-" dynamodbav:"sk"`
+	Word           string      `json:"word" dynamodbav:"-"`
 	IDs            Uint32Slice `json:"ids"`
 	InsertTime     time.Time   `json:"insert_time,omitempty"`
 	LastUpdateTime time.Time   `json:"last_update_time,omitempty"`
@@ -110,7 +114,8 @@ type PlaceSettingsIn struct {
 
 // PlaceSettings represents global placeSettings
 type PlaceSettings struct {
-	ID int    `json:"-" dynamodbav:"pk"`
+	ID int    `json:"-" dynamodbav:"-"`
+	Pk string `json:"-" dynamodbav:"pk"`
 	Sk string `json:"-" dynamodbav:"sk"`
 	PlaceSettingsIn
 	InsertTime     time.Time `json:"insert_time,omitempty"`
