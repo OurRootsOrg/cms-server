@@ -414,7 +414,7 @@ func (p Persister) LoadPlaceData(rd io.Reader) error {
 		batchCount++
 		total++
 		if batchCount >= batchSize {
-			err = p.writePlaceBatch(batch)
+			err = p.writePlaceBatch(batch, total)
 			if err != nil {
 				return err
 			}
@@ -423,7 +423,7 @@ func (p Persister) LoadPlaceData(rd io.Reader) error {
 		}
 	}
 	if batchCount > 0 {
-		err := p.writePlaceBatch(batch)
+		err := p.writePlaceBatch(batch, total)
 		if err != nil {
 			return err
 		}
@@ -432,7 +432,7 @@ func (p Persister) LoadPlaceData(rd io.Reader) error {
 	return nil
 }
 
-func (p Persister) writePlaceBatch(batch []model.Place) error {
+func (p Persister) writePlaceBatch(batch []model.Place, count int) error {
 	ris := map[string][]*dynamodb.WriteRequest{}
 	for _, place := range batch {
 		avs, err := dynamodbattribute.MarshalMap(place)
@@ -465,7 +465,7 @@ func (p Persister) writePlaceBatch(batch []model.Place) error {
 		log.Printf("[ERROR] " + msg)
 		return errors.New(msg)
 	}
-	log.Printf("[DEBUG] Wrote batch of %d places", len(batch))
+	log.Printf("[INFO] Wrote batch of %d places, total %d", len(batch), count)
 	return nil
 }
 
@@ -556,7 +556,7 @@ func (p Persister) LoadPlaceWordData(rd io.Reader) error {
 		batchCount++
 		total++
 		if batchCount >= batchSize {
-			err = p.writePlaceWordBatch(batch)
+			err = p.writePlaceWordBatch(batch, total)
 			if err != nil {
 				return err
 			}
@@ -565,7 +565,7 @@ func (p Persister) LoadPlaceWordData(rd io.Reader) error {
 		}
 	}
 	if batchCount > 0 {
-		err := p.writePlaceWordBatch(batch)
+		err := p.writePlaceWordBatch(batch, total)
 		if err != nil {
 			return err
 		}
@@ -573,7 +573,7 @@ func (p Persister) LoadPlaceWordData(rd io.Reader) error {
 	log.Printf("[INFO] Wrote %d place words", total)
 	return nil
 }
-func (p Persister) writePlaceWordBatch(batch []model.PlaceWord) error {
+func (p Persister) writePlaceWordBatch(batch []model.PlaceWord, count int) error {
 	ris := map[string][]*dynamodb.WriteRequest{}
 	for _, placeWord := range batch {
 		avs, err := dynamodbattribute.MarshalMap(placeWord)
@@ -606,7 +606,7 @@ func (p Persister) writePlaceWordBatch(batch []model.PlaceWord) error {
 		log.Printf("[ERROR] " + msg)
 		return errors.New(msg)
 	}
-	log.Printf("[DEBUG] Wrote batch of %d place words", len(batch))
+	log.Printf("[INFO] Wrote batch of %d place words , total %d", len(batch), count)
 	return nil
 }
 

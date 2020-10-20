@@ -15,8 +15,8 @@ func TestParseEnv(t *testing.T) {
 	os.Setenv("MIN_LOG_LEVEL", "")
 	os.Setenv("DYNAMODB_TABLE_NAME", "test-table")
 	os.Setenv("AWS_REGION", "us-east-1")
-	os.Setenv("FILE_URL", fileURL)
-	os.Unsetenv("FILE_PATH")
+	os.Setenv("FILE_URLS", fileURL)
+	os.Unsetenv("FILE_PATHS")
 	env, err := ParseEnv()
 	assert.NoError(t, err)
 	assert.NotNil(t, env)
@@ -35,35 +35,28 @@ func TestParseEnv(t *testing.T) {
 	assert.Nil(t, env)
 	os.Setenv("MIN_LOG_LEVEL", "")
 
-	// Bad FILE_URL
-	os.Setenv("FILE_URL", "bad")
-	env, err = ParseEnv()
-	assert.Error(t, err)
-	log.Printf("Error: %v", err)
-	assert.Nil(t, env)
-	os.Setenv("FILE_URL", fileURL)
-
-	// Both FILE_PATH and FILE_URL set
-	os.Setenv("FILE_PATH", "/tmp/file.tsv")
+	// Both FILE_PATHS and FILE_URLS set
+	os.Setenv("FILE_URLS", fileURL)
+	os.Setenv("FILE_PATHS", "/tmp/file.tsv")
 	env, err = ParseEnv()
 	assert.Error(t, err)
 	log.Printf("Error: %v", err)
 	assert.Nil(t, env)
 
-	// Only FILE_PATH set
-	os.Setenv("FILE_PATH", "/tmp/file.tsv")
-	os.Unsetenv("FILE_URL")
+	// Only FILE_PATHS set
+	os.Setenv("FILE_PATHS", "/tmp/file.tsv")
+	os.Unsetenv("FILE_URLS")
 	env, err = ParseEnv()
 	assert.NoError(t, err)
 	assert.NotNil(t, env)
 
-	// Neither FILE_URL or FILE_PATH set
-	os.Unsetenv("FILE_PATH")
+	// Neither FILE_URLS or FILE_PATHS set
+	os.Unsetenv("FILE_PATHS")
 	env, err = ParseEnv()
 	assert.Error(t, err)
 	log.Printf("Error: %v", err)
 	assert.Nil(t, env)
-	os.Setenv("FILE_URL", fileURL)
+	os.Setenv("FILE_URLS", fileURL)
 
 	// Missing DYNAMODB_TABLE_NAME
 	os.Unsetenv("DYNAMODB_TABLE_NAME")
@@ -97,8 +90,8 @@ func TestParseEnv(t *testing.T) {
 
 	// All bad
 	os.Setenv("MIN_LOG_LEVEL", "WARN")
-	os.Setenv("FILE_URL", "bad")
-	os.Setenv("FILE_PATH", "bad")
+	os.Setenv("FILE_URLS", "bad")
+	os.Setenv("FILE_PATHS", "bad")
 	os.Unsetenv("DYNAMODB_TABLE_NAME")
 	os.Unsetenv("AWS_REGION")
 	os.Setenv("LOCAL_TEST", "bad")

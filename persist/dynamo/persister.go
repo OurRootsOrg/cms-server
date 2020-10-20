@@ -23,6 +23,11 @@ const (
 	gsiName   = "gsi_" + skName + "_" + gsiSkName
 
 	idSeparator = "#"
+
+	initialReadThroughput  = 200
+	initialWriteThroughput = 200
+	readThroughput         = 5
+	writeThroughput        = 5
 )
 
 // Reserved non-sequential IDs
@@ -85,6 +90,37 @@ func (p *Persister) GetMultipleSequenceValues(cnt int) ([]uint32, error) {
 		ret[i] = uint32(v) - uint32(cnt) + i + 1
 	}
 	return ret, err
+}
+
+// SetFinalThroughput updates the Dynamo table throughput values to their final values
+// after initial data loads are complete
+func (p Persister) SetFinalThroughput() error {
+	cti := &dynamodb.UpdateTableInput{
+		TableName: p.tableName,
+		GlobalSecondaryIndexUpdates: []*dynamodb.GlobalSecondaryIndexUpdate{
+			{
+				Update: &dynamodb.UpdateGlobalSecondaryIndexAction{
+					IndexName: aws.String(gsiName),
+					// TODO: How should these values be set/modified?
+					ProvisionedThroughput: &dynamodb.ProvisionedThroughput{
+						ReadCapacityUnits:  aws.Int64(readThroughput),
+						WriteCapacityUnits: aws.Int64(writeThroughput),
+					},
+				},
+			},
+		},
+		// TODO: How should these values be set/modified?
+		ProvisionedThroughput: &dynamodb.ProvisionedThroughput{
+			ReadCapacityUnits:  aws.Int64(readThroughput),
+			WriteCapacityUnits: aws.Int64(writeThroughput),
+		},
+	}
+	_, err := p.svc.UpdateTable(cti)
+	if err != nil {
+		log.Printf("[ERROR] Failed to create table %s: %v", *p.tableName, err)
+		return err
+	}
+	return nil
 }
 
 func (p Persister) truncateEntity(name string) error {
@@ -240,15 +276,15 @@ func ensureTableExists(svc *dynamodb.DynamoDB, tableName string) error {
 				},
 				// TODO: How should these values be set/modified?
 				ProvisionedThroughput: &dynamodb.ProvisionedThroughput{
-					ReadCapacityUnits:  aws.Int64(5),
-					WriteCapacityUnits: aws.Int64(5),
+					ReadCapacityUnits:  aws.Int64(initialReadThroughput),
+					WriteCapacityUnits: aws.Int64(initialWriteThroughput),
 				},
 			},
 		},
 		// TODO: How should these values be set/modified?
 		ProvisionedThroughput: &dynamodb.ProvisionedThroughput{
-			ReadCapacityUnits:  aws.Int64(5),
-			WriteCapacityUnits: aws.Int64(5),
+			ReadCapacityUnits:  aws.Int64(initialReadThroughput),
+			WriteCapacityUnits: aws.Int64(initialWriteThroughput),
 		},
 	}
 	_, err = svc.CreateTable(cti)

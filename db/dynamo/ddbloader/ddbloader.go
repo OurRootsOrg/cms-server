@@ -53,53 +53,59 @@ func main() {
 	if err != nil {
 		log.Fatalf("[FATAL] Error creating DynamoDB persister: %v", err)
 	}
-	var fileName string
-	if config.FileURL != "" {
-		fileName = config.FileURL
+
+	var fileNames string
+	if config.FileURLs != "" {
+		fileNames = config.FileURLs
 	} else {
-		fileName = config.FilePath
+		fileNames = config.FilePaths
 	}
+	for _, fileName := range strings.Split(fileNames, ",") {
+		r := openFile(config, fileName)
+		defer r.Close()
 
-	r := openFile(config)
-	defer r.Close()
-
-	switch {
-	case strings.HasSuffix(fileName, "places.tsv"):
-		err = p.LoadPlaceData(r)
-		if err != nil {
-			log.Fatalf("[FATAL] Unable to load place data from %s: %v", fileName, err)
+		switch {
+		case strings.HasSuffix(fileName, "places.tsv"):
+			err = p.LoadPlaceData(r)
+			if err != nil {
+				log.Fatalf("[FATAL] Unable to load place data from %s: %v", fileName, err)
+			}
+			log.Printf("[INFO] Loaded place data from %s", fileName)
+		case strings.HasSuffix(fileName, "place_settings.tsv"):
+			log.Printf("[DEBUG] Loading place settings data from %s", fileName)
+			err = p.LoadPlaceSettingsData(r)
+			if err != nil {
+				log.Fatalf("[FATAL] Unable to load place settings data from %s: %v", fileName, err)
+			}
+			log.Printf("[INFO] Loaded place settings data from %s", fileName)
+		case strings.HasSuffix(fileName, "place_words.tsv"):
+			err = p.LoadPlaceWordData(r)
+			if err != nil {
+				log.Fatalf("[FATAL] Unable to load place word data from %s: %v", fileName, err)
+			}
+			log.Printf("[INFO] Loaded place words data from %s", fileName)
+		default:
+			log.Fatalf("[FATAL] Don't know how to load '%s'", fileName)
 		}
-		log.Printf("[INFO] Loaded place data from %s", fileName)
-	case strings.HasSuffix(fileName, "place_settings.tsv"):
-		log.Printf("[DEBUG] Loading place settings data from %s", fileName)
-		err = p.LoadPlaceSettingsData(openFile(config))
-		if err != nil {
-			log.Fatalf("[FATAL] Unable to load place settings data from %s: %v", fileName, err)
-		}
-		log.Printf("[INFO] Loaded place settings data from %s", fileName)
-	case strings.HasSuffix(fileName, "place_words.tsv"):
-		err = p.LoadPlaceWordData(openFile(config))
-		if err != nil {
-			log.Fatalf("[FATAL] Unable to load place word data from %s: %v", fileName, err)
-		}
-		log.Printf("[INFO] Loaded place words data from %s", fileName)
-	default:
-		log.Fatalf("[FATAL] Don't know how to load '%s'", fileName)
+	}
+	err = p.SetFinalThroughput()
+	if err != nil {
+		log.Fatalf("[FATAL] Error setting final table throughput. **WARNING** You should review the provisioned throughput ASAP, because the current throughput may be expensive!: %v", err)
 	}
 }
 
-func openFile(config *Env) io.ReadCloser {
+func openFile(config *Env, fileName string) io.ReadCloser {
 	var reader io.ReadCloser
-	if config.FileURL != "" {
-		resp, err := http.Get(config.FileURL)
+	if config.FileURLs != "" {
+		resp, err := http.Get(fileName)
 		if err != nil {
-			log.Fatalf("[FATAL] Unable to open file URL %s: %v", config.FileURL, err)
+			log.Fatalf("[FATAL] Unable to open file URL %s: %v", fileName, err)
 		}
 		reader = resp.Body
 	} else {
-		f, err := os.Open(config.FilePath)
+		f, err := os.Open(fileName)
 		if err != nil {
-			log.Fatalf("[FATAL] Unable to open file path %s: %v", config.FilePath, err)
+			log.Fatalf("[FATAL] Unable to open file path %s: %v", fileName, err)
 		}
 		reader = f
 	}
@@ -111,8 +117,8 @@ type Env struct {
 	MinLogLevel       string `env:"MIN_LOG_LEVEL" validate:"omitempty,eq=DEBUG|eq=INFO|eq=ERROR"`
 	DynamoDBTableName string `env:"DYNAMODB_TABLE_NAME" validate:"required"`
 	Region            string `env:"AWS_REGION" validate:"required"`
-	FileURL           string `env:"FILE_URL" validate:"required_without=FilePath,omitempty,url"`
-	FilePath          string `env:"FILE_PATH" validate:"required_without=FileURL,omitempty"`
+	FileURLs          string `env:"FILE_URLS" validate:"required_without=FilePaths,omitempty"`
+	FilePaths         string `env:"FILE_PATHS" validate:"required_without=FileURLs,omitempty"`
 	LocalTestString   string `env:"LOCAL_TEST" validate:"omitempty,eq=true|eq=false"`
 	LocalTest         bool
 }
@@ -134,8 +140,6 @@ func ParseEnv() (*Env, error) {
 			switch fe.Field() {
 			case "MIN_LOG_LEVEL":
 				errs += fmt.Sprintf("  Invalid MIN_LOG_LEVEL: '%v', valid values are 'DEBUG', 'INFO' or 'ERROR'\n", fe.Value())
-			case "FILE_URL":
-				errs += fmt.Sprintf("  Invalid FILE_URL: '%v' is not a valid URL\n", fe.Value())
 			case "LOCAL_TEST":
 				errs += fmt.Sprintf("  Invalid LOCAL_TEST: '%v', valid values are 'TRUE' or 'FALSE'\n", fe.Value())
 			case "AWS_REGION":
@@ -149,7 +153,7 @@ func ParseEnv() (*Env, error) {
 	if config.MinLogLevel == "" {
 		config.MinLogLevel = "DEBUG"
 	}
-	if config.FileURL != "" && config.FilePath != "" {
+	if config.FileURLs != "" && config.FilePaths != "" {
 		return nil, errors.New("Must set only one of FILE_URL or FILE_PATH")
 	}
 	if config.LocalTestString != "" {

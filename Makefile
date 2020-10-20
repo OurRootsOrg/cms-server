@@ -21,8 +21,8 @@ build-server:
 	cd recordswriter && $(GOBUILD) && GOOS=linux $(GOBUILD) -o $(RECORDSWRITER_BINARY)
 	cd imageswriter && $(GOBUILD) && GOOS=linux $(GOBUILD) -o $(IMAGESWRITER_BINARY)
 build-clients:
-	cd client && npm run build
-	cd search-client && npm run build
+	cd client && npm install && npm run build
+	cd search-client && npm install && npm run build
 package:
 	zip -r deploy/awslambda/$(BINARY_NAME).zip server/$(BINARY_NAME) db/migrations/*
 	zip -r deploy/awslambda/${PUBLISHER_BINARY}.zip publisher/$(PUBLISHER_BINARY)

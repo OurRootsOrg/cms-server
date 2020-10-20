@@ -30,6 +30,7 @@ To deploy to AWS using DynamoDB as a database, execute the following commands:
 ```
 USE_POSTGRES=false ENVIRONMENT_NAME=<env-name> ./deploy-infra.sh
 USE_POSTGRES=false ENVIRONMENT_NAME=<env-name> DOMAIN_NAME="<domain-name>" CERTIFICATE_ARN="<cert-arn>" ./deploy.sh
+cd ../../db/dynamo/ddbloader
 AWS_REGION=<aws-region> ENVIRONMENT_NAME=<env-name> ./ddb_load_full.sh
 ```
 
