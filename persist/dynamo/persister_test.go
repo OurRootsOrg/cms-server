@@ -303,6 +303,35 @@ func TestRecord(t *testing.T) {
 	out, err = p.InsertRecord(context.TODO(), recordIn)
 	assert.Error(t, err)
 	t.Logf("Error: %#v", e)
+
+	// RecordHoushold
+	_, err = p.SelectOneRecordHousehold(context.TODO(), post.ID, "XYZ")
+	assert.Error(t, err)
+	assert.IsType(t, &model.Error{}, err)
+	assert.Equal(t, model.ErrNotFound, err.(*model.Error).Code)
+
+	rhIn := model.RecordHouseholdIn{
+		Post:      post.ID,
+		Household: "XYZ",
+		Records:   model.Uint32Slice([]uint32{1234}),
+	}
+	outRH, e := p.InsertRecordHousehold(context.TODO(), rhIn)
+	assert.Nil(t, e)
+	assert.Equal(t, rhIn.Post, outRH.Post)
+	assert.Equal(t, rhIn.Household, outRH.Household)
+	assert.Equal(t, rhIn.Records, outRH.Records)
+
+	rh, e := p.SelectOneRecordHousehold(context.TODO(), post.ID, "XYZ")
+	assert.Nil(t, e)
+	assert.Equal(t, outRH.Post, rh.Post)
+	assert.Equal(t, outRH.Household, rh.Household)
+	assert.Equal(t, outRH.Records, rh.Records)
+
+	rhs, e := p.SelectRecordHouseholdsForPost(context.TODO(), post.ID)
+	assert.Nil(t, e)
+	if assert.Equal(t, 1, len(rhs)) {
+		assert.Equal(t, *rh, rhs[0])
+	}
 }
 
 func TestSettings(t *testing.T) {
