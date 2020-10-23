@@ -246,16 +246,16 @@ func (p Persister) SelectPlacesByFullNamePrefix(ctx context.Context, prefix stri
 	for _, p := range places {
 		if searchRegex.MatchString(p.FullName) {
 			filteredPlaces = append(filteredPlaces, p)
-			if len(filteredPlaces) >= count {
-				break
-			}
 		}
 	}
 	// sort by Count descending
 	sort.Slice(filteredPlaces, func(i, j int) bool {
 		return filteredPlaces[i].Count > filteredPlaces[j].Count
 	})
-	return filteredPlaces, nil
+	if count > len(filteredPlaces) {
+		count = len(filteredPlaces)
+	}
+	return filteredPlaces[0:count], nil
 }
 
 // LoadPlaceSettingsData loads place settings data in TSV format
