@@ -17,12 +17,9 @@ import (
 	"github.com/codingconcepts/env"
 	"github.com/go-playground/validator/v10"
 	"github.com/hashicorp/logutils"
+	"github.com/ourrootsorg/cms-server/model"
 	"github.com/ourrootsorg/cms-server/persist/dynamo"
 )
-
-// placesTSV         = "https://s3.amazonaws.com/public.ourroots.org/places.tsv"
-// placeWordsTSV     = "https://s3.amazonaws.com/public.ourroots.org/place_words.tsv"
-// placeSettingsTSV  = "https://s3.amazonaws.com/public.ourroots.org/place_settings.tsv"
 
 func main() {
 	config, err := ParseEnv()
@@ -52,6 +49,11 @@ func main() {
 	p, err := dynamo.NewPersister(sess, config.DynamoDBTableName)
 	if err != nil {
 		log.Fatalf("[FATAL] Error creating DynamoDB persister: %v", err)
+	}
+
+	err = p.SetThroughput(config.LoadThroughput, config.LoadThroughput)
+	if err != nil {
+		log.Fatalf("[FATAL] Error setting table throughput for data load: %v", err)
 	}
 
 	var fileNames string
@@ -84,11 +86,23 @@ func main() {
 				log.Fatalf("[FATAL] Unable to load place word data from %s: %v", fileName, err)
 			}
 			log.Printf("[INFO] Loaded place words data from %s", fileName)
+		case strings.HasSuffix(fileName, "givenname_variants.tsv"):
+			err = p.LoadNameVariantsData(r, model.GivenType)
+			if err != nil {
+				log.Fatalf("[FATAL] Unable to load name variants data from %s: %v", fileName, err)
+			}
+			log.Printf("[INFO] Loaded name variants data from %s", fileName)
+		case strings.HasSuffix(fileName, "surname_variants.tsv"):
+			err = p.LoadNameVariantsData(r, model.SurnameType)
+			if err != nil {
+				log.Fatalf("[FATAL] Unable to load name variants data from %s: %v", fileName, err)
+			}
+			log.Printf("[INFO] Loaded name variants data from %s", fileName)
 		default:
 			log.Fatalf("[FATAL] Don't know how to load '%s'", fileName)
 		}
 	}
-	err = p.SetFinalThroughput()
+	err = p.SetThroughput(config.NormalThroughput, config.NormalThroughput)
 	if err != nil {
 		log.Fatalf("[FATAL] Error setting final table throughput. **WARNING** You should review the provisioned throughput ASAP, because the current throughput may be expensive!: %v", err)
 	}
@@ -116,6 +130,8 @@ func openFile(config *Env, fileName string) io.ReadCloser {
 type Env struct {
 	MinLogLevel       string `env:"MIN_LOG_LEVEL" validate:"omitempty,eq=DEBUG|eq=INFO|eq=ERROR"`
 	DynamoDBTableName string `env:"DYNAMODB_TABLE_NAME" validate:"required"`
+	LoadThroughput    int    `env:"LOAD_THROUGHPUT" validate:"numeric,min=2"`
+	NormalThroughput  int    `env:"NORMAL_THROUGHPUT" validate:"numeric,min=2"`
 	Region            string `env:"AWS_REGION" validate:"required"`
 	FileURLs          string `env:"FILE_URLS" validate:"required_without=FilePaths,omitempty"`
 	FilePaths         string `env:"FILE_PATHS" validate:"required_without=FileURLs,omitempty"`
@@ -127,7 +143,7 @@ type Env struct {
 func ParseEnv() (*Env, error) {
 	var config Env
 	if err := env.Set(&config); err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 	validate := validator.New()
 	validate.RegisterTagNameFunc(func(fld reflect.StructField) string {
@@ -144,6 +160,8 @@ func ParseEnv() (*Env, error) {
 				errs += fmt.Sprintf("  Invalid LOCAL_TEST: '%v', valid values are 'TRUE' or 'FALSE'\n", fe.Value())
 			case "AWS_REGION":
 				errs += fmt.Sprintf("  AWS_REGION is required\n")
+			case "LOAD_THROUGHPUT", "NORMAL_THROUGHPUT":
+				errs += fmt.Sprintf("  Invalid %s: %v, must be a numeric value >= 2\n", fe.Field(), fe.Value())
 			default:
 				errs += fmt.Sprintf("  Other error, fe: %#v", fe)
 			}

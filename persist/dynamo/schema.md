@@ -15,7 +15,8 @@
 | Settings            | "settings"          | "settings"         | Name             | setting name
 | Sequence            | "sequence"          | "sequence"         | \<none\>         |
 | User                | ID                  | "user"             | SortKey          | SortKey value is URL-encoded Issuer + Subject
-| record_household    | PostID              | "record_household#" + Household | PostID           |
+| RecordHousehold     | PostID              | "recordHousehold#" + Household | PostID           |
+| NameVariants        | Name                | "nameVariants"     | \<none\>         |
 
 ## Notes on changes
 * Where we don't have a use for the GSI, we don't put values in the GSI SK. In that case there will be no item in the GSI (indicated by _\<none\>_).

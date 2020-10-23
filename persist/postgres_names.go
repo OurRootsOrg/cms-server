@@ -7,7 +7,7 @@ import (
 	"github.com/ourrootsorg/cms-server/model"
 )
 
-// SelectPlaceWord selects the PlaceWord object if it exists or returns ErrNoRows
+// SelectNameVariants selects the NameVariants object if it exists or returns ErrNoRows
 func (p PostgresPersister) SelectNameVariants(ctx context.Context, nameType model.NameType, name string) (*model.NameVariants, error) {
 	var nameVariants model.NameVariants
 	var table string
