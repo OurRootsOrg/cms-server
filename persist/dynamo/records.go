@@ -17,7 +17,7 @@ import (
 const (
 	recordType            = "record"
 	recordPostPrefix      = recordType + "_" + postType + "#"
-	recordHouseholdPrefix = "record_household#"
+	recordHouseholdPrefix = "recordHousehold#"
 )
 
 // SelectRecordsByID selects many records from a slice of IDs

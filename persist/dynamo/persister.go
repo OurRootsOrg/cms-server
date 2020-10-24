@@ -23,18 +23,7 @@ const (
 	gsiName   = "gsi_" + skName + "_" + gsiSkName
 
 	idSeparator = "#"
-
-	initialReadThroughput  = 200
-	initialWriteThroughput = 200
-	readThroughput         = 5
-	writeThroughput        = 5
 )
-
-// Reserved non-sequential IDs
-// const (
-// 	sequenceID = -1
-// 	settingsID = -2
-// )
 
 // Persister persists the model objects to DynammoDB
 type Persister struct {
@@ -46,7 +35,8 @@ type Persister struct {
 // NewPersister constructs a new Persister
 func NewPersister(session *session.Session, tableName string) (Persister, error) {
 	svc := dynamodb.New(session)
-	err := ensureTableExists(svc, tableName)
+	// These initial throughputs will be set to the real values by SetThroughput
+	err := ensureTableExists(svc, tableName, 5, 5)
 	p := Persister{
 		svc:       svc,
 		tableName: &tableName,
@@ -92,34 +82,32 @@ func (p *Persister) GetMultipleSequenceValues(cnt int) ([]uint32, error) {
 	return ret, err
 }
 
-// SetFinalThroughput updates the Dynamo table throughput values to their final values
-// after initial data loads are complete
-func (p Persister) SetFinalThroughput() error {
+// SetThroughput updates the Dynamo table throughput values
+func (p Persister) SetThroughput(readThroughput, writeThroughput int) error {
 	cti := &dynamodb.UpdateTableInput{
 		TableName: p.tableName,
 		GlobalSecondaryIndexUpdates: []*dynamodb.GlobalSecondaryIndexUpdate{
 			{
 				Update: &dynamodb.UpdateGlobalSecondaryIndexAction{
 					IndexName: aws.String(gsiName),
-					// TODO: How should these values be set/modified?
 					ProvisionedThroughput: &dynamodb.ProvisionedThroughput{
-						ReadCapacityUnits:  aws.Int64(readThroughput),
-						WriteCapacityUnits: aws.Int64(writeThroughput),
+						ReadCapacityUnits:  aws.Int64(int64(readThroughput)),
+						WriteCapacityUnits: aws.Int64(int64(writeThroughput)),
 					},
 				},
 			},
 		},
-		// TODO: How should these values be set/modified?
 		ProvisionedThroughput: &dynamodb.ProvisionedThroughput{
-			ReadCapacityUnits:  aws.Int64(readThroughput),
-			WriteCapacityUnits: aws.Int64(writeThroughput),
+			ReadCapacityUnits:  aws.Int64(int64(readThroughput)),
+			WriteCapacityUnits: aws.Int64(int64(writeThroughput)),
 		},
 	}
 	_, err := p.svc.UpdateTable(cti)
 	if err != nil {
-		log.Printf("[ERROR] Failed to create table %s: %v", *p.tableName, err)
+		log.Printf("[ERROR] Failed to set final table throughput %s: %v", *p.tableName, err)
 		return err
 	}
+	log.Printf("[INFO] Set table throughput to read %d, write %d", readThroughput, writeThroughput)
 	return nil
 }
 
@@ -215,7 +203,7 @@ func (p Persister) deleteBatch(batch []map[string]*dynamodb.AttributeValue) erro
 	return nil
 }
 
-func ensureTableExists(svc *dynamodb.DynamoDB, tableName string) error {
+func ensureTableExists(svc *dynamodb.DynamoDB, tableName string, initialReadThroughput, initialWriteThroughput int) error {
 	// See if the table exists already
 	err := waitForTable(svc, tableName)
 	if err == nil {
@@ -274,17 +262,15 @@ func ensureTableExists(svc *dynamodb.DynamoDB, tableName string) error {
 				Projection: &dynamodb.Projection{
 					ProjectionType: aws.String("ALL"),
 				},
-				// TODO: How should these values be set/modified?
 				ProvisionedThroughput: &dynamodb.ProvisionedThroughput{
-					ReadCapacityUnits:  aws.Int64(initialReadThroughput),
-					WriteCapacityUnits: aws.Int64(initialWriteThroughput),
+					ReadCapacityUnits:  aws.Int64(int64(initialReadThroughput)),
+					WriteCapacityUnits: aws.Int64(int64(initialWriteThroughput)),
 				},
 			},
 		},
-		// TODO: How should these values be set/modified?
 		ProvisionedThroughput: &dynamodb.ProvisionedThroughput{
-			ReadCapacityUnits:  aws.Int64(initialReadThroughput),
-			WriteCapacityUnits: aws.Int64(initialWriteThroughput),
+			ReadCapacityUnits:  aws.Int64(int64(initialReadThroughput)),
+			WriteCapacityUnits: aws.Int64(int64(initialWriteThroughput)),
 		},
 	}
 	_, err = svc.CreateTable(cti)

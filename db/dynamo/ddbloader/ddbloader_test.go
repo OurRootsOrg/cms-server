@@ -16,6 +16,8 @@ func TestParseEnv(t *testing.T) {
 	os.Setenv("DYNAMODB_TABLE_NAME", "test-table")
 	os.Setenv("AWS_REGION", "us-east-1")
 	os.Setenv("FILE_URLS", fileURL)
+	os.Setenv("LOAD_THROUGHPUT", "500")
+	os.Setenv("NORMAL_THROUGHPUT", "5")
 	os.Unsetenv("FILE_PATHS")
 	env, err := ParseEnv()
 	assert.NoError(t, err)
@@ -88,6 +90,50 @@ func TestParseEnv(t *testing.T) {
 	assert.NotNil(t, env)
 	assert.Equal(t, true, env.LocalTest)
 
+	// Bad NORMAL_THROUGHPUT
+	os.Setenv("NORMAL_THROUGHPUT", "bad")
+	env, err = ParseEnv()
+	assert.Error(t, err)
+	log.Printf("Error: %v", err)
+	assert.Nil(t, env)
+
+	// Bad NORMAL_THROUGHPUT
+	os.Setenv("NORMAL_THROUGHPUT", "-1")
+	env, err = ParseEnv()
+	assert.Error(t, err)
+	log.Printf("Error: %v", err)
+	assert.Nil(t, env)
+
+	// Unset NORMAL_THROUGHPUT
+	os.Unsetenv("NORMAL_THROUGHPUT")
+	env, err = ParseEnv()
+	assert.Error(t, err)
+	log.Printf("Error: %v", err)
+	assert.Nil(t, env)
+	os.Setenv("NORMAL_THROUGHPUT", "5")
+
+	// Bad LOAD_THROUGHPUT
+	os.Setenv("LOAD_THROUGHPUT", "bad")
+	env, err = ParseEnv()
+	assert.Error(t, err)
+	log.Printf("Error: %v", err)
+	assert.Nil(t, env)
+
+	// Bad LOAD_THROUGHPUT
+	os.Setenv("LOAD_THROUGHPUT", "0")
+	env, err = ParseEnv()
+	assert.Error(t, err)
+	log.Printf("Error: %v", err)
+	assert.Nil(t, env)
+
+	// Unset LOAD_THROUGHPUT
+	os.Unsetenv("LOAD_THROUGHPUT")
+	env, err = ParseEnv()
+	assert.Error(t, err)
+	log.Printf("Error: %v", err)
+	assert.Nil(t, env)
+	os.Setenv("LOAD_THROUGHPUT", "500")
+
 	// All bad
 	os.Setenv("MIN_LOG_LEVEL", "WARN")
 	os.Setenv("FILE_URLS", "bad")
@@ -95,6 +141,8 @@ func TestParseEnv(t *testing.T) {
 	os.Unsetenv("DYNAMODB_TABLE_NAME")
 	os.Unsetenv("AWS_REGION")
 	os.Setenv("LOCAL_TEST", "bad")
+	os.Setenv("NORMAL_THROUGHPUT", "0")
+	os.Setenv("LOAD_THROUGHPUT", "0")
 	env, err = ParseEnv()
 	assert.Error(t, err)
 	assert.Nil(t, env)

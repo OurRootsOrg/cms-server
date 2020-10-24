@@ -332,6 +332,35 @@ func TestRecord(t *testing.T) {
 	if assert.Equal(t, 1, len(rhs)) {
 		assert.Equal(t, *rh, rhs[0])
 	}
+
+	_, e = p.SelectNameVariants(context.TODO(), model.GivenType, "bob")
+	assert.Error(t, e)
+
+	fnv, e := p.SelectNameVariants(context.TODO(), model.GivenType, "fred")
+	assert.Nil(t, e)
+	assert.Equal(t, "fred", fnv.Name)
+	if assert.Equal(t, 1, len(fnv.Variants)) {
+		assert.Equal(t, "freddy", fnv.Variants[0])
+	}
+
+	fnv, e = p.SelectNameVariants(context.TODO(), model.GivenType, "freddy")
+	assert.Nil(t, e)
+	assert.Equal(t, "freddy", fnv.Name)
+	if assert.Equal(t, 1, len(fnv.Variants)) {
+		assert.Equal(t, "fred", fnv.Variants[0])
+	}
+
+	_, e = p.SelectNameVariants(context.TODO(), model.SurnameType, "jones")
+	assert.Error(t, e)
+
+	fnv, e = p.SelectNameVariants(context.TODO(), model.SurnameType, "bedrock")
+	assert.Nil(t, e)
+	assert.Equal(t, "bedrock", fnv.Name)
+	assert.Equal(t, 4, len(fnv.Variants))
+	assert.Contains(t, fnv.Variants, "flintstone")
+	assert.Contains(t, fnv.Variants, "mcbricker")
+	assert.Contains(t, fnv.Variants, "rubble")
+	assert.Contains(t, fnv.Variants, "slaghoople")
 }
 
 func TestSettings(t *testing.T) {

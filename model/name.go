@@ -20,6 +20,7 @@ type NamePersister interface {
 // NameVariants holds name variants
 type NameVariants struct {
 	Name           string      `json:"name" dynamodbav:"pk"`
+	Type           string      `json:"-" dynamodbav:"sk"`
 	Variants       StringSlice `json:"variants"`
 	InsertTime     time.Time   `json:"insert_time,omitempty"`
 	LastUpdateTime time.Time   `json:"last_update_time,omitempty"`
