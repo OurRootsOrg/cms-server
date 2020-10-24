@@ -140,6 +140,8 @@ func (p Persister) InsertRecord(ctx context.Context, in model.RecordIn) (*model.
 		log.Printf("[ERROR] Failed to marshal record %#v: %v", record, err)
 		return nil, model.NewError(model.ErrOther, err.Error())
 	}
+	// GSI sort key needs a value; we use the record's ID
+	avs[gsiSkName] = avs[pkName]
 
 	twi := make([]*dynamodb.TransactWriteItem, 2)
 	twi[0] = &dynamodb.TransactWriteItem{
