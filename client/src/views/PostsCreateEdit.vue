@@ -46,15 +46,15 @@
         <div class="postStatus">
           <strong>{{ post.postStatus }}:</strong>
           <span> Records {{ !post.recordsKey ? "Missing" : post.recordsStatus || "Loaded" }}</span>
-          <span v-if="post.recordsError"> &ndash; {{ post.recordsError }}</span>
           <span v-if="this.collections.collection.imagePathHeader">
             <span
               >; Images
               {{ !post.imagesKeys || post.imagesKeys.length === 0 ? "Missing" : post.imagesStatus || "Loaded" }}</span
             >
-            <span v-if="post.imagesError"> &ndash; {{ post.imagesError }}</span>
           </span>
         </div>
+        <div v-if="post.recordsError"><strong>Records Error</strong>: {{ cleanError(post.recordsError) }}</div>
+        <div v-if="post.imagesError"><strong>Images Error</strong>: {{ cleanError(post.imagesError) }}</div>
       </div>
       <div v-if="settings.settings.postMetadata.length > 0">
         <h3>
@@ -149,16 +149,59 @@
             class="ml-4"
             >Unpublish Post</v-btn
           >
-          <v-btn
-            v-if="isRecordsImportable"
-            id="importData"
-            @click="importData"
-            color="primary"
-            title="Upload or replace records"
-            class="ml-4"
-          >
-            {{ post.recordsKey ? "Replace data" : "Import data" }}
-          </v-btn>
+          <v-dialog v-if="isRecordsImportable" v-model="importRecordsDlg" persistent max-width="320">
+            <template v-slot:activator="{ on, attrs }">
+              <v-btn color="primary" v-bind="attrs" v-on="on" class="ml-4">
+                {{ post.recordsKey ? "Replace data" : "Import data" }}
+              </v-btn>
+            </template>
+            <v-card>
+              <v-card-title class="headline">Select file to import</v-card-title>
+              <v-card-text>
+                <file-upload
+                  class="btn btn-primary"
+                  post-action="/"
+                  extensions="csv"
+                  accept="text/csv"
+                  :multiple="false"
+                  :size="1024 * 1024 * 1024"
+                  v-model="recordFiles"
+                  @input-filter="recordsInputFilter"
+                  ref="uploadrecords"
+                >
+                  <v-btn class="btn primary" :disabled="recordsUploading">Select CSV file</v-btn>
+                </file-upload>
+                <div v-if="recordsError" class="errorMessage">{{ recordsError }}</div>
+                <ul>
+                  <li v-for="file in recordFiles" :key="file.id">
+                    <span>{{ file.name }}</span> - <span>{{ file.size | formatSize }}</span>
+                    <span v-if="file.error"> - {{ file.error }}</span>
+                    <span v-else-if="file.success"> - success</span>
+                    <span v-else-if="file.active"> - uploading</span>
+                    <span v-else></span>
+                  </li>
+                </ul>
+              </v-card-text>
+              <v-card-actions>
+                <v-spacer></v-spacer>
+                <v-btn text v-if="!recordFiles.find(f => f.success)" @click="cancelRecordsUpload($refs.uploadrecords)"
+                  >Cancel</v-btn
+                >
+                <v-btn
+                  color="primary"
+                  text
+                  v-if="!recordFiles.find(f => f.success)"
+                  :disabled="!$refs.uploadrecords || $refs.uploadrecords.active"
+                  @click="startRecordsUpload($refs.uploadrecords)"
+                  >Start Upload</v-btn
+                >
+                <v-btn color="primary" text v-if="recordFiles.find(f => f.success)" @click="endRecordsUpload()"
+                  >Upload Successful!</v-btn
+                >
+              </v-card-actions>
+            </v-card>
+          </v-dialog>
+
           <v-dialog v-if="isImagesImportable" v-model="importImagesDlg" persistent max-width="320">
             <template v-slot:activator="{ on, attrs }">
               <v-btn color="primary" v-bind="attrs" v-on="on" class="ml-4">
@@ -177,10 +220,11 @@
                   :size="1024 * 1024 * 1024 * 10"
                   v-model="imageFiles"
                   @input-filter="imagesInputFilter"
-                  ref="upload"
+                  ref="uploadimages"
                 >
                   <v-btn class="btn primary" :disabled="imagesUploading">Select ZIP file</v-btn>
                 </file-upload>
+                <div v-if="imagesError" class="errorMessage">{{ imagesError }}</div>
                 <ul>
                   <li v-for="file in imageFiles" :key="file.id">
                     <span>{{ file.name }}</span> - <span>{{ file.size | formatSize }}</span>
@@ -193,15 +237,15 @@
               </v-card-text>
               <v-card-actions>
                 <v-spacer></v-spacer>
-                <v-btn text v-if="!imageFiles.find(f => f.success)" @click="cancelImagesUpload($refs.upload)"
+                <v-btn text v-if="!imageFiles.find(f => f.success)" @click="cancelImagesUpload($refs.uploadimages)"
                   >Cancel</v-btn
                 >
                 <v-btn
                   color="primary"
                   text
                   v-if="!imageFiles.find(f => f.success)"
-                  :disabled="!$refs.upload || $refs.upload.active"
-                  @click="startImagesUpload($refs.upload)"
+                  :disabled="!$refs.uploadimages || $refs.uploadimages.active"
+                  @click="startImagesUpload($refs.uploadimages)"
                   >Start Upload</v-btn
                 >
                 <v-btn color="primary" text v-if="imageFiles.find(f => f.success)" @click="endImagesUpload()"
@@ -253,27 +297,15 @@
 import store from "@/store";
 import { mapState } from "vuex";
 import { required } from "vuelidate/lib/validators";
-import FlatfileImporter from "flatfile-csv-importer";
 import FileUpload from "vue-upload-component";
-import config from "../utils/flatfileConfig.js";
 import Server from "@/services/Server.js";
 import NProgress from "nprogress";
 import lodash from "lodash";
-
-FlatfileImporter.setVersion(2);
 
 function setup() {
   this.post = {
     ...this.posts.post
   };
-}
-
-async function uploadData(store, post, contentType, data) {
-  let postRequestResult = await Server.contentPostRequest(contentType);
-  await Server.contentPut(postRequestResult.data.putURL, contentType, data.validData);
-  post.recordsKey = postRequestResult.data.key;
-  let postPostResult = await store.dispatch("postsUpdate", post);
-  return postPostResult;
 }
 
 export default {
@@ -320,8 +352,14 @@ export default {
       showPicker: false,
       importImagesDlg: false,
       imageFiles: [],
+      imagesError: "",
       imagesUploading: false,
-      imagesPostRequestResultData: null
+      imagesPostRequestResultData: null,
+      importRecordsDlg: false,
+      recordFiles: [],
+      recordsError: "",
+      recordsUploading: false,
+      recordsPostRequestResultData: null
     };
   },
   computed: {
@@ -384,6 +422,14 @@ export default {
         this.$v.post[attr].$touch();
       }
     },
+    cleanError(err) {
+      for (let errPrefix of ["Errors:", "Error OTHER:", "Unknown error:"]) {
+        if (err.startsWith(errPrefix)) {
+          err = err.substr(errPrefix.length).trim();
+        }
+      }
+      return err;
+    },
     metadataEdited() {
       this.touch("metadata");
     },
@@ -403,7 +449,7 @@ export default {
       return cols;
     },
     rowClicked(record) {
-      console.log("roeClicked", record);
+      console.log("rowClicked", record);
       this.$router.push({
         name: "records-view",
         params: { rid: record.__id }
@@ -429,8 +475,10 @@ export default {
       this.update(post);
     },
     imagesInputFilter(newFile, oldFile, prevent) {
+      this.imagesError = "";
       if (newFile && !oldFile) {
         if (!newFile.name || !newFile.name.endsWith(".zip")) {
+          this.imagesError = "Please put your images into a ZIP file; You need to select a file ending in .zip";
           return prevent();
         }
         return Server.contentPostRequest("application/zip").then(result => {
@@ -459,6 +507,49 @@ export default {
       NProgress.start();
       post.imagesKeys = [this.imagesPostRequestResultData.key];
       console.log("emdImagesUpload", post, this.imagesPostRequestResultData);
+      this.$store
+        .dispatch("postsUpdate", post)
+        .then(() => {
+          setup.bind(this)();
+          this.$v.$reset();
+        })
+        .finally(() => {
+          NProgress.done();
+        });
+    },
+    recordsInputFilter(newFile, oldFile, prevent) {
+      this.recordsError = "";
+      if (newFile && !oldFile) {
+        if (!newFile.name || !newFile.name.endsWith(".csv")) {
+          this.recordsError = "Please save your data as a CSV file; You need to select a file ending in .csv";
+          return prevent();
+        }
+        return Server.contentPostRequest("text/csv").then(result => {
+          console.log("contentPostRequest", result.data);
+          this.recordsPostRequestResultData = result.data;
+          newFile.putAction = result.data.putURL;
+        });
+      }
+    },
+    cancelRecordsUpload(upload) {
+      upload.active = false;
+      this.recordsUploading = false;
+      this.recordFiles = [];
+      this.importRecordsDlg = false;
+    },
+    startRecordsUpload(upload) {
+      upload.active = true;
+      this.recordsUploading = true;
+    },
+    endRecordsUpload() {
+      this.recordFiles = [];
+      this.importRecordsDlg = false;
+      this.recordsUploading = false;
+      let post = this.getPostFromForm();
+      this.$v.$touch();
+      NProgress.start();
+      post.recordsKey = this.recordsPostRequestResultData.key;
+      console.log("emdRecordsUpload", post, this.recordsPostRequestResultData);
       this.$store
         .dispatch("postsUpdate", post)
         .then(() => {
@@ -501,56 +592,6 @@ export default {
         .catch(() => {
           NProgress.done();
         });
-    },
-    importData() {
-      let post = this.getPostFromForm();
-      let store = this.$store;
-      if (!this.$v.$invalid) {
-        const importer = new FlatfileImporter(config.license, this.getFlatFileOptions(this.collections.collection));
-        console.log("setCustomer", this.user.user.id.toString(), this.user.user.email);
-        importer.setCustomer({ userId: this.user.user.id.toString(), email: this.user.user.email });
-        importer
-          .requestDataFromUser()
-          .then(results => {
-            importer.displayLoader();
-            uploadData(store, post, "application/json", results) // use application/json for records
-              .then(() => {
-                importer.displaySuccess("Success!");
-                setup.bind(this)();
-                this.$v.$reset();
-              });
-          })
-          .catch(() => {
-            // console.info(error);
-          });
-      }
-    },
-    getFlatFileOptions(coll) {
-      return {
-        type: "Record",
-        allowInvalidSubmit: true,
-        managed: true,
-        allowCustom: false,
-        disableManualInput: true,
-        fields: coll.fields.map(fld => {
-          let validators = [];
-          if (fld.required) {
-            validators.push({ validate: "required", error: "required field" });
-          }
-          if (fld.regex) {
-            validators.push({
-              validate: "regex_matches",
-              regex: fld.regex,
-              error: fld.regexError || "doesn't match validation rule"
-            });
-          }
-          return {
-            label: fld.header,
-            key: fld.header,
-            validators: validators
-          };
-        })
-      };
     }
   }
 };

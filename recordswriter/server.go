@@ -1,7 +1,9 @@
 package main
 
 import (
+	"bytes"
 	"context"
+	"encoding/csv"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -57,7 +59,52 @@ type recordIndex struct {
 	ix       int
 }
 
+func cleanHeader(header string) string {
+	return strings.ToLower(strings.ReplaceAll(header, " ", ""))
+}
+
+func findHeader(headers []string, value string) string {
+	for _, header := range headers {
+		if header == value {
+			return header
+		}
+	}
+	for _, header := range headers {
+		if cleanHeader(header) == cleanHeader(value) {
+			return header
+		}
+	}
+	return value
+}
+
+func containsString(haystack []string, needle string) bool {
+	for _, s := range haystack {
+		if s == needle {
+			return true
+		}
+	}
+	return false
+}
+
+func sameHeaders(headers1 []string, headers2 []string) bool {
+	if len(headers1) != len(headers2) {
+		return false
+	}
+	for _, header := range headers1 {
+		if !containsString(headers2, header) {
+			return false
+		}
+	}
+	for _, header := range headers2 {
+		if !containsString(headers1, header) {
+			return false
+		}
+	}
+	return true
+}
+
 func loadRecords(ctx context.Context, ap *api.API, post *model.Post) error {
+	log.Printf("[DEBUG] Processing file %s\n", post.RecordsKey)
 	// read collection for post
 	collection, errs := ap.GetCollection(ctx, post.Collection)
 	if errs != nil {
@@ -76,20 +123,6 @@ func loadRecords(ctx context.Context, ap *api.API, post *model.Post) error {
 		}
 	}
 
-	// delete any previous record households for post
-	errs = ap.DeleteRecordHouseholdsForPost(ctx, post.ID)
-	if errs != nil {
-		log.Printf("[ERROR] DeleteRecordHouseholdsForPost on %d: %v\n", post.ID, errs)
-		return errs
-	}
-
-	// delete any previous records for post
-	errs = ap.DeleteRecordsForPost(ctx, post.ID)
-	if errs != nil {
-		log.Printf("[ERROR] DeleteRecordsForPost on %d: %v\n", post.ID, errs)
-		return errs
-	}
-
 	// open bucket
 	bucket, err := ap.OpenBucket(ctx, false)
 	if err != nil {
@@ -104,13 +137,63 @@ func loadRecords(ctx context.Context, ap *api.API, post *model.Post) error {
 		log.Printf("[ERROR] ReadAll %v\n", err)
 		return api.NewError(err)
 	}
-	var datas []map[string]string
-	err = json.Unmarshal(bs, &datas)
+
+	// read CSV
+	r := csv.NewReader(bytes.NewReader(bs))
+	r.FieldsPerRecord = -1
+	r.TrimLeadingSpace = true
+	records, err := r.ReadAll()
 	if err != nil {
-		log.Printf("[ERROR] Unmarshal datas %v\n", err)
+		log.Printf("[ERROR] reading file: %v\n", err)
 		return api.NewError(err)
 	}
+
+	// convert records into datas map
+	var headers []string
+	var collectionHeaders []string
+	for _, collectionField := range collection.Fields {
+		collectionHeaders = append(collectionHeaders, collectionField.Header)
+	}
+	var datas []map[string]string
+	for i, record := range records {
+		if i == 0 {
+			// header row
+			for _, field := range record {
+				header := findHeader(collectionHeaders, field)
+				headers = append(headers, header)
+			}
+			log.Printf("[DEBUG] collectionHeaders %s\n", strings.Join(collectionHeaders, ", "))
+			log.Printf("[DEBUG] headers %s\n", strings.Join(headers, ", "))
+			log.Printf("[DEBUG] same %t\n", sameHeaders(collectionHeaders, headers))
+			if !sameHeaders(collectionHeaders, headers) {
+				err := fmt.Errorf("found headers: %s; but expected headers: %s\n",
+					strings.Join(headers, ", "),
+					strings.Join(collectionHeaders, ", "))
+				return api.NewHTTPError(err, http.StatusBadRequest)
+			}
+			continue
+		}
+		data := map[string]string{}
+		for j, field := range record {
+			data[headers[j]] = field
+		}
+		datas = append(datas, data)
+	}
 	log.Printf("[DEBUG] datas: %#v", datas)
+
+	// delete any previous record households for post
+	errs = ap.DeleteRecordHouseholdsForPost(ctx, post.ID)
+	if errs != nil {
+		log.Printf("[ERROR] DeleteRecordHouseholdsForPost on %d: %v\n", post.ID, errs)
+		return errs
+	}
+
+	// delete any previous records for post
+	errs = ap.DeleteRecordsForPost(ctx, post.ID)
+	if errs != nil {
+		log.Printf("[ERROR] DeleteRecordsForPost on %d: %v\n", post.ID, errs)
+		return errs
+	}
 
 	// set up workers
 	in := make(chan workerIn)

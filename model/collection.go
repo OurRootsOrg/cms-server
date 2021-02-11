@@ -32,10 +32,7 @@ type CollectionBody struct {
 }
 
 type CollectionField struct {
-	Header     string `json:"header"`
-	Required   bool   `json:"required"`
-	Regex      string `json:"regex"`
-	RegexError string `json:"regexError"`
+	Header string `json:"header"`
 }
 
 type CollectionMapping struct {

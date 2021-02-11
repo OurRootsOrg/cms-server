@@ -91,11 +91,7 @@
               <template v-slot:activator="{ on, attrs }">
                 <v-icon v-bind="attrs" v-on="on" small>mdi-information</v-icon>
               </template>
-              <span
-                >"Spreadsheet headers" are the names of the columns in the Excel or CSV you will be uploading.
-                "Validation rules" are expressions defining the requirements for the spreadsheet data, and "Validation
-                messages" are the error messages you want to show if the data does not meet the validation rules.</span
-              >
+              <span>"Spreadsheet headers" are the names of the columns in the CSV you will be uploading.</span>
             </v-tooltip>
             (step 5 of 8)
           </h3>
@@ -113,13 +109,6 @@
                 <tr v-for="(field, index) in collection.fields" :key="index">
                   <td><v-icon small>mdi-drag-horizontal-variant</v-icon></td>
                   <td>{{ field.header }}</td>
-                  <td>
-                    <span v-if="field.required"
-                      ><v-icon class="green--text" small>mdi-check-circle</v-icon> Required</span
-                    >
-                  </td>
-                  <td>{{ field.regex }}</td>
-                  <td>{{ field.regexError }}</td>
                   <td>
                     <v-icon small @click="editColumnDefs(field)" class="mr-3">mdi-pencil</v-icon>
                     <v-icon small @click="deleteColumnDefs(field)">mdi-delete</v-icon>
@@ -147,32 +136,6 @@
                               v-model="editedItem.header"
                               label="Spreadsheet header"
                               placeholder="Column title in your spreadsheet"
-                            ></v-text-field>
-                          </v-col>
-                          <v-col cols="12" sm="5">
-                            <v-checkbox
-                              dense
-                              class="pt-0 mt-1"
-                              v-model="editedItem.required"
-                              label="Required"
-                            ></v-checkbox>
-                          </v-col>
-                          <v-col cols="12">
-                            <v-textarea
-                              dense
-                              outlined
-                              rows="2"
-                              v-model="editedItem.regex"
-                              label="Validation rule (optional)"
-                              placeholder="Regex to validate data. For help with regular expressions see http://regex101.com/"
-                            ></v-textarea>
-                          </v-col>
-                          <v-col cols="12">
-                            <v-text-field
-                              dense
-                              v-model="editedItem.regexError"
-                              label="Validation message (optional)"
-                              placeholder="Error message if validation fails"
                             ></v-text-field>
                           </v-col>
                         </v-row>
@@ -522,10 +485,7 @@ export default {
       dialogMapping: false,
       editedIndex: -1,
       editedItem: {
-        header: "",
-        required: false,
-        regex: "",
-        regexError: ""
+        header: ""
       },
       editedMappingItem: {
         header: "",
@@ -534,10 +494,7 @@ export default {
         ixField: ""
       },
       defaultItem: {
-        header: "",
-        required: false,
-        regex: "",
-        regexError: ""
+        header: ""
       },
       defaultMappingItem: {
         header: "",
@@ -629,19 +586,6 @@ export default {
         {
           text: "Spreadsheet header",
           value: "header"
-        },
-        {
-          text: "Required?",
-          value: "required",
-          align: "center"
-        },
-        {
-          text: "Validation rule",
-          value: "regex"
-        },
-        {
-          text: "Validation Message",
-          value: "regexError"
         },
         {
           text: "",
