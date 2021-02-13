@@ -18,6 +18,8 @@ requireComponent.keys().forEach(fileName => {
   Vue.component(componentName, componentConfig.default || componentConfig);
 });
 
+console.log("Starting search");
+
 new Vue({
   router,
   store,

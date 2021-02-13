@@ -124,12 +124,6 @@ definitions:
     properties:
       header:
         type: string
-      regex:
-        type: string
-      regexError:
-        type: string
-      required:
-        type: boolean
     type: object
   model.CollectionIn:
     properties:

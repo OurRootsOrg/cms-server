@@ -22,6 +22,7 @@ export default {
     Notifications
   },
   mounted() {
+    console.log("Search mounted");
     NProgress.configure({ parent: "#container-wrapper" });
   },
   props: {

@@ -49,9 +49,10 @@ func TestRecordsWriter(t *testing.T) {
 	defer bucket.Close()
 
 	// write an object
-	content := `[{"household":"H1","given":"fred","surname":"flintstone","birthdate":"19 Mar 1900","birthplace":"Autaugaville, AL"},
-				 {"household":"H1","given":"wilma","surname":"slaghoople","birthdate":"Abt 1900","birthplace":"AL"},
-				 {"household":"H2","given":"barney","surname":"rubble"}]`
+	content := `"household","given","surname","birthdate","birthplace"
+				"H1","fred","flintstone","19 Mar 1900","Autaugaville, AL"
+				"H1","wilma","slaghoople","Abt 1900","AL"
+				"H2","barney","rubble","",""`
 	recordsKey := "/2020-05-30/2020-05-30T00:00:00.000000000Z"
 	w, err := bucket.NewWriter(ctx, recordsKey, nil)
 	assert.NoError(t, err)
@@ -157,6 +158,23 @@ func deleteTestCategory(t *testing.T, p model.CategoryPersister, category *model
 
 func createTestCollection(t *testing.T, p model.CollectionPersister, categoryID uint32) *model.Collection {
 	in := model.NewCollectionIn("Test", []uint32{categoryID})
+	in.Fields = []model.CollectionField{
+		{
+			Header: "household",
+		},
+		{
+			Header: "given",
+		},
+		{
+			Header: "surname",
+		},
+		{
+			Header: "birthdate",
+		},
+		{
+			Header: "birthplace",
+		},
+	}
 	in.Mappings = []model.CollectionMapping{
 		{
 			Header:  "given",

@@ -1884,15 +1884,6 @@ var doc = `{
             "properties": {
                 "header": {
                     "type": "string"
-                },
-                "regex": {
-                    "type": "string"
-                },
-                "regexError": {
-                    "type": "string"
-                },
-                "required": {
-                    "type": "boolean"
                 }
             }
         },
