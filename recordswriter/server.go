@@ -17,6 +17,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ourrootsorg/cms-server/utils"
+
 	"github.com/ourrootsorg/cms-server/stdplace"
 
 	"github.com/ourrootsorg/cms-server/stddate"
@@ -131,8 +133,16 @@ func loadRecords(ctx context.Context, ap *api.API, post *model.Post) error {
 	}
 	defer bucket.Close()
 
+	// get key
+	societyID, err := utils.GetSocietyIDFromContext(ctx)
+	if err != nil {
+		log.Printf("[ERROR] Missing society ID %v\n", err)
+		return api.NewError(err)
+	}
+	key := fmt.Sprintf("/%d/%s", societyID, post.RecordsKey)
+
 	// read datas
-	bs, err := bucket.ReadAll(ctx, post.RecordsKey)
+	bs, err := bucket.ReadAll(ctx, key)
 	if err != nil {
 		log.Printf("[ERROR] ReadAll %v\n", err)
 		return api.NewError(err)
@@ -319,8 +329,10 @@ func processMessage(ctx context.Context, ap *api.API, rawMsg []byte) error {
 
 	log.Printf("[DEBUG] RecordsWriter Processing PostID: %d", msg.PostID)
 
+	sctx := utils.AddSocietyIDToContext(ctx, msg.SocietyID)
+
 	// read post
-	post, errs := ap.GetPost(ctx, msg.PostID)
+	post, errs := ap.GetPost(sctx, msg.PostID)
 	if errs != nil {
 		log.Printf("[ERROR] Error calling GetPost on %d: %v", msg.PostID, errs)
 		return errs
@@ -331,14 +343,14 @@ func processMessage(ctx context.Context, ap *api.API, rawMsg []byte) error {
 	}
 
 	post.RecordsStatus = model.RecordsStatusLoading
-	post, errs = ap.UpdatePost(ctx, msg.PostID, *post)
+	post, errs = ap.UpdatePost(sctx, msg.PostID, *post)
 	if errs != nil {
 		log.Printf("[ERROR] Error calling UpdatePost on %d: %v", msg.PostID, errs)
 		return errs
 	}
 
 	// do the work
-	errs = loadRecords(ctx, ap, post)
+	errs = loadRecords(sctx, ap, post)
 
 	// update post
 	if errs != nil {
@@ -347,7 +359,7 @@ func processMessage(ctx context.Context, ap *api.API, rawMsg []byte) error {
 	} else {
 		post.RecordsStatus = model.RecordsStatusLoadComplete
 	}
-	_, err = ap.UpdatePost(ctx, post.ID, *post)
+	_, err = ap.UpdatePost(sctx, post.ID, *post)
 	if err != nil {
 		log.Printf("[ERROR] UpdatePost %v\n", err)
 		return err

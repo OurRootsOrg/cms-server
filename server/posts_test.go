@@ -35,7 +35,7 @@ func TestGetAllPosts(t *testing.T) {
 	am.Result = &cr
 	am.Errors = nil
 
-	request, _ := http.NewRequest("GET", "/posts", nil)
+	request, _ := http.NewRequest("GET", "/societies/1/posts", nil)
 	response := httptest.NewRecorder()
 	r.ServeHTTP(response, request)
 	assert.Equal(t, 200, response.Code, "OK response is expected")
@@ -64,7 +64,7 @@ func TestGetAllPosts(t *testing.T) {
 	}
 	am.Result = &cr
 	am.Errors = nil
-	request, _ = http.NewRequest("GET", "/posts", nil)
+	request, _ = http.NewRequest("GET", "/societies/1/posts", nil)
 	response = httptest.NewRecorder()
 	r.ServeHTTP(response, request)
 	assert.Equal(t, 200, response.Code, "OK response is expected")
@@ -82,7 +82,7 @@ func TestGetAllPosts(t *testing.T) {
 	// error result
 	am.Result = (*api.PostResult)(nil)
 	am.Errors = api.NewError(assert.AnError)
-	request, _ = http.NewRequest("GET", "/posts", nil)
+	request, _ = http.NewRequest("GET", "/societies/1/posts", nil)
 	response = httptest.NewRecorder()
 	r.ServeHTTP(response, request)
 	assert.Equal(t, 500, response.Code)
@@ -113,7 +113,7 @@ func TestGetPost(t *testing.T) {
 	am.Errors = nil
 	var ret model.Post
 
-	request, _ := http.NewRequest("GET", "/posts/1", nil)
+	request, _ := http.NewRequest("GET", "/societies/1/posts/1", nil)
 	response := httptest.NewRecorder()
 	r.ServeHTTP(response, request)
 	assert.Equal(t, http.StatusOK, response.Code)
@@ -127,7 +127,7 @@ func TestGetPost(t *testing.T) {
 	am.Result = post
 	am.Errors = api.NewError(model.NewError(model.ErrNotFound, "1"))
 
-	request, _ = http.NewRequest("GET", "/posts/1", nil)
+	request, _ = http.NewRequest("GET", "/societies/1/posts/1", nil)
 	response = httptest.NewRecorder()
 	r.ServeHTTP(response, request)
 	assert.Equal(t, http.StatusNotFound, response.Code)
@@ -157,19 +157,19 @@ func TestGetPostImage(t *testing.T) {
 	am.Result = &api.ImageMetadata{URL: url}
 	am.Errors = nil
 
-	request, _ := http.NewRequest("GET", "/posts/1/images/"+imagePath, nil)
+	request, _ := http.NewRequest("GET", "/societies/1/posts/1/images/"+imagePath, nil)
 	response := httptest.NewRecorder()
 	r.ServeHTTP(response, request)
 	assert.Equal(t, http.StatusTemporaryRedirect, response.Code)
 	assert.Equal(t, url, response.Header().Get("Location"))
 
-	request, _ = http.NewRequest("GET", "/posts/1/images/"+imagePath+"?height=100", nil)
+	request, _ = http.NewRequest("GET", "/societies/1/posts/1/images/"+imagePath+"?height=100", nil)
 	response = httptest.NewRecorder()
 	r.ServeHTTP(response, request)
 	assert.Equal(t, http.StatusTemporaryRedirect, response.Code)
 	assert.Equal(t, url, response.Header().Get("Location"))
 
-	request, _ = http.NewRequest("GET", "/posts/1/images/"+imagePath+"?noredirect=true", nil)
+	request, _ = http.NewRequest("GET", "/societies/1/posts/1/images/"+imagePath+"?noredirect=true", nil)
 	response = httptest.NewRecorder()
 	r.ServeHTTP(response, request)
 	assert.Equal(t, http.StatusOK, response.Code)
@@ -200,7 +200,7 @@ func TestPostPost(t *testing.T) {
 	}
 	am.Errors = nil
 
-	request, _ := http.NewRequest("POST", "/posts", buf)
+	request, _ := http.NewRequest("POST", "/societies/1/posts", buf)
 	request.Header.Add("Content-Type", contentType)
 
 	response := httptest.NewRecorder()
@@ -239,7 +239,7 @@ func TestPutPost(t *testing.T) {
 	am.Result = &post
 	am.Errors = nil
 
-	request, _ := http.NewRequest("PUT", "/posts/1", buf)
+	request, _ := http.NewRequest("PUT", "/societies/1/posts/1", buf)
 	request.Header.Add("Content-Type", contentType)
 
 	response := httptest.NewRecorder()
@@ -311,7 +311,7 @@ func TestPutPostInvalidStatus(t *testing.T) {
 
 	// create a collection for referential integrity
 	_, buf := makeCollectionIn(t, 0)
-	request, _ := http.NewRequest("POST", "/collections", buf)
+	request, _ := http.NewRequest("POST", "/societies/1/collections", buf)
 	request.Header.Add("Content-Type", contentType)
 	response := httptest.NewRecorder()
 	r.ServeHTTP(response, request)
@@ -326,7 +326,7 @@ func TestPutPostInvalidStatus(t *testing.T) {
 
 	// create a post that we can try to update
 	_, buf = makePostIn(t, collection.ID)
-	request, _ = http.NewRequest("POST", "/posts", buf)
+	request, _ = http.NewRequest("POST", "/societies/1/posts", buf)
 	request.Header.Add("Content-Type", contentType)
 	response = httptest.NewRecorder()
 	r.ServeHTTP(response, request)
@@ -397,7 +397,7 @@ func TestPutPostInvalidStatus(t *testing.T) {
 			if err != nil {
 				t.Errorf("Error encoding PostIn: %v", err)
 			}
-			request, _ := http.NewRequest("PUT", fmt.Sprintf("/posts/%d", post.ID), buf)
+			request, _ := http.NewRequest("PUT", fmt.Sprintf("/societies/1/posts/%d", post.ID), buf)
 			request.Header.Add("Content-Type", contentType)
 			response := httptest.NewRecorder()
 			r.ServeHTTP(response, request)
@@ -446,7 +446,7 @@ func TestPutPostInvalidStatus(t *testing.T) {
 			if err != nil {
 				t.Errorf("Error encoding PostIn: %v", err)
 			}
-			request, _ := http.NewRequest("PUT", fmt.Sprintf("/posts/%d", post.ID), buf)
+			request, _ := http.NewRequest("PUT", fmt.Sprintf("/societies/1/posts/%d", post.ID), buf)
 			request.Header.Add("Content-Type", contentType)
 			response := httptest.NewRecorder()
 			r.ServeHTTP(response, request)
@@ -495,7 +495,7 @@ func TestPutPostInvalidStatus(t *testing.T) {
 			if err != nil {
 				t.Errorf("Error encoding PostIn: %v", err)
 			}
-			request, _ := http.NewRequest("PUT", fmt.Sprintf("/posts/%d", post.ID), buf)
+			request, _ := http.NewRequest("PUT", fmt.Sprintf("/societies/1/posts/%d", post.ID), buf)
 			request.Header.Add("Content-Type", contentType)
 			response := httptest.NewRecorder()
 			r.ServeHTTP(response, request)
@@ -515,7 +515,7 @@ func TestDeletePost(t *testing.T) {
 	am.Result = nil
 	am.Errors = nil
 
-	request, _ := http.NewRequest("DELETE", "/posts/1", nil)
+	request, _ := http.NewRequest("DELETE", "/societies/1/posts/1", nil)
 	response := httptest.NewRecorder()
 	r.ServeHTTP(response, request)
 	assert.Equal(t, http.StatusNoContent, response.Code, "Response: %s", string(response.Body.Bytes()))

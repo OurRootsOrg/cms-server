@@ -7,6 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ourrootsorg/cms-server/utils"
+
 	"github.com/ourrootsorg/cms-server/model"
 	"github.com/ourrootsorg/cms-server/persist"
 
@@ -15,6 +17,7 @@ import (
 )
 
 func TestSelectCategories(t *testing.T) {
+	ctx := utils.AddSocietyIDToContext(context.TODO(), 1)
 	db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
 	assert.NoError(t, err)
 	defer db.Close()
@@ -25,11 +28,12 @@ func TestSelectCategories(t *testing.T) {
 
 	now := time.Now()
 
-	mock.ExpectQuery("SELECT id, body, insert_time, last_update_time FROM category").
+	mock.ExpectQuery("SELECT id, body, insert_time, last_update_time FROM category WHERE society_id=$1").
+		WithArgs(1).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "body", "insert_time", "last_update_time"}).
 			AddRow(1, js, now, now).AddRow(2, js, now, now))
 
-	c, e := p.SelectCategories(context.TODO())
+	c, e := p.SelectCategories(ctx)
 	assert.Nil(t, e)
 	assert.Len(t, c, 2)
 	cc := model.NewCategory(1, in)
@@ -42,6 +46,7 @@ func TestSelectCategories(t *testing.T) {
 	assert.Contains(t, c, cc)
 }
 func TestSelectOneCategory(t *testing.T) {
+	ctx := utils.AddSocietyIDToContext(context.TODO(), 1)
 	db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
 	assert.NoError(t, err)
 	defer db.Close()
@@ -52,12 +57,12 @@ func TestSelectOneCategory(t *testing.T) {
 	assert.NoError(t, err)
 
 	now := time.Now()
-	mock.ExpectQuery("SELECT id, body, insert_time, last_update_time FROM category WHERE id=$1").
-		WithArgs(int32(1)).
+	mock.ExpectQuery("SELECT id, body, insert_time, last_update_time FROM category WHERE society_id=$1 AND id=$2").
+		WithArgs(1, 1).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "body", "insert_time", "last_update_time"}).
 			AddRow(int32(1), js, now, now))
 
-	c, e := p.SelectOneCategory(context.TODO(), 1)
+	c, e := p.SelectOneCategory(ctx, 1)
 	assert.Nil(t, e)
 	assert.Equal(t, uint32(1), c.ID)
 	assert.Equal(t, cb.Name, c.Name)
@@ -66,6 +71,7 @@ func TestSelectOneCategory(t *testing.T) {
 }
 
 func TestInsertCategory(t *testing.T) {
+	ctx := utils.AddSocietyIDToContext(context.TODO(), 1)
 	db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
 	assert.NoError(t, err)
 	defer db.Close()
@@ -75,11 +81,11 @@ func TestInsertCategory(t *testing.T) {
 	assert.NoError(t, err)
 
 	now := time.Now()
-	mock.ExpectQuery("INSERT INTO category (body) VALUES ($1) RETURNING id, body, insert_time, last_update_time").
-		WithArgs([]byte(js)).
+	mock.ExpectQuery("INSERT INTO category (society_id, body) VALUES ($1,$2) RETURNING id, body, insert_time, last_update_time").
+		WithArgs(1, []byte(js)).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "body", "insert_time", "last_update_time"}).AddRow(1, js, now, now))
 
-	c, e := p.InsertCategory(context.TODO(), cb)
+	c, e := p.InsertCategory(ctx, cb)
 	assert.Nil(t, e)
 	assert.Equal(t, uint32(1), c.ID)
 	assert.Equal(t, cb.Name, c.Name)
@@ -88,6 +94,7 @@ func TestInsertCategory(t *testing.T) {
 }
 
 func TestUpdateCategory(t *testing.T) {
+	ctx := utils.AddSocietyIDToContext(context.TODO(), 1)
 	db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
 	assert.NoError(t, err)
 	defer db.Close()
@@ -97,11 +104,11 @@ func TestUpdateCategory(t *testing.T) {
 	assert.NoError(t, err)
 
 	now := time.Now()
-	mock.ExpectQuery("UPDATE category SET body = $1, last_update_time = CURRENT_TIMESTAMP WHERE id = $2 AND last_update_time = $3 RETURNING id, body, insert_time, last_update_time").
-		WithArgs([]byte(js), 1, in.LastUpdateTime).
+	mock.ExpectQuery("UPDATE category SET body = $1, last_update_time = CURRENT_TIMESTAMP WHERE society_id = $2 AND id = $3 AND last_update_time = $4 RETURNING id, body, insert_time, last_update_time").
+		WithArgs([]byte(js), 1, 1, in.LastUpdateTime).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "body", "insert_time", "last_update_time"}).AddRow(1, js, in.InsertTime, now))
 
-	c, e := p.UpdateCategory(context.TODO(), 1, in)
+	c, e := p.UpdateCategory(ctx, 1, in)
 	assert.Nil(t, e)
 	assert.Equal(t, uint32(1), c.ID)
 	assert.Equal(t, in.Name, c.Name)
@@ -109,19 +116,21 @@ func TestUpdateCategory(t *testing.T) {
 	assert.Equal(t, now, c.LastUpdateTime)
 }
 func TestDeleteCategory(t *testing.T) {
+	ctx := utils.AddSocietyIDToContext(context.TODO(), 1)
 	db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
 	assert.NoError(t, err)
 	defer db.Close()
 	p := persist.NewPostgresPersister(db)
-	mock.ExpectExec("DELETE FROM category WHERE id = $1").
-		WithArgs(1).WillReturnResult(sqlmock.NewResult(0, 1))
-	e := p.DeleteCategory(context.TODO(), 1)
+	mock.ExpectExec("DELETE FROM category WHERE society_id = $1 AND id = $2").
+		WithArgs(1, 1).WillReturnResult(sqlmock.NewResult(0, 1))
+	e := p.DeleteCategory(ctx, 1)
 	assert.Nil(t, e)
 }
 
 // Collection tests
 
 func TestSelectCollections(t *testing.T) {
+	ctx := utils.AddSocietyIDToContext(context.TODO(), 1)
 	db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
 	assert.NoError(t, err)
 	defer db.Close()
@@ -135,12 +144,13 @@ func TestSelectCollections(t *testing.T) {
 
 	mock.ExpectQuery(
 		"SELECT id, array_agg(cc.category_id), body, insert_time, last_update_time " +
-			"FROM collection LEFT JOIN collection_category cc ON id = cc.collection_id GROUP BY id").
+			"FROM collection LEFT JOIN collection_category cc ON id = cc.collection_id WHERE society_id=$1 GROUP BY id").
+		WithArgs(1).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "category_id", "body", "insert_time", "last_update_time"}).
 			AddRow(1, "{1}", js, now, now).
 			AddRow(2, "{1}", js, now, now))
 
-	c, e := p.SelectCollections(context.TODO())
+	c, e := p.SelectCollections(ctx)
 	assert.Nil(t, e)
 	assert.Len(t, c, 2)
 	cc := model.NewCollection(1, in)
@@ -154,6 +164,7 @@ func TestSelectCollections(t *testing.T) {
 	assert.Contains(t, c, cc)
 }
 func TestSelectOneCollection(t *testing.T) {
+	ctx := utils.AddSocietyIDToContext(context.TODO(), 1)
 	db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
 	assert.NoError(t, err)
 	defer db.Close()
@@ -165,13 +176,13 @@ func TestSelectOneCollection(t *testing.T) {
 
 	now := time.Now()
 	mock.ExpectQuery(
-		"SELECT id, array_agg(cc.category_id), body, insert_time, last_update_time " +
-			"FROM collection LEFT JOIN collection_category cc ON id = cc.collection_id WHERE id = $1 GROUP BY id").
-		WithArgs(1).
+		"SELECT id, array_agg(cc.category_id), body, insert_time, last_update_time "+
+			"FROM collection LEFT JOIN collection_category cc ON id = cc.collection_id WHERE society_id=$1 AND id = $2 GROUP BY id").
+		WithArgs(1, 1).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "category_id", "body", "insert_time", "last_update_time"}).
 			AddRow(1, "{1}", js, now, now))
 
-	c, e := p.SelectOneCollection(context.TODO(), 1)
+	c, e := p.SelectOneCollection(ctx, 1)
 	assert.Nil(t, e)
 	assert.Equal(t, uint32(1), c.ID)
 	assert.Equal(t, cb.Name, c.Name)
@@ -180,6 +191,7 @@ func TestSelectOneCollection(t *testing.T) {
 }
 
 func TestInsertCollection(t *testing.T) {
+	ctx := utils.AddSocietyIDToContext(context.TODO(), 1)
 	db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
 	assert.NoError(t, err)
 	defer db.Close()
@@ -191,17 +203,17 @@ func TestInsertCollection(t *testing.T) {
 	now := time.Now()
 
 	mock.ExpectBegin()
-	mock.ExpectQuery(`INSERT INTO collection (body)
-	VALUES ($1)
+	mock.ExpectQuery(`INSERT INTO collection (society_id, body)
+	VALUES ($1, $2)
 	RETURNING id, body, insert_time, last_update_time`).
-		WithArgs([]byte(js)).
+		WithArgs(1, []byte(js)).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "body", "insert_time", "last_update_time"}).
 			AddRow(1, js, now, now))
 	mock.ExpectExec("INSERT INTO collection_category (collection_id, category_id) VALUES ($1, $2)").
 		WithArgs(1, 1).WillReturnResult(sqlmock.NewResult(0, 1))
 	mock.ExpectCommit()
 
-	c, e := p.InsertCollection(context.TODO(), in)
+	c, e := p.InsertCollection(ctx, in)
 	assert.Nil(t, e)
 	assert.Equal(t, uint32(1), c.ID)
 	assert.Equal(t, in.Name, c.Name)
@@ -210,10 +222,14 @@ func TestInsertCollection(t *testing.T) {
 }
 
 func TestUpdateCollection(t *testing.T) {
+	ctx := utils.AddSocietyIDToContext(context.TODO(), 1)
 	db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
 	assert.NoError(t, err)
 	defer db.Close()
 	p := persist.NewPostgresPersister(db)
+	collExist := makeCollectionIn(t)
+	jsExist, err := json.Marshal(collExist.CollectionBody)
+	assert.NoError(t, err)
 	in := makeCollection(t)
 	js, err := json.Marshal(in.CollectionBody)
 	assert.NoError(t, err)
@@ -221,6 +237,12 @@ func TestUpdateCollection(t *testing.T) {
 	now := time.Now()
 
 	mock.ExpectBegin()
+	mock.ExpectQuery(
+		"SELECT id, array_agg(cc.category_id), body, insert_time, last_update_time "+
+			"FROM collection LEFT JOIN collection_category cc ON id = cc.collection_id WHERE society_id=$1 AND id = $2 GROUP BY id").
+		WithArgs(1, 1).
+		WillReturnRows(sqlmock.NewRows([]string{"id", "category_id", "body", "insert_time", "last_update_time"}).
+			AddRow(1, "{1}", jsExist, now, now))
 	mock.ExpectQuery(`UPDATE collection SET body = $1, last_update_time = CURRENT_TIMESTAMP
 	WHERE id = $2 AND last_update_time = $3
 	RETURNING id, body, insert_time, last_update_time`).
@@ -233,7 +255,7 @@ func TestUpdateCollection(t *testing.T) {
 		WithArgs(1, 1).WillReturnResult(sqlmock.NewResult(0, 1))
 	mock.ExpectCommit()
 
-	c, e := p.UpdateCollection(context.TODO(), 1, in)
+	c, e := p.UpdateCollection(ctx, 1, in)
 	assert.Nil(t, e)
 	assert.Equal(t, uint32(1), c.ID)
 	assert.Equal(t, in.Name, c.Name)
@@ -241,19 +263,31 @@ func TestUpdateCollection(t *testing.T) {
 	assert.Equal(t, now, c.LastUpdateTime)
 }
 func TestDeleteCollection(t *testing.T) {
+	ctx := utils.AddSocietyIDToContext(context.TODO(), 1)
 	db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
 	assert.NoError(t, err)
 	defer db.Close()
 	p := persist.NewPostgresPersister(db)
 
+	collExist := makeCollectionIn(t)
+	jsExist, err := json.Marshal(collExist)
+	assert.NoError(t, err)
+	now := time.Now()
+
 	mock.ExpectBegin()
+	mock.ExpectQuery(
+		"SELECT id, array_agg(cc.category_id), body, insert_time, last_update_time "+
+			"FROM collection LEFT JOIN collection_category cc ON id = cc.collection_id WHERE society_id=$1 AND id = $2 GROUP BY id").
+		WithArgs(1, 1).
+		WillReturnRows(sqlmock.NewRows([]string{"id", "category_id", "body", "insert_time", "last_update_time"}).
+			AddRow(1, "{1}", jsExist, now, now))
 	mock.ExpectExec("DELETE FROM collection_category WHERE collection_id = $1").
 		WithArgs(1).WillReturnResult(sqlmock.NewResult(0, 1))
 	mock.ExpectExec("DELETE FROM collection WHERE id = $1").
 		WithArgs(1).WillReturnResult(sqlmock.NewResult(0, 1))
 	mock.ExpectCommit()
 
-	e := p.DeleteCollection(context.TODO(), 1)
+	e := p.DeleteCollection(ctx, 1)
 	assert.Nil(t, e)
 }
 

@@ -29,6 +29,9 @@ type CollectionBody struct {
 	HouseholdNumberHeader       string              `json:"householdNumberHeader,omitempty"`
 	HouseholdRelationshipHeader string              `json:"householdRelationshipHeader,omitempty"`
 	GenderHeader                string              `json:"genderHeader,omitempty"`
+	IndexPrivacy                string              `json:"indexPrivacy"`
+	DetailPrivacy               string              `json:"detailPrivacy"`
+	ImagePrivacy                string              `json:"imagePrivacy"`
 }
 
 type CollectionField struct {

@@ -43,7 +43,7 @@ export default {
     });
   },
   currentUser() {
-    return get(`/currentuser`);
+    return get(`/current_user`);
   },
   placeSearch(prefix) {
     return get(`places`, {

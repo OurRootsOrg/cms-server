@@ -23,7 +23,7 @@ func TestPostContentRequest(t *testing.T) {
 	}
 	am.Errors = nil
 
-	request, _ := http.NewRequest("POST", "/content", strings.NewReader("{\"contentType\": \"text/csv\"}"))
+	request, _ := http.NewRequest("POST", "/societies/1/content", strings.NewReader("{\"contentType\": \"text/csv\"}"))
 	request.Header.Add("Content-Type", contentType)
 
 	response := httptest.NewRecorder()

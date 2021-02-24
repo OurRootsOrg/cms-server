@@ -6,6 +6,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/ourrootsorg/cms-server/utils"
+
 	"github.com/ourrootsorg/cms-server/api"
 	"github.com/stretchr/testify/assert"
 )
@@ -14,7 +16,7 @@ func TestContent(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping tests in short mode")
 	}
-	ctx := context.TODO()
+	ctx := utils.AddSocietyIDToContext(context.TODO(), 1)
 	testApi, err := api.NewAPI()
 	assert.NoError(t, err)
 	defer testApi.Close()

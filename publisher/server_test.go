@@ -8,6 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ourrootsorg/cms-server/utils"
+
 	"github.com/ourrootsorg/cms-server/api"
 	"github.com/ourrootsorg/cms-server/model"
 	"github.com/ourrootsorg/cms-server/persist"
@@ -19,7 +21,7 @@ func TestPublisher(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping tests in short mode")
 	}
-	ctx := context.TODO()
+	ctx := utils.AddSocietyIDToContext(context.TODO(), 1)
 
 	// create test api
 	db, err := postgres.Open(ctx, os.Getenv("DATABASE_URL"))
@@ -38,18 +40,18 @@ func TestPublisher(t *testing.T) {
 		RecordPersister(p)
 
 	// Add a test category and test collection and test post for referential integrity
-	testCategory := createTestCategory(t, p)
-	defer deleteTestCategory(t, p, testCategory)
-	testCollection := createTestCollection(t, p, testCategory.ID)
-	defer deleteTestCollection(t, p, testCollection)
-	testPost := createTestPost(t, p, testCollection.ID)
-	defer deleteTestPost(t, p, testPost)
+	testCategory := createTestCategory(ctx, t, p)
+	defer deleteTestCategory(ctx, t, p, testCategory)
+	testCollection := createTestCollection(ctx, t, p, testCategory.ID)
+	defer deleteTestCollection(ctx, t, p, testCollection)
+	testPost := createTestPost(ctx, t, p, testCollection.ID)
+	defer deleteTestPost(ctx, t, p, testPost)
 	// create records
-	testRecords := createTestRecords(t, p, testPost.ID)
-	defer deleteTestRecords(t, p, testRecords)
+	testRecords := createTestRecords(ctx, t, p, testPost.ID)
+	defer deleteTestRecords(ctx, t, p, testRecords)
 	// create record households
-	createTestRecordHouseholds(t, p, testPost.ID, testRecords)
-	defer deleteTestRecordHouseholds(t, p, testPost.ID)
+	createTestRecordHouseholds(ctx, t, p, testPost.ID, testRecords)
+	defer deleteTestRecordHouseholds(ctx, t, p, testPost.ID)
 	testPost.RecordsKey = "has records"
 	testPost, err = p.UpdatePost(ctx, testPost.ID, *testPost)
 	assert.NoError(t, err, "Error updating test post")
@@ -143,20 +145,20 @@ func TestPublisher(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func createTestCategory(t *testing.T, p model.CategoryPersister) *model.Category {
+func createTestCategory(ctx context.Context, t *testing.T, p model.CategoryPersister) *model.Category {
 	in, err := model.NewCategoryIn("Test")
 	assert.NoError(t, err)
-	created, e := p.InsertCategory(context.TODO(), in)
+	created, e := p.InsertCategory(ctx, in)
 	assert.NoError(t, e)
 	return created
 }
 
-func deleteTestCategory(t *testing.T, p model.CategoryPersister, category *model.Category) {
-	e := p.DeleteCategory(context.TODO(), category.ID)
+func deleteTestCategory(ctx context.Context, t *testing.T, p model.CategoryPersister, category *model.Category) {
+	e := p.DeleteCategory(ctx, category.ID)
 	assert.NoError(t, e)
 }
 
-func createTestCollection(t *testing.T, p model.CollectionPersister, categoryID uint32) *model.Collection {
+func createTestCollection(ctx context.Context, t *testing.T, p model.CollectionPersister, categoryID uint32) *model.Collection {
 	in := model.NewCollectionIn("Test", []uint32{categoryID})
 	in.Fields = []model.CollectionField{
 		{
@@ -206,25 +208,25 @@ func createTestCollection(t *testing.T, p model.CollectionPersister, categoryID 
 	in.HouseholdNumberHeader = "household"
 	in.HouseholdRelationshipHeader = "reltohead"
 	in.GenderHeader = "gender"
-	created, e := p.InsertCollection(context.TODO(), in)
+	created, e := p.InsertCollection(ctx, in)
 	assert.NoError(t, e)
 	return created
 }
 
-func deleteTestCollection(t *testing.T, p model.CollectionPersister, collection *model.Collection) {
-	e := p.DeleteCollection(context.TODO(), collection.ID)
+func deleteTestCollection(ctx context.Context, t *testing.T, p model.CollectionPersister, collection *model.Collection) {
+	e := p.DeleteCollection(ctx, collection.ID)
 	assert.NoError(t, e)
 }
 
-func createTestPost(t *testing.T, p model.PostPersister, collectionID uint32) *model.Post {
+func createTestPost(ctx context.Context, t *testing.T, p model.PostPersister, collectionID uint32) *model.Post {
 	in := model.NewPostIn("Test", collectionID, "")
-	created, e := p.InsertPost(context.TODO(), in)
+	created, e := p.InsertPost(ctx, in)
 	assert.NoError(t, e)
 	return created
 }
 
-func deleteTestPost(t *testing.T, p model.PostPersister, post *model.Post) {
-	e := p.DeletePost(context.TODO(), post.ID)
+func deleteTestPost(ctx context.Context, t *testing.T, p model.PostPersister, post *model.Post) {
+	e := p.DeletePost(ctx, post.ID)
 	assert.NoError(t, e)
 }
 
@@ -267,25 +269,25 @@ var recordData = []map[string]string{
 	},
 }
 
-func createTestRecords(t *testing.T, p model.RecordPersister, postID uint32) []model.Record {
+func createTestRecords(ctx context.Context, t *testing.T, p model.RecordPersister, postID uint32) []model.Record {
 	var records []model.Record
 	for _, data := range recordData {
 		in := model.NewRecordIn(data, postID)
-		record, e := p.InsertRecord(context.TODO(), in)
+		record, e := p.InsertRecord(ctx, in)
 		assert.NoError(t, e)
 		records = append(records, *record)
 	}
 	return records
 }
 
-func deleteTestRecords(t *testing.T, p model.RecordPersister, records []model.Record) {
+func deleteTestRecords(ctx context.Context, t *testing.T, p model.RecordPersister, records []model.Record) {
 	for _, record := range records {
-		e := p.DeleteRecord(context.TODO(), record.ID)
+		e := p.DeleteRecord(ctx, record.ID)
 		assert.NoError(t, e)
 	}
 }
 
-func createTestRecordHouseholds(t *testing.T, p model.RecordPersister, postID uint32, records []model.Record) {
+func createTestRecordHouseholds(ctx context.Context, t *testing.T, p model.RecordPersister, postID uint32, records []model.Record) {
 	households := map[string][]uint32{}
 	for _, record := range records {
 		households[record.Data["household"]] = append(households[record.Data["household"]], record.ID)
@@ -298,12 +300,12 @@ func createTestRecordHouseholds(t *testing.T, p model.RecordPersister, postID ui
 			Household: householdID,
 			Records:   recordIDs,
 		}
-		_, e := p.InsertRecordHousehold(context.TODO(), in)
+		_, e := p.InsertRecordHousehold(ctx, in)
 		assert.NoError(t, e)
 	}
 }
 
-func deleteTestRecordHouseholds(t *testing.T, p model.RecordPersister, postID uint32) {
-	e := p.DeleteRecordHouseholdsForPost(context.TODO(), postID)
+func deleteTestRecordHouseholds(ctx context.Context, t *testing.T, p model.RecordPersister, postID uint32) {
+	e := p.DeleteRecordHouseholdsForPost(ctx, postID)
 	assert.NoError(t, e)
 }

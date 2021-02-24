@@ -46,9 +46,9 @@ func (api API) AddCategory(ctx context.Context, in model.CategoryIn) (*model.Cat
 	if err != nil {
 		return nil, NewError(err)
 	}
-	category, e := api.categoryPersister.InsertCategory(ctx, in)
+	category, err := api.categoryPersister.InsertCategory(ctx, in)
 	if err != nil {
-		return nil, NewError(e)
+		return nil, NewError(err)
 	}
 	return category, nil
 }

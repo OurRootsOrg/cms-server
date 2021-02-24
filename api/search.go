@@ -16,6 +16,8 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/ourrootsorg/cms-server/utils"
+
 	"github.com/ourrootsorg/cms-server/stddate"
 	"github.com/ourrootsorg/cms-server/stdplace"
 
@@ -224,6 +226,7 @@ type ESSearchHit struct {
 	Source  ESSearchSource `json:"_source"`
 }
 type ESSearchSource struct {
+	SocietyID    uint32 `json:"societyId"`
 	CollectionID uint32 `json:"collectionId"`
 }
 type ESSearchAggregation struct {
@@ -238,6 +241,7 @@ type ESSearchAggregationBucket struct {
 
 type HitData struct {
 	ID           string
+	SocietyID    uint32
 	RecordID     uint32
 	Role         model.Role
 	CollectionID uint32
@@ -412,6 +416,12 @@ var RelativeRelationshipsToHead = map[model.HouseholdRelToHead]map[model.Relativ
 func (api API) IndexPost(ctx context.Context, post *model.Post) error {
 	var countSuccessful uint64
 
+	societyID, err := utils.GetSocietyIDFromContext(ctx)
+	if err != nil {
+		log.Printf("[ERROR] Missing society %v\n", err)
+		return err
+	}
+
 	lastModified := strconv.FormatInt(time.Now().Unix()*1000, 10)
 
 	// read collection for post
@@ -470,7 +480,7 @@ func (api API) IndexPost(ctx context.Context, post *model.Post) error {
 		if collection.HouseholdNumberHeader != "" {
 			householdRecords = householdRecordsMap[record.Data[collection.HouseholdNumberHeader]]
 		}
-		err = indexRecord(&record, householdRecords, post, collection, categories, lastModified, &countSuccessful, bi)
+		err = indexRecord(&record, householdRecords, societyID, post, collection, categories, lastModified, &countSuccessful, bi)
 		if err != nil {
 			log.Printf("[ERROR] Unexpected error %d: %v", record.ID, err)
 			return err
@@ -513,7 +523,7 @@ func getHouseholdRecordsMap(recordHouseholds []model.RecordHousehold, records []
 	return result
 }
 
-func indexRecord(record *model.Record, householdRecords []*model.Record, post *model.Post, collection *model.Collection,
+func indexRecord(record *model.Record, householdRecords []*model.Record, societyID uint32, post *model.Post, collection *model.Collection,
 	categories []model.Category, lastModified string, countSuccessful *uint64, bi esutil.BulkIndexer) error {
 
 	for role, suffix := range IndexRoles {
@@ -596,6 +606,8 @@ func indexRecord(record *model.Record, householdRecords []*model.Record, post *m
 		ixRecord["category"] = catNames
 		ixRecord["collection"] = collection.Name
 		ixRecord["collectionId"] = collection.ID
+		ixRecord["societyId"] = societyID
+		ixRecord["privacy"] = collection.IndexPrivacy
 		if collection.Location != "" {
 			placeLevels := getPlaceFacets(collection.Location)
 			if len(placeLevels) > 0 {
@@ -694,6 +706,8 @@ func (api API) SearchByID(ctx context.Context, id string) (*model.SearchHit, err
 		return nil, NewError(err)
 	}
 
+	// TODO verify hitData.SocietyID == ctx.societyID
+
 	// read record and collection
 	// don't include household because we can get the household here more efficiently (we don't have to re-read post and collection)
 	recordDetail, errs := api.GetRecord(ctx, false, hitData.RecordID)
@@ -732,6 +746,7 @@ func (api API) SearchByID(ctx context.Context, id string) (*model.SearchHit, err
 	}
 	return &model.SearchHit{
 		ID:                 hitData.ID,
+		SocietyID:          hitData.SocietyID,
 		Person:             constructSearchPerson(collection.Mappings, hitData.Role, &recordDetail.Record),
 		Record:             constructSearchRecord(collection.Mappings, &recordDetail.Record),
 		CollectionName:     collection.Name,
@@ -745,6 +760,8 @@ func (api API) SearchByID(ctx context.Context, id string) (*model.SearchHit, err
 }
 
 func (api API) SearchDeleteByPost(ctx context.Context, id uint32) error {
+	// post ID is globally unique
+	// ID must have been verified to belong to ctx society; we don't include society in the search
 	search := Search{
 		Query: Query{
 			Term: map[string]TermQuery{
@@ -771,6 +788,7 @@ func (api API) SearchDeleteByPost(ctx context.Context, id uint32) error {
 }
 
 func (api API) SearchDeleteByID(ctx context.Context, id string) error {
+	// for testing only
 	res, err := api.es.Delete("records", id,
 		api.es.Delete.WithContext(ctx),
 	)
@@ -784,6 +802,7 @@ func (api API) SearchDeleteByID(ctx context.Context, id string) error {
 
 // Search
 func (api API) Search(ctx context.Context, req *SearchRequest) (*model.SearchResult, error) {
+	// TODO add societyID as a search facet term
 	search, err := api.constructSearchQuery(ctx, req)
 	if err != nil {
 		return nil, err
@@ -1522,6 +1541,7 @@ func getHitData(r ESSearchHit) (*HitData, error) {
 
 	return &HitData{
 		ID:           r.ID,
+		SocietyID:    r.Source.SocietyID,
 		RecordID:     uint32(rid),
 		Role:         role,
 		CollectionID: r.Source.CollectionID,

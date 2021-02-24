@@ -77,8 +77,8 @@ func (a *ApiMock) GetContent(ctx context.Context, key string) ([]byte, error) {
 	return a.Result.([]byte), a.Errors
 }
 
-func (a *ApiMock) RetrieveUser(ctx context.Context, provider OIDCProvider, token *oidc.IDToken, rawToken string) (*model.User, error) {
-	return a.Result.(*model.User), a.Errors
+func (a *ApiMock) RetrieveUser(ctx context.Context, provider OIDCProvider, token *oidc.IDToken, rawToken string) (*model.User, bool, error) {
+	return a.Result.(*model.User), false, a.Errors
 }
 
 func (a *ApiMock) GetRecordsForPost(ctx context.Context, postid uint32) (*RecordsResult, error) {
@@ -126,13 +126,6 @@ func (a *ApiMock) SearchDeleteByID(ctx context.Context, id string) error {
 	return a.Errors
 }
 
-func (a *ApiMock) GetSettings(ctx context.Context) (*model.Settings, error) {
-	return a.Result.(*model.Settings), a.Errors
-}
-func (a *ApiMock) UpdateSettings(ctx context.Context, in model.Settings) (*model.Settings, error) {
-	return a.Result.(*model.Settings), a.Errors
-}
-
 func (a *ApiMock) StandardizePlace(ctx context.Context, text, defaultContainingPlace string) (*model.Place, error) {
 	return a.Result.(*model.Place), a.Errors
 }
@@ -143,4 +136,53 @@ func (a *ApiMock) GetPlacesByPrefix(ctx context.Context, prefix string, count in
 
 func (a *ApiMock) GetNameVariants(ctx context.Context, nameType model.NameType, name string) (*model.NameVariants, error) {
 	return a.Result.(*model.NameVariants), a.Errors
+}
+
+func (a *ApiMock) GetSocietySummariesForCurrentUser(ctx context.Context) ([]model.SocietySummary, error) {
+	return a.Result.([]model.SocietySummary), a.Errors
+}
+func (a *ApiMock) GetSocietySummary(ctx context.Context) (*model.SocietySummary, error) {
+	return a.Result.(*model.SocietySummary), a.Errors
+}
+func (a *ApiMock) GetSociety(ctx context.Context) (*model.Society, error) {
+	return a.Result.(*model.Society), a.Errors
+}
+func (a *ApiMock) AddSociety(ctx context.Context, in model.SocietyIn) (*model.Society, error) {
+	return a.Result.(*model.Society), a.Errors
+}
+func (a *ApiMock) UpdateSociety(ctx context.Context, in model.Society) (*model.Society, error) {
+	return a.Result.(*model.Society), a.Errors
+}
+func (a *ApiMock) DeleteSociety(ctx context.Context) error {
+	return a.Errors
+}
+func (a *ApiMock) GetSocietyUserNames(ctx context.Context) ([]SocietyUserName, error) {
+	return a.Result.([]SocietyUserName), a.Errors
+}
+func (a *ApiMock) UpdateSocietyUserName(ctx context.Context, id uint32, in SocietyUserName) (*SocietyUserName, error) {
+	return a.Result.(*SocietyUserName), a.Errors
+}
+func (a *ApiMock) GetSocietyUserByUser(ctx context.Context, userID uint32) (*model.SocietyUser, error) {
+	return a.Result.(*model.SocietyUser), a.Errors
+}
+func (a *ApiMock) AddSocietyUser(ctx context.Context, body model.SocietyUserBody) (*model.SocietyUser, error) {
+	return a.Result.(*model.SocietyUser), a.Errors
+}
+func (a *ApiMock) DeleteSocietyUser(ctx context.Context, id uint32) error {
+	return a.Errors
+}
+func (a *ApiMock) GetInvitations(ctx context.Context) ([]model.Invitation, error) {
+	return a.Result.([]model.Invitation), a.Errors
+}
+func (a *ApiMock) AddInvitation(ctx context.Context, body model.InvitationBody) (*model.Invitation, error) {
+	return a.Result.(*model.Invitation), a.Errors
+}
+func (a *ApiMock) DeleteInvitation(ctx context.Context, id uint32) error {
+	return a.Errors
+}
+func (a *ApiMock) GetInvitationSocietyName(ctx context.Context, code string) (*InvitationSocietyName, error) {
+	return a.Result.(*InvitationSocietyName), a.Errors
+}
+func (a *ApiMock) AcceptInvitation(ctx context.Context, code string) (*model.SocietyUser, error) {
+	return a.Result.(*model.SocietyUser), a.Errors
 }

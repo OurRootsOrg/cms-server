@@ -710,6 +710,101 @@ var doc = `{
                 }
             }
         },
+        "/invitations/{code}": {
+            "get": {
+                "security": [
+                    {
+                        "OAuth2Implicit": [
+                            "cms",
+                            "openid",
+                            "profile",
+                            "email"
+                        ]
+                    },
+                    {
+                        "OAuth2AuthCode": [
+                            "cms",
+                            "openid",
+                            "profile",
+                            "email"
+                        ]
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "invitations"
+                ],
+                "summary": "gets an Invitation",
+                "operationId": "getInvitation",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.InvitationSocietyName"
+                        }
+                    },
+                    "404": {
+                        "description": "Not found",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "OAuth2Implicit": [
+                            "cms",
+                            "openid",
+                            "profile",
+                            "email"
+                        ]
+                    },
+                    {
+                        "OAuth2AuthCode": [
+                            "cms",
+                            "openid",
+                            "profile",
+                            "email"
+                        ]
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "invitations"
+                ],
+                "summary": "accept an invitation",
+                "operationId": "acceptInvitation",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.SocietyUser"
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    }
+                }
+            }
+        },
         "/places": {
             "get": {
                 "security": [
@@ -1634,7 +1729,71 @@ var doc = `{
                 }
             }
         },
-        "/settings": {
+        "/societies": {
+            "post": {
+                "security": [
+                    {
+                        "OAuth2Implicit": [
+                            "cms",
+                            "openid",
+                            "profile",
+                            "email"
+                        ]
+                    },
+                    {
+                        "OAuth2AuthCode": [
+                            "cms",
+                            "openid",
+                            "profile",
+                            "email"
+                        ]
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "societies"
+                ],
+                "summary": "adds a new Society",
+                "operationId": "addSociety",
+                "parameters": [
+                    {
+                        "description": "Add Society",
+                        "name": "society",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.SocietyIn"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.Society"
+                        }
+                    },
+                    "415": {
+                        "description": "Bad Content-Type",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/societies/{id}": {
             "put": {
                 "security": [
                     {
@@ -1661,18 +1820,25 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "settings"
+                    "societies"
                 ],
-                "summary": "updates settings",
-                "operationId": "updateSettings",
+                "summary": "updates a Society",
+                "operationId": "updateSociety",
                 "parameters": [
                     {
-                        "description": "Update Settings",
-                        "name": "post",
+                        "type": "integer",
+                        "description": "Society ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Update Society",
+                        "name": "society",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/model.Settings"
+                            "$ref": "#/definitions/model.Society"
                         }
                     }
                 ],
@@ -1680,11 +1846,587 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/model.Settings"
+                            "$ref": "#/definitions/model.Society"
                         }
                     },
                     "415": {
                         "description": "Bad Content-Type",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "OAuth2Implicit": [
+                            "cms",
+                            "openid",
+                            "profile",
+                            "email"
+                        ]
+                    },
+                    {
+                        "OAuth2AuthCode": [
+                            "cms",
+                            "openid",
+                            "profile",
+                            "email"
+                        ]
+                    }
+                ],
+                "tags": [
+                    "societies"
+                ],
+                "summary": "deletes a Society",
+                "operationId": "deleteSociety",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Society ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "OK"
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/societies/{society}": {
+            "get": {
+                "security": [
+                    {
+                        "OAuth2Implicit": [
+                            "cms",
+                            "openid",
+                            "profile",
+                            "email"
+                        ]
+                    },
+                    {
+                        "OAuth2AuthCode": [
+                            "cms",
+                            "openid",
+                            "profile",
+                            "email"
+                        ]
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "societies"
+                ],
+                "summary": "gets a Society",
+                "operationId": "getSociety",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Society ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.Society"
+                        }
+                    },
+                    "404": {
+                        "description": "Not found",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/societies/{society}/current_user": {
+            "get": {
+                "security": [
+                    {
+                        "OAuth2Implicit": [
+                            "cms",
+                            "openid",
+                            "profile",
+                            "email"
+                        ]
+                    },
+                    {
+                        "OAuth2AuthCode": [
+                            "cms",
+                            "openid",
+                            "profile",
+                            "email"
+                        ]
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "societyUsers"
+                ],
+                "summary": "returns the current SocietyUser",
+                "operationId": "getCurrentSocietyUser",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.SocietyUser"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/societies/{society}/invitations": {
+            "get": {
+                "security": [
+                    {
+                        "OAuth2Implicit": [
+                            "cms",
+                            "openid",
+                            "profile",
+                            "email"
+                        ]
+                    },
+                    {
+                        "OAuth2AuthCode": [
+                            "cms",
+                            "openid",
+                            "profile",
+                            "email"
+                        ]
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "invitations"
+                ],
+                "summary": "returns all invitations",
+                "operationId": "getInvitations",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.Invitation"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "OAuth2Implicit": [
+                            "cms",
+                            "openid",
+                            "profile",
+                            "email"
+                        ]
+                    },
+                    {
+                        "OAuth2AuthCode": [
+                            "cms",
+                            "openid",
+                            "profile",
+                            "email"
+                        ]
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "invitations"
+                ],
+                "summary": "adds a new Invitation",
+                "operationId": "addInvitation",
+                "parameters": [
+                    {
+                        "description": "Add Invitation",
+                        "name": "society",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.InvitationIn"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.Invitation"
+                        }
+                    },
+                    "415": {
+                        "description": "Bad Content-Type",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/societies/{society}/invitations/{id}": {
+            "delete": {
+                "security": [
+                    {
+                        "OAuth2Implicit": [
+                            "cms",
+                            "openid",
+                            "profile",
+                            "email"
+                        ]
+                    },
+                    {
+                        "OAuth2AuthCode": [
+                            "cms",
+                            "openid",
+                            "profile",
+                            "email"
+                        ]
+                    }
+                ],
+                "tags": [
+                    "invitations"
+                ],
+                "summary": "deletes an Invitation",
+                "operationId": "deleteInvitation",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Invitation ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "OK"
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/societies/{society}/users": {
+            "get": {
+                "security": [
+                    {
+                        "OAuth2Implicit": [
+                            "cms",
+                            "openid",
+                            "profile",
+                            "email"
+                        ]
+                    },
+                    {
+                        "OAuth2AuthCode": [
+                            "cms",
+                            "openid",
+                            "profile",
+                            "email"
+                        ]
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "societyUsers"
+                ],
+                "summary": "returns all users",
+                "operationId": "getUsers",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/api.SocietyUserName"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/societies/{society}/users/{id}": {
+            "put": {
+                "security": [
+                    {
+                        "OAuth2Implicit": [
+                            "cms",
+                            "openid",
+                            "profile",
+                            "email"
+                        ]
+                    },
+                    {
+                        "OAuth2AuthCode": [
+                            "cms",
+                            "openid",
+                            "profile",
+                            "email"
+                        ]
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "societyUsers"
+                ],
+                "summary": "updates a SocietyUser",
+                "operationId": "updateSocietyUser",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "SocietyUser ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Update SocietyUser",
+                        "name": "society",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.SocietyUserName"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.SocietyUserName"
+                        }
+                    },
+                    "415": {
+                        "description": "Bad Content-Type",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "OAuth2Implicit": [
+                            "cms",
+                            "openid",
+                            "profile",
+                            "email"
+                        ]
+                    },
+                    {
+                        "OAuth2AuthCode": [
+                            "cms",
+                            "openid",
+                            "profile",
+                            "email"
+                        ]
+                    }
+                ],
+                "tags": [
+                    "societyUsers"
+                ],
+                "summary": "deletes a SocietyUser",
+                "operationId": "deleteSocietyUSer",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "SocietyUser ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "OK"
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/society_summaries": {
+            "get": {
+                "security": [
+                    {
+                        "OAuth2Implicit": [
+                            "cms",
+                            "openid",
+                            "profile",
+                            "email"
+                        ]
+                    },
+                    {
+                        "OAuth2AuthCode": [
+                            "cms",
+                            "openid",
+                            "profile",
+                            "email"
+                        ]
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "societies"
+                ],
+                "summary": "returns all society summaries for the current user",
+                "operationId": "getSocietySummaries",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.SocietySummary"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/society_summaries/{society}": {
+            "get": {
+                "security": [
+                    {
+                        "OAuth2Implicit": [
+                            "cms",
+                            "openid",
+                            "profile",
+                            "email"
+                        ]
+                    },
+                    {
+                        "OAuth2AuthCode": [
+                            "cms",
+                            "openid",
+                            "profile",
+                            "email"
+                        ]
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "societies"
+                ],
+                "summary": "gets a SocietySummary",
+                "operationId": "getSocietySummary",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Society ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.SocietySummary"
+                        }
+                    },
+                    "404": {
+                        "description": "Not found",
                         "schema": {
                             "$ref": "#/definitions/api.Error"
                         }
@@ -1718,6 +2460,43 @@ var doc = `{
                     "type": "string"
                 },
                 "label": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.InvitationSocietyName": {
+            "type": "object",
+            "required": [
+                "code",
+                "id",
+                "level",
+                "name",
+                "societyId"
+            ],
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 999
+                },
+                "insert_time": {
+                    "type": "string"
+                },
+                "last_update_time": {
+                    "type": "string"
+                },
+                "level": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "societyId": {
+                    "type": "integer"
+                },
+                "societyName": {
                     "type": "string"
                 }
             }
@@ -1787,6 +2566,39 @@ var doc = `{
                 }
             }
         },
+        "api.SocietyUserName": {
+            "type": "object",
+            "required": [
+                "id",
+                "level",
+                "societyId",
+                "userId"
+            ],
+            "properties": {
+                "id": {
+                    "type": "integer",
+                    "example": 999
+                },
+                "insert_time": {
+                    "type": "string"
+                },
+                "last_update_time": {
+                    "type": "string"
+                },
+                "level": {
+                    "type": "integer"
+                },
+                "societyId": {
+                    "type": "integer"
+                },
+                "userId": {
+                    "type": "integer"
+                },
+                "userName": {
+                    "type": "string"
+                }
+            }
+        },
         "model.Category": {
             "type": "object",
             "required": [
@@ -1837,6 +2649,9 @@ var doc = `{
                 "citation_template": {
                     "type": "string"
                 },
+                "detailPrivacy": {
+                    "type": "string"
+                },
                 "fields": {
                     "type": "array",
                     "items": {
@@ -1857,6 +2672,12 @@ var doc = `{
                     "example": 999
                 },
                 "imagePathHeader": {
+                    "type": "string"
+                },
+                "imagePrivacy": {
+                    "type": "string"
+                },
+                "indexPrivacy": {
                     "type": "string"
                 },
                 "insert_time": {
@@ -1903,6 +2724,9 @@ var doc = `{
                 "citation_template": {
                     "type": "string"
                 },
+                "detailPrivacy": {
+                    "type": "string"
+                },
                 "fields": {
                     "type": "array",
                     "items": {
@@ -1919,6 +2743,12 @@ var doc = `{
                     "type": "string"
                 },
                 "imagePathHeader": {
+                    "type": "string"
+                },
+                "imagePrivacy": {
+                    "type": "string"
+                },
+                "indexPrivacy": {
                     "type": "string"
                 },
                 "location": {
@@ -1966,6 +2796,63 @@ var doc = `{
                     "items": {
                         "type": "string"
                     }
+                }
+            }
+        },
+        "model.Invitation": {
+            "type": "object",
+            "required": [
+                "code",
+                "id",
+                "level",
+                "name",
+                "societyId"
+            ],
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 999
+                },
+                "insert_time": {
+                    "type": "string"
+                },
+                "last_update_time": {
+                    "type": "string"
+                },
+                "level": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "societyId": {
+                    "type": "integer"
+                }
+            }
+        },
+        "model.InvitationIn": {
+            "type": "object",
+            "required": [
+                "code",
+                "level",
+                "name",
+                "societyId"
+            ],
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "level": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "societyId": {
+                    "type": "integer"
                 }
             }
         },
@@ -2239,6 +3126,9 @@ var doc = `{
                 },
                 "score": {
                     "type": "number"
+                },
+                "societyId": {
+                    "type": "integer"
                 }
             }
         },
@@ -2316,23 +3206,6 @@ var doc = `{
                 }
             }
         },
-        "model.Settings": {
-            "type": "object",
-            "properties": {
-                "insert_time": {
-                    "type": "string"
-                },
-                "last_update_time": {
-                    "type": "string"
-                },
-                "postMetadata": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/model.SettingsPostMetadata"
-                    }
-                }
-            }
-        },
         "model.SettingsPostMetadata": {
             "type": "object",
             "properties": {
@@ -2344,6 +3217,111 @@ var doc = `{
                 },
                 "type": {
                     "type": "string"
+                }
+            }
+        },
+        "model.Society": {
+            "type": "object",
+            "required": [
+                "id",
+                "name",
+                "secretKey"
+            ],
+            "properties": {
+                "id": {
+                    "type": "integer",
+                    "example": 999
+                },
+                "insert_time": {
+                    "type": "string"
+                },
+                "last_update_time": {
+                    "type": "string"
+                },
+                "loginURL": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "postMetadata": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.SettingsPostMetadata"
+                    }
+                },
+                "secretKey": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.SocietyIn": {
+            "type": "object",
+            "required": [
+                "name",
+                "secretKey"
+            ],
+            "properties": {
+                "loginURL": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "postMetadata": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.SettingsPostMetadata"
+                    }
+                },
+                "secretKey": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.SocietySummary": {
+            "type": "object",
+            "required": [
+                "id",
+                "name"
+            ],
+            "properties": {
+                "id": {
+                    "type": "integer",
+                    "example": 999
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.SocietyUser": {
+            "type": "object",
+            "required": [
+                "id",
+                "level",
+                "societyId",
+                "userId"
+            ],
+            "properties": {
+                "id": {
+                    "type": "integer",
+                    "example": 999
+                },
+                "insert_time": {
+                    "type": "string"
+                },
+                "last_update_time": {
+                    "type": "string"
+                },
+                "level": {
+                    "type": "integer"
+                },
+                "societyId": {
+                    "type": "integer"
+                },
+                "userId": {
+                    "type": "integer"
                 }
             }
         },

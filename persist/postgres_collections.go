@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"strconv"
 
+	"github.com/ourrootsorg/cms-server/utils"
+
 	"github.com/lib/pq"
 
 	"github.com/ourrootsorg/cms-server/model"
@@ -14,9 +16,14 @@ import (
 
 // SelectCollections selects all collections
 func (p PostgresPersister) SelectCollections(ctx context.Context) ([]model.Collection, error) {
+	societyID, err := utils.GetSocietyIDFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
 	rows, err := p.db.QueryContext(ctx,
 		`SELECT id, array_agg(cc.category_id), body, insert_time, last_update_time
-			   FROM collection LEFT JOIN collection_category cc ON id = cc.collection_id GROUP BY id`)
+			   FROM collection LEFT JOIN collection_category cc ON id = cc.collection_id 
+			   WHERE society_id=$1 GROUP BY id`, societyID)
 	if err != nil {
 		return nil, translateError(err, nil, nil, "")
 	}
@@ -40,6 +47,10 @@ func (p PostgresPersister) SelectCollections(ctx context.Context) ([]model.Colle
 
 // SelectCollectionsByID selects many collections
 func (p PostgresPersister) SelectCollectionsByID(ctx context.Context, ids []uint32) ([]model.Collection, error) {
+	societyID, err := utils.GetSocietyIDFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
 	collections := make([]model.Collection, 0)
 	if len(ids) == 0 {
 		return collections, nil
@@ -47,7 +58,8 @@ func (p PostgresPersister) SelectCollectionsByID(ctx context.Context, ids []uint
 
 	rows, err := p.db.QueryContext(ctx,
 		`SELECT id, array_agg(cc.category_id), body, insert_time, last_update_time
-			   FROM collection LEFT JOIN collection_category cc ON id = cc.collection_id WHERE id = ANY($1) GROUP BY id`, pq.Array(ids))
+			   FROM collection LEFT JOIN collection_category cc ON id = cc.collection_id 
+			   WHERE society_id=$1 AND id = ANY($2) GROUP BY id`, societyID, pq.Array(ids))
 	if err != nil {
 		return nil, translateError(err, nil, nil, "")
 	}
@@ -70,11 +82,16 @@ func (p PostgresPersister) SelectCollectionsByID(ctx context.Context, ids []uint
 
 // SelectOneCollection selects a single collection
 func (p PostgresPersister) SelectOneCollection(ctx context.Context, id uint32) (*model.Collection, error) {
+	societyID, err := utils.GetSocietyIDFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
 	var categories []int64
 	var collection model.Collection
-	err := p.db.QueryRowContext(ctx,
+	err = p.db.QueryRowContext(ctx,
 		`SELECT id, array_agg(cc.category_id), body, insert_time, last_update_time
-			   FROM collection LEFT JOIN collection_category cc ON id = cc.collection_id WHERE id = $1 GROUP BY id`, id).Scan(
+			   FROM collection LEFT JOIN collection_category cc ON id = cc.collection_id 
+			   WHERE society_id=$1 AND id = $2 GROUP BY id`, societyID, id).Scan(
 		&collection.ID,
 		pq.Array(&categories),
 		&collection.CollectionBody,
@@ -93,6 +110,10 @@ func (p PostgresPersister) SelectOneCollection(ctx context.Context, id uint32) (
 
 // InsertCollection inserts a CollectionBody into the database and returns the inserted Collection
 func (p PostgresPersister) InsertCollection(ctx context.Context, in model.CollectionIn) (*model.Collection, error) {
+	societyID, err := utils.GetSocietyIDFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
 	var collection model.Collection
 	// create a transaction so collection and collection_category stay in sync
 	tx, err := p.db.Begin()
@@ -102,10 +123,10 @@ func (p PostgresPersister) InsertCollection(ctx context.Context, in model.Collec
 	defer tx.Rollback()
 
 	err = tx.QueryRowContext(ctx,
-		`INSERT INTO collection (body)
-		 VALUES ($1)
+		`INSERT INTO collection (society_id, body)
+		 VALUES ($1, $2)
 		 RETURNING id, body, insert_time, last_update_time`,
-		in.CollectionBody).
+		societyID, in.CollectionBody).
 		Scan(
 			&collection.ID,
 			&collection.CollectionBody,
@@ -136,6 +157,12 @@ func (p PostgresPersister) UpdateCollection(ctx context.Context, id uint32, in m
 	}
 	defer tx.Rollback()
 
+	// make sure collection exists for this society
+	existingCollection, err := p.SelectOneCollection(ctx, id)
+	if err != nil || existingCollection == nil || existingCollection.ID != id {
+		return nil, model.NewError(model.ErrNotFound, strconv.Itoa(int(id)))
+	}
+
 	err = tx.QueryRowContext(ctx,
 		`UPDATE collection SET body = $1, last_update_time = CURRENT_TIMESTAMP
 		 WHERE id = $2 AND last_update_time = $3
@@ -148,13 +175,8 @@ func (p PostgresPersister) UpdateCollection(ctx context.Context, id uint32, in m
 			&collection.LastUpdateTime,
 		)
 	if err != nil && err == sql.ErrNoRows {
-		// Either non-existent or last_update_time didn't match
-		c, _ := p.SelectOneCollection(ctx, id)
-		if c != nil && c.ID == id {
-			// Row exists, so it must be a non-matching update time
-			return nil, model.NewError(model.ErrConcurrentUpdate, c.LastUpdateTime.String(), in.LastUpdateTime.String())
-		}
-		return nil, model.NewError(model.ErrNotFound, strconv.Itoa(int(id)))
+		// Row exists, so it must be a non-matching update time
+		return nil, model.NewError(model.ErrConcurrentUpdate, existingCollection.LastUpdateTime.String(), in.LastUpdateTime.String())
 	}
 	// delete and re-add categories (in the future we could calculate the differences and add/delete just what we need to)
 	_, err = tx.ExecContext(ctx, "DELETE FROM collection_category WHERE collection_id = $1", id)
@@ -180,6 +202,12 @@ func (p PostgresPersister) DeleteCollection(ctx context.Context, id uint32) erro
 		return translateError(err, &id, nil, "")
 	}
 	defer tx.Rollback()
+
+	// make sure collection exists for this society
+	existingCollection, err := p.SelectOneCollection(ctx, id)
+	if err != nil || existingCollection == nil || existingCollection.ID != id {
+		return translateError(err, &id, nil, "")
+	}
 
 	_, err = tx.ExecContext(ctx, "DELETE FROM collection_category WHERE collection_id = $1", id)
 	if err != nil {

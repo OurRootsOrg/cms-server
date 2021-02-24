@@ -7,6 +7,8 @@ import (
 	"os"
 	"testing"
 
+	"github.com/ourrootsorg/cms-server/utils"
+
 	"github.com/ourrootsorg/cms-server/model"
 	"github.com/ourrootsorg/cms-server/persist"
 	"gocloud.dev/postgres"
@@ -269,7 +271,7 @@ func TestSearchQuery(t *testing.T) {
 func doInternalSearchTests(t *testing.T,
 	nameP model.NamePersister,
 ) {
-	ctx := context.TODO()
+	ctx := utils.AddSocietyIDToContext(context.TODO(), 1)
 	testApi, err := NewAPI()
 	assert.NoError(t, err)
 	defer testApi.Close()

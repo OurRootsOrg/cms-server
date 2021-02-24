@@ -11,6 +11,10 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/ourrootsorg/cms-server/model"
+
+	"github.com/ourrootsorg/cms-server/utils"
+
 	"github.com/gorilla/mux"
 	"github.com/ourrootsorg/cms-server/api"
 	"github.com/ourrootsorg/go-oidc"
@@ -25,13 +29,14 @@ type verifier interface {
 
 // App is the container for the application
 type App struct {
-	baseURL      url.URL
-	api          api.LocalAPI
-	oidcAudience string
-	oidcDomain   string
-	oidcProvider *oidc.Provider
-	oidcVerifier verifier
-	authDisabled bool // If set to true, this disables authentication. This should only be done in test code!
+	baseURL          url.URL
+	api              api.LocalAPI
+	oidcAudience     string
+	oidcDomain       string
+	oidcProvider     *oidc.Provider
+	oidcVerifier     verifier
+	sandboxSocietyID uint32
+	authDisabled     bool // If set to true, this disables authentication. This should only be done in test code!
 }
 
 // NewApp builds an App
@@ -71,6 +76,12 @@ func (app *App) OIDC(oidcAudience string, oidcDomain string) *App {
 	return app
 }
 
+// SandboxSociety - everyone is added as an editor to the default society if it exists
+func (app *App) SandboxSociety(id uint32) *App {
+	app.sandboxSocietyID = id
+	return app
+}
+
 // GetIndex redirects to the Swagger documentation
 func (app App) GetIndex(w http.ResponseWriter, req *http.Request) {
 	http.Redirect(w, req,
@@ -85,6 +96,24 @@ func (app App) GetHealth(w http.ResponseWriter, req *http.Request) {
 
 // we need a handler for options. This handler won't actually get invoked; it's just needed so the CORS middleware will get invoked
 func (app App) OptionsNoop(w http.ResponseWriter, req *http.Request) {
+}
+
+func (app App) setSociety(next http.Handler) http.Handler {
+	fn := func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		societyID, err := strconv.Atoi(vars["society"])
+		if err != nil || societyID <= 0 {
+			ErrorResponse(w, http.StatusBadRequest, fmt.Sprintf("Bad society id '%s': %v", vars["society"], err))
+			return
+		}
+
+		c := utils.AddSocietyIDToContext(r.Context(), uint32(societyID))
+		newRequest := r.WithContext(c)
+		// Update the current request with the new context information.
+		*r = *newRequest
+		next.ServeHTTP(w, r)
+	}
+	return http.HandlerFunc(fn)
 }
 
 func (app App) verifyToken(next http.Handler) http.Handler {
@@ -122,7 +151,7 @@ func (app App) verifyToken(next http.Handler) http.Handler {
 			return
 		}
 		log.Printf("[DEBUG] Found valid token for subject '%s'", parsedToken.Subject)
-		user, errors := app.api.RetrieveUser(r.Context(), app.oidcProvider, parsedToken, accessJWT)
+		user, isNew, errors := app.api.RetrieveUser(r.Context(), app.oidcProvider, parsedToken, accessJWT)
 		if errors != nil {
 			msg := fmt.Sprintf("RetrieveUser error %v", errors)
 			log.Print("[ERROR] " + msg)
@@ -133,11 +162,58 @@ func (app App) verifyToken(next http.Handler) http.Handler {
 		// If we get here, everything worked and we can set the
 		// user property in context.
 		// c := context.WithValue(r.Context(), api.TokenProperty, parsedToken)
-		c := context.WithValue(r.Context(), api.UserProperty, user)
+		c := utils.AddUserToContext(r.Context(), user)
+
+		// if the user is new and there is a default society, add the user as an editor of the society
+		if isNew && app.sandboxSocietyID > 0 {
+			sctx := utils.AddSocietyIDToContext(c, app.sandboxSocietyID)
+			body := model.SocietyUserBody{
+				Level: model.AuthEditor,
+			}
+			_, err = app.api.AddSocietyUser(sctx, body)
+			if err != nil {
+				msg := fmt.Sprintf("AddSocietyUser error %v", err)
+				log.Print("[ERROR] " + msg)
+				ErrorsResponse(w, err)
+				return
+			}
+		}
 
 		newRequest := r.WithContext(c)
 		// Update the current request with the new context information.
 		*r = *newRequest
+		next.ServeHTTP(w, r)
+	}
+	return http.HandlerFunc(fn)
+}
+
+func (app App) authenticate(minAuthLevel model.AuthLevel, next http.Handler) http.Handler {
+	if app.authDisabled {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			next.ServeHTTP(w, r)
+		})
+	}
+	fn := func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		user, err := utils.GetUserFromContext(ctx)
+		if err != nil || user == nil {
+			ErrorResponse(w, http.StatusUnauthorized, fmt.Sprintf("Missing user: %v", err))
+			return
+		}
+		// read society user
+		societyUser, errors := app.api.GetSocietyUserByUser(r.Context(), user.ID)
+		if errors != nil {
+			msg := fmt.Sprintf("RetrieveUserSociety error %v", errors)
+			log.Print("[ERROR] " + msg)
+			ErrorsResponse(w, errors)
+			return
+		}
+
+		if societyUser.Level < minAuthLevel {
+			ErrorResponse(w, http.StatusForbidden,
+				fmt.Sprintf("User is level '%s' but '%s' is required: %v", societyUser.Level, minAuthLevel, err))
+			return
+		}
 		next.ServeHTTP(w, r)
 	}
 	return http.HandlerFunc(fn)
@@ -151,61 +227,122 @@ func (app App) NewRouter() *mux.Router {
 	r.HandleFunc(app.baseURL.Path+"/health", app.GetHealth).Methods("GET")
 	r.HandleFunc(app.baseURL.Path+"/index.html", app.GetIndex).Methods("GET")
 
-	r.Handle(app.baseURL.Path+"/categories", http.HandlerFunc(app.OptionsNoop)).Methods("OPTIONS")
-	r.Handle(app.baseURL.Path+"/categories", app.verifyToken(http.HandlerFunc(app.GetAllCategories))).Methods("GET")
-	r.Handle(app.baseURL.Path+"/categories", app.verifyToken(http.HandlerFunc(app.PostCategory))).Methods("POST")
+	r.Handle(app.baseURL.Path+"/societies/{society}/categories", http.HandlerFunc(app.OptionsNoop)).Methods("OPTIONS")
+	r.Handle(app.baseURL.Path+"/societies/{society}/categories", app.setSociety(app.verifyToken(app.authenticate(model.AuthReader,
+		http.HandlerFunc(app.GetAllCategories))))).Methods("GET")
+	r.Handle(app.baseURL.Path+"/societies/{society}/categories", app.setSociety(app.verifyToken(app.authenticate(model.AuthEditor,
+		http.HandlerFunc(app.PostCategory))))).Methods("POST")
 
-	r.Handle(app.baseURL.Path+"/categories/{id}", http.HandlerFunc(app.OptionsNoop)).Methods("OPTIONS")
-	r.Handle(app.baseURL.Path+"/categories/{id}", app.verifyToken(http.HandlerFunc(app.GetCategory))).Methods("GET")
-	r.Handle(app.baseURL.Path+"/categories/{id}", app.verifyToken(http.HandlerFunc(app.PutCategory))).Methods("PUT")
-	r.Handle(app.baseURL.Path+"/categories/{id}", app.verifyToken(http.HandlerFunc(app.DeleteCategory))).Methods("DELETE")
+	r.Handle(app.baseURL.Path+"/societies/{society}/categories/{id}", http.HandlerFunc(app.OptionsNoop)).Methods("OPTIONS")
+	r.Handle(app.baseURL.Path+"/societies/{society}/categories/{id}", app.setSociety(app.verifyToken(app.authenticate(model.AuthReader,
+		http.HandlerFunc(app.GetCategory))))).Methods("GET")
+	r.Handle(app.baseURL.Path+"/societies/{society}/categories/{id}", app.setSociety(app.verifyToken(app.authenticate(model.AuthEditor,
+		http.HandlerFunc(app.PutCategory))))).Methods("PUT")
+	r.Handle(app.baseURL.Path+"/societies/{society}/categories/{id}", app.setSociety(app.verifyToken(app.authenticate(model.AuthEditor,
+		http.HandlerFunc(app.DeleteCategory))))).Methods("DELETE")
 
-	r.Handle(app.baseURL.Path+"/collections", http.HandlerFunc(app.OptionsNoop)).Methods("OPTIONS")
-	r.Handle(app.baseURL.Path+"/collections", app.verifyToken(http.HandlerFunc(app.GetCollections))).Methods("GET")
-	r.Handle(app.baseURL.Path+"/collections", app.verifyToken(http.HandlerFunc(app.PostCollection))).Methods("POST")
+	r.Handle(app.baseURL.Path+"/societies/{society}/collections", http.HandlerFunc(app.OptionsNoop)).Methods("OPTIONS")
+	r.Handle(app.baseURL.Path+"/societies/{society}/collections", app.setSociety(app.verifyToken(app.authenticate(model.AuthReader,
+		http.HandlerFunc(app.GetCollections))))).Methods("GET")
+	r.Handle(app.baseURL.Path+"/societies/{society}/collections", app.setSociety(app.verifyToken(app.authenticate(model.AuthEditor,
+		http.HandlerFunc(app.PostCollection))))).Methods("POST")
 
-	r.Handle(app.baseURL.Path+"/collections/{id}", http.HandlerFunc(app.OptionsNoop)).Methods("OPTIONS")
-	r.Handle(app.baseURL.Path+"/collections/{id}", app.verifyToken(http.HandlerFunc(app.GetCollection))).Methods("GET")
-	r.Handle(app.baseURL.Path+"/collections/{id}", app.verifyToken(http.HandlerFunc(app.PutCollection))).Methods("PUT")
-	r.Handle(app.baseURL.Path+"/collections/{id}", app.verifyToken(http.HandlerFunc(app.DeleteCollection))).Methods("DELETE")
+	r.Handle(app.baseURL.Path+"/societies/{society}/collections/{id}", http.HandlerFunc(app.OptionsNoop)).Methods("OPTIONS")
+	r.Handle(app.baseURL.Path+"/societies/{society}/collections/{id}", app.setSociety(app.verifyToken(app.authenticate(model.AuthReader,
+		http.HandlerFunc(app.GetCollection))))).Methods("GET")
+	r.Handle(app.baseURL.Path+"/societies/{society}/collections/{id}", app.setSociety(app.verifyToken(app.authenticate(model.AuthEditor,
+		http.HandlerFunc(app.PutCollection))))).Methods("PUT")
+	r.Handle(app.baseURL.Path+"/societies/{society}/collections/{id}", app.setSociety(app.verifyToken(app.authenticate(model.AuthEditor,
+		http.HandlerFunc(app.DeleteCollection))))).Methods("DELETE")
 
-	r.Handle(app.baseURL.Path+"/content", http.HandlerFunc(app.OptionsNoop)).Methods("OPTIONS")
-	r.Handle(app.baseURL.Path+"/content", app.verifyToken(http.HandlerFunc(app.PostContentRequest))).Methods("POST")
+	r.Handle(app.baseURL.Path+"/societies/{society}/content", http.HandlerFunc(app.OptionsNoop)).Methods("OPTIONS")
+	r.Handle(app.baseURL.Path+"/societies/{society}/content", app.setSociety(app.verifyToken(app.authenticate(model.AuthEditor,
+		http.HandlerFunc(app.PostContentRequest))))).Methods("POST")
 
-	r.Handle(app.baseURL.Path+"/posts", http.HandlerFunc(app.OptionsNoop)).Methods("OPTIONS")
-	r.Handle(app.baseURL.Path+"/posts", app.verifyToken(http.HandlerFunc(app.GetPosts))).Methods("GET")
-	r.Handle(app.baseURL.Path+"/posts", app.verifyToken(http.HandlerFunc(app.PostPost))).Methods("POST")
+	r.Handle(app.baseURL.Path+"/societies/{society}/posts", http.HandlerFunc(app.OptionsNoop)).Methods("OPTIONS")
+	r.Handle(app.baseURL.Path+"/societies/{society}/posts", app.setSociety(app.verifyToken(app.authenticate(model.AuthReader,
+		http.HandlerFunc(app.GetPosts))))).Methods("GET")
+	r.Handle(app.baseURL.Path+"/societies/{society}/posts", app.setSociety(app.verifyToken(app.authenticate(model.AuthContributor,
+		http.HandlerFunc(app.PostPost))))).Methods("POST")
 
-	r.Handle(app.baseURL.Path+"/posts/{id}", http.HandlerFunc(app.OptionsNoop)).Methods("OPTIONS")
-	r.Handle(app.baseURL.Path+"/posts/{id}", app.verifyToken(http.HandlerFunc(app.GetPost))).Methods("GET")
-	r.Handle(app.baseURL.Path+"/posts/{id}", app.verifyToken(http.HandlerFunc(app.PutPost))).Methods("PUT")
-	r.Handle(app.baseURL.Path+"/posts/{id}", app.verifyToken(http.HandlerFunc(app.DeletePost))).Methods("DELETE")
+	r.Handle(app.baseURL.Path+"/societies/{society}/posts/{id}", http.HandlerFunc(app.OptionsNoop)).Methods("OPTIONS")
+	r.Handle(app.baseURL.Path+"/societies/{society}/posts/{id}", app.setSociety(app.verifyToken(app.authenticate(model.AuthReader,
+		http.HandlerFunc(app.GetPost))))).Methods("GET")
+	r.Handle(app.baseURL.Path+"/societies/{society}/posts/{id}", app.setSociety(app.verifyToken(app.authenticate(model.AuthEditor,
+		http.HandlerFunc(app.PutPost))))).Methods("PUT")
+	r.Handle(app.baseURL.Path+"/societies/{society}/posts/{id}", app.setSociety(app.verifyToken(app.authenticate(model.AuthEditor,
+		http.HandlerFunc(app.DeletePost))))).Methods("DELETE")
 
-	r.Handle(app.baseURL.Path+"/posts/{id}/images/{filePath:.*}", http.HandlerFunc(app.OptionsNoop)).Methods("OPTIONS")
-	r.HandleFunc(app.baseURL.Path+"/posts/{id}/images/{filePath:.*}", app.GetPostImage).Methods("GET")
+	r.Handle(app.baseURL.Path+"/societies/{society}/posts/{id}/images/{filePath:.*}", http.HandlerFunc(app.OptionsNoop)).Methods("OPTIONS")
+	r.Handle(app.baseURL.Path+"/societies/{society}/posts/{id}/images/{filePath:.*}", app.setSociety(app.verifyToken(app.authenticate(model.AuthReader,
+		http.HandlerFunc(app.GetPostImage))))).Methods("GET")
 
-	r.Handle(app.baseURL.Path+"/records", http.HandlerFunc(app.OptionsNoop)).Methods("OPTIONS")
-	r.Handle(app.baseURL.Path+"/records", app.verifyToken(http.HandlerFunc(app.GetRecords))).Methods("GET")
+	r.Handle(app.baseURL.Path+"/societies/{society}/records", http.HandlerFunc(app.OptionsNoop)).Methods("OPTIONS")
+	r.Handle(app.baseURL.Path+"/societies/{society}/records", app.setSociety(app.verifyToken(app.authenticate(model.AuthReader,
+		http.HandlerFunc(app.GetRecords))))).Methods("GET")
 
-	r.Handle(app.baseURL.Path+"/records/{id}", http.HandlerFunc(app.OptionsNoop)).Methods("OPTIONS")
-	r.Handle(app.baseURL.Path+"/records/{id}", app.verifyToken(http.HandlerFunc(app.GetRecord))).Methods("GET")
+	r.Handle(app.baseURL.Path+"/societies/{society}/records/{id}", http.HandlerFunc(app.OptionsNoop)).Methods("OPTIONS")
+	r.Handle(app.baseURL.Path+"/societies/{society}/records/{id}", app.setSociety(app.verifyToken(app.authenticate(model.AuthReader,
+		http.HandlerFunc(app.GetRecord))))).Methods("GET")
 
-	r.Handle(app.baseURL.Path+"/settings", http.HandlerFunc(app.OptionsNoop)).Methods("OPTIONS")
-	r.Handle(app.baseURL.Path+"/settings", app.verifyToken(http.HandlerFunc(app.GetSettings))).Methods("GET")
-	r.Handle(app.baseURL.Path+"/settings", app.verifyToken(http.HandlerFunc(app.PutSettings))).Methods("PUT")
+	r.Handle(app.baseURL.Path+"/society_summaries", http.HandlerFunc(app.OptionsNoop)).Methods("OPTIONS")
+	r.Handle(app.baseURL.Path+"/society_summaries", app.verifyToken(http.HandlerFunc(app.GetSocietySummariesForCurrentUser))).Methods("GET")
+
+	r.Handle(app.baseURL.Path+"/society_summaries/{society}", http.HandlerFunc(app.OptionsNoop)).Methods("OPTIONS")
+	r.Handle(app.baseURL.Path+"/society_summaries/{society}", app.setSociety(app.verifyToken(app.authenticate(model.AuthReader,
+		http.HandlerFunc(app.GetSocietySummary))))).Methods("GET")
+
+	r.Handle(app.baseURL.Path+"/societies", http.HandlerFunc(app.OptionsNoop)).Methods("OPTIONS")
+	r.Handle(app.baseURL.Path+"/societies", app.verifyToken(http.HandlerFunc(app.PostSociety))).Methods("POST")
+
+	r.Handle(app.baseURL.Path+"/societies/{society}", http.HandlerFunc(app.OptionsNoop)).Methods("OPTIONS")
+	r.Handle(app.baseURL.Path+"/societies/{society}", app.setSociety(app.verifyToken(app.authenticate(model.AuthAdmin,
+		http.HandlerFunc(app.GetSociety))))).Methods("GET")
+	r.Handle(app.baseURL.Path+"/societies/{society}", app.setSociety(app.verifyToken(app.authenticate(model.AuthAdmin,
+		http.HandlerFunc(app.PutSociety))))).Methods("PUT")
+	r.Handle(app.baseURL.Path+"/societies/{society}", app.setSociety(app.verifyToken(app.authenticate(model.AuthAdmin,
+		http.HandlerFunc(app.DeleteSociety))))).Methods("DELETE")
+
+	r.Handle(app.baseURL.Path+"/societies/{society}/current_user", http.HandlerFunc(app.OptionsNoop)).Methods("OPTIONS")
+	r.Handle(app.baseURL.Path+"/societies/{society}/current_user", app.setSociety(app.verifyToken(app.authenticate(model.AuthReader,
+		http.HandlerFunc(app.GetCurrentSocietyUser))))).Methods("GET")
+
+	r.Handle(app.baseURL.Path+"/societies/{society}/users", http.HandlerFunc(app.OptionsNoop)).Methods("OPTIONS")
+	r.Handle(app.baseURL.Path+"/societies/{society}/users", app.setSociety(app.verifyToken(app.authenticate(model.AuthAdmin,
+		http.HandlerFunc(app.GetSocietyUserNames))))).Methods("GET")
+
+	r.Handle(app.baseURL.Path+"/societies/{society}/users/{id}", http.HandlerFunc(app.OptionsNoop)).Methods("OPTIONS")
+	r.Handle(app.baseURL.Path+"/societies/{society}/users/{id}", app.setSociety(app.verifyToken(app.authenticate(model.AuthAdmin,
+		http.HandlerFunc(app.PutSocietyUserName))))).Methods("PUT")
+	r.Handle(app.baseURL.Path+"/societies/{society}/users/{id}", app.setSociety(app.verifyToken(app.authenticate(model.AuthAdmin,
+		http.HandlerFunc(app.DeleteSocietyUser))))).Methods("DELETE")
+
+	r.Handle(app.baseURL.Path+"/societies/{society}/invitations", http.HandlerFunc(app.OptionsNoop)).Methods("OPTIONS")
+	r.Handle(app.baseURL.Path+"/societies/{society}/invitations", app.setSociety(app.verifyToken(app.authenticate(model.AuthAdmin,
+		http.HandlerFunc(app.GetInvitations))))).Methods("GET")
+	r.Handle(app.baseURL.Path+"/societies/{society}/invitations", app.setSociety(app.verifyToken(app.authenticate(model.AuthAdmin,
+		http.HandlerFunc(app.PostInvitation))))).Methods("POST")
+
+	r.Handle(app.baseURL.Path+"/societies/{society}/invitations/{id}", http.HandlerFunc(app.OptionsNoop)).Methods("OPTIONS")
+	r.Handle(app.baseURL.Path+"/societies/{society}/invitations/{id}", app.setSociety(app.verifyToken(app.authenticate(model.AuthAdmin,
+		http.HandlerFunc(app.DeleteInvitation))))).Methods("DELETE")
+
+	r.Handle(app.baseURL.Path+"/invitations/{code}", http.HandlerFunc(app.OptionsNoop)).Methods("OPTIONS")
+	r.Handle(app.baseURL.Path+"/invitations/{code}", app.verifyToken(http.HandlerFunc(app.GetInvitationSocietyName))).Methods("GET")
+	r.Handle(app.baseURL.Path+"/invitations/{code}", app.verifyToken(http.HandlerFunc(app.AcceptInvitation))).Methods("POST")
 
 	// search doesn't require a token for now
-	r.Handle(app.baseURL.Path+"/search", http.HandlerFunc(app.OptionsNoop)).Methods("OPTIONS")
-	r.HandleFunc(app.baseURL.Path+"/search", app.Search).Methods("GET")
+	r.Handle(app.baseURL.Path+"/societies/{society}/search", http.HandlerFunc(app.OptionsNoop)).Methods("OPTIONS")
+	r.HandleFunc(app.baseURL.Path+"/societies/{society}/search", app.Search).Methods("GET")
 
-	r.Handle(app.baseURL.Path+"/search/{id}", http.HandlerFunc(app.OptionsNoop)).Methods("OPTIONS")
-	r.HandleFunc(app.baseURL.Path+"/search/{id}", app.SearchByID).Methods("GET")
+	r.Handle(app.baseURL.Path+"/societies/{society}/search/{id}", http.HandlerFunc(app.OptionsNoop)).Methods("OPTIONS")
+	r.HandleFunc(app.baseURL.Path+"/societies/{society}/search/{id}", app.SearchByID).Methods("GET")
 
 	r.Handle(app.baseURL.Path+"/places", http.HandlerFunc(app.OptionsNoop)).Methods("OPTIONS")
 	r.HandleFunc(app.baseURL.Path+"/places", http.HandlerFunc(app.GetPlacesByPrefix)).Methods("GET")
 
-	r.Handle(app.baseURL.Path+"/currentuser", http.HandlerFunc(app.OptionsNoop)).Methods("OPTIONS")
-	r.Handle(app.baseURL.Path+"/currentuser", app.verifyToken(http.HandlerFunc(app.GetCurrentUser))).Methods("GET")
+	r.Handle(app.baseURL.Path+"/current_user", http.HandlerFunc(app.OptionsNoop)).Methods("OPTIONS")
+	r.Handle(app.baseURL.Path+"/current_user", app.verifyToken(http.HandlerFunc(app.GetCurrentUser))).Methods("GET")
 
 	return r
 }

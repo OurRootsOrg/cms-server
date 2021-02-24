@@ -50,6 +50,7 @@
     "_source": {
       "enabled": true,
       "includes": [
+        "societyId",
         "collectionId"
       ]
     },
@@ -576,6 +577,21 @@
         "similarity": "boolean"
       },
 
+      "societyId": {
+        "type": "keyword",
+        "doc_values": true,
+        "index_options": "docs",
+        "norms": false,
+        "similarity": "boolean"
+      },
+      "privacy": {
+        "type": "keyword",
+        "doc_values": true,
+        "index_options": "docs",
+        "norms": false,
+        "similarity": "boolean"
+      },
+
       "category": {
         "type": "keyword",
         "doc_values": true,
@@ -607,6 +623,53 @@
         "index_options": "docs",
         "similarity": "boolean"
       },
+
+      "book_title": {
+        "type": "text",
+        "analyzer": "standard_folding",
+        "doc_values": false,
+        "index_options": "docs",
+        "norms": false,
+        "similarity": "boolean"
+      },
+      "book_author": {
+        "type": "text",
+        "analyzer": "standard_folding",
+        "doc_values": false,
+        "index_options": "docs",
+        "norms": false,
+        "similarity": "boolean"
+      },
+      "book_donor": {
+        "type": "text",
+        "analyzer": "standard_folding",
+        "doc_values": false,
+        "index_options": "docs",
+        "norms": false,
+        "similarity": "boolean"
+      },
+      "book_subject": {
+        "type": "text",
+        "analyzer": "standard_folding",
+        "doc_values": false,
+        "index_options": "docs",
+        "norms": false,
+        "similarity": "boolean"
+      },
+      "book_type": {
+        "type": "text",
+        "analyzer": "standard_folding",
+        "doc_values": false,
+        "index_options": "docs",
+        "norms": false,
+        "similarity": "boolean"
+      },
+      "book_year": {
+        "type": "short",
+        "doc_values": false,
+        "similarity": "boolean"
+      },
+
       "keywords": {
         "type": "text",
         "analyzer": "standard_folding",
