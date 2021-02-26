@@ -56,6 +56,9 @@ export const actions = {
   societiesGetCurrent({ commit, dispatch, rootGetters }) {
     return Server.societiesGetOne(rootGetters.currentSocietyId)
       .then(response => {
+        if (!response.data.postMetadata) {
+          response.data.postMetadata = [];
+        }
         commit("SOCIETY_SET", response.data);
         return response.data;
       })

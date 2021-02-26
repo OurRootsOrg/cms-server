@@ -11,7 +11,6 @@
         :class="{ error: $v.collection.name.$error }"
         @change="touch('name')"
       ></v-text-field>
-
       <template v-if="$v.collection.name.$error">
         <p v-if="!$v.collection.name.required" class="errorMessage">
           Name is required.
@@ -447,9 +446,9 @@ export default {
       },
       privacyLevels: [
         { id: 0, name: "Public" },
-        { id: 1, name: "Public search results and record details; Members-only images" },
-        { id: 3, name: "Public search results; Members-only record details and images" },
-        { id: 7, name: "Members-only search results, record details, and images" }
+        { id: 1, name: "Public search results and record details; Members-only media" },
+        { id: 3, name: "Public search results; Members-only record details and media" },
+        { id: 7, name: "Members-only search results, record details, and media" }
       ],
       ixRoleMap: {
         na: "Don't index",
