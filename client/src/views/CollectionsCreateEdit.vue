@@ -42,7 +42,28 @@
         </p>
       </template>
 
-      <h3 style="margin-top: 16px;">What location does this collection cover? (step 3 of 8)</h3>
+      <h3 style="margin-top: 24px;">
+        Privacy level
+        <v-tooltip bottom maxWidth="600px">
+          <template v-slot:activator="{ on, attrs }">
+            <v-icon v-bind="attrs" v-on="on" small>mdi-information</v-icon>
+          </template>
+          <span>Do you want search results, record details, or images to be available to members only?</span>
+        </v-tooltip>
+        (step 3 of 8)
+      </h3>
+      <div class="citation">
+        <v-select
+          label="Privacy level"
+          :items="privacyLevels"
+          item-text="name"
+          item-value="id"
+          v-model="collection.privacyLevel"
+          @input="touch('privacyLevel')"
+        ></v-select>
+      </div>
+
+      <h3 style="margin-top: 16px;">What location does this collection cover? (step 4 of 8)</h3>
       <div class="location">
         <v-autocomplete
           outlined
@@ -65,78 +86,7 @@
 
       <v-row no-gutters>
         <v-col cols="12">
-          <h3>
-            Define spreadsheet columns
-            <v-tooltip bottom maxWidth="600px">
-              <template v-slot:activator="{ on, attrs }">
-                <v-icon v-bind="attrs" v-on="on" small>mdi-information</v-icon>
-              </template>
-              <span>"Spreadsheet headers" are the names of the columns in the CSV you will be uploading.</span>
-            </v-tooltip>
-            (step 5 of 8)
-          </h3>
-          <v-data-table
-            :headers="fieldColumns"
-            :items="collection.fields"
-            item-key="id"
-            :show-select="false"
-            :disable-pagination="true"
-            dense
-            v-columns-resizable
-          >
-            <template v-slot:body>
-              <draggable :list="collection.fields" tag="tbody" @change="columnDefsDrag">
-                <tr v-for="(field, index) in collection.fields" :key="index">
-                  <td><v-icon small>mdi-drag-horizontal-variant</v-icon></td>
-                  <td>{{ field.header }}</td>
-                  <td>
-                    <v-icon small @click="editColumnDefs(field)" class="mr-3">mdi-pencil</v-icon>
-                    <v-icon small @click="deleteColumnDefs(field)">mdi-delete</v-icon>
-                  </td>
-                </tr>
-              </draggable>
-            </template>
-            <template v-slot:footer>
-              <v-toolbar flat class="ml-n3">
-                <v-dialog v-model="dialogColumnDefs" max-width="600px">
-                  <template v-slot:activator="{ on, attrs }">
-                    <v-btn class="secondary primary--text mr-3" v-bind="attrs" v-on="on" small>Add a row</v-btn>
-                    <span v-if="collection.fields.length === 0"
-                      >(you need at least one row defining at least one column in your spreadsheet)</span
-                    >
-                  </template>
-                  <v-card>
-                    <v-card-title class="pb-5 mb-0"> {{ formTitle }}</v-card-title>
-                    <v-card-text>
-                      <v-container class="pl-0">
-                        <v-row>
-                          <v-col cols="12" sm="7">
-                            <v-text-field
-                              dense
-                              v-model="editedItem.header"
-                              label="Spreadsheet header"
-                              placeholder="Column title in your spreadsheet"
-                            ></v-text-field>
-                          </v-col>
-                        </v-row>
-                      </v-container>
-                    </v-card-text>
-                    <v-card-actions class="pb-5 pr-5">
-                      <v-spacer></v-spacer>
-                      <v-btn color="primary" text @click="closeColumnDefs" class="mr-5">Cancel</v-btn>
-                      <v-btn color="primary" @click="saveColumnDefs">Save</v-btn>
-                    </v-card-actions>
-                  </v-card>
-                </v-dialog>
-              </v-toolbar>
-            </template>
-          </v-data-table>
-        </v-col>
-      </v-row>
-
-      <v-row no-gutters>
-        <v-col cols="12">
-          <h3>
+          <h3 style="margin-top: 16px;">
             Define spreadsheet columns
             <v-tooltip bottom maxWidth="600px">
               <template v-slot:activator="{ on, attrs }">
@@ -145,7 +95,7 @@
               <span>"Spreadsheet headers" are the names of the columns in the CSV you will be uploading.</span>
               >
             </v-tooltip>
-            (step 6 of 8)
+            (step 5 of 8)
           </h3>
 
           <!--draggable mappings-->
@@ -192,13 +142,14 @@
                       <v-container class="pl-0">
                         <v-row>
                           <v-col cols="12" sm="6">
-                            <v-select
+                            <v-text-field
+                              dense
                               v-model="editedMappingItem.header"
                               label="Spreadsheet header"
-                              :items="spreadsheetColumnHeaders"
-                              dense
+                              placeholder="Column title in your spreadsheet"
+                              @change="spreadsheetHeaderChanged"
                             >
-                            </v-select>
+                            </v-text-field>
                           </v-col>
                           <v-col cols="12" sm="6">
                             <v-text-field
@@ -271,7 +222,7 @@
           </template>
           <span>If the collection does not contain images, leave this blank</span>
         </v-tooltip>
-        (step 7 of 8)
+        (step 6 of 8)
       </h3>
       <v-select
         outlined
@@ -310,7 +261,7 @@
             relationship should be created when indexing the "head" record of a son, daughter, or child.
           </div>
         </v-tooltip>
-        (step 8 of 8)
+        (step 7 of 8)
       </h3>
       <v-select
         outlined
@@ -356,7 +307,7 @@
           </template>
           <span>You can include html and <span>{{</span>Spreadsheet header<span>}}</span> references</span>
         </v-tooltip>
-        (step 4 of 8)
+        (step 8 of 8)
       </h3>
       <div class="citation">
         <v-textarea
@@ -372,9 +323,7 @@
         <v-btn
           type="submit"
           color="primary"
-          :disabled="
-            $v.$anyError || collection.fields.length === 0 || collection.mappings.length === 0 || !$v.$anyDirty
-          "
+          :disabled="$v.$anyError || collection.mappings.length === 0 || !$v.$anyDirty"
         >
           <v-icon left small>
             mdi-alert
@@ -458,7 +407,6 @@ function setup() {
     categories: this.collections.collection.categories.map(catId =>
       this.categories.categoriesList.find(cat => cat.id === catId)
     ),
-    fields: lodash.cloneDeep(this.collections.collection.fields),
     mappings: lodash.cloneDeep(this.collections.collection.mappings)
   };
   if (this.collection.location) {
@@ -484,30 +432,25 @@ export default {
     if (this.$route.params && this.$route.params.cid) {
       setup.bind(this)();
     }
+    this.editedMappingItem = Object.assign({}, this.defaultMappingItem);
   },
   data() {
     return {
-      dialogColumnDefs: false,
       dialogMapping: false,
       editedIndex: -1,
-      editedItem: {
-        header: ""
-      },
-      editedMappingItem: {
-        header: "",
-        dbField: "",
-        ixRole: "",
-        ixField: ""
-      },
-      defaultItem: {
-        header: ""
-      },
+      editedMappingItem: {},
       defaultMappingItem: {
         header: "",
         dbField: "",
-        ixRole: "Don't index",
+        ixRole: "principal",
         ixField: "Don't index"
       },
+      privacyLevels: [
+        { id: 0, name: "Public" },
+        { id: 1, name: "Public search results and record details; Members-only images" },
+        { id: 3, name: "Public search results; Members-only record details and images" },
+        { id: 7, name: "Members-only search results, record details, and images" }
+      ],
       ixRoleMap: {
         na: "Don't index",
         principal: "Principal",
@@ -567,38 +510,20 @@ export default {
         { value: "otherDate", text: "Other Date" },
         { value: "otherPlace", text: "Other Place" }
       ],
-      spreadsheetColumnOptions: [{ value: "get this from the columns", text: "Spreadsheet column" }],
       //end of data for table
       collection: {
         id: null,
         name: null,
+        privacyLevel: 0,
         location: null,
         citation_template: null,
         categories: [],
-        fields: [],
         mappings: []
       },
       locationLoading: false,
       locationTimeout: null,
       locationItems: [],
       locationSearch: "",
-      fieldColumns: [
-        {
-          text: "",
-          value: "handle",
-          align: "left",
-          width: 10
-        },
-        {
-          text: "Spreadsheet header",
-          value: "header"
-        },
-        {
-          text: "",
-          value: "actions",
-          align: "right"
-        }
-      ],
       mappingColumns: [
         {
           text: "",
@@ -631,9 +556,6 @@ export default {
     };
   },
   watch: {
-    dialogColumnDefs(val) {
-      val || this.closeColumnDefs();
-    },
     dialogMapping(val) {
       val || this.closeMapping();
     },
@@ -644,7 +566,7 @@ export default {
   computed: {
     headers() {
       let headers = [{ text: "N/A", value: "" }].concat(
-        this.collection.fields.map(f => {
+        this.collection.mappings.map(f => {
           return {
             get text() {
               return f.header;
@@ -676,9 +598,6 @@ export default {
           };
         });
     },
-    spreadsheetColumnHeaders() {
-      return this.collection.fields.map(f => f.header);
-    },
     formTitle() {
       return this.editedIndex === -1 ? "New Spreadsheet Item" : "Edit Spreadsheet Item";
     },
@@ -687,10 +606,10 @@ export default {
   validations: {
     collection: {
       name: { required },
+      privacyLevel: {},
       location: {},
       citation_template: {},
       categories: { required },
-      fields: {},
       mappings: {},
       imagePathHeader: {},
       householdNumberHeader: {},
@@ -728,30 +647,9 @@ export default {
       if (attr === "categories") {
         value = value.map(v => v.id);
       }
-      if (
-        attr === "mappings" ||
-        attr === "fields" ||
-        !this.collection.id ||
-        !lodash.isEqual(value, this.collections.collection[attr])
-      ) {
+      if (attr === "mappings" || !this.collection.id || !lodash.isEqual(value, this.collections.collection[attr])) {
         this.$v.collection[attr].$touch();
       }
-    },
-    syncFieldsMappings(newValue, oldValue) {
-      if (newValue) {
-        if (oldValue) {
-          this.collection.mappings.forEach(m => {
-            if (m.header === oldValue) {
-              m.header = newValue;
-            }
-          });
-        } else {
-          this.collection.mappings.push({ header: newValue, dbField: newValue, ixRole: "na", ixField: "na" });
-        }
-      } else {
-        this.collection.mappings = this.collection.mappings.filter(m => m.header !== oldValue);
-      }
-      this.touch("mappings");
     },
     getPostColumns() {
       let cols = [
@@ -794,14 +692,11 @@ export default {
       return this.headers.findIndex(h => h.value === value) >= 0;
     },
     save() {
-      this.collection.fields = this.collection.fields.filter(f => f.header);
-      if (this.collection.fields.length === 0) {
-        return;
-      }
       this.collection.mappings = this.collection.mappings.filter(f => f.header);
       if (this.collection.mappings.length === 0) {
         return;
       }
+      this.collection.fields = this.collection.mappings.map(m => ({ header: m.header }));
       if (
         !this.isHeader(this.imagePathHeader) ||
         !this.isHeader(this.householdNumberHeader) ||
@@ -850,43 +745,7 @@ export default {
           NProgress.done();
         });
     },
-    //methods for the spreadsheet columns table
-    editColumnDefs(item) {
-      this.editedIndex = this.collection.fields.indexOf(item);
-      this.editedItem = Object.assign({}, item);
-      this.dialogColumnDefs = true;
-    },
-    deleteColumnDefs(item) {
-      const index = this.collection.fields.indexOf(item);
-      if (confirm("Are you sure you want to delete this item?")) {
-        this.collection.fields.splice(index, 1);
-        this.syncFieldsMappings(null, item.header);
-      }
-    },
-    closeColumnDefs() {
-      this.dialogColumnDefs = false;
-      this.$nextTick(() => {
-        this.editedItem = Object.assign({}, this.defaultItem);
-        this.editedIndex = -1;
-      });
-    },
-    saveColumnDefs() {
-      if (this.editedIndex > -1) {
-        if (this.editedItem.header !== this.collection.fields[this.editedIndex].header) {
-          this.syncFieldsMappings(this.editedItem.header, this.collection.fields[this.editedIndex].header);
-        }
-        Object.assign(this.collection.fields[this.editedIndex], this.editedItem);
-        this.touch("fields");
-      } else {
-        this.collection.fields.push(this.editedItem);
-        this.syncFieldsMappings(this.editedItem.header, null);
-      }
-      this.closeColumnDefs();
-    },
     // methods to touch fields after they've been dragged
-    columnDefsDrag() {
-      this.touch("fields");
-    },
     mappingDrag() {
       this.touch("mappings");
     },
@@ -900,7 +759,6 @@ export default {
       const index = this.collection.mappings.indexOf(item);
       if (confirm("Are you sure you want to delete this item?")) {
         this.collection.mappings.splice(index, 1);
-        this.syncFieldsMappings(null, item.header);
       }
     },
     closeMapping() {
@@ -913,15 +771,21 @@ export default {
     saveMapping() {
       if (this.editedIndex > -1) {
         Object.assign(this.collection.mappings[this.editedIndex], this.editedMappingItem);
-        this.touch("fields");
       } else {
         this.collection.mappings.push(this.editedMappingItem);
       }
+      this.touch("mappings");
       this.closeMapping();
     },
     ixRoleChanged() {
       if (this.editedMappingItem.ixRole === "na") {
         this.editedMappingItem.ixField = "na";
+      }
+    },
+    spreadsheetHeaderChanged() {
+      console.log("changed", this.editedMappingItem.header);
+      if (!this.editedMappingItem.dbField) {
+        this.editedMappingItem.dbField = this.editedMappingItem.header;
       }
     }
   }
@@ -944,60 +808,6 @@ export default {
   content: attr(data-select);
   background: #b2ebf2;
   color: #006064;
-}
-.spreadsheetColumnsTable >>> table > tbody > tr > td:nth-child(1),
-.spreadsheetColumnsTable >>> table > thead > tr > th:nth-child(1) {
-  left: 0;
-}
-.spreadsheetColumnsTable >>> table > tbody > tr > td:nth-child(2),
-.spreadsheetColumnsTable >>> table > thead > tr > th:nth-child(2) {
-  left: 50px;
-}
-.spreadsheetColumnsTable >>> table > tbody > tr > td:nth-child(3),
-.spreadsheetColumnsTable >>> table > thead > tr > th:nth-child(3) {
-  left: 140px;
-}
-.spreadsheetColumnsTable >>> table > tbody > tr > td:nth-child(4),
-.spreadsheetColumnsTable >>> table > thead > tr > th:nth-child(4) {
-  left: 260px;
-}
-.spreadsheetColumnsTable >>> table > thead > tr > th:nth-child(1)
-/* .spreadsheetColumnsTable >>> table > thead > tr > th:nth-child(2) */
- {
-  position: sticky !important;
-  position: -webkit-sticky !important;
-  /* z-index: 9999; */
-  background: white;
-}
-.spreadsheetColumnsTable >>> table > tbody > tr > td:nth-child(1)
-/* .spreadsheetColumnsTable >>> table > tbody > tr > td:nth-child(2) */
- {
-  position: sticky !important;
-  position: -webkit-sticky !important;
-  /* z-index: 9998; */
-  background: white;
-}
-.spreadsheetColumnsTable >>> table > tbody > tr > td:nth-child(1):hover {
-  background-color: #efefef;
-}
-
-.spreadsheetColumnsTable >>> table > tbody > tr > td {
-  padding: 0 8px;
-}
-.spreadsheetColumnsTable >>> thead .text-start {
-  vertical-align: top;
-  text-align: left;
-  padding-left: 8px;
-}
-.spreadsheetColumnsTable >>> thead .sortable {
-  vertical-align: top;
-  text-align: left;
-  padding-left: 8px;
-}
-.spreadsheetColumnsTable >>> .table-header-group {
-  vertical-align: top;
-  text-align: left;
-  padding-left: 8px;
 }
 .location {
   margin-bottom: 24px;
