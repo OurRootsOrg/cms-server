@@ -8,6 +8,24 @@ import (
 	"time"
 )
 
+type PrivacyLevel int
+
+const (
+	PrivacyPublic = iota
+	PrivacyPrivateImages
+	PrivacyPrivateDetail
+	PrivacyPrivateDetailImages
+	PrivacyPrivateSearch
+	PrivacyPrivateSearchImages
+	PrivacyPrivateSearchDetail
+	PrivacyPrivateSearchDetailImages
+)
+
+func (l PrivacyLevel) String() string {
+	return [...]string{"Public", "PrivateImages", "PrivateDetail", "PrivateDetailImages", "PrivateSearch",
+		"PrivateSearchImages", "PrivateSearchDetail", "PrivateSearchDetailImages"}[l]
+}
+
 // CollectionPersister defines methods needed to persist categories
 type CollectionPersister interface {
 	SelectCollections(ctx context.Context) ([]Collection, error)
@@ -29,9 +47,7 @@ type CollectionBody struct {
 	HouseholdNumberHeader       string              `json:"householdNumberHeader,omitempty"`
 	HouseholdRelationshipHeader string              `json:"householdRelationshipHeader,omitempty"`
 	GenderHeader                string              `json:"genderHeader,omitempty"`
-	IndexPrivacy                string              `json:"indexPrivacy"`
-	DetailPrivacy               string              `json:"detailPrivacy"`
-	ImagePrivacy                string              `json:"imagePrivacy"`
+	PrivacyLevel                PrivacyLevel        `json:"privacyLevel"`
 }
 
 type CollectionField struct {

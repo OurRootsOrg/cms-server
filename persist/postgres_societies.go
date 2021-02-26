@@ -28,11 +28,8 @@ func (p PostgresPersister) SelectSocietySummariesByID(ctx context.Context, ids [
 		if err != nil {
 			return nil, translateError(err, nil, nil, "")
 		}
-		societySummary := model.SocietySummary{
-			ID:   society.ID,
-			Name: society.Name,
-		}
-		societySummaries = append(societySummaries, societySummary)
+		societySummary := createSocietySummary(&society)
+		societySummaries = append(societySummaries, *societySummary)
 	}
 	return societySummaries, nil
 }
@@ -49,10 +46,7 @@ func (p PostgresPersister) SelectSocietySummary(ctx context.Context, id uint32) 
 	if err != nil {
 		return nil, translateError(err, &id, nil, "")
 	}
-	return &model.SocietySummary{
-		ID:   society.ID,
-		Name: society.Name,
-	}, nil
+	return createSocietySummary(&society), nil
 }
 
 // SelectOneSociety loads the current Society from the database
@@ -126,4 +120,12 @@ func (p PostgresPersister) DeleteSociety(ctx context.Context) error {
 	}
 	_, err = p.db.ExecContext(ctx, "DELETE FROM society WHERE id = $1", societyID)
 	return translateError(err, &societyID, nil, "")
+}
+
+func createSocietySummary(society *model.Society) *model.SocietySummary {
+	return &model.SocietySummary{
+		ID:           society.ID,
+		Name:         society.Name,
+		PostMetadata: society.PostMetadata,
+	}
 }

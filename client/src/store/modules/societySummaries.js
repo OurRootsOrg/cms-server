@@ -36,6 +36,9 @@ export const actions = {
     return Server.societySummariesGetOne(societyId)
       .then(response => {
         console.log("societySummaries.GetOne", response);
+        if (!response.data.postMetadata) {
+          response.data.postMetadata = [];
+        }
         commit("SOCIETY_SUMMARY_SET", response.data);
         return response.data;
       })

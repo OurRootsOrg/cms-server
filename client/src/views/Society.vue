@@ -98,7 +98,7 @@ export default {
   data: () => ({
     drawer: true,
     items: [
-      { icon: "mdi-home", text: "", link: "home", authRequired: true },
+      { icon: "mdi-home", text: "", link: "society-home", authRequired: true },
       { icon: "mdi-shape", text: "Categories", link: "categories-list", authRequired: true },
       { icon: "mdi-book-open-variant", text: "Collections", link: "collections-list", authRequired: true },
       { icon: "mdi-cloud-upload", text: "Posts", link: "posts-list", authRequired: true },

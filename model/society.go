@@ -84,6 +84,7 @@ func NewSociety(id uint32, in SocietyIn) Society {
 
 // SocietySummary represents public info about a society
 type SocietySummary struct {
-	ID   uint32 `json:"id,omitempty" example:"999" validate:"required,omitempty"`
-	Name string `json:"name" validate:"required"`
+	ID           uint32                 `json:"id" example:"999"`
+	Name         string                 `json:"name"`
+	PostMetadata []SettingsPostMetadata `json:"postMetadata"`
 }

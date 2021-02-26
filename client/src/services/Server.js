@@ -18,7 +18,7 @@ export default {
     return get(`/societies/${societyId}/categories/${id}`);
   },
   collectionsCreate(societyId, collection) {
-    return post("/societies/${societyId}/collections", collection);
+    return post(`/societies/${societyId}/collections`, collection);
   },
   collectionsUpdate(societyId, coll) {
     return put(`/societies/${societyId}/collections/${coll.id}`, coll);
@@ -33,7 +33,7 @@ export default {
     return get(`/societies/${societyId}/collections/${id}`);
   },
   contentPostRequest(societyId, contentType) {
-    return post("/societies/${societyId}/content", { contentType });
+    return post(`/societies/${societyId}/content`, { contentType });
   },
   contentPut(url, contentType, data) {
     return axios.put(url, data, {
@@ -76,7 +76,7 @@ export default {
     return get(`/societies/${societyId}/records/${id}?details=true`);
   },
   recordsGetForPost(societyId, postId) {
-    return get("/societies/${societyId}/records", {
+    return get(`/societies/${societyId}/records`, {
       params: { post: postId }
     });
   },
@@ -91,5 +91,11 @@ export default {
   },
   societyUsersGetCurrent(societyId) {
     return get(`/societies/${societyId}/current_user`);
+  },
+  societiesGetOne(societyId) {
+    return get(`/societies/${societyId}`);
+  },
+  societiesUpdate(society) {
+    return put(`/societies/${society.id}`, society);
   }
 };

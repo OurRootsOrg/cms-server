@@ -607,7 +607,9 @@ func indexRecord(record *model.Record, householdRecords []*model.Record, society
 		ixRecord["collection"] = collection.Name
 		ixRecord["collectionId"] = collection.ID
 		ixRecord["societyId"] = societyID
-		ixRecord["privacy"] = collection.IndexPrivacy
+		if collection.PrivacyLevel < model.PrivacyPrivateSearch {
+			ixRecord["privacy"] = "PUBLIC"
+		}
 		if collection.Location != "" {
 			placeLevels := getPlaceFacets(collection.Location)
 			if len(placeLevels) > 0 {

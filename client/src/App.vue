@@ -5,7 +5,7 @@
       <router-link to="/">
         <v-toolbar-title style="color: white; width: 300px" class="ml-0 pl-4">
           <img src="./assets/roots-white.svg" height="25" class="mt-1 mb-n2" />
-          <span class="hidden-sm-and-down pl-2">OurRoots CMS</span>
+          <span class="hidden-sm-and-down pl-2">OurRoots Genealogy CMS</span>
         </v-toolbar-title>
       </router-link>
       <v-spacer></v-spacer>

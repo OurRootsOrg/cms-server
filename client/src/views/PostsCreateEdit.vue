@@ -53,6 +53,7 @@
             >
           </span>
         </div>
+        <div v-if="post.postError"><strong>Post Error</strong>: {{ cleanError(post.postError) }}</div>
         <div v-if="post.recordsError"><strong>Records Error</strong>: {{ cleanError(post.recordsError) }}</div>
         <div v-if="post.imagesError"><strong>Images Error</strong>: {{ cleanError(post.imagesError) }}</div>
       </div>
@@ -432,7 +433,7 @@ export default {
       }
     },
     cleanError(err) {
-      for (let errPrefix of ["Errors:", "Error OTHER:", "Unknown error:"]) {
+      for (let errPrefix of ["[ERROR] ", "Errors:", "Error OTHER:", "Unknown error:"]) {
         if (err.startsWith(errPrefix)) {
           err = err.substr(errPrefix.length).trim();
         }
@@ -490,7 +491,7 @@ export default {
           this.imagesError = "Please put your images into a ZIP file; You need to select a file ending in .zip";
           return prevent();
         }
-        return Server.contentPostRequest(this.$route.params.societyId, "application/zip").then(result => {
+        return Server.contentPostRequest(store.getters.currentSocietyId, "application/zip").then(result => {
           console.log("contentPostRequest", result.data);
           this.imagesPostRequestResultData = result.data;
           newFile.putAction = result.data.putURL;
@@ -533,7 +534,7 @@ export default {
           this.recordsError = "Please save your data as a CSV file; You need to select a file ending in .csv";
           return prevent();
         }
-        return Server.contentPostRequest(this.$route.params.societyId, "text/csv").then(result => {
+        return Server.contentPostRequest(store.getters.currentSocietyId, "text/csv").then(result => {
           console.log("contentPostRequest", result.data);
           this.recordsPostRequestResultData = result.data;
           newFile.putAction = result.data.putURL;

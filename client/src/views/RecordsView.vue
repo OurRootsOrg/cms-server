@@ -109,7 +109,7 @@ export default {
     // get image path
     if (this.records.record.imagePath) {
       Server.postsGetImage(
-        this.$route.params.societyId,
+        store.getters.currentSocietyId,
         this.records.record.post,
         this.records.record.imagePath,
         true

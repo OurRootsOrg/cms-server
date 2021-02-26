@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/rand"
 	"fmt"
-	"log"
 
 	"github.com/ourrootsorg/cms-server/model"
 	"github.com/ourrootsorg/cms-server/utils"
@@ -21,13 +20,9 @@ func (api API) GetSocietySummariesForCurrentUser(ctx context.Context) ([]model.S
 	}
 	var ids []uint32
 	for _, societyUser := range societyUsers {
-		log.Printf("!!! GetSocietySummariesforCurrentUser.societyUser %d %d %d\n", user.ID, societyUser.UserID, societyUser.SocietyID)
 		ids = append(ids, societyUser.SocietyID)
 	}
 	societySummaries, err := api.societyPersister.SelectSocietySummariesByID(ctx, ids)
-	for _, societySummary := range societySummaries {
-		log.Printf("!!! GetSocietySummariesforCurrentUser.society %d %s\n", societySummary.ID, societySummary.Name)
-	}
 	if err != nil {
 		return nil, NewError(err)
 	}

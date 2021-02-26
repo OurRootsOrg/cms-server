@@ -237,7 +237,6 @@ func TestPostImage(t *testing.T) {
 	defer deleteTestCollection(ctx, t, p, testCollection)
 
 	// Add a Post
-	log.Printf("[DEBUG] !!! contentRequest.key= %s\n", contentRequest.Key)
 	in := model.PostIn{
 		PostBody: model.PostBody{
 			Name:       "Test Post",
