@@ -4,6 +4,7 @@ import store from "@/store";
 import Auth from "@/services/Auth";
 import NProgress from "nprogress";
 import Home from "../views/Home.vue";
+import Society from "../views/Society.vue";
 import NotFound from "../views/NotFound.vue";
 import NetworkIssue from "../views/NetworkIssue.vue";
 
@@ -16,88 +17,94 @@ const routes = [
     component: Home
   },
   {
-    path: "/dashboard",
-    name: "dashboard",
-    meta: { requiresAuth: true },
-    component: () => import(/* webpackChunkName: "about" */ "../views/Dashboard.vue")
-  },
-  {
-    path: "/categories",
-    name: "categories-list",
-    meta: { requiresAuth: true },
-    component: () => import(/* webpackChunkName: "about" */ "../views/CategoriesList.vue")
-  },
-  {
-    path: "/categories/create",
-    name: "categories-create",
-    meta: { requiresAuth: true },
-    component: () => import(/* webpackChunkName: "about" */ "../views/CategoriesCreateEdit.vue")
-  },
-  {
-    path: "/categories/:cid",
-    name: "category-edit",
-    meta: { requiresAuth: true },
-    component: () => import(/* webpackChunkName: "about" */ "../views/CategoriesCreateEdit.vue")
-  },
-  {
-    path: "/collections",
-    name: "collections-list",
-    meta: { requiresAuth: true },
-    component: () => import(/* webpackChunkName: "about" */ "../views/CollectionsList.vue")
-  },
-  {
-    path: "/collections/create",
-    name: "collections-create",
-    meta: { requiresAuth: true },
-    component: () => import(/* webpackChunkName: "about" */ "../views/CollectionsCreateEdit.vue")
-  },
-  {
-    path: "/collections/:cid",
-    name: "collection-edit",
-    meta: { requiresAuth: true },
-    component: () => import(/* webpackChunkName: "about" */ "../views/CollectionsCreateEdit.vue")
-  },
-  {
-    path: "/images/:pid/:path",
-    name: "image",
-    meta: { requiresAuth: true },
-    component: () => import(/* webpackChunkName: "about" */ "../views/Image.vue")
-  },
-  {
-    path: "/posts",
-    name: "posts-list",
-    meta: { requiresAuth: true },
-    component: () => import(/* webpackChunkName: "about" */ "../views/PostsList.vue")
-  },
-  {
-    path: "/posts/create",
-    name: "posts-create",
-    meta: { requiresAuth: true },
-    component: () => import(/* webpackChunkName: "about" */ "../views/PostsCreateEdit.vue")
-  },
-  {
-    path: "/posts/:pid",
-    name: "post-edit",
-    meta: { requiresAuth: true },
-    component: () => import(/* webpackChunkName: "about" */ "../views/PostsCreateEdit.vue")
-  },
-  {
-    path: "/records/:rid",
-    name: "records-view",
-    meta: { requiresAuth: true },
-    component: () => import(/* webpackChunkName: "about" */ "../views/RecordsView.vue")
-  },
-  {
-    path: "/settings",
-    name: "settings",
-    meta: { requiresAuth: true },
-    component: () => import(/* webpackChunkName: "about" */ "../views/Settings.vue")
-  },
-  {
-    path: "/users",
-    name: "users-list",
-    meta: { requiresAuth: true },
-    component: () => import(/* webpackChunkName: "about" */ "../views/UsersList.vue")
+    path: "/society/:society",
+    component: Society,
+    children: [
+      {
+        path: "home",
+        name: "society-home",
+        meta: { requiresAuth: true },
+        component: () => import(/* webpackChunkName: "about" */ "../views/SocietyHome.vue")
+      },
+      {
+        path: "categories",
+        name: "categories-list",
+        meta: { requiresAuth: true },
+        component: () => import(/* webpackChunkName: "about" */ "../views/CategoriesList.vue")
+      },
+      {
+        path: "categories/create",
+        name: "categories-create",
+        meta: { requiresAuth: true },
+        component: () => import(/* webpackChunkName: "about" */ "../views/CategoriesCreateEdit.vue")
+      },
+      {
+        path: "categories/:cid",
+        name: "category-edit",
+        meta: { requiresAuth: true },
+        component: () => import(/* webpackChunkName: "about" */ "../views/CategoriesCreateEdit.vue")
+      },
+      {
+        path: "collections",
+        name: "collections-list",
+        meta: { requiresAuth: true },
+        component: () => import(/* webpackChunkName: "about" */ "../views/CollectionsList.vue")
+      },
+      {
+        path: "collections/create",
+        name: "collections-create",
+        meta: { requiresAuth: true },
+        component: () => import(/* webpackChunkName: "about" */ "../views/CollectionsCreateEdit.vue")
+      },
+      {
+        path: "collections/:cid",
+        name: "collection-edit",
+        meta: { requiresAuth: true },
+        component: () => import(/* webpackChunkName: "about" */ "../views/CollectionsCreateEdit.vue")
+      },
+      {
+        path: "images/:pid/:path",
+        name: "image",
+        meta: { requiresAuth: true },
+        component: () => import(/* webpackChunkName: "about" */ "../views/Image.vue")
+      },
+      {
+        path: "posts",
+        name: "posts-list",
+        meta: { requiresAuth: true },
+        component: () => import(/* webpackChunkName: "about" */ "../views/PostsList.vue")
+      },
+      {
+        path: "posts/create",
+        name: "posts-create",
+        meta: { requiresAuth: true },
+        component: () => import(/* webpackChunkName: "about" */ "../views/PostsCreateEdit.vue")
+      },
+      {
+        path: "posts/:pid",
+        name: "post-edit",
+        meta: { requiresAuth: true },
+        component: () => import(/* webpackChunkName: "about" */ "../views/PostsCreateEdit.vue")
+      },
+      {
+        path: "records/:rid",
+        name: "records-view",
+        meta: { requiresAuth: true },
+        component: () => import(/* webpackChunkName: "about" */ "../views/RecordsView.vue")
+      },
+      {
+        path: "settings",
+        name: "settings",
+        meta: { requiresAuth: true },
+        component: () => import(/* webpackChunkName: "about" */ "../views/Settings.vue")
+      },
+      {
+        path: "users",
+        name: "users-list",
+        meta: { requiresAuth: true },
+        component: () => import(/* webpackChunkName: "about" */ "../views/UsersList.vue")
+      }
+    ]
   },
   {
     path: "/404",

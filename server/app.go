@@ -150,7 +150,7 @@ func (app App) verifyToken(next http.Handler) http.Handler {
 			ErrorResponse(w, http.StatusUnauthorized, msg)
 			return
 		}
-		log.Printf("[DEBUG] Found valid token for subject '%s'", parsedToken.Subject)
+		//log.Printf("[DEBUG] Found valid token for subject '%s'", parsedToken.Subject)
 		user, isNew, errors := app.api.RetrieveUser(r.Context(), app.oidcProvider, parsedToken, accessJWT)
 		if errors != nil {
 			msg := fmt.Sprintf("RetrieveUser error %v", errors)
@@ -166,13 +166,9 @@ func (app App) verifyToken(next http.Handler) http.Handler {
 
 		// if the user is new and there is a default society, add the user as an editor of the society
 		if isNew && app.sandboxSocietyID > 0 {
-			sctx := utils.AddSocietyIDToContext(c, app.sandboxSocietyID)
-			body := model.SocietyUserBody{
-				Level: model.AuthEditor,
-			}
-			_, err = app.api.AddSocietyUser(sctx, body)
+			err = app.addUserToSandboxSociety(c, model.AuthEditor)
 			if err != nil {
-				msg := fmt.Sprintf("AddSocietyUser error %v", err)
+				msg := fmt.Sprintf("AddSocietyUser to sandbox society error %v", err)
 				log.Print("[ERROR] " + msg)
 				ErrorsResponse(w, err)
 				return
@@ -185,6 +181,22 @@ func (app App) verifyToken(next http.Handler) http.Handler {
 		next.ServeHTTP(w, r)
 	}
 	return http.HandlerFunc(fn)
+}
+
+func (app App) addUserToSandboxSociety(ctx context.Context, level model.AuthLevel) error {
+	sctx := utils.AddSocietyIDToContext(ctx, app.sandboxSocietyID)
+	_, err := app.api.GetSociety(sctx)
+	if err != nil {
+		msg := fmt.Sprintf("Get sandbox society error %v", err)
+		log.Print("[ERROR] " + msg)
+		// don't return an error, maybe sandbox society hasn't been created yet
+		return nil
+	}
+	body := model.SocietyUserBody{
+		Level: level,
+	}
+	_, err = app.api.AddSocietyUser(sctx, body)
+	return err
 }
 
 func (app App) authenticate(minAuthLevel model.AuthLevel, next http.Handler) http.Handler {

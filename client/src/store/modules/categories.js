@@ -33,8 +33,8 @@ export const mutations = {
 };
 
 export const actions = {
-  categoriesCreate({ commit, dispatch }, category) {
-    return Server.categoriesCreate(category)
+  categoriesCreate({ commit, dispatch, rootGetters }, category) {
+    return Server.categoriesCreate(rootGetters.currentSocietyId, category)
       .then(response => {
         commit("CATEGORIES_ADD", response.data);
         const notification = {
@@ -54,8 +54,8 @@ export const actions = {
         throw error;
       });
   },
-  categoriesUpdate({ commit, dispatch }, coll) {
-    return Server.categoriesUpdate(coll)
+  categoriesUpdate({ commit, dispatch, rootGetters }, coll) {
+    return Server.categoriesUpdate(rootGetters.currentSocietyId, coll)
       .then(response => {
         commit("CATEGORY_UPDATE", response.data);
         const notification = {
@@ -75,8 +75,8 @@ export const actions = {
         throw error;
       });
   },
-  categoriesGetAll({ commit, dispatch }) {
-    return Server.categoriesGetAll()
+  categoriesGetAll({ commit, dispatch, rootGetters }) {
+    return Server.categoriesGetAll(rootGetters.currentSocietyId)
       .then(response => {
         commit("CATEGORIES_SET", response.data.categories);
         return response.data.categories;
@@ -91,8 +91,8 @@ export const actions = {
         throw error;
       });
   },
-  categoriesGetOne({ commit, dispatch }, id) {
-    return Server.categoriesGetOne(id)
+  categoriesGetOne({ commit, dispatch, rootGetters }, id) {
+    return Server.categoriesGetOne(rootGetters.currentSocietyId, id)
       .then(response => {
         commit("CATEGORY_SET", response.data);
         return response.data;
@@ -107,8 +107,8 @@ export const actions = {
         throw error;
       });
   },
-  categoriesDelete({ commit, dispatch }, id) {
-    return Server.categoriesDelete(id)
+  categoriesDelete({ commit, dispatch, rootGetters }, id) {
+    return Server.categoriesDelete(rootGetters.currentSocietyId, id)
       .then(() => {
         commit("CATEGORIES_REMOVE", id);
         const notification = {

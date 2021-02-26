@@ -84,22 +84,36 @@ import { mapState } from "vuex";
 import store from "@/store";
 import Server from "@/services/Server.js";
 
+function getContent(rid, next) {
+  store
+    .dispatch("recordsGetDetail", rid)
+    .then(() => {
+      next();
+    })
+    .catch(() => {
+      next("/");
+    });
+}
+
 export default {
   beforeRouteEnter(routeTo, routeFrom, next) {
-    store
-      .dispatch("recordsGetDetail", routeTo.params.rid)
-      .then(() => {
-        next();
-      })
-      .catch(() => {
-        next("/");
-      });
+    console.log("recordsView.beforeRouteEnter");
+    getContent(routeTo.params.rid, next);
+  },
+  beforeRouteUpdate(routeTo, routeFrom, next) {
+    console.log("recordsView.beforeRouteUpdate");
+    getContent(routeTo.params.rid, next);
   },
   created() {
     console.log("recordsView", this.records.record);
     // get image path
     if (this.records.record.imagePath) {
-      Server.postsGetImage(this.records.record.post, this.records.record.imagePath, true).then(result => {
+      Server.postsGetImage(
+        this.$route.params.societyId,
+        this.records.record.post,
+        this.records.record.imagePath,
+        true
+      ).then(result => {
         this.thumbURL = result.data.url;
       });
     }

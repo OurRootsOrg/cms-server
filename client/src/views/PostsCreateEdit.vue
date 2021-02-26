@@ -56,7 +56,7 @@
         <div v-if="post.recordsError"><strong>Records Error</strong>: {{ cleanError(post.recordsError) }}</div>
         <div v-if="post.imagesError"><strong>Images Error</strong>: {{ cleanError(post.imagesError) }}</div>
       </div>
-      <div v-if="settings.settings.postMetadata.length > 0">
+      <div v-if="societySummaries.societySummary.postMetadata.length > 0">
         <h3>
           Custom fields (metadata) for this post
           <v-tooltip bottom>
@@ -69,7 +69,7 @@
             >
           </v-tooltip>
         </h3>
-        <v-row no-gutter v-for="(item, index) in settings.settings.postMetadata" :key="index">
+        <v-row no-gutter v-for="(item, index) in societySummaries.societySummary.postMetadata" :key="index">
           <v-col cols="12" md="5" class="py-0" v-if="item.type === 'string'">
             <v-text-field
               :placeholder="item.tooltip"
@@ -302,6 +302,29 @@ import Server from "@/services/Server.js";
 import NProgress from "nprogress";
 import lodash from "lodash";
 
+function getContent(pid, next) {
+  let routes = [];
+  if (pid) {
+    routes.push(store.dispatch("postsGetOne", pid));
+    routes.push(store.dispatch("recordsGetForPost", pid));
+  } else {
+    routes.push(store.dispatch("collectionsGetAll"));
+  }
+  Promise.all(routes)
+    .then(() => {
+      if (pid) {
+        store.dispatch("collectionsGetOne", store.state.posts.post.collection).then(() => {
+          next();
+        });
+      } else {
+        next();
+      }
+    })
+    .catch(() => {
+      next("/");
+    });
+}
+
 function setup() {
   this.post = {
     ...this.posts.post
@@ -311,26 +334,12 @@ function setup() {
 export default {
   components: { FileUpload },
   beforeRouteEnter: function(routeTo, routeFrom, next) {
-    let routes = [store.dispatch("settingsGet")];
-    if (routeTo.params && routeTo.params.pid) {
-      routes.push(store.dispatch("postsGetOne", routeTo.params.pid));
-      routes.push(store.dispatch("recordsGetForPost", routeTo.params.pid));
-    } else {
-      routes.push(store.dispatch("collectionsGetAll"));
-    }
-    Promise.all(routes)
-      .then(() => {
-        if (routeTo.params && routeTo.params.pid) {
-          store.dispatch("collectionsGetOne", store.state.posts.post.collection).then(() => {
-            next();
-          });
-        } else {
-          next();
-        }
-      })
-      .catch(() => {
-        next("/");
-      });
+    console.log("postsCreateEdit.beforeRouteEnter");
+    getContent(routeTo.params.pid, next);
+  },
+  beforeRouteUpdate: function(routeTo, routeFrom, next) {
+    console.log("postsCreateEdit.beforeRouteUpdate");
+    getContent(routeTo.params.pid, next);
   },
   created() {
     if (this.$route.params && this.$route.params.pid) {
@@ -404,7 +413,7 @@ export default {
         this.post.postStatus === "Published"
       );
     },
-    ...mapState(["collections", "posts", "records", "settings", "user"])
+    ...mapState(["collections", "posts", "records", "societySummaries", "user"])
   },
   validations: {
     post: {
@@ -481,7 +490,7 @@ export default {
           this.imagesError = "Please put your images into a ZIP file; You need to select a file ending in .zip";
           return prevent();
         }
-        return Server.contentPostRequest("application/zip").then(result => {
+        return Server.contentPostRequest(this.$route.params.societyId, "application/zip").then(result => {
           console.log("contentPostRequest", result.data);
           this.imagesPostRequestResultData = result.data;
           newFile.putAction = result.data.putURL;
@@ -524,7 +533,7 @@ export default {
           this.recordsError = "Please save your data as a CSV file; You need to select a file ending in .csv";
           return prevent();
         }
-        return Server.contentPostRequest("text/csv").then(result => {
+        return Server.contentPostRequest(this.$route.params.societyId, "text/csv").then(result => {
           console.log("contentPostRequest", result.data);
           this.recordsPostRequestResultData = result.data;
           newFile.putAction = result.data.putURL;

@@ -59,7 +59,7 @@
         </v-data-table>
       </v-col>
     </v-row>
-    <v-btn v-if="category.id" outlined color="primary" class="mt-4" to="/collections/create">
+    <v-btn v-if="category.id" outlined color="primary" class="mt-4" :to="{ name: 'collections-create' }">
       Create a new collection
     </v-btn>
   </v-container>
@@ -78,22 +78,31 @@ function setup() {
   };
 }
 
+function getContent(cid, next) {
+  let routes = [];
+  if (cid) {
+    routes.push(store.dispatch("categoriesGetOne", cid));
+    routes.push(store.dispatch("categoriesGetAll"));
+    routes.push(store.dispatch("collectionsGetAll"));
+    routes.push(store.dispatch("postsGetAll"));
+  }
+  Promise.all(routes)
+    .then(() => {
+      next();
+    })
+    .catch(() => {
+      next("/");
+    });
+}
+
 export default {
   beforeRouteEnter: function(routeTo, routeFrom, next) {
-    let routes = [];
-    if (routeTo.params && routeTo.params.cid) {
-      routes.push(store.dispatch("categoriesGetOne", routeTo.params.cid));
-      routes.push(store.dispatch("categoriesGetAll"));
-      routes.push(store.dispatch("collectionsGetAll"));
-      routes.push(store.dispatch("postsGetAll"));
-    }
-    Promise.all(routes)
-      .then(() => {
-        next();
-      })
-      .catch(() => {
-        next("/");
-      });
+    console.log("categoriesCreateEdit.beforeRouteEnter");
+    getContent(routeTo.params.cid, next);
+  },
+  beforeRouteUpdate: function(routeTo, routeFrom, next) {
+    console.log("categoriesCreateEdit.beforeRouteUpdate");
+    getContent(routeTo.params.cid, next);
   },
   created() {
     if (this.$route.params && this.$route.params.cid) {

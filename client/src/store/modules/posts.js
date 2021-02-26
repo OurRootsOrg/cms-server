@@ -33,8 +33,8 @@ export const mutations = {
 };
 
 export const actions = {
-  postsCreate({ commit, dispatch }, post) {
-    return Server.postsCreate(post)
+  postsCreate({ commit, dispatch, rootGetters }, post) {
+    return Server.postsCreate(rootGetters.currentSocietyId, post)
       .then(response => {
         commit("POSTS_ADD", response.data);
         const notification = {
@@ -54,8 +54,8 @@ export const actions = {
         throw error;
       });
   },
-  postsUpdate({ commit, dispatch }, post) {
-    return Server.postsUpdate(post)
+  postsUpdate({ commit, dispatch, rootGetters }, post) {
+    return Server.postsUpdate(rootGetters.currentSocietyId, post)
       .then(response => {
         commit("POST_UPDATE", response.data);
         const notification = {
@@ -75,8 +75,8 @@ export const actions = {
         throw error;
       });
   },
-  postsDelete({ commit, dispatch }, id) {
-    return Server.postsDelete(id)
+  postsDelete({ commit, dispatch, rootGetters }, id) {
+    return Server.postsDelete(rootGetters.currentSocietyId, id)
       .then(() => {
         commit("POSTS_REMOVE", id);
         const notification = {
@@ -95,8 +95,8 @@ export const actions = {
         throw error;
       });
   },
-  postsGetAll({ commit, dispatch }) {
-    return Server.postsGetAll()
+  postsGetAll({ commit, dispatch, rootGetters }) {
+    return Server.postsGetAll(rootGetters.currentSocietyId)
       .then(response => {
         commit("POSTS_SET", response.data.posts);
         return response.data.posts;
@@ -111,8 +111,8 @@ export const actions = {
         throw error;
       });
   },
-  postsGetOne({ commit, dispatch }, id) {
-    return Server.postsGetOne(id)
+  postsGetOne({ commit, dispatch, rootGetters }, id) {
+    return Server.postsGetOne(rootGetters.currentSocietyId, id)
       .then(response => {
         commit("POST_SET", response.data);
         return response.data;

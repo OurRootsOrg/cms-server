@@ -21,7 +21,7 @@ type SocietyPersister interface {
 // SocietyBody is the JSON part of the Society object
 type SocietyBody struct {
 	Name         string                 `json:"name" validate:"required"`
-	SecretKey    string                 `json:"secretKey" validate:"required"`
+	SecretKey    string                 `json:"secretKey"`
 	LoginURL     string                 `json:"loginURL"`
 	PostMetadata []SettingsPostMetadata `json:"postMetadata"`
 }

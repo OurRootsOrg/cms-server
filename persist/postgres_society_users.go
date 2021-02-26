@@ -42,7 +42,7 @@ func (p PostgresPersister) SelectAllSocietyUsersByUser(ctx context.Context, user
 
 	rows, err := p.db.QueryContext(ctx,
 		"SELECT id, body, user_id, society_id, insert_time, last_update_time FROM society_user "+
-			"WHERE society_id = $1", userID)
+			"WHERE user_id = $1", userID)
 	if err != nil {
 		return nil, translateError(err, nil, nil, "")
 	}

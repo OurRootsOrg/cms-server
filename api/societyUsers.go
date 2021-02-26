@@ -3,7 +3,6 @@ package api
 import (
 	"context"
 	"fmt"
-	"log"
 	"net/http"
 
 	"github.com/ourrootsorg/cms-server/utils"
@@ -79,10 +78,12 @@ func (api API) GetSocietyUserByUser(ctx context.Context, userID uint32) (*model.
 	cacheKey := fmt.Sprintf("%d", userID)
 	u, ok := api.societyUserCache.Get(cacheKey)
 	if ok {
-		*societyUser, ok = u.(model.SocietyUser)
+		var result model.SocietyUser
+		result, ok = u.(model.SocietyUser)
+		societyUser = &result
 	}
 	if ok {
-		log.Printf("[DEBUG] Found user for key '%s' in cache: %#v", cacheKey, societyUser)
+		//log.Printf("[DEBUG] Found user for key '%s' in cache: %#v", cacheKey, societyUser)
 		return societyUser, nil
 	}
 

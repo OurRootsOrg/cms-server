@@ -1,79 +1,32 @@
 <template>
   <v-app id="app">
-    <v-navigation-drawer
-      v-model="drawer"
-      :clipped="true"
-      :mini-variant="$vuetify.breakpoint.mdAndDown"
-      :permanent="drawer"
-      app
-    >
-      <v-list dense>
-        <template v-for="item in items">
-          <v-row v-if="!itemAuthorized(item)" :key="item.heading + item.text"></v-row>
-          <v-row v-else-if="item.heading" :key="item.heading" align="center">
-            <v-col cols="6">
-              <v-subheader v-if="item.heading">{{ item.heading }}</v-subheader>
-            </v-col>
-            <v-col cols="6" class="text-center">
-              <a href="#!" class="body-2 black--text">EDIT</a>
-            </v-col>
-          </v-row>
-          <v-list-group
-            v-else-if="item.children"
-            :key="item.text"
-            v-model="item.model"
-            :append-icon="item.model ? item.post_icon : item['post_icon-alt']"
-          >
-            <template v-slot:activator>
-              <v-list-item-action>
-                <v-icon :title="item.text">{{ item.icon }}</v-icon>
-              </v-list-item-action>
-              <v-list-item-content>
-                <v-list-item-title>{{ item.text }}</v-list-item-title>
-              </v-list-item-content>
-            </template>
-            <v-list-item v-for="(child, i) in item.children" :key="i" :to="child.link" link>
-              <v-list-item-action v-if="child.icon">
-                <v-icon :title="child.text">{{ child.icon }}</v-icon>
-              </v-list-item-action>
-              <v-list-item-content>
-                <v-list-item-title>{{ child.text }}</v-list-item-title>
-              </v-list-item-content>
-            </v-list-item>
-          </v-list-group>
-          <v-list-item v-else-if="item.external" :key="item.text" :href="item.link" target="_blank">
-            <v-list-item-action>
-              <v-icon :title="item.text">{{ item.icon }}</v-icon>
-            </v-list-item-action>
-            <v-list-item-content>
-              <v-list-item-title>{{ item.text }}</v-list-item-title>
-            </v-list-item-content>
-          </v-list-item>
-          <v-list-item v-else :key="item.text" :to="item.link" link>
-            <v-list-item-action>
-              <v-icon :title="item.text">{{ item.icon }}</v-icon>
-            </v-list-item-action>
-            <v-list-item-content>
-              <v-list-item-title>{{ item.text }}</v-list-item-title>
-            </v-list-item-content>
-          </v-list-item>
-        </template>
-      </v-list>
-    </v-navigation-drawer>
-
     <v-app-bar :clipped-left="true" app dark color="primary">
-      <v-app-bar-nav-icon @click.stop="drawer = !drawer"></v-app-bar-nav-icon>
-      <v-toolbar-title style="width: 300px" class="ml-0 pl-4">
-        <img src="./assets/roots-white.svg" height="25" class="mt-1 mb-n2" />
-        <span class="hidden-sm-and-down pl-2">OurRoots CMS Sandbox</span>
-      </v-toolbar-title>
+      <!--      <v-app-bar-nav-icon @click.stop="drawer = !drawer"></v-app-bar-nav-icon>-->
+      <router-link to="/">
+        <v-toolbar-title style="color: white; width: 300px" class="ml-0 pl-4">
+          <img src="./assets/roots-white.svg" height="25" class="mt-1 mb-n2" />
+          <span class="hidden-sm-and-down pl-2">OurRoots CMS</span>
+        </v-toolbar-title>
+      </router-link>
       <v-spacer></v-spacer>
-      <v-btn icon>
-        <v-icon>mdi-bell</v-icon>
-      </v-btn>
-      <v-btn icon>
-        <v-avatar v-if="user.user && user.user.picture" size="28"><img :src="user.user.picture"/></v-avatar>
-      </v-btn>
+      <!--      <v-btn icon>-->
+      <!--        <v-icon>mdi-bell</v-icon>-->
+      <!--      </v-btn>-->
+      <v-menu offset-y :close-on-click="true" v-if="user.user">
+        <template v-slot:activator="{ on, attrs }">
+          <v-btn icon v-bind="attrs" v-on="on">
+            <v-avatar size="32">
+              <img v-if="user.user.picture" :src="user.user.picture" />
+              <v-icon v-else>mdi-account</v-icon>
+            </v-avatar>
+          </v-btn>
+        </template>
+        <v-list>
+          <v-list-item @click="logout()">
+            <v-list-item-title>Logout</v-list-item-title>
+          </v-list-item>
+        </v-list>
+      </v-menu>
     </v-app-bar>
 
     <v-main>
@@ -86,17 +39,13 @@
         </v-container>
       </div>
     </v-main>
-
-    <!--FAB commented out for now
-    <v-btn bottom color="pink" dark fab fixed right @click="dialog = !dialog">
-      <v-icon>mdi-plus</v-icon>
-    </v-btn>-->
   </v-app>
 </template>
 
 <script>
 import Notifications from "@/components/Notifications.vue";
 import NProgress from "nprogress";
+import Auth from "@/services/Auth";
 import store from "@/store";
 import { mapState } from "vuex";
 
@@ -112,22 +61,14 @@ export default {
   },
   computed: mapState(["user"]),
   data: () => ({
-    dialog: false,
-    drawer: true,
-    items: [
-      { icon: "mdi-home", text: "Home", link: "/" },
-      { icon: "mdi-chart-areaspline", text: "Dashboard", link: "/dashboard", authRequired: true },
-      { icon: "mdi-shape", text: "Categories", link: "/categories", authRequired: true },
-      { icon: "mdi-book-open-variant", text: "Collections", link: "/collections", authRequired: true },
-      { icon: "mdi-cloud-upload", text: "Posts", link: "/posts", authRequired: true },
-      { icon: "mdi-account-circle", text: "Users", link: "/users", authRequired: true },
-      { icon: "mdi-open-in-new", text: "Search", link: process.env.VUE_APP_SEARCH_URL, external: true },
-      { icon: "mdi-cog", text: "Settings", link: "/settings", authRequired: true }
-    ]
+    dialog: false
   }),
   methods: {
-    itemAuthorized(item) {
-      return !item.authRequired || store.getters.userIsLoggedIn;
+    isLoggedIn() {
+      return store.getters.userIsLoggedIn;
+    },
+    logout() {
+      Auth.logout();
     }
   }
 };

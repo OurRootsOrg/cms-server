@@ -1,7 +1,7 @@
 <template>
   <v-container class="collections-list">
     <h1>Collections</h1>
-    <v-btn small color="primary" class="mt-2" to="/collections/create">
+    <v-btn small color="primary" class="mt-2" :to="{ name: 'collections-create' }">
       Create a new collection
     </v-btn>
     <v-row fluid>
@@ -42,19 +42,24 @@
 import { mapState } from "vuex";
 import store from "@/store";
 
+function getContent(next) {
+  Promise.all([store.dispatch("categoriesGetAll"), store.dispatch("collectionsGetAll"), store.dispatch("postsGetAll")])
+    .then(() => {
+      next();
+    })
+    .catch(() => {
+      next("/");
+    });
+}
+
 export default {
   beforeRouteEnter(routeTo, routeFrom, next) {
-    Promise.all([
-      store.dispatch("categoriesGetAll"),
-      store.dispatch("collectionsGetAll"),
-      store.dispatch("postsGetAll")
-    ])
-      .then(() => {
-        next();
-      })
-      .catch(() => {
-        next("/");
-      });
+    console.log("collectionsList.beforeRouteEnter");
+    getContent(next);
+  },
+  beforeRouteUpdate(routeTo, routeFrom, next) {
+    console.log("collectionsList.beforeRouteUpdate");
+    getContent(next);
   },
   data() {
     return {

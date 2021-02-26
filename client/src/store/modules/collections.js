@@ -35,8 +35,8 @@ export const mutations = {
 };
 
 export const actions = {
-  collectionsCreate({ commit, dispatch }, collection) {
-    return Server.collectionsCreate(collection)
+  collectionsCreate({ commit, dispatch, rootGetters }, collection) {
+    return Server.collectionsCreate(rootGetters.currentSocietyId, collection)
       .then(response => {
         commit("COLLECTIONS_ADD", response.data);
         const notification = {
@@ -56,8 +56,8 @@ export const actions = {
         throw error;
       });
   },
-  collectionsUpdate({ commit, dispatch }, coll) {
-    return Server.collectionsUpdate(coll)
+  collectionsUpdate({ commit, dispatch, rootGetters }, coll) {
+    return Server.collectionsUpdate(rootGetters.currentSocietyId, coll)
       .then(response => {
         commit("COLLECTION_UPDATE", response.data);
         const notification = {
@@ -77,8 +77,8 @@ export const actions = {
         throw error;
       });
   },
-  collectionsDelete({ commit, dispatch }, id) {
-    return Server.collectionsDelete(id)
+  collectionsDelete({ commit, dispatch, rootGetters }, id) {
+    return Server.collectionsDelete(rootGetters.currentSocietyId, id)
       .then(() => {
         commit("COLLECTIONS_REMOVE", id);
         const notification = {
@@ -97,8 +97,8 @@ export const actions = {
         throw error;
       });
   },
-  collectionsGetAll({ commit, dispatch }) {
-    return Server.collectionsGetAll()
+  collectionsGetAll({ commit, dispatch, rootGetters }) {
+    return Server.collectionsGetAll(rootGetters.currentSocietyId)
       .then(response => {
         commit("COLLECTIONS_SET", response.data.collections);
         return response.data.collections;
@@ -113,8 +113,8 @@ export const actions = {
         throw error;
       });
   },
-  collectionsGetOne({ commit, dispatch }, id) {
-    return Server.collectionsGetOne(id)
+  collectionsGetOne({ commit, dispatch, rootGetters }, id) {
+    return Server.collectionsGetOne(rootGetters.currentSocietyId, id)
       .then(response => {
         commit("COLLECTION_SET", response.data);
         return response.data;

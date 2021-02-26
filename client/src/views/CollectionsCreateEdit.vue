@@ -63,26 +63,6 @@
         ></v-autocomplete>
       </div>
 
-      <h3>
-        Citation template
-        <v-tooltip bottom maxWidth="600px">
-          <template v-slot:activator="{ on, attrs }">
-            <v-icon v-bind="attrs" v-on="on" small>mdi-information</v-icon>
-          </template>
-          <span>You can include html and <span>{{</span>Spreadsheet header<span>}}</span> references</span>
-        </v-tooltip>
-        (step 4 of 8)
-      </h3>
-      <div class="citation">
-        <v-textarea
-          outlined
-          name="input-7-4"
-          v-model="collection.citation_template"
-          @change="touch('citation_template')"
-          placeholder="Citation template"
-        ></v-textarea>
-      </div>
-
       <v-row no-gutters>
         <v-col cols="12">
           <h3>
@@ -155,16 +135,14 @@
       </v-row>
 
       <v-row no-gutters>
-        <v-col class="mt-0">
+        <v-col cols="12">
           <h3>
-            Define how spreadsheet data is displayed and indexed
+            Define spreadsheet columns
             <v-tooltip bottom maxWidth="600px">
               <template v-slot:activator="{ on, attrs }">
                 <v-icon v-bind="attrs" v-on="on" small>mdi-information</v-icon>
               </template>
-              <span
-                >This mapping determines how your spreadsheet's columns and data will be indexed and shown in search
-                results.</span
+              <span>"Spreadsheet headers" are the names of the columns in the CSV you will be uploading.</span>
               >
             </v-tooltip>
             (step 6 of 8)
@@ -370,6 +348,26 @@
         Column containing gender no longer appears in the list of spreadsheet columns.
       </div>
 
+      <h3>
+        Citation template
+        <v-tooltip bottom maxWidth="600px">
+          <template v-slot:activator="{ on, attrs }">
+            <v-icon v-bind="attrs" v-on="on" small>mdi-information</v-icon>
+          </template>
+          <span>You can include html and <span>{{</span>Spreadsheet header<span>}}</span> references</span>
+        </v-tooltip>
+        (step 4 of 8)
+      </h3>
+      <div class="citation">
+        <v-textarea
+          outlined
+          name="input-7-4"
+          v-model="collection.citation_template"
+          @change="touch('citation_template')"
+          placeholder="Citation template"
+        ></v-textarea>
+      </div>
+
       <div class="d-flex justify-space-between">
         <v-btn
           type="submit"
@@ -419,7 +417,7 @@
           </template>
         </v-data-table>
 
-        <v-btn v-if="collection.id" outlined color="primary" class="mt-4" to="/posts/create">
+        <v-btn v-if="collection.id" outlined color="primary" class="mt-4" :to="{ name: 'posts-create' }">
           Create a new post
         </v-btn>
       </v-col>
@@ -437,6 +435,22 @@ import lodash from "lodash";
 import draggable from "vuedraggable";
 import Server from "@/services/Server";
 import { getMetadataColumn } from "../utils/metadata";
+
+function getContent(cid, next) {
+  let routes = [store.dispatch("categoriesGetAll")];
+  if (cid) {
+    routes.push(store.dispatch("collectionsGetOne", cid));
+    routes.push(store.dispatch("collectionsGetAll"));
+    routes.push(store.dispatch("postsGetAll"));
+  }
+  Promise.all(routes)
+    .then(() => {
+      next();
+    })
+    .catch(() => {
+      next("/");
+    });
+}
 
 function setup() {
   this.collection = {
@@ -459,20 +473,12 @@ function setup() {
 export default {
   components: { Multiselect, draggable },
   beforeRouteEnter: function(routeTo, routeFrom, next) {
-    let routes = [store.dispatch("categoriesGetAll")];
-    if (routeTo.params && routeTo.params.cid) {
-      routes.push(store.dispatch("collectionsGetOne", routeTo.params.cid));
-      routes.push(store.dispatch("collectionsGetAll"));
-      routes.push(store.dispatch("postsGetAll"));
-      routes.push(store.dispatch("settingsGet"));
-    }
-    Promise.all(routes)
-      .then(() => {
-        next();
-      })
-      .catch(() => {
-        next("/");
-      });
+    console.log("collectionsCreateEdit.beforeRouteEnter");
+    getContent(routeTo.params.cid, next);
+  },
+  beforeRouteUpdate: function(routeTo, routeFrom, next) {
+    console.log("collectionsCreateEdit.beforeRouteUpdate");
+    getContent(routeTo.params.cid, next);
   },
   created() {
     if (this.$route.params && this.$route.params.cid) {
@@ -676,7 +682,7 @@ export default {
     formTitle() {
       return this.editedIndex === -1 ? "New Spreadsheet Item" : "Edit Spreadsheet Item";
     },
-    ...mapState(["collections", "categories", "posts", "settings"])
+    ...mapState(["collections", "categories", "posts", "societySummaries"])
   },
   validations: {
     collection: {
@@ -774,7 +780,7 @@ export default {
         title: "Collection",
         field: "collectionName"
       });
-      cols.push(...this.settings.settings.postMetadata.map(pf => getMetadataColumn(pf)));
+      cols.push(...this.societySummaries.societySummary.postMetadata.map(pf => getMetadataColumn(pf)));
       return cols;
     },
     postRowClicked(post) {

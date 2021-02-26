@@ -25,7 +25,7 @@ func (api API) RetrieveUser(ctx context.Context, provider OIDCProvider, token *o
 		user, ok = u.(model.User)
 	}
 	if ok {
-		log.Printf("[DEBUG] Found user for key '%s' in cache: %#v", cacheKey, user)
+		//log.Printf("[DEBUG] Found user for key '%s' in cache: %#v", cacheKey, user)
 		return &user, false, nil
 	}
 	// No user in cache, so look up their info and check the database
