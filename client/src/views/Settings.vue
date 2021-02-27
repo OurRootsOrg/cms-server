@@ -184,7 +184,6 @@ function getContent(next) {
 }
 
 function setup() {
-  console.log("!!! setup", this.societies.society);
   this.society = {
     ...this.societies.society,
     postMetadata: lodash.cloneDeep(this.societies.society.postMetadata)

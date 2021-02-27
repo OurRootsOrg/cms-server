@@ -32,6 +32,8 @@ func (api API) AddInvitation(ctx context.Context, body model.InvitationBody) (*m
 	if err != nil {
 		return nil, NewError(err)
 	}
+
+	// generate code
 	b := make([]byte, 8)
 	_, err = rand.Read(b)
 	if err != nil {

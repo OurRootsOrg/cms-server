@@ -6,9 +6,11 @@ import "nprogress/nprogress.css";
 import Vuelidate from "vuelidate";
 import vuetify from "./plugins/vuetify";
 import VueColumnsResizableVuetify from "vue-columns-resizable-vuetify";
+import VueCookies from "vue-cookies"
 
 Vue.use(Vuelidate);
 Vue.use(VueColumnsResizableVuetify);
+Vue.use(VueCookies);
 
 Vue.config.productionTip = false;
 

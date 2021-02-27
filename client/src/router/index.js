@@ -17,6 +17,12 @@ const routes = [
     component: Home
   },
   {
+    path: "/invitation/:code",
+    name: "accept-invitation",
+    meta: { requiresAuth: false },
+    component: () => import(/* webpackChunkName: "about" */ "../views/AcceptInvitation.vue")
+  },
+  {
     path: "/society/:society",
     component: Society,
     children: [

@@ -414,7 +414,7 @@ export default {
         this.post.postStatus === "Published"
       );
     },
-    ...mapState(["collections", "posts", "records", "societySummaries", "user"])
+    ...mapState(["collections", "posts", "records", "societySummaries", "users"])
   },
   validations: {
     post: {

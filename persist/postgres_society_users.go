@@ -132,8 +132,8 @@ func (p PostgresPersister) UpdateSocietyUser(ctx context.Context, id uint32, in 
 	}
 	var societyUser model.SocietyUser
 	err = p.db.QueryRowContext(ctx, "UPDATE society_user SET body = $1, last_update_time = CURRENT_TIMESTAMP "+
-		"WHERE society_id = $3 AND id = $4 AND last_update_time = $5 RETURNING id, body, user_id, society_id, insert_time, last_update_time",
-		in.SocietyUserBody, in.UserID, societyID, id, in.LastUpdateTime).
+		"WHERE society_id = $2 AND id = $3 AND last_update_time = $4 RETURNING id, body, user_id, society_id, insert_time, last_update_time",
+		in.SocietyUserBody, societyID, id, in.LastUpdateTime).
 		Scan(
 			&societyUser.ID,
 			&societyUser.SocietyUserBody,

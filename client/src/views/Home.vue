@@ -1,8 +1,8 @@
 <template>
   <v-container fluid class="home">
     <h1>Home</h1>
-    <div v-if="user.user">
-      <p v-if="user.user.name">Welcome {{ user.user.name }}</p>
+    <div v-if="users.user">
+      <p v-if="users.user.name">Welcome {{ users.user.name }}</p>
       <p>Select a society</p>
       <ul>
         <li v-for="society in societySummaries.societySummariesList" :key="society.id">
@@ -49,14 +49,25 @@
 
 <script>
 import Auth from "@/services/Auth";
+import Vue from "vue";
 import { mapState } from "vuex";
 import store from "@/store";
 import NProgress from "nprogress";
 
 export default {
   name: "Home",
+  beforeRouteEnter(routeTo, routeFrom, next) {
+    let code = routeTo.query ? routeTo.query.code : "";
+    if (!code) {
+      code = Vue.$cookies.get("invitation-code");
+    }
+    if (code) {
+      next("/invitation/" + code);
+    } else {
+      next();
+    }
+  },
   created() {
-    console.log("created userIsLoggedIn", store.getters.userIsLoggedIn);
     if (store.getters.userIsLoggedIn) {
       this.loadSocietiesForUser();
     }
@@ -67,10 +78,9 @@ export default {
       societyName: ""
     };
   },
-  computed: mapState(["user", "societySummaries"]),
+  computed: mapState(["users", "societySummaries"]),
   methods: {
     loadSocietiesForUser() {
-      console.log("methods loadSocietiesForUser");
       store.dispatch("societySummariesGetAll");
     },
     // Log the user in

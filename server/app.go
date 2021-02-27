@@ -340,7 +340,7 @@ func (app App) NewRouter() *mux.Router {
 		http.HandlerFunc(app.DeleteInvitation))))).Methods("DELETE")
 
 	r.Handle(app.baseURL.Path+"/invitations/{code}", http.HandlerFunc(app.OptionsNoop)).Methods("OPTIONS")
-	r.Handle(app.baseURL.Path+"/invitations/{code}", app.verifyToken(http.HandlerFunc(app.GetInvitationSocietyName))).Methods("GET")
+	r.Handle(app.baseURL.Path+"/invitations/{code}", http.HandlerFunc(app.GetInvitationSocietyName)).Methods("GET")
 	r.Handle(app.baseURL.Path+"/invitations/{code}", app.verifyToken(http.HandlerFunc(app.AcceptInvitation))).Methods("POST")
 
 	// search doesn't require a token for now

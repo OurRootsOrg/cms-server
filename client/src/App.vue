@@ -12,11 +12,11 @@
       <!--      <v-btn icon>-->
       <!--        <v-icon>mdi-bell</v-icon>-->
       <!--      </v-btn>-->
-      <v-menu offset-y :close-on-click="true" v-if="user.user">
+      <v-menu offset-y :close-on-click="true" v-if="users.user">
         <template v-slot:activator="{ on, attrs }">
           <v-btn icon v-bind="attrs" v-on="on">
             <v-avatar size="32">
-              <img v-if="user.user.picture" :src="user.user.picture" />
+              <img v-if="users.user.picture" :src="users.user.picture" />
               <v-icon v-else>mdi-account</v-icon>
             </v-avatar>
           </v-btn>
@@ -59,7 +59,7 @@ export default {
   props: {
     source: String
   },
-  computed: mapState(["user"]),
+  computed: mapState(["users"]),
   data: () => ({
     dialog: false
   }),

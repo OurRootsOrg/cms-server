@@ -1,5 +1,5 @@
 import axios from "axios";
-import { get, post, put, del } from "./ServerHelper";
+import {get, post, put, del, getWithoutAccessToken} from "./ServerHelper";
 
 export default {
   categoriesCreate(societyId, category) {
@@ -44,6 +44,21 @@ export default {
   },
   currentUser() {
     return get(`/current_user`);
+  },
+  invitationsCreate(societyId, invitation) {
+    return post(`/societies/${societyId}/invitations`, invitation);
+  },
+  invitationsDelete(societyId, id) {
+    return del(`/societies/${societyId}/invitations/${id}`);
+  },
+  invitationsGetAll(societyId) {
+    return get(`/societies/${societyId}/invitations`);
+  },
+  invitationGetForCode(code) {
+    return getWithoutAccessToken(`/invitations/${code}`);
+  },
+  invitationAccept(code) {
+    return post(`/invitations/${code}`, {});
   },
   placeSearch(prefix) {
     return get(`places`, {
@@ -97,5 +112,14 @@ export default {
   },
   societiesUpdate(society) {
     return put(`/societies/${society.id}`, society);
+  },
+  usersGetAll(societyId) {
+    return get(`/societies/${societyId}/users`);
+  },
+  usersUpdate(societyId, user) {
+    return put(`/societies/${societyId}/users/${user.id}`, user);
+  },
+  usersDelete(societyId, id) {
+    return del(`/societies/${societyId}/users/${id}`);
   }
 };

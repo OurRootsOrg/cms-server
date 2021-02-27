@@ -7,8 +7,7 @@
 
 <script>
 import { mapState } from "vuex";
-
-const levels = ["Guest", "Reader", "Contributor", "Editor", "Admin"];
+import { getAuthLevelName } from "@/utils/authLevels";
 
 export default {
   name: "SocietyHome",
@@ -25,8 +24,7 @@ export default {
   },
   computed: {
     getLevel() {
-      let level = this.societyUsers.societyUserCurrent.level;
-      return levels[level];
+      return getAuthLevelName(this.societyUsers.societyUserCurrent.level);
     },
     ...mapState(["societySummaries", "societyUsers"])
   }
