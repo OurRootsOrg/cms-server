@@ -44,6 +44,13 @@
       <p>Introductory text goes here</p>
       <v-btn color="primary" @click="login">Register or Log in</v-btn>
     </div>
+    <v-footer paddless fixed style="background-color: #fafafa">
+      <v-col cols="12">
+        <a style="padding-right: 8px;" href="/privacy.html">Privacy policy</a>
+        <a style="padding-right: 8px;" href="/terms.html">Terms and conditions</a>
+        <a style="padding-right: 8px;" href="/cookie.html">Cookie policy</a>
+      </v-col>
+    </v-footer>
   </v-container>
 </template>
 
