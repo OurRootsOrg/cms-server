@@ -35,7 +35,7 @@ type LocalAPI interface {
 	UpdateCategory(ctx context.Context, id uint32, in model.Category) (*model.Category, error)
 	DeleteCategory(ctx context.Context, id uint32) error
 	GetCollections(ctx context.Context /* filter/search criteria */) (*CollectionResult, error)
-	GetCollectionsByID(ctx context.Context, ids []uint32) ([]model.Collection, error)
+	GetCollectionsByID(ctx context.Context, ids []uint32, enforceContextSocietyMatch bool) ([]model.Collection, error)
 	GetCollection(ctx context.Context, id uint32) (*model.Collection, error)
 	AddCollection(ctx context.Context, in model.CollectionIn) (*model.Collection, error)
 	UpdateCollection(ctx context.Context, id uint32, in model.Collection) (*model.Collection, error)
@@ -50,7 +50,7 @@ type LocalAPI interface {
 	GetContent(ctx context.Context, key string) ([]byte, error)
 	RetrieveUser(ctx context.Context, provider OIDCProvider, token *oidc.IDToken, rawToken string) (*model.User, bool, error)
 	GetRecordsForPost(ctx context.Context, postid uint32) (*RecordsResult, error)
-	GetRecordsByID(ctx context.Context, ids []uint32) ([]model.Record, error)
+	GetRecordsByID(ctx context.Context, ids []uint32, enforceContextSocietyMatch bool) ([]model.Record, error)
 	GetRecord(ctx context.Context, includeDetails bool, id uint32) (*RecordDetail, error)
 	AddRecord(ctx context.Context, in model.RecordIn) (*model.Record, error)
 	UpdateRecord(ctx context.Context, id uint32, in model.Record) (*model.Record, error)
@@ -62,13 +62,14 @@ type LocalAPI interface {
 	DeleteRecordHouseholdsForPost(ctx context.Context, postID uint32) error
 	Search(ctx context.Context, req *SearchRequest) (*model.SearchResult, error)
 	SearchByID(ctx context.Context, id string) (*model.SearchHit, error)
+	SearchImage(ctx context.Context, societyID, id uint32, filePath string, thumbnail bool, expireSeconds int) (*ImageMetadata, error)
 	SearchDeleteByID(ctx context.Context, id string) error
 	StandardizePlace(ctx context.Context, text, defaultContainingPlace string) (*model.Place, error)
 	GetPlacesByPrefix(ctx context.Context, prefix string, count int) ([]model.Place, error)
 	GetNameVariants(ctx context.Context, nameType model.NameType, name string) (*model.NameVariants, error)
 	GetSocietySummariesForCurrentUser(ctx context.Context) ([]model.SocietySummary, error)
 	GetSocietySummary(ctx context.Context) (*model.SocietySummary, error)
-	GetSociety(ctx context.Context) (*model.Society, error)
+	GetSociety(ctx context.Context, id uint32) (*model.Society, error)
 	AddSociety(ctx context.Context, in model.SocietyIn) (*model.Society, error)
 	UpdateSociety(ctx context.Context, in model.Society) (*model.Society, error)
 	DeleteSociety(ctx context.Context) error
@@ -101,6 +102,7 @@ type API struct {
 	pubSubConfig             PubSubConfig
 	placeStandardizer        *stdplace.Standardizer
 	userCache                *lru.TwoQueueCache
+	societyCache             *lru.TwoQueueCache
 	societyUserCache         *lru.TwoQueueCache
 	nameVariantsCache        *lru.TwoQueueCache
 	rabbitmqTopicConn        *amqp.Connection
@@ -134,6 +136,10 @@ func NewAPI() (*API, error) {
 	api.Validate(validator.New())
 	var err error
 	api.userCache, err = lru.New2Q(100)
+	if err != nil {
+		return nil, err
+	}
+	api.societyCache, err = lru.New2Q(100)
 	if err != nil {
 		return nil, err
 	}

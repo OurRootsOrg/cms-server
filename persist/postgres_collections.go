@@ -46,7 +46,7 @@ func (p PostgresPersister) SelectCollections(ctx context.Context) ([]model.Colle
 }
 
 // SelectCollectionsByID selects many collections
-func (p PostgresPersister) SelectCollectionsByID(ctx context.Context, ids []uint32) ([]model.Collection, error) {
+func (p PostgresPersister) SelectCollectionsByID(ctx context.Context, ids []uint32, enforceContextSocietyMatch bool) ([]model.Collection, error) {
 	societyID, err := utils.GetSocietyIDFromContext(ctx)
 	if err != nil {
 		return nil, err
@@ -56,10 +56,18 @@ func (p PostgresPersister) SelectCollectionsByID(ctx context.Context, ids []uint
 		return collections, nil
 	}
 
-	rows, err := p.db.QueryContext(ctx,
-		`SELECT id, array_agg(cc.category_id), body, insert_time, last_update_time
+	var rows *sql.Rows
+	if enforceContextSocietyMatch {
+		rows, err = p.db.QueryContext(ctx,
+			`SELECT id, array_agg(cc.category_id), body, insert_time, last_update_time
 			   FROM collection LEFT JOIN collection_category cc ON id = cc.collection_id 
 			   WHERE society_id=$1 AND id = ANY($2) GROUP BY id`, societyID, pq.Array(ids))
+	} else {
+		rows, err = p.db.QueryContext(ctx,
+			`SELECT id, array_agg(cc.category_id), body, insert_time, last_update_time
+			   FROM collection LEFT JOIN collection_category cc ON id = cc.collection_id 
+			   WHERE id = ANY($1) GROUP BY id`, pq.Array(ids))
+	}
 	if err != nil {
 		return nil, translateError(err, nil, nil, "")
 	}

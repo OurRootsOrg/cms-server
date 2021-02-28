@@ -21,7 +21,8 @@ const (
 )
 
 // SelectRecordsByID selects many records from a slice of IDs
-func (p Persister) SelectRecordsByID(ctx context.Context, ids []uint32) ([]model.Record, error) {
+func (p Persister) SelectRecordsByID(ctx context.Context, ids []uint32, enforceContextSocietyMatch bool) ([]model.Record, error) {
+	// TODO implement enforce context society match
 	// We can't do a query to select multiple Records, so just call SelectPlace in a loop
 	var records []model.Record
 	for _, id := range ids {

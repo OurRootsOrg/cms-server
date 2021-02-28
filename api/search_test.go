@@ -32,7 +32,7 @@ func TestSearch(t *testing.T) {
 			)
 		}
 		p := persist.NewPostgresPersister(db)
-		doSearchTests(t, p, p, p, p, p)
+		doSearchTests(t, p, p, p, p, p, p)
 	}
 	// TODO implement
 	//dynamoDBTableName := os.Getenv("DYNAMODB_TEST_TABLE_NAME")
@@ -57,8 +57,10 @@ func doSearchTests(t *testing.T,
 	postP model.PostPersister,
 	recordP model.RecordPersister,
 	nameP model.NamePersister,
+	societyP model.SocietyPersister,
 ) {
 	ctx := utils.AddSocietyIDToContext(context.TODO(), 1)
+	ctx = utils.AddSearchUserIDToContext(ctx, 1)
 	testApi, err := api.NewAPI()
 	assert.NoError(t, err)
 	defer testApi.Close()
@@ -68,6 +70,7 @@ func doSearchTests(t *testing.T,
 		PostPersister(postP).
 		RecordPersister(recordP).
 		NamePersister(nameP).
+		SocietyPersister(societyP).
 		ElasticsearchConfig("http://localhost:19200", nil)
 
 	// Add a test category and test collection and test post and test records
@@ -111,7 +114,12 @@ func doSearchTests(t *testing.T,
 	assert.Equal(t, "Pebbles", hit.Household[2][0].Value)
 
 	// search
-	res, errs := testApi.Search(ctx, &api.SearchRequest{Given: "Fred", CollectionPlace1: "United States", CollectionPlace2Facet: true})
+	res, errs := testApi.Search(ctx, &api.SearchRequest{
+		SocietyID:             1,
+		Given:                 "Fred",
+		CollectionPlace1:      "United States",
+		CollectionPlace2Facet: true,
+	})
 	assert.Nil(t, errs, "Error searching")
 	assert.GreaterOrEqual(t, res.Total, 1)
 	assert.GreaterOrEqual(t, len(res.Hits), 1)
@@ -126,6 +134,7 @@ func doSearchTests(t *testing.T,
 
 	// search with relative
 	res, errs = testApi.Search(ctx, &api.SearchRequest{
+		SocietyID:            1,
 		Given:                "Wilma",
 		GivenFuzziness:       api.FuzzyNameExact,
 		SpouseGiven:          "Fred",
@@ -136,6 +145,7 @@ func doSearchTests(t *testing.T,
 	assert.Equal(t, "Wilma Flintstone", res.Hits[0].Person.Name)
 
 	res, errs = testApi.Search(ctx, &api.SearchRequest{
+		SocietyID:            1,
 		Given:                "Pebbles",
 		GivenFuzziness:       api.FuzzyNameExact,
 		FatherGiven:          "Fred",
@@ -148,6 +158,7 @@ func doSearchTests(t *testing.T,
 	assert.Equal(t, "Pebbles Flintstone", res.Hits[0].Person.Name)
 
 	res, errs = testApi.Search(ctx, &api.SearchRequest{
+		SocietyID:            1,
 		Given:                "Pebbles",
 		GivenFuzziness:       api.FuzzyNameExact,
 		FatherGiven:          "Imposter",

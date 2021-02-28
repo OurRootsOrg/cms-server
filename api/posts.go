@@ -26,9 +26,11 @@ type PostResult struct {
 }
 
 type ImageMetadata struct {
-	URL    string `json:"url"`
-	Height int    `json:"height"`
-	Width  int    `json:"width"`
+	URL      string `json:"url"`
+	Height   int    `json:"height"`
+	Width    int    `json:"width"`
+	Private  bool   `json:"private"`
+	LoginURL string `json:"loginURL,omitempty"`
 }
 
 // GetPosts holds the business logic around getting many Posts

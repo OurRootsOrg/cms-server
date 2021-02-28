@@ -35,7 +35,7 @@ func (a *ApiMock) DeleteCategory(ctx context.Context, id uint32) error {
 func (a *ApiMock) GetCollections(ctx context.Context /* filter/search criteria */) (*CollectionResult, error) {
 	return a.Result.(*CollectionResult), a.Errors
 }
-func (a *ApiMock) GetCollectionsByID(ctx context.Context, ids []uint32) ([]model.Collection, error) {
+func (a *ApiMock) GetCollectionsByID(ctx context.Context, ids []uint32, enforceContextSocietyMatch bool) ([]model.Collection, error) {
 	return a.Result.([]model.Collection), a.Errors
 }
 func (a *ApiMock) GetCollection(ctx context.Context, id uint32) (*model.Collection, error) {
@@ -84,7 +84,7 @@ func (a *ApiMock) RetrieveUser(ctx context.Context, provider OIDCProvider, token
 func (a *ApiMock) GetRecordsForPost(ctx context.Context, postid uint32) (*RecordsResult, error) {
 	return a.Result.(*RecordsResult), a.Errors
 }
-func (a *ApiMock) GetRecordsByID(ctx context.Context, ids []uint32) ([]model.Record, error) {
+func (a *ApiMock) GetRecordsByID(ctx context.Context, ids []uint32, enforceContextSocietyMatch bool) ([]model.Record, error) {
 	return a.Result.([]model.Record), a.Errors
 }
 func (a *ApiMock) GetRecord(ctx context.Context, includeDetails bool, id uint32) (*RecordDetail, error) {
@@ -122,6 +122,9 @@ func (a *ApiMock) Search(ctx context.Context, searchRequest *SearchRequest) (*mo
 func (a *ApiMock) SearchByID(ctx context.Context, id string) (*model.SearchHit, error) {
 	return a.Result.(*model.SearchHit), a.Errors
 }
+func (a *ApiMock) SearchImage(ctx context.Context, societyID, id uint32, filePath string, thumbnail bool, expireSeconds int) (*ImageMetadata, error) {
+	return a.Result.(*ImageMetadata), a.Errors
+}
 func (a *ApiMock) SearchDeleteByID(ctx context.Context, id string) error {
 	return a.Errors
 }
@@ -144,7 +147,7 @@ func (a *ApiMock) GetSocietySummariesForCurrentUser(ctx context.Context) ([]mode
 func (a *ApiMock) GetSocietySummary(ctx context.Context) (*model.SocietySummary, error) {
 	return a.Result.(*model.SocietySummary), a.Errors
 }
-func (a *ApiMock) GetSociety(ctx context.Context) (*model.Society, error) {
+func (a *ApiMock) GetSociety(ctx context.Context, id uint32) (*model.Society, error) {
 	return a.Result.(*model.Society), a.Errors
 }
 func (a *ApiMock) AddSociety(ctx context.Context, in model.SocietyIn) (*model.Society, error) {

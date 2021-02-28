@@ -6,6 +6,8 @@ import (
 	"mime"
 	"net/http"
 
+	"github.com/ourrootsorg/cms-server/utils"
+
 	"github.com/ourrootsorg/cms-server/model"
 )
 
@@ -118,12 +120,17 @@ func (app App) PostSociety(w http.ResponseWriter, req *http.Request) {
 func (app App) GetSociety(w http.ResponseWriter, req *http.Request) {
 	enc := json.NewEncoder(w)
 	w.Header().Set("Content-Type", contentType)
-	society, errors := app.api.GetSociety(req.Context())
+	societyID, err := utils.GetSocietyIDFromContext(req.Context())
+	if err != nil {
+		serverError(w, err)
+		return
+	}
+	society, errors := app.api.GetSociety(req.Context(), societyID)
 	if errors != nil {
 		ErrorsResponse(w, errors)
 		return
 	}
-	err := enc.Encode(society)
+	err = enc.Encode(society)
 	if err != nil {
 		serverError(w, err)
 		return

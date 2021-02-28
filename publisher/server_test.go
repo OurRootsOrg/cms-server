@@ -22,6 +22,7 @@ func TestPublisher(t *testing.T) {
 		t.Skip("skipping tests in short mode")
 	}
 	ctx := utils.AddSocietyIDToContext(context.TODO(), 1)
+	ctx = utils.AddSearchUserIDToContext(ctx, 1)
 
 	// create test api
 	db, err := postgres.Open(ctx, os.Getenv("DATABASE_URL"))
@@ -37,7 +38,8 @@ func TestPublisher(t *testing.T) {
 		CategoryPersister(p).
 		CollectionPersister(p).
 		PostPersister(p).
-		RecordPersister(p)
+		RecordPersister(p).
+		SocietyPersister(p)
 
 	// Add a test category and test collection and test post for referential integrity
 	testCategory := createTestCategory(ctx, t, p)
@@ -86,11 +88,14 @@ func TestPublisher(t *testing.T) {
 
 	// search by date
 	searchResult, err := testAPI.Search(ctx, &api.SearchRequest{
+		SocietyID:          1,
 		BirthDate:          "1900",
 		BirthDateFuzziness: 1,
 	})
+	assert.NoError(t, err, "Search result error")
 	assert.Equal(t, 2, searchResult.Total)
 	searchResult, err = testAPI.Search(ctx, &api.SearchRequest{
+		SocietyID:          1,
 		BirthDate:          "1901",
 		BirthDateFuzziness: 1,
 	})
@@ -99,11 +104,13 @@ func TestPublisher(t *testing.T) {
 
 	// search by place
 	searchResult, err = testAPI.Search(ctx, &api.SearchRequest{
+		SocietyID:           1,
 		BirthPlace:          "Alabama, United States",
 		BirthPlaceFuzziness: 1,
 	})
 	assert.Equal(t, 2, searchResult.Total)
 	searchResult, err = testAPI.Search(ctx, &api.SearchRequest{
+		SocietyID:           1,
 		BirthPlace:          "Autauga, Alabama, United States",
 		BirthPlaceFuzziness: 1,
 	})

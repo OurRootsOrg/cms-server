@@ -104,7 +104,7 @@ func doRecordsTests(t *testing.T,
 	assert.Equal(t, *created, ret.Records[0])
 
 	// GET many records should now return the created Record
-	records, err := testApi.GetRecordsByID(ctx, []uint32{created.ID})
+	records, err := testApi.GetRecordsByID(ctx, []uint32{created.ID}, true)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(records))
 	assert.Equal(t, *created, records[0])

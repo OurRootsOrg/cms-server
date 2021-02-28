@@ -88,6 +88,8 @@ type SearchResult struct {
 type SearchHit struct {
 	ID                 string         `json:"id"`
 	SocietyID          uint32         `json:"societyId"`
+	Private            bool           `json:"private"`
+	LoginURL           string         `json:"loginURL,omitempty"`
 	Score              float64        `json:"score"`
 	Person             SearchPerson   `json:"person,omitempty"`
 	Record             SearchRecord   `json:"record,omitempty"` // only returned on search by id

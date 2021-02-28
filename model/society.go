@@ -12,7 +12,7 @@ import (
 type SocietyPersister interface {
 	SelectSocietySummariesByID(ctx context.Context, ids []uint32) ([]SocietySummary, error)
 	SelectSocietySummary(ctx context.Context, id uint32) (*SocietySummary, error)
-	SelectSociety(ctx context.Context) (*Society, error)
+	SelectSociety(ctx context.Context, id uint32) (*Society, error)
 	InsertSociety(ctx context.Context, in SocietyIn) (*Society, error)
 	UpdateSociety(ctx context.Context, in Society) (*Society, error)
 	DeleteSociety(ctx context.Context) error

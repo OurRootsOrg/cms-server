@@ -10,6 +10,9 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"time"
+
+	"github.com/dgrijalva/jwt-go"
 
 	"github.com/ourrootsorg/cms-server/model"
 
@@ -100,10 +103,9 @@ func (app App) OptionsNoop(w http.ResponseWriter, req *http.Request) {
 
 func (app App) setSociety(next http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
-		vars := mux.Vars(r)
-		societyID, err := strconv.Atoi(vars["society"])
+		societyID, err := getSocietyIDFromRequest(r)
 		if err != nil || societyID <= 0 {
-			ErrorResponse(w, http.StatusBadRequest, fmt.Sprintf("Bad society id '%s': %v", vars["society"], err))
+			ErrorResponse(w, http.StatusBadRequest, fmt.Sprintf("Bad society id %v", err))
 			return
 		}
 
@@ -183,9 +185,108 @@ func (app App) verifyToken(next http.Handler) http.Handler {
 	return http.HandlerFunc(fn)
 }
 
+func (app App) verifySearchToken(next http.Handler) http.Handler {
+	if app.authDisabled {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			next.ServeHTTP(w, r)
+		})
+	}
+	fn := func(w http.ResponseWriter, r *http.Request) {
+		authHeader := r.Header.Get("Authorization")
+		if authHeader == "" {
+			msg := "No Authorization header found"
+			log.Print("[DEBUG] " + msg)
+			ErrorResponse(w, http.StatusUnauthorized, msg)
+			return
+		}
+		authHeaderParts := strings.Fields(authHeader)
+		if len(authHeaderParts) != 2 || strings.ToLower(authHeaderParts[0]) != "bearer" {
+			msg := "Authorization header format must be Bearer {token}"
+			log.Print("[DEBUG] " + msg)
+			ErrorResponse(w, http.StatusUnauthorized, msg)
+			return
+		}
+
+		// Make sure that the incoming request has our token header
+		accessJWT := authHeaderParts[1]
+
+		// Verify the access token
+		ctx := r.Context()
+		token, err := jwt.Parse(accessJWT, func(token *jwt.Token) (interface{}, error) {
+			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+				return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+			}
+			societyID, _, err := parseSearchTokenClaims(token)
+			if err != nil {
+				return nil, err
+			}
+			society, err := app.api.GetSociety(ctx, societyID)
+			if err != nil {
+				return nil, err
+			}
+			return []byte(society.SecretKey), nil
+		})
+		errMsg := ""
+		if err != nil || !token.Valid {
+			errMsg = fmt.Sprintf("Invalid search token: %s %v", accessJWT, err)
+		}
+		claims, ok := token.Claims.(jwt.MapClaims)
+		if !ok {
+			errMsg = fmt.Sprintf("Search token claims of the wrong type: %s", accessJWT)
+		}
+		err = claims.Valid()
+		if err != nil {
+			errMsg = fmt.Sprintf("Invalid search token claims: %s %v", accessJWT, err)
+		}
+		if !claims.VerifyExpiresAt(time.Now().Unix(), true) {
+			errMsg = fmt.Sprintf("Search token is expired: %s", accessJWT)
+		}
+		if errMsg != "" {
+			log.Print("[DEBUG] " + errMsg)
+			ErrorResponse(w, http.StatusUnauthorized, errMsg)
+			return
+		}
+
+		// save the society ID and user ID in context
+		societyID, userID, err := parseSearchTokenClaims(token)
+		ctx = utils.AddSocietyIDToContext(ctx, societyID)
+		ctx = utils.AddSearchUserIDToContext(ctx, userID)
+
+		newRequest := r.WithContext(ctx)
+		// Update the current request with the new context information.
+		*r = *newRequest
+		next.ServeHTTP(w, r)
+	}
+	return http.HandlerFunc(fn)
+}
+
+func parseSearchTokenClaims(token *jwt.Token) (uint32, uint32, error) {
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		return 0, 0, fmt.Errorf("invalid search claims")
+	}
+	subject, ok := claims["sub"].(string)
+	if !ok {
+		return 0, 0, fmt.Errorf("invalid search claims subject %v", subject)
+	}
+	subjectParts := strings.Split(subject, "_")
+	if len(subjectParts) != 2 {
+		return 0, 0, fmt.Errorf("unexpected subject: %s", subject)
+	}
+	societyID, err := strconv.Atoi(subjectParts[0])
+	if err != nil {
+		return 0, 0, fmt.Errorf("unexpected subject: %s", subject)
+	}
+	userID, err := strconv.Atoi(subjectParts[1])
+	if err != nil {
+		return 0, 0, fmt.Errorf("unexpected subject: %s", subject)
+	}
+	return uint32(societyID), uint32(userID), nil
+}
+
 func (app App) addUserToSandboxSociety(ctx context.Context, level model.AuthLevel) error {
 	sctx := utils.AddSocietyIDToContext(ctx, app.sandboxSocietyID)
-	_, err := app.api.GetSociety(sctx)
+	_, err := app.api.GetSociety(sctx, app.sandboxSocietyID)
 	if err != nil {
 		msg := fmt.Sprintf("Get sandbox society error %v", err)
 		log.Print("[ERROR] " + msg)
@@ -344,11 +445,14 @@ func (app App) NewRouter() *mux.Router {
 	r.Handle(app.baseURL.Path+"/invitations/{code}", app.verifyToken(http.HandlerFunc(app.AcceptInvitation))).Methods("POST")
 
 	// search doesn't require a token for now
-	r.Handle(app.baseURL.Path+"/societies/{society}/search", http.HandlerFunc(app.OptionsNoop)).Methods("OPTIONS")
-	r.HandleFunc(app.baseURL.Path+"/societies/{society}/search", app.Search).Methods("GET")
+	r.Handle(app.baseURL.Path+"/search", http.HandlerFunc(app.OptionsNoop)).Methods("OPTIONS")
+	r.Handle(app.baseURL.Path+"/search", app.verifySearchToken(http.HandlerFunc(app.Search))).Methods("GET")
 
-	r.Handle(app.baseURL.Path+"/societies/{society}/search/{id}", http.HandlerFunc(app.OptionsNoop)).Methods("OPTIONS")
-	r.HandleFunc(app.baseURL.Path+"/societies/{society}/search/{id}", app.SearchByID).Methods("GET")
+	r.Handle(app.baseURL.Path+"/search/{id}", http.HandlerFunc(app.OptionsNoop)).Methods("OPTIONS")
+	r.Handle(app.baseURL.Path+"/search/{id}", app.verifySearchToken(http.HandlerFunc(app.SearchByID))).Methods("GET")
+
+	r.Handle(app.baseURL.Path+"/search-image/{society}/{id}/{filePath:.*}", http.HandlerFunc(app.OptionsNoop)).Methods("OPTIONS")
+	r.Handle(app.baseURL.Path+"/search-image/{society}/{id}/{filePath:.*}", app.verifySearchToken(http.HandlerFunc(app.SearchImage))).Methods("GET")
 
 	r.Handle(app.baseURL.Path+"/places", http.HandlerFunc(app.OptionsNoop)).Methods("OPTIONS")
 	r.HandleFunc(app.baseURL.Path+"/places", http.HandlerFunc(app.GetPlacesByPrefix)).Methods("GET")
@@ -396,10 +500,18 @@ func ErrorsResponse(w http.ResponseWriter, err error) {
 
 // get a "id" variable from the request and validate > 0
 func getIDFromRequest(req *http.Request) (uint32, error) {
+	return getUint32FromRequest(req, "id")
+}
+
+func getSocietyIDFromRequest(req *http.Request) (uint32, error) {
+	return getUint32FromRequest(req, "society")
+}
+
+func getUint32FromRequest(req *http.Request, name string) (uint32, error) {
 	vars := mux.Vars(req)
-	id, err := strconv.Atoi(vars["id"])
+	id, err := strconv.Atoi(vars[name])
 	if err != nil || id <= 0 {
-		return 0, api.NewError(fmt.Errorf("Bad id '%s': %v", vars["id"], err))
+		return 0, api.NewError(fmt.Errorf("bad id '%s': %v", vars[name], err))
 	}
 	return uint32(id), nil
 }

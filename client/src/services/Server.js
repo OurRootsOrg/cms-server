@@ -1,5 +1,5 @@
 import axios from "axios";
-import {get, post, put, del, getWithoutAccessToken} from "./ServerHelper";
+import { get, post, put, del, getWithoutAccessToken } from "./ServerHelper";
 
 export default {
   categoriesCreate(societyId, category) {

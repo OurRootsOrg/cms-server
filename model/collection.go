@@ -29,7 +29,7 @@ func (l PrivacyLevel) String() string {
 // CollectionPersister defines methods needed to persist categories
 type CollectionPersister interface {
 	SelectCollections(ctx context.Context) ([]Collection, error)
-	SelectCollectionsByID(ctx context.Context, ids []uint32) ([]Collection, error)
+	SelectCollectionsByID(ctx context.Context, ids []uint32, enforceContextSocietyMatch bool) ([]Collection, error)
 	SelectOneCollection(ctx context.Context, id uint32) (*Collection, error)
 	InsertCollection(ctx context.Context, in CollectionIn) (*Collection, error)
 	UpdateCollection(ctx context.Context, id uint32, in Collection) (*Collection, error)

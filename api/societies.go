@@ -41,11 +41,32 @@ func (api API) GetSocietySummary(ctx context.Context) (*model.SocietySummary, er
 	return societySummary, nil
 }
 
-func (api API) GetSociety(ctx context.Context) (*model.Society, error) {
-	society, err := api.societyPersister.SelectSociety(ctx)
+func (api API) GetSociety(ctx context.Context, id uint32) (*model.Society, error) {
+	var society *model.Society
+
+	// look up in cache
+	cacheKey := fmt.Sprintf("%d", id)
+	soc, ok := api.societyCache.Get(cacheKey)
+	if ok {
+		var result model.Society
+		if result, ok = soc.(model.Society); ok {
+			society = &result
+		}
+	}
+	if ok {
+		//log.Printf("[DEBUG] Found user for key '%s' in cache: %#v", cacheKey, societyUser)
+		return society, nil
+	}
+
+	// read from database
+	society, err := api.societyPersister.SelectSociety(ctx, id)
 	if err != nil {
 		return nil, NewError(err)
 	}
+
+	// add to cache
+	api.societyCache.Add(cacheKey, *society)
+
 	return society, nil
 }
 
@@ -104,7 +125,7 @@ func (api API) UpdateSociety(ctx context.Context, in model.Society) (*model.Soci
 }
 
 func (api API) DeleteSociety(ctx context.Context) error {
-	// TODO lots of things to delete here
+	// TODO !!! lots of things to delete here
 	err := api.societyPersister.DeleteSociety(ctx)
 	if err != nil {
 		return NewError(err)

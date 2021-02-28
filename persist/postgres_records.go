@@ -36,7 +36,7 @@ func (p PostgresPersister) SelectRecordsForPost(ctx context.Context, postID uint
 }
 
 // SelectRecordsByID selects many records
-func (p PostgresPersister) SelectRecordsByID(ctx context.Context, ids []uint32) ([]model.Record, error) {
+func (p PostgresPersister) SelectRecordsByID(ctx context.Context, ids []uint32, enforceContextSocietyMatch bool) ([]model.Record, error) {
 	societyID, err := utils.GetSocietyIDFromContext(ctx)
 	if err != nil {
 		return nil, err
@@ -45,8 +45,15 @@ func (p PostgresPersister) SelectRecordsByID(ctx context.Context, ids []uint32) 
 	if len(ids) == 0 {
 		return records, nil
 	}
-	rows, err := p.db.QueryContext(ctx, "SELECT id, post_id, body, ix_hash, insert_time, last_update_time FROM record "+
-		"WHERE society_id=$1 AND id = ANY($2)", societyID, pq.Array(ids))
+
+	var rows *sql.Rows
+	if enforceContextSocietyMatch {
+		rows, err = p.db.QueryContext(ctx, "SELECT id, post_id, body, ix_hash, insert_time, last_update_time FROM record "+
+			"WHERE society_id=$1 AND id = ANY($2)", societyID, pq.Array(ids))
+	} else {
+		rows, err = p.db.QueryContext(ctx, "SELECT id, post_id, body, ix_hash, insert_time, last_update_time FROM record "+
+			"WHERE id = ANY($1)", pq.Array(ids))
+	}
 	if err != nil {
 		return nil, translateError(err, nil, nil, "")
 	}

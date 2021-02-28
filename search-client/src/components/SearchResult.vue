@@ -33,7 +33,7 @@
             icon
             x-small
             class="primary--text view-camera"
-            :to="{ name: 'image', params: { pid: result.post, path: result.imagePath } }"
+            :to="{ name: 'image', params: { societyId: result.societyId, pid: result.post, path: result.imagePath } }"
             ><v-icon title="View image">mdi-camera</v-icon></v-btn
           >
         </div>

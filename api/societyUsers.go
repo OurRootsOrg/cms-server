@@ -75,12 +75,17 @@ func (api API) GetSocietyUserByUser(ctx context.Context, userID uint32) (*model.
 	var societyUser *model.SocietyUser
 
 	// look up in cache
-	cacheKey := fmt.Sprintf("%d", userID)
+	societyID, err := utils.GetSocietyIDFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	cacheKey := fmt.Sprintf("%d_%d", societyID, userID)
 	u, ok := api.societyUserCache.Get(cacheKey)
 	if ok {
 		var result model.SocietyUser
-		result, ok = u.(model.SocietyUser)
-		societyUser = &result
+		if result, ok = u.(model.SocietyUser); ok {
+			societyUser = &result
+		}
 	}
 	if ok {
 		//log.Printf("[DEBUG] Found user for key '%s' in cache: %#v", cacheKey, societyUser)
@@ -88,7 +93,7 @@ func (api API) GetSocietyUserByUser(ctx context.Context, userID uint32) (*model.
 	}
 
 	// read from database
-	societyUser, err := api.societyUserPersister.SelectOneSocietyUserByUser(ctx, userID)
+	societyUser, err = api.societyUserPersister.SelectOneSocietyUserByUser(ctx, userID)
 	if err != nil {
 		return nil, NewError(err)
 	}

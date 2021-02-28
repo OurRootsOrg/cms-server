@@ -15,6 +15,7 @@ import (
 func TestSearchByID(t *testing.T) {
 	am := &api.ApiMock{}
 	app := NewApp().API(am)
+	app.authDisabled = true
 	r := app.NewRouter()
 
 	// Empty result
@@ -24,7 +25,7 @@ func TestSearchByID(t *testing.T) {
 	am.Result = &sh
 	am.Errors = nil
 
-	request, _ := http.NewRequest("GET", "/societies/1/search/1", nil)
+	request, _ := http.NewRequest("GET", "/search/1", nil)
 	response := httptest.NewRecorder()
 	r.ServeHTTP(response, request)
 	assert.Equal(t, 200, response.Code, "OK response is expected")
@@ -42,6 +43,7 @@ func TestSearchByID(t *testing.T) {
 func TestSearch(t *testing.T) {
 	am := &api.ApiMock{}
 	app := NewApp().API(am)
+	app.authDisabled = true
 	r := app.NewRouter()
 
 	// Empty result
@@ -49,7 +51,7 @@ func TestSearch(t *testing.T) {
 	am.Result = &sr
 	am.Errors = nil
 
-	request, _ := http.NewRequest("GET", "/societies/1/search?given=Fred&surname=Flintstone", nil)
+	request, _ := http.NewRequest("GET", "/search?given=Fred&surname=Flintstone", nil)
 	response := httptest.NewRecorder()
 	r.ServeHTTP(response, request)
 	assert.Equal(t, 200, response.Code, "OK response is expected")

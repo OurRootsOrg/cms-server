@@ -578,15 +578,13 @@
       },
 
       "societyId": {
-        "type": "keyword",
+        "type": "integer",
         "doc_values": true,
-        "index_options": "docs",
-        "norms": false,
         "similarity": "boolean"
       },
       "privacy": {
         "type": "keyword",
-        "doc_values": true,
+        "doc_values": false,
         "index_options": "docs",
         "norms": false,
         "similarity": "boolean"

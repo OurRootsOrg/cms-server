@@ -16,9 +16,8 @@ const routes = [
     component: Search
   },
   {
-    path: "/images/:pid/:path",
+    path: "/images/:societyId/:pid/:path",
     name: "image",
-    meta: { requiresAuth: true },
     component: Image
   },
   {

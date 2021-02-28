@@ -94,7 +94,7 @@ func doCollectionsTests(t *testing.T, catP model.CategoryPersister, colP model.C
 	// assert.Equal(t, *created, ret.Collections[0])
 
 	// GET many collections should now return the created Collection
-	colls, err := testApi.GetCollectionsByID(ctx, []uint32{created.ID})
+	colls, err := testApi.GetCollectionsByID(ctx, []uint32{created.ID}, true)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(colls))
 	assert.Equal(t, *created, colls[0])

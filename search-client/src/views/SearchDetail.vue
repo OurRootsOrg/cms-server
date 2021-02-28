@@ -10,6 +10,7 @@
             :to="{
               name: 'image',
               params: {
+                societyId: search.searchResult.societyId,
                 pid: search.searchResult.post,
                 path: search.searchResult.imagePath
               }
@@ -22,7 +23,11 @@
             class="primary--text mx-5"
             :to="{
               name: 'image',
-              params: { pid: search.searchResult.post, path: search.searchResult.imagePath }
+              params: {
+                societyId: search.searchResult.societyId,
+                pid: search.searchResult.post,
+                path: search.searchResult.imagePath
+              }
             }"
           >
             Larger image<v-icon right>mdi-chevron-right</v-icon>
@@ -30,7 +35,13 @@
         </div>
       </v-col>
       <!--individual transcript-->
-      <v-col cols="12" md="8">
+      <v-col cols="12" md="8" v-if="search.searchResult.private">
+        <p>
+          This record is available to members of the society.
+          <a v-if="search.searchResult.loginURL" :href="search.searchResult.loginURL">Click here to become a member</a>
+        </p>
+      </v-col>
+      <v-col cols="12" md="8" v-else>
         <v-row v-if="search.searchResult.person.role !== 'principal'" no-gutters>
           <v-col>
             <div>Name: {{ search.searchResult.person.name }}</div>
@@ -105,7 +116,12 @@ export default {
     console.log("searchResult", this.search.searchResult);
     // get image path
     if (this.search.searchResult.imagePath) {
-      Server.postsGetImage(this.search.searchResult.post, this.search.searchResult.imagePath, true).then(result => {
+      Server.postsGetImage(
+        this.search.searchResult.societyId,
+        this.search.searchResult.post,
+        this.search.searchResult.imagePath,
+        true
+      ).then(result => {
         this.thumbURL = result.data.url;
       });
     }

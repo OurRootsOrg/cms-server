@@ -50,22 +50,18 @@ func (p PostgresPersister) SelectSocietySummary(ctx context.Context, id uint32) 
 }
 
 // SelectOneSociety loads the current Society from the database
-func (p PostgresPersister) SelectSociety(ctx context.Context) (*model.Society, error) {
-	societyID, err := utils.GetSocietyIDFromContext(ctx)
-	if err != nil {
-		return nil, err
-	}
+func (p PostgresPersister) SelectSociety(ctx context.Context, id uint32) (*model.Society, error) {
 	var society model.Society
-	log.Printf("[DEBUG] id: %d", societyID)
-	err = p.db.QueryRowContext(ctx, "SELECT id, body, insert_time, last_update_time FROM society "+
-		"WHERE id=$1", societyID).Scan(
+	log.Printf("[DEBUG] id: %d", id)
+	err := p.db.QueryRowContext(ctx, "SELECT id, body, insert_time, last_update_time FROM society "+
+		"WHERE id=$1", id).Scan(
 		&society.ID,
 		&society.SocietyBody,
 		&society.InsertTime,
 		&society.LastUpdateTime,
 	)
 	if err != nil {
-		return nil, translateError(err, &societyID, nil, "")
+		return nil, translateError(err, &id, nil, "")
 	}
 	return &society, nil
 }
@@ -102,7 +98,7 @@ func (p PostgresPersister) UpdateSociety(ctx context.Context, in model.Society) 
 		)
 	if err != nil && err == sql.ErrNoRows {
 		// Either non-existent or last_update_time didn't match
-		c, _ := p.SelectSociety(ctx)
+		c, _ := p.SelectSociety(ctx, societyID)
 		if c != nil && c.ID == societyID {
 			// Row exists, so it must be a non-matching update time
 			return nil, model.NewError(model.ErrConcurrentUpdate, c.LastUpdateTime.String(), in.LastUpdateTime.String())

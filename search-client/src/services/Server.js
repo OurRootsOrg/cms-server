@@ -6,10 +6,10 @@ export default {
       params: { prefix: prefix, count: 8 }
     });
   },
-  postsGetImage(postId, imagePath, thumbnail) {
-    let url = `/posts/${postId}/images/${imagePath}?noredirect=true`;
+  postsGetImage(societyId, postId, imagePath, thumbnail) {
+    let url = `/search-image/${societyId}/${postId}/${imagePath}`;
     if (thumbnail) {
-      url += `&thumbnail=${thumbnail}`;
+      url += `?thumbnail=${thumbnail}`;
     }
     return get(url);
   },
