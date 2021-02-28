@@ -137,8 +137,6 @@ definitions:
         type: array
       citation_template:
         type: string
-      detailPrivacy:
-        type: string
       fields:
         items:
           $ref: '#/definitions/model.CollectionField'
@@ -154,10 +152,6 @@ definitions:
         type: integer
       imagePathHeader:
         type: string
-      imagePrivacy:
-        type: string
-      indexPrivacy:
-        type: string
       insert_time:
         type: string
       last_update_time:
@@ -170,6 +164,8 @@ definitions:
         type: array
       name:
         type: string
+      privacyLevel:
+        type: integer
     required:
     - categories
     - id
@@ -188,8 +184,6 @@ definitions:
         type: array
       citation_template:
         type: string
-      detailPrivacy:
-        type: string
       fields:
         items:
           $ref: '#/definitions/model.CollectionField'
@@ -202,10 +196,6 @@ definitions:
         type: string
       imagePathHeader:
         type: string
-      imagePrivacy:
-        type: string
-      indexPrivacy:
-        type: string
       location:
         type: string
       mappings:
@@ -214,6 +204,8 @@ definitions:
         type: array
       name:
         type: string
+      privacyLevel:
+        type: integer
     required:
     - categories
     - name
@@ -455,11 +447,15 @@ definitions:
         type: string
       imagePath:
         type: string
+      loginURL:
+        type: string
       person:
         $ref: '#/definitions/model.SearchPerson'
         type: object
       post:
         type: integer
+      private:
+        type: boolean
       record:
         $ref: '#/definitions/model.SearchRecord'
         description: only returned on search by id
@@ -548,7 +544,6 @@ definitions:
     required:
     - id
     - name
-    - secretKey
     type: object
   model.SocietyIn:
     properties:
@@ -564,7 +559,6 @@ definitions:
         type: string
     required:
     - name
-    - secretKey
     type: object
   model.SocietySummary:
     properties:
@@ -573,9 +567,10 @@ definitions:
         type: integer
       name:
         type: string
-    required:
-    - id
-    - name
+      postMetadata:
+        items:
+          $ref: '#/definitions/model.SettingsPostMetadata'
+        type: array
     type: object
   model.SocietyUser:
     properties:
@@ -1707,6 +1702,51 @@ paths:
           schema:
             $ref: '#/definitions/api.Error'
       summary: returns search results
+      tags:
+      - search
+  /search-images/{society}/{id}/{filePath}:
+    get:
+      operationId: getSearchImage
+      parameters:
+      - description: Post ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Image file path
+        in: path
+        name: imageFile
+        required: true
+        type: string
+      - description: return thumbnail
+        in: query
+        name: thumbnail
+        type: boolean
+      responses:
+        "307":
+          description: Temporary Redirect
+          schema:
+            type: header
+        "404":
+          description: Not found
+          schema:
+            $ref: '#/definitions/api.Error'
+        "500":
+          description: Server error
+          schema:
+            $ref: '#/definitions/api.Error'
+      security:
+      - OAuth2Implicit:
+        - cms
+        - openid
+        - profile
+        - email
+      - OAuth2AuthCode:
+        - cms
+        - openid
+        - profile
+        - email
+      summary: Returns an image URL
       tags:
       - search
   /search/{id}:

@@ -486,6 +486,7 @@ Resources:
           PUB_SUB_PUBLISHER_URL: !Ref "CMSPublisherQueueURL"
           OIDC_DOMAIN: 'https://ourroots.auth0.com/'
           OIDC_AUDIENCE: 'https://api.ourroots.org/preprod'
+          SANDBOX_SOCIETY_ID: '1'
           ELASTICSEARCH_URL: !Join
             - ''
             -

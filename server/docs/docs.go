@@ -1688,6 +1688,75 @@ var doc = `{
                 }
             }
         },
+        "/search-images/{society}/{id}/{filePath}": {
+            "get": {
+                "security": [
+                    {
+                        "OAuth2Implicit": [
+                            "cms",
+                            "openid",
+                            "profile",
+                            "email"
+                        ]
+                    },
+                    {
+                        "OAuth2AuthCode": [
+                            "cms",
+                            "openid",
+                            "profile",
+                            "email"
+                        ]
+                    }
+                ],
+                "tags": [
+                    "search"
+                ],
+                "summary": "Returns an image URL",
+                "operationId": "getSearchImage",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Post ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Image file path",
+                        "name": "imageFile",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "return thumbnail",
+                        "name": "thumbnail",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "307": {
+                        "description": "Temporary Redirect",
+                        "schema": {
+                            "type": "header"
+                        }
+                    },
+                    "404": {
+                        "description": "Not found",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    }
+                }
+            }
+        },
         "/search/{id}": {
             "get": {
                 "produces": [
@@ -2649,9 +2718,6 @@ var doc = `{
                 "citation_template": {
                     "type": "string"
                 },
-                "detailPrivacy": {
-                    "type": "string"
-                },
                 "fields": {
                     "type": "array",
                     "items": {
@@ -2674,12 +2740,6 @@ var doc = `{
                 "imagePathHeader": {
                     "type": "string"
                 },
-                "imagePrivacy": {
-                    "type": "string"
-                },
-                "indexPrivacy": {
-                    "type": "string"
-                },
                 "insert_time": {
                     "type": "string"
                 },
@@ -2697,6 +2757,9 @@ var doc = `{
                 },
                 "name": {
                     "type": "string"
+                },
+                "privacyLevel": {
+                    "type": "integer"
                 }
             }
         },
@@ -2724,9 +2787,6 @@ var doc = `{
                 "citation_template": {
                     "type": "string"
                 },
-                "detailPrivacy": {
-                    "type": "string"
-                },
                 "fields": {
                     "type": "array",
                     "items": {
@@ -2745,12 +2805,6 @@ var doc = `{
                 "imagePathHeader": {
                     "type": "string"
                 },
-                "imagePrivacy": {
-                    "type": "string"
-                },
-                "indexPrivacy": {
-                    "type": "string"
-                },
                 "location": {
                     "type": "string"
                 },
@@ -2762,6 +2816,9 @@ var doc = `{
                 },
                 "name": {
                     "type": "string"
+                },
+                "privacyLevel": {
+                    "type": "integer"
                 }
             }
         },
@@ -3112,12 +3169,18 @@ var doc = `{
                 "imagePath": {
                     "type": "string"
                 },
+                "loginURL": {
+                    "type": "string"
+                },
                 "person": {
                     "type": "object",
                     "$ref": "#/definitions/model.SearchPerson"
                 },
                 "post": {
                     "type": "integer"
+                },
+                "private": {
+                    "type": "boolean"
                 },
                 "record": {
                     "description": "only returned on search by id",
@@ -3224,8 +3287,7 @@ var doc = `{
             "type": "object",
             "required": [
                 "id",
-                "name",
-                "secretKey"
+                "name"
             ],
             "properties": {
                 "id": {
@@ -3258,8 +3320,7 @@ var doc = `{
         "model.SocietyIn": {
             "type": "object",
             "required": [
-                "name",
-                "secretKey"
+                "name"
             ],
             "properties": {
                 "loginURL": {
@@ -3281,10 +3342,6 @@ var doc = `{
         },
         "model.SocietySummary": {
             "type": "object",
-            "required": [
-                "id",
-                "name"
-            ],
             "properties": {
                 "id": {
                     "type": "integer",
@@ -3292,6 +3349,12 @@ var doc = `{
                 },
                 "name": {
                     "type": "string"
+                },
+                "postMetadata": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.SettingsPostMetadata"
+                    }
                 }
             }
         },
