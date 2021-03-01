@@ -25,19 +25,25 @@ See [Configuration Reference](https://cli.vuejs.org/config/).
 
 ## Deploying
 
-### Deploying the search client to a custom Wordpress page template
+### Deploying the search client as a Wordpress plugin
 
-1. Run `npm run build` to build this project.
-2. Figure out which Wordpress theme you're using and navigate to the directory for that theme under wp-content/themes in your wordpress directory.
-3. Add the code in deploy/ourroots_search_functions.php to the end of the functions.php file in the wordpress directory for your theme. 
-   If you are upgrading a previous installation, you may want to change the version numbers from 0.0.1 to something else for cache-busting.
-4. Copy deploy/ourroots_search.php to the wordpress directory for your theme.
-5. Create a subdirectory ourroots_search under the wordpress directory for your theme.
-6. Copy the dist/css, dist/js, and dist/img in this project to the new wordpress ourroots_search subdirectory.
-7. Rename css/app...css to just app.css, and css/chunk-vendors...css to just css/chunk-vendors.css.
-8. Rename js/app...js to just app.js, and js/chunk-vendors.js to just js/chunk-vendors.js.
-9. Delete the js/...map files. 
-10. In WordPress, create a new page (not a post, but a page) using ourroots_search as the page template. The page text can be empty.
+1. Run `npm run build` to build this project. This stores its output in a dist subdirectory of the project root.
+
+2. Copy the files from dist into the plugin directory
+    ```
+    cp -r dist/img/* deploy/wp-plugin/ourroots/img
+    cp dist/js/app*.js deploy/wp-plugin/ourroots/js/app.js
+    cp dist/js/chunk-vendors*.js deploy/wp-plugin/ourroots/js/chunk-vendors.js
+    cp dist/css/app*.css deploy/wp-plugin/ourroots/css/app.css
+    cp dist/css/chunk-vendors*.css deploy/wp-plugin/ourroots/css/chunk-vendors.css
+    ```
+3. Create the plugin zip file
+    ```
+    cd deploy/wp-plugin
+    zip -r ourroots ourroots
+    cd ../..
+    ```
+4. Upload the zip file to your wordpress installation
 
 ### Deploying the search client as a stand-alone application
 

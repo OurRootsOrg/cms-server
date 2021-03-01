@@ -237,10 +237,10 @@
                 <v-autocomplete
                   outlined
                   dense
-                  v-model="query.anyPlace"
-                  :loading="anyPlaceLoading"
-                  :items="anyPlaceItems"
-                  :search-input.sync="anyPlaceSearch"
+                  v-model="defaultPlace"
+                  :loading="defaultPlaceLoading"
+                  :items="defaultPlaceItems"
+                  :search-input.sync="defaultPlaceSearch"
                   no-filter
                   auto-select-first
                   flat
@@ -248,10 +248,11 @@
                   hide-details
                   solo
                   placeholder="Any place"
-                  @change="anyPlaceChanged()"
+                  :menu-props="{ nudgeTop: autocompleteOffset }"
+                  @change="defaultPlaceChanged()"
                 ></v-autocomplete>
               </v-row>
-              <v-row no-gutters v-if="query.anyPlace">
+              <v-row no-gutters v-if="query.defaultPlace">
                 <v-col cols="12" class="exactCheck d-flex flex-row">
                   <v-checkbox
                     v-model="query.anyPlaceFuzziness"
@@ -430,6 +431,7 @@
                   hide-details
                   solo
                   placeholder="Birth place"
+                  :menu-props="{ nudgeTop: autocompleteOffset }"
                 ></v-autocomplete>
               </v-col>
               <v-col
@@ -531,6 +533,7 @@
                   hide-details
                   solo
                   placeholder="Marriage place"
+                  :menu-props="{ nudgeTop: autocompleteOffset }"
                 ></v-autocomplete>
               </v-col>
               <v-col
@@ -632,6 +635,7 @@
                   hide-details
                   solo
                   placeholder="Death place"
+                  :menu-props="{ nudgeTop: autocompleteOffset }"
                 ></v-autocomplete>
               </v-col>
               <v-col
@@ -733,6 +737,7 @@
                   hide-details
                   solo
                   placeholder="Residence place"
+                  :menu-props="{ nudgeTop: autocompleteOffset }"
                 ></v-autocomplete>
               </v-col>
               <v-col
@@ -836,6 +841,8 @@
                   hide-details
                   solo
                   placeholder="Any place"
+                  :menu-props="{ nudgeTop: autocompleteOffset }"
+                  @change="anyPlaceChanged()"
                 ></v-autocomplete>
               </v-col>
               <v-col
@@ -1225,7 +1232,7 @@
               >
             </v-col>
           </v-row>
-          <!--Keywords-->
+          <!--Keywords
           <v-row no-gutters class="mt-5">
             <h4 class="mt-2 mr-2">Keyword:</h4>
             <v-text-field
@@ -1237,6 +1244,7 @@
               class="ma-0 mb-n2"
             ></v-text-field>
           </v-row>
+          -->
           <v-row class="d-flex flex-row">
             <v-btn class="mt-2 mb-4 ml-3" type="submit" color="primary"
               ><span v-if="!searchPerformed">Search</span><span v-if="searchPerformed">Update</span></v-btn
@@ -1340,6 +1348,12 @@ export default {
         next("/");
       });
   },
+  mounted() {
+    let mainHeader = document.getElementById("main-header");
+    if (mainHeader) {
+      this.autocompleteOffset = Math.round(mainHeader.getBoundingClientRect().height);
+    }
+  },
   created() {
     if (this.$route.query && Object.keys(this.$route.query).length > 0) {
       this.searchPerformed = true;
@@ -1369,6 +1383,7 @@ export default {
   },
   data() {
     return {
+      autocompleteOffset: 0,
       editSearch: false,
       page: 1,
       pageSize: 10,
@@ -1440,7 +1455,7 @@ export default {
         otherSurname: [0]
       },
       dateRanges: [
-        { value: 0, text: "Default" },
+        { value: 0, text: "Optional" },
         { value: 1, text: "Exact to this year" },
         { value: 2, text: "+/- 1 year" },
         { value: 3, text: "+/- 2 years" },
@@ -1448,7 +1463,7 @@ export default {
         { value: 5, text: "+/- 10 years" }
       ],
       givenFuzzinessLevels: [
-        { value: 0, text: "Default" },
+        { value: 0, text: "Optional" },
         { value: 1, text: "Exact spelling only" },
         { value: 2, text: "Alternate spellings" },
         { value: 4, text: "Sounds like (narrow)" },
@@ -1457,7 +1472,7 @@ export default {
         { value: 32, text: "Initials" }
       ],
       surnameFuzzinessLevels: [
-        { value: 0, text: "Default" },
+        { value: 0, text: "Optional" },
         { value: 1, text: "Exact" },
         { value: 2, text: "Alternate spellings" },
         { value: 4, text: "Sounds like (narrow)" },
@@ -1465,26 +1480,30 @@ export default {
         { value: 16, text: "Fuzzy" }
       ],
       placeFuzzinessLevels: [
-        { value: 0, text: "Default" },
+        { value: 0, text: "Optional" },
         { value: 1, text: "Exact" },
         { value: 3, text: "Exact and higher-level places" }
       ],
       wildcardRegex: /[~*?]/,
+      defaultPlace: "",
       placeTimeout: null,
       birthPlaceSearch: "",
       marriagePlaceSearch: "",
       residencePlaceSearch: "",
       deathPlaceSearch: "",
+      defaultPlaceSearch: "",
       anyPlaceSearch: "",
       birthPlaceItems: [],
       marriagePlaceItems: [],
       residencePlaceItems: [],
       deathPlaceItems: [],
+      defaultPlaceItems: [],
       anyPlaceItems: [],
       birthPlaceLoading: false,
       marriagePlaceLoading: false,
       residencePlaceLoading: false,
       deathPlaceLoading: false,
+      defaultPlaceLoading: false,
       anyPlaceLoading: false,
       //option menus
       givenOptionsMenu: false,
@@ -1559,6 +1578,9 @@ export default {
     deathPlaceSearch(val) {
       val && val !== this.query.deathPlace && this.placeSearch(val, "deathPlace");
     },
+    defaultPlaceSearch(val) {
+      val && val !== this.defaultPlace && this.placeSearch(val, "defaultPlace");
+    },
     anyPlaceSearch(val) {
       val && val !== this.query.anyPlace && this.placeSearch(val, "anyPlace");
     }
@@ -1578,13 +1600,21 @@ export default {
       this.query[event + "DateFuzziness"] = 0;
       this.query[event + "PlaceFuzziness"] = 0;
     },
-    anyPlaceChanged() {
+    defaultPlaceChanged() {
+      this.query.anyPlace = this.defaultPlace;
+      this.anyPlaceSearch = this.defaultPlaceSearch;
+      this.anyPlaceItems = this.defaultPlaceItems;
       if (this.query.anyPlace && !this.showEvent.any) {
         this.showEvent.any = true;
       } else if (!this.query.anyPlace && !this.query.anyDate && this.showEvent.any) {
         this.showEvent.any = false;
       }
       this.placeOptionsMenu = false;
+    },
+    anyPlaceChanged() {
+      this.defaultPlace = this.query.anyPlace;
+      this.defaultPlaceSearch = this.anyPlaceSearch;
+      this.defaultPlaceItems = this.anyPlaceItems;
     },
     birthYearChanged() {
       if (this.query.birthDate && !this.showEvent.birth) {

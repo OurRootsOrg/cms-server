@@ -23,7 +23,7 @@ To deploy to AWS using Serverless RDS Postgres as a database, execute the follow
 ENVIRONMENT_NAME=<env-name> ./deploy-infra.sh
 AWS_REGION=<aws-region> go run dbconfig/dbconfig.go <env-name>
 ENVIRONMENT_NAME=<env-name> DOMAIN_NAME="<domain-name>" CERTIFICATE_ARN="<cert-arn>" ./deploy.sh
-# TODO: Add instructions for db_load_full.sh against the EDS instance
+# TODO: Add instructions for db_load_full.sh against the RDS database
 ```
 
 To deploy to AWS using DynamoDB as a database, execute the following commands:

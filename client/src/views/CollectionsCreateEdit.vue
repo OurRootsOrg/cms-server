@@ -318,6 +318,11 @@
         ></v-textarea>
       </div>
 
+      <div v-if="warnChanges" class="errorMessage" style="margin-bottom: 16px">
+        The changes made to the collection will not affect posts that have already been uploaded, even if the posts have
+        not yet been published. If you want your changes to affect posts that have already been uploaded, you need to
+        delete the posts and re-upload them after changing the collection.
+      </div>
       <div class="d-flex justify-space-between">
         <v-btn
           type="submit"
@@ -551,6 +556,16 @@ export default {
           value: "actions",
           align: "right"
         }
+      ],
+      warnChangesFields: [
+        "categories",
+        "privacyLevel",
+        "location",
+        "mappings",
+        "imagePathHeader",
+        "householdNumberHeader",
+        "householdRelationshipHeader",
+        "genderHeader"
       ]
     };
   },
@@ -563,6 +578,9 @@ export default {
     }
   },
   computed: {
+    warnChanges() {
+      return this.postsForCollection.length > 0 && this.warnChangesFields.some(fld => this.$v.collection[fld].$dirty);
+    },
     headers() {
       let headers = [{ text: "N/A", value: "" }].concat(
         this.collection.mappings.map(f => {

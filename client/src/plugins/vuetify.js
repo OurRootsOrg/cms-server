@@ -10,7 +10,7 @@ export default new Vuetify({
         primary: colors.cyan.darken2,
         secondary: colors.cyan.lighten4,
         accent: colors.orange.darken3,
-        error: "#b71c1c"
+        error: "#fff8f8"
       }
     }
   }

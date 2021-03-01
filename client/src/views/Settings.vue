@@ -19,6 +19,7 @@
         v-model="society.name"
         type="text"
         placeholder="Name"
+        :class="{ error: $v.society.name.$error }"
         @blur="touch('name')"
       ></v-text-field>
       <template v-if="$v.society.name.$error">
@@ -41,6 +42,7 @@
         v-model="society.secretKey"
         type="text"
         placeholder="Secret key"
+        :class="{ error: $v.society.secretKey.$error }"
         @blur="touch('secretKey')"
       ></v-text-field>
       <template v-if="$v.society.secretKey.$error">
@@ -63,6 +65,7 @@
         v-model="society.loginURL"
         type="text"
         placeholder="Login URL"
+        :class="{ error: $v.society.loginURL.$error }"
         @blur="touch('loginURL')"
       ></v-text-field>
       <template v-if="$v.society.loginURL.$error">

@@ -205,6 +205,27 @@ Resources:
       IntegrationMethod: GET
       PayloadFormatVersion: "1.0"
 
+  StaticRoute:
+    Type: "AWS::ApiGatewayV2::Route"
+    Properties:
+      ApiId: !Ref OurRootsCMSApi
+      RouteKey: "GET /static/{proxy+}"
+      AuthorizationType: NONE
+      Target: !Join
+        - /
+        - - integrations
+          - !Ref StaticIntegration
+
+  StaticIntegration:
+    Type: "AWS::ApiGatewayV2::Integration"
+    Properties:
+      ApiId: !Ref OurRootsCMSApi
+      Description: Site Bucket static Integration
+      IntegrationType: HTTP_PROXY
+      IntegrationUri: !Join [ '/', [ !Ref CMSSiteBucketURL , 'static', '{proxy}' ] ]
+      IntegrationMethod: GET
+      PayloadFormatVersion: "1.0"
+
   SearchCSSRoute:
     Type: "AWS::ApiGatewayV2::Route"
     Properties:

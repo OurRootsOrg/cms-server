@@ -269,12 +269,18 @@ func processUnzipMessage(ctx context.Context, ap *api.API, msg model.ImagesWrite
 	}
 
 	// do the work
-	errs = unzipImages(ctx, ap, msg)
+	unzipErrs := unzipImages(ctx, ap, msg)
 
-	// update post
+	// get post again, in case there were any changes in the meantime
+	post, errs = ap.GetPost(ctx, msg.PostID)
 	if errs != nil {
+		log.Printf("[ERROR] Error calling GetPost on %d: %v", msg.PostID, errs)
+		return errs
+	}
+	// update post
+	if unzipErrs != nil {
 		post.ImagesStatus = model.ImagesStatusLoadError
-		post.ImagesError = errs.Error()
+		post.ImagesError = unzipErrs.Error()
 	} else {
 		post.ImagesStatus = model.ImagesStatusLoadComplete
 	}

@@ -69,6 +69,9 @@
 import store from "@/store";
 import { mapState } from "vuex";
 
+const AUTH_LEVEL_READER = 1;
+const AUTH_LEVEL_ADMIN = 4;
+
 function getContent(societyId, next) {
   Promise.all([
     store.dispatch("societySummariesGetOne", societyId),
@@ -98,19 +101,19 @@ export default {
   data: () => ({
     drawer: true,
     items: [
-      { icon: "mdi-home", text: "", link: "society-home", authRequired: true },
-      { icon: "mdi-shape", text: "Categories", link: "categories-list", authRequired: true },
-      { icon: "mdi-book-open-variant", text: "Collections", link: "collections-list", authRequired: true },
-      { icon: "mdi-cloud-upload", text: "Posts", link: "posts-list", authRequired: true },
-      { icon: "mdi-account-circle", text: "Users", link: "users-list", authRequired: true },
+      { icon: "mdi-home", text: "", link: "society-home", authLevel: AUTH_LEVEL_READER },
+      { icon: "mdi-shape", text: "Categories", link: "categories-list", authLevel: AUTH_LEVEL_READER },
+      { icon: "mdi-book-open-variant", text: "Collections", link: "collections-list", authLevel: AUTH_LEVEL_READER },
+      { icon: "mdi-cloud-upload", text: "Posts", link: "posts-list", authLevel: AUTH_LEVEL_READER },
+      { icon: "mdi-account-circle", text: "Users", link: "users-list", authLevel: AUTH_LEVEL_ADMIN },
       // { icon: "mdi-open-in-new", text: "Search", link: process.env.VUE_APP_SEARCH_URL, external: true },
-      { icon: "mdi-cog", text: "Settings", link: "settings", authRequired: true }
+      { icon: "mdi-cog", text: "Settings", link: "settings", authLevel: AUTH_LEVEL_ADMIN }
     ]
   }),
   computed: mapState(["societySummaries"]),
   methods: {
     itemAuthorized(item) {
-      return !item.authRequired || store.getters.userIsLoggedIn;
+      return item.authLevel <= store.getters.authLevel;
     }
   }
 };

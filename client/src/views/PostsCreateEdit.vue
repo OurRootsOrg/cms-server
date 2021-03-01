@@ -512,18 +512,25 @@ export default {
       this.imageFiles = [];
       this.importImagesDlg = false;
       this.imagesUploading = false;
-      let post = this.getPostFromForm();
       this.$v.$touch();
       NProgress.start();
-      post.imagesKeys = [this.imagesPostRequestResultData.key];
-      console.log("emdImagesUpload", post, this.imagesPostRequestResultData);
+      // re-read post to avoid 409 conflict
       this.$store
-        .dispatch("postsUpdate", post)
-        .then(() => {
-          setup.bind(this)();
-          this.$v.$reset();
+        .dispatch("postsGetOne", this.post.id)
+        .then(post => {
+          post.imagesKeys = [this.imagesPostRequestResultData.key];
+          console.log("emdImagesUpload", post, this.imagesPostRequestResultData);
+          this.$store
+            .dispatch("postsUpdate", post)
+            .then(() => {
+              setup.bind(this)();
+              this.$v.$reset();
+            })
+            .finally(() => {
+              NProgress.done();
+            });
         })
-        .finally(() => {
+        .catch(() => {
           NProgress.done();
         });
     },
@@ -555,18 +562,25 @@ export default {
       this.recordFiles = [];
       this.importRecordsDlg = false;
       this.recordsUploading = false;
-      let post = this.getPostFromForm();
       this.$v.$touch();
       NProgress.start();
-      post.recordsKey = this.recordsPostRequestResultData.key;
-      console.log("emdRecordsUpload", post, this.recordsPostRequestResultData);
+      // re-read post to avoid 409 conflict
       this.$store
-        .dispatch("postsUpdate", post)
-        .then(() => {
-          setup.bind(this)();
-          this.$v.$reset();
+        .dispatch("postsGetOne", this.post.id)
+        .then(post => {
+          post.recordsKey = this.recordsPostRequestResultData.key;
+          console.log("endRecordsUpload", post, this.recordsPostRequestResultData);
+          this.$store
+            .dispatch("postsUpdate", post)
+            .then(() => {
+              setup.bind(this)();
+              this.$v.$reset();
+            })
+            .finally(() => {
+              NProgress.done();
+            });
         })
-        .finally(() => {
+        .catch(() => {
           NProgress.done();
         });
     },

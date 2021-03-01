@@ -46,9 +46,9 @@
     </div>
     <v-footer paddless fixed style="background-color: #fafafa">
       <v-col cols="12">
-        <a style="padding-right: 8px;" href="/privacy.html">Privacy policy</a>
-        <a style="padding-right: 8px;" href="/terms.html">Terms of service</a>
-        <a style="padding-right: 8px;" href="/cookie.html">Cookie policy</a>
+        <a style="padding-right: 8px;" href="/static/privacy.html">Privacy policy</a>
+        <a style="padding-right: 8px;" href="/static/terms.html">Terms of service</a>
+        <a style="padding-right: 8px;" href="/static/cookie.html">Cookie policy</a>
       </v-col>
     </v-footer>
   </v-container>

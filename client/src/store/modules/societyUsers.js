@@ -28,3 +28,9 @@ export const actions = {
       });
   }
 };
+
+export const getters = {
+  authLevel: state => {
+    return state.societyUserCurrent ? state.societyUserCurrent.level : 0;
+  }
+};

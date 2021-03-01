@@ -350,12 +350,18 @@ func processMessage(ctx context.Context, ap *api.API, rawMsg []byte) error {
 	}
 
 	// do the work
-	errs = loadRecords(sctx, ap, post)
+	loadErrs := loadRecords(sctx, ap, post)
 
-	// update post
+	// get post again, in case there were any changes in the meantime
+	post, errs = ap.GetPost(sctx, msg.PostID)
 	if errs != nil {
+		log.Printf("[ERROR] Error calling GetPost on %d: %v", msg.PostID, errs)
+		return errs
+	}
+	// update post
+	if loadErrs != nil {
 		post.RecordsStatus = model.RecordsStatusLoadError
-		post.RecordsError = errs.Error()
+		post.RecordsError = loadErrs.Error()
 	} else {
 		post.RecordsStatus = model.RecordsStatusLoadComplete
 	}

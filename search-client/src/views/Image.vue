@@ -1,8 +1,9 @@
 <template>
   <v-container>
-    <v-btn text class="pl-0 ml-0 primary--text" @click="$router.go(-1)"
-      ><v-icon>mdi-chevron-left</v-icon> Back to record details</v-btn
-    >
+    <div>
+      <v-btn text class="pl-0 ml-0 primary--text" @click="$router.go(-1)"><v-icon>mdi-chevron-left</v-icon> Back</v-btn>
+      <v-progress-circular v-if="loading" :size="24" indeterminate></v-progress-circular>
+    </div>
     <div v-if="isPrivate">
       <p style="margin: 32px 8px;">
         The full image is available to members of the society.
@@ -55,6 +56,10 @@ export default {
               autoHideControls: false,
               showRotationControl: true //ROTATION
             });
+            this.loading = true;
+            this.osd.addOnceHandler("tile-drawn", () => {
+              this.loading = false;
+            });
           }
         }
       );
@@ -62,6 +67,7 @@ export default {
   },
   data() {
     return {
+      loading: false,
       isPrivate: false,
       loginURL: ""
     };

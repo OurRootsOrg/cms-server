@@ -1,5 +1,6 @@
 <template>
   <v-col class="search-detail" cols="12">
+    <v-btn text class="pl-0 ml-0 primary--text" @click="$router.go(-1)"><v-icon>mdi-chevron-left</v-icon> Back</v-btn>
     <h1>Record detail for</h1>
     <h2>{{ search.searchResult.person.name }} in {{ search.searchResult.collectionName }}</h2>
     <v-row class="recordDetail d-flex">
