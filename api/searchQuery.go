@@ -108,8 +108,9 @@ type FuzzyQuery struct {
 	Boost     float32 `json:"boost,omitempty"`
 }
 type MatchQuery struct {
-	Query string  `json:"query"`
-	Boost float32 `json:"boost,omitempty"`
+	Query    string  `json:"query"`
+	Operator string  `json:"operator,omitempty"`
+	Boost    float32 `json:"boost,omitempty"`
 }
 type RangeQuery struct {
 	GTE   int     `json:"gte,omitempty"`
@@ -477,7 +478,7 @@ func (api API) constructNameQueries(ctx context.Context, label, value string, fu
 				},
 			})
 		}
-		if fuzziness == FuzzyNameDefault || fuzziness&FuzzyNameInitials > 0 && nameType == model.GivenType {
+		if (fuzziness == FuzzyNameDefault || fuzziness&FuzzyNameInitials > 0) && nameType == model.GivenType {
 			subqueries = append(subqueries, Query{
 				Match: map[string]MatchQuery{
 					label: {
@@ -696,7 +697,8 @@ func constructTextQueries(label, value string) []Query {
 		{
 			Match: map[string]MatchQuery{
 				label: {
-					Query: value,
+					Query:    value,
+					Operator: "AND",
 				},
 			},
 		},

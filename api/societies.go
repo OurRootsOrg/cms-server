@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"fmt"
+	"net/http"
 
 	"github.com/ourrootsorg/cms-server/model"
 	"github.com/ourrootsorg/cms-server/utils"
@@ -78,6 +79,11 @@ func (api API) AddSociety(ctx context.Context, in model.SocietyIn) (*model.Socie
 	user, err := utils.GetUserFromContext(ctx)
 	if err != nil {
 		return nil, NewError(err)
+	}
+
+	// email must be confirmed
+	if !user.EmailConfirmed {
+		return nil, NewHTTPError(fmt.Errorf("user email is not confirmed"), http.StatusForbidden)
 	}
 
 	// add secret key
