@@ -2644,6 +2644,9 @@ var doc = `{
                 "userId"
             ],
             "properties": {
+                "email": {
+                    "type": "string"
+                },
                 "id": {
                     "type": "integer",
                     "example": 999
@@ -2657,14 +2660,14 @@ var doc = `{
                 "level": {
                     "type": "integer"
                 },
+                "name": {
+                    "type": "string"
+                },
                 "societyId": {
                     "type": "integer"
                 },
                 "userId": {
                     "type": "integer"
-                },
-                "userName": {
-                    "type": "string"
                 }
             }
         },
@@ -3346,6 +3349,9 @@ var doc = `{
                 "id": {
                     "type": "integer",
                     "example": 999
+                },
+                "insert_time": {
+                    "type": "string"
                 },
                 "name": {
                     "type": "string"

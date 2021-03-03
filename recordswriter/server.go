@@ -88,21 +88,20 @@ func containsString(haystack []string, needle string) bool {
 	return false
 }
 
-func sameHeaders(headers1 []string, headers2 []string) bool {
-	if len(headers1) != len(headers2) {
-		return false
-	}
-	for _, header := range headers1 {
-		if !containsString(headers2, header) {
-			return false
+func compareHeaders(collHeaders []string, postHeaders []string) ([]string, []string) {
+	extraHeaders := []string{}
+	missingHeaders := []string{}
+	for _, header := range collHeaders {
+		if !containsString(postHeaders, header) {
+			missingHeaders = append(missingHeaders, header)
 		}
 	}
-	for _, header := range headers2 {
-		if !containsString(headers1, header) {
-			return false
+	for _, header := range postHeaders {
+		if !containsString(collHeaders, header) {
+			extraHeaders = append(extraHeaders, header)
 		}
 	}
-	return true
+	return extraHeaders, missingHeaders
 }
 
 func loadRecords(ctx context.Context, ap *api.API, post *model.Post) error {
@@ -172,13 +171,18 @@ func loadRecords(ctx context.Context, ap *api.API, post *model.Post) error {
 				header := findHeader(collectionHeaders, field)
 				headers = append(headers, header)
 			}
-			log.Printf("[DEBUG] collectionHeaders %s\n", strings.Join(collectionHeaders, ", "))
-			log.Printf("[DEBUG] headers %s\n", strings.Join(headers, ", "))
-			log.Printf("[DEBUG] same %t\n", sameHeaders(collectionHeaders, headers))
-			if !sameHeaders(collectionHeaders, headers) {
-				err := fmt.Errorf("found headers: %s; but expected headers: %s\n",
-					strings.Join(headers, ", "),
-					strings.Join(collectionHeaders, ", "))
+			extraHeaders, missingHeaders := compareHeaders(collectionHeaders, headers)
+			if len(extraHeaders) > 0 || len(missingHeaders) > 0 {
+				log.Printf("[DEBUG] collectionHeaders:%s:\n", strings.Join(collectionHeaders, ","))
+				log.Printf("[DEBUG] headers:%s:\n", strings.Join(headers, ","))
+				var extraHeadersMsg, missingHeadersMsg string
+				if len(extraHeaders) > 0 {
+					extraHeadersMsg = fmt.Sprintf("found extra headers: %s", strings.Join(extraHeaders, ", "))
+				}
+				if len(missingHeaders) > 0 {
+					missingHeadersMsg = fmt.Sprintf("missing headers: %s", strings.Join(missingHeaders, ", "))
+				}
+				err := fmt.Errorf("%s %s", extraHeadersMsg, missingHeadersMsg)
 				return api.NewHTTPError(err, http.StatusBadRequest)
 			}
 			continue
