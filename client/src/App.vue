@@ -97,12 +97,12 @@ export default {
   text-transform: capitalize;
 }
 .smallCheckbox .v-checkbox {
-  color: #607d8b !important;
+  color: #0097a7 !important;
 }
 
 .smallCheckbox i {
   font-size: 17px !important;
-  color: #607d8b !important;
+  color: #0097a7 !important;
   margin-top: -3px;
 }
 </style>

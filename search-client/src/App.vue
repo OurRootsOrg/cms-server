@@ -19,15 +19,15 @@ import NProgress from "nprogress";
 
 export default {
   components: {
-    Notifications,
+    Notifications
   },
   mounted() {
     console.log("Search mounted");
     NProgress.configure({ parent: "#container-wrapper" });
   },
   props: {
-    source: String,
-  },
+    source: String
+  }
 };
 </script>
 
