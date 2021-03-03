@@ -21,6 +21,7 @@
           <template v-slot:body>
             <tr v-for="user in usersList" :key="user.id">
               <td>{{ user.name }}</td>
+              <td>{{ user.email }}</td>
               <td>{{ user.levelName }}</td>
               <td>
                 <v-icon v-if="notMe(user)" small @click="editUser(user)" class="mr-3">mdi-pencil</v-icon>
@@ -190,6 +191,10 @@ export default {
           value: "name"
         },
         {
+          text: "Email",
+          value: "email"
+        },
+        {
           text: "Level",
           value: "levelName"
         },
@@ -247,7 +252,8 @@ export default {
       return this.users.usersList.map(user => {
         return {
           id: user.id,
-          name: user.userName,
+          name: user.name,
+          email: user.email,
           level: user.level,
           levelName: getAuthLevelName(user.level)
         };

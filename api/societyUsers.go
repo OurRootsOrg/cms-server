@@ -12,7 +12,8 @@ import (
 
 type SocietyUserName struct {
 	model.SocietyUser
-	UserName string `json:"userName"`
+	UserName  string `json:"name"`
+	UserEmail string `json:"email"`
 }
 
 func (api API) GetSocietyUserNames(ctx context.Context) ([]SocietyUserName, error) {
@@ -39,6 +40,7 @@ outer:
 				societyUserNames = append(societyUserNames, SocietyUserName{
 					SocietyUser: societyUser,
 					UserName:    user.Name,
+					UserEmail:   user.Email,
 				})
 				continue outer
 			}
@@ -68,6 +70,7 @@ func (api API) UpdateSocietyUserName(ctx context.Context, id uint32, in SocietyU
 	return &SocietyUserName{
 		SocietyUser: *societyUser,
 		UserName:    in.UserName,
+		UserEmail:   in.UserEmail,
 	}, nil
 }
 

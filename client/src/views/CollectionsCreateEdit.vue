@@ -197,12 +197,7 @@
                     <v-card-actions class="pb-5 pr-5">
                       <v-spacer></v-spacer>
                       <v-btn color="primary" text @click="closeMapping" class="mr-5">Cancel</v-btn>
-                      <v-btn
-                        color="primary"
-                        @click="saveMapping"
-                        :disabled="editedMappingItem.ixRole !== 'na' && editedMappingItem.ixField === 'na'"
-                        >Save</v-btn
-                      >
+                      <v-btn color="primary" @click="saveMapping">Save</v-btn>
                     </v-card-actions>
                   </v-card>
                 </v-dialog>
@@ -420,6 +415,7 @@ function setup() {
   this.collection.householdNumberHeader = this.collection.householdNumberHeader || "";
   this.collection.householdRelationshipHeader = this.collection.householdRelationshipHeader || "";
   this.collection.genderHeader = this.collection.genderHeader || "";
+  this.editedFields.length = 0;
 }
 
 export default {
@@ -447,7 +443,7 @@ export default {
         header: "",
         dbField: "",
         ixRole: "principal",
-        ixField: "Don't index"
+        ixField: "na"
       },
       privacyLevels: [
         { id: 0, name: "Public" },
@@ -482,7 +478,8 @@ export default {
         residenceDate: "Residence Date",
         residencePlace: "Residence Place",
         otherDate: "Other Date",
-        otherPlace: "Other Place"
+        otherPlace: "Other Place",
+        keywords: "Keywords"
       },
       //do it like this [{value: true, text: "Has data"}, {value: false, text: "No data"}]
       ixRoleMapOptions: [
@@ -512,7 +509,8 @@ export default {
         { value: "residenceDate", text: "Residence Date" },
         { value: "residencePlace", text: "Residence Place" },
         { value: "otherDate", text: "Other Date" },
-        { value: "otherPlace", text: "Other Place" }
+        { value: "otherPlace", text: "Other Place" },
+        { value: "keywords", text: "Keywords" }
       ],
       //end of data for table
       collection: {
@@ -528,6 +526,7 @@ export default {
       locationTimeout: null,
       locationItems: [],
       locationSearch: "",
+      editedFields: [],
       mappingColumns: [
         {
           text: "",
@@ -579,7 +578,8 @@ export default {
   },
   computed: {
     warnChanges() {
-      return this.postsForCollection.length > 0 && this.warnChangesFields.some(fld => this.$v.collection[fld].$dirty);
+      console.log("!!! warnChanges", this.editedFields);
+      return this.postsForCollection.length > 0 && this.warnChangesFields.some(fld => this.editedFields.includes(fld));
     },
     headers() {
       let headers = [{ text: "N/A", value: "" }].concat(
@@ -657,6 +657,7 @@ export default {
       this.touch("householdNumberHeader");
     },
     touch(attr) {
+      this.editedFields.push(attr);
       if (this.$v.collection[attr].$dirty) {
         return;
       }
@@ -786,6 +787,9 @@ export default {
       });
     },
     saveMapping() {
+      if (this.editedMappingItem.ixRole !== "na" && this.editedMappingItem.ixField === "na") {
+        this.editedMappingItem.ixRole = "na";
+      }
       if (this.editedIndex > -1) {
         Object.assign(this.collection.mappings[this.editedIndex], this.editedMappingItem);
       } else {
@@ -800,7 +804,6 @@ export default {
       }
     },
     spreadsheetHeaderChanged() {
-      console.log("changed", this.editedMappingItem.header);
       if (!this.editedMappingItem.dbField) {
         this.editedMappingItem.dbField = this.editedMappingItem.header;
       }
@@ -810,7 +813,7 @@ export default {
 </script>
 
 <style src="vue-multiselect/dist/vue-multiselect.min.css"></style>
-<style scoped>
+<style>
 .multiselect__tag {
   color: #006064;
   line-height: 1;
@@ -821,11 +824,18 @@ export default {
   outline: none;
   color: #006064;
 }
+.multiselect__option.multiselect__option--selected.multiselect__option--highlight {
+  background: #b2ebf2;
+  outline: none;
+  color: #006064;
+}
 .multiselect__option--highlight:after {
   content: attr(data-select);
   background: #b2ebf2;
   color: #006064;
 }
+</style>
+<style scoped>
 .location {
   margin-bottom: 24px;
 }

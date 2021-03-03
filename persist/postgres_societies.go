@@ -16,7 +16,7 @@ import (
 func (p PostgresPersister) SelectSocietySummariesByID(ctx context.Context, ids []uint32) ([]model.SocietySummary, error) {
 	societySummaries := make([]model.SocietySummary, 0)
 
-	rows, err := p.db.QueryContext(ctx, "SELECT id, body FROM society "+
+	rows, err := p.db.QueryContext(ctx, "SELECT id, body, insert_time, last_update_time FROM society "+
 		"WHERE id = ANY($1)", pq.Array(ids))
 	if err != nil {
 		return nil, translateError(err, nil, nil, "")
@@ -24,7 +24,12 @@ func (p PostgresPersister) SelectSocietySummariesByID(ctx context.Context, ids [
 	defer rows.Close()
 	for rows.Next() {
 		var society model.Society
-		err := rows.Scan(&society.ID, &society.SocietyBody)
+		err := rows.Scan(
+			&society.ID,
+			&society.SocietyBody,
+			&society.InsertTime,
+			&society.LastUpdateTime,
+		)
 		if err != nil {
 			return nil, translateError(err, nil, nil, "")
 		}
@@ -38,10 +43,12 @@ func (p PostgresPersister) SelectSocietySummariesByID(ctx context.Context, ids [
 func (p PostgresPersister) SelectSocietySummary(ctx context.Context, id uint32) (*model.SocietySummary, error) {
 	var society model.Society
 	log.Printf("[DEBUG] id: %d", id)
-	err := p.db.QueryRowContext(ctx, "SELECT id, body FROM society "+
+	err := p.db.QueryRowContext(ctx, "SELECT id, body, insert_time, last_update_time FROM society "+
 		"WHERE id=$1", id).Scan(
 		&society.ID,
 		&society.SocietyBody,
+		&society.InsertTime,
+		&society.LastUpdateTime,
 	)
 	if err != nil {
 		return nil, translateError(err, &id, nil, "")
@@ -122,6 +129,7 @@ func createSocietySummary(society *model.Society) *model.SocietySummary {
 	return &model.SocietySummary{
 		ID:           society.ID,
 		Name:         society.Name,
+		InsertTime:   society.InsertTime,
 		PostMetadata: society.PostMetadata,
 	}
 }

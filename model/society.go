@@ -87,4 +87,5 @@ type SocietySummary struct {
 	ID           uint32                 `json:"id" example:"999"`
 	Name         string                 `json:"name"`
 	PostMetadata []SettingsPostMetadata `json:"postMetadata"`
+	InsertTime   time.Time              `json:"insert_time"`
 }

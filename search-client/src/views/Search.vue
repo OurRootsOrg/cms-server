@@ -243,6 +243,7 @@
                   :search-input.sync="defaultPlaceSearch"
                   no-filter
                   auto-select-first
+                  clearable
                   flat
                   hide-no-data
                   hide-details
@@ -252,7 +253,7 @@
                   @change="defaultPlaceChanged()"
                 ></v-autocomplete>
               </v-row>
-              <v-row no-gutters v-if="query.defaultPlace">
+              <v-row no-gutters v-if="defaultPlace">
                 <v-col cols="12" class="exactCheck d-flex flex-row">
                   <v-checkbox
                     v-model="query.anyPlaceFuzziness"
@@ -260,7 +261,7 @@
                     class="mt-0 mr-1 ml-n1 primary--text shrink smallCheckbox"
                   >
                   </v-checkbox>
-                  <span class="mt-2 ml-n3 primary--text">Exact location</span>
+                  <span class="mt-2 ml-n3 primary--text">Exact</span>
                 </v-col>
               </v-row>
             </v-col>
@@ -426,6 +427,7 @@
                   :search-input.sync="birthPlaceSearch"
                   no-filter
                   auto-select-first
+                  clearable
                   flat
                   hide-no-data
                   hide-details
@@ -528,6 +530,7 @@
                   :search-input.sync="marriagePlaceSearch"
                   no-filter
                   auto-select-first
+                  clearable
                   flat
                   hide-no-data
                   hide-details
@@ -630,6 +633,7 @@
                   :search-input.sync="deathPlaceSearch"
                   no-filter
                   auto-select-first
+                  clearable
                   flat
                   hide-no-data
                   hide-details
@@ -732,6 +736,7 @@
                   :search-input.sync="residencePlaceSearch"
                   no-filter
                   auto-select-first
+                  clearable
                   flat
                   hide-no-data
                   hide-details
@@ -836,6 +841,7 @@
                   :search-input.sync="anyPlaceSearch"
                   no-filter
                   auto-select-first
+                  clearable
                   flat
                   hide-no-data
                   hide-details
@@ -1232,7 +1238,7 @@
               >
             </v-col>
           </v-row>
-          <!--Keywords
+          <!--Keywords-->
           <v-row no-gutters class="mt-5">
             <h4 class="mt-2 mr-2">Keyword:</h4>
             <v-text-field
@@ -1240,11 +1246,10 @@
               dense
               v-model="query.keywords"
               type="text"
-              placeholder="Occupation, etc."
+              placeholder="Other text"
               class="ma-0 mb-n2"
             ></v-text-field>
           </v-row>
-          -->
           <v-row class="d-flex flex-row">
             <v-btn class="mt-2 mb-4 ml-3" type="submit" color="primary"
               ><span v-if="!searchPerformed">Search</span><span v-if="searchPerformed">Update</span></v-btn
@@ -1314,12 +1319,15 @@ import { mapState } from "vuex";
 import store from "@/store";
 
 function decodeFuzziness(f) {
-  let result = [0];
+  let result = [];
   for (let i = 32; i > 0; i = i / 2) {
     if (f >= i) {
       result.push(i);
       f -= i;
     }
+  }
+  if (result.length === 0) {
+    result.push(0);
   }
   return result;
 }
@@ -1443,8 +1451,8 @@ export default {
       },
       fuzziness: {
         dlg: [],
-        given: [0],
-        surname: [0],
+        given: [1, 4, 32],
+        surname: [1, 4],
         fatherGiven: [0],
         fatherSurname: [0],
         motherGiven: [0],
@@ -1464,10 +1472,10 @@ export default {
       ],
       givenFuzzinessLevels: [
         { value: 0, text: "Optional" },
-        { value: 1, text: "Exact spelling only" },
+        { value: 1, text: "Exact spelling" },
         { value: 2, text: "Alternate spellings" },
-        { value: 4, text: "Sounds like (narrow)" },
-        { value: 8, text: "Sounds like (broad)" },
+        { value: 4, text: "Sounds like (nysiis)" },
+        { value: 8, text: "Sounds like (soundex)" },
         { value: 16, text: "Fuzzy" },
         { value: 32, text: "Initials" }
       ],
@@ -1475,8 +1483,8 @@ export default {
         { value: 0, text: "Optional" },
         { value: 1, text: "Exact" },
         { value: 2, text: "Alternate spellings" },
-        { value: 4, text: "Sounds like (narrow)" },
-        { value: 8, text: "Sounds like (broad)" },
+        { value: 4, text: "Sounds like (nysiis)" },
+        { value: 8, text: "Sounds like (soundex)" },
         { value: 16, text: "Fuzzy" }
       ],
       placeFuzzinessLevels: [
@@ -1599,6 +1607,9 @@ export default {
       this.query[event + "Place"] = null;
       this.query[event + "DateFuzziness"] = 0;
       this.query[event + "PlaceFuzziness"] = 0;
+      if (event === "any") {
+        this.defaultPlace = this.defaultPlaceSearch = "";
+      }
     },
     defaultPlaceChanged() {
       this.query.anyPlace = this.defaultPlace;

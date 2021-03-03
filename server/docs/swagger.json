@@ -2633,6 +2633,9 @@
                 "userId"
             ],
             "properties": {
+                "email": {
+                    "type": "string"
+                },
                 "id": {
                     "type": "integer",
                     "example": 999
@@ -2646,14 +2649,14 @@
                 "level": {
                     "type": "integer"
                 },
+                "name": {
+                    "type": "string"
+                },
                 "societyId": {
                     "type": "integer"
                 },
                 "userId": {
                     "type": "integer"
-                },
-                "userName": {
-                    "type": "string"
                 }
             }
         },
@@ -3335,6 +3338,9 @@
                 "id": {
                     "type": "integer",
                     "example": 999
+                },
+                "insert_time": {
+                    "type": "string"
                 },
                 "name": {
                     "type": "string"

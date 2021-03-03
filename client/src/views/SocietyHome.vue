@@ -1,13 +1,29 @@
 <template>
   <div class="society-home">
     <h2>{{ societySummaries.societySummary.name }}</h2>
-    <p>Your membership level in this society: {{ getLevel }}</p>
+    <p style="margin-top: 32px">Created: {{ getCreationDate }}</p>
+    <p style="margin-top: 32px">Your membership level in this society: {{ getLevel }}</p>
   </div>
 </template>
 
 <script>
 import { mapState } from "vuex";
 import { getAuthLevelName } from "@/utils/authLevels";
+
+const months = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December"
+];
 
 export default {
   name: "SocietyHome",
@@ -23,6 +39,10 @@ export default {
     console.log("societyHome.create", this.$route.fullPath);
   },
   computed: {
+    getCreationDate() {
+      let d = new Date(this.societySummaries.societySummary.insert_time);
+      return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
+    },
     getLevel() {
       return getAuthLevelName(this.societyUsers.societyUserCurrent.level);
     },

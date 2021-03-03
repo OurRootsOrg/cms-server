@@ -1,4 +1,4 @@
-"Given","Surname","DeathDate","DeathPlace"
-"Fred","Flintstone","27 July 2000","Iowa"
-"Papa","Flintstone","ABT 1900","Chicago, IL"
-"Grandpapa","Flintstone","BTW 1795 AND 1802","New York"
+"Given","Surname","DeathDate","DeathPlace","Cause"
+"Fred","Flintstone","27 July 2000","Iowa","Old age"
+"Papa","Flintstone","ABT 1900","Chicago, IL","Very old age"
+"Grandpapa","Flintstone","BTW 1795 AND 1802","New York","Dinosaur"
