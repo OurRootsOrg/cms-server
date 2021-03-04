@@ -17,6 +17,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ourrootsorg/cms-server/stdtext"
+
 	"github.com/ourrootsorg/cms-server/utils"
 
 	"github.com/ourrootsorg/cms-server/stdplace"
@@ -62,7 +64,7 @@ type recordIndex struct {
 }
 
 func cleanHeader(header string) string {
-	return strings.ToLower(strings.ReplaceAll(header, " ", ""))
+	return stdtext.AsciiFold(strings.ToLower(strings.ReplaceAll(header, " ", "")))
 }
 
 func findHeader(headers []string, value string) string {
@@ -71,8 +73,9 @@ func findHeader(headers []string, value string) string {
 			return header
 		}
 	}
+	cleanedValue := cleanHeader(value)
 	for _, header := range headers {
-		if cleanHeader(header) == cleanHeader(value) {
+		if cleanHeader(header) == cleanedValue {
 			return header
 		}
 	}
@@ -91,13 +94,21 @@ func containsString(haystack []string, needle string) bool {
 func compareHeaders(collHeaders []string, postHeaders []string) ([]string, []string) {
 	extraHeaders := []string{}
 	missingHeaders := []string{}
-	for _, header := range collHeaders {
+	for i, header := range collHeaders {
 		if !containsString(postHeaders, header) {
+			log.Printf("[DEBUG] missing header %d:%s in %s", i, header, strings.Join(postHeaders, ","))
+			for i := 0; i < len(header); i++ {
+				log.Printf("[DEBUG] header char %d %d", i, header[i])
+			}
 			missingHeaders = append(missingHeaders, header)
 		}
 	}
-	for _, header := range postHeaders {
+	for i, header := range postHeaders {
 		if !containsString(collHeaders, header) {
+			log.Printf("[DEBUG] extra header %d:%s in %s", i, header, strings.Join(collHeaders, ","))
+			for i := 0; i < len(header); i++ {
+				log.Printf("[DEBUG] header char %d %d", i, header[i])
+			}
 			extraHeaders = append(extraHeaders, header)
 		}
 	}
@@ -167,14 +178,15 @@ func loadRecords(ctx context.Context, ap *api.API, post *model.Post) error {
 	for i, record := range records {
 		if i == 0 {
 			// header row
-			for _, field := range record {
+			for fieldPos, field := range record {
+				if fieldPos == 0 && stdtext.HasByteOrderMark(field) {
+					field = stdtext.RemoveByteOrderMark(field)
+				}
 				header := findHeader(collectionHeaders, field)
 				headers = append(headers, header)
 			}
 			extraHeaders, missingHeaders := compareHeaders(collectionHeaders, headers)
 			if len(extraHeaders) > 0 || len(missingHeaders) > 0 {
-				log.Printf("[DEBUG] collectionHeaders:%s:\n", strings.Join(collectionHeaders, ","))
-				log.Printf("[DEBUG] headers:%s:\n", strings.Join(headers, ","))
 				var extraHeadersMsg, missingHeadersMsg string
 				if len(extraHeaders) > 0 {
 					extraHeadersMsg = fmt.Sprintf("found extra headers: %s", strings.Join(extraHeaders, ", "))
@@ -182,7 +194,11 @@ func loadRecords(ctx context.Context, ap *api.API, post *model.Post) error {
 				if len(missingHeaders) > 0 {
 					missingHeadersMsg = fmt.Sprintf("missing headers: %s", strings.Join(missingHeaders, ", "))
 				}
-				err := fmt.Errorf("%s %s", extraHeadersMsg, missingHeadersMsg)
+				log.Printf("[DEBUG] collectionHeaders: %s", strings.Join(collectionHeaders, ","))
+				log.Printf("[DEBUG] headers: %s", strings.Join(headers, ","))
+				msg := fmt.Sprintf("%s %s", extraHeadersMsg, missingHeadersMsg)
+				log.Printf("[DEBUG] error: %s", msg)
+				err := fmt.Errorf(msg)
 				return api.NewHTTPError(err, http.StatusBadRequest)
 			}
 			continue

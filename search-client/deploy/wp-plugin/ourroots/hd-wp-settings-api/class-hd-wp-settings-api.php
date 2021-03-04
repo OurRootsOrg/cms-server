@@ -327,6 +327,8 @@ class OURROOTS_WP_Settings_API {
 
 			</form>
 
+            <div>Manage your database content at <a href="https://cms.ourroots.org">cms.ourroots.org</a></div>
+
 		</div>
 		<?php
 
