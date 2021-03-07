@@ -1,8 +1,8 @@
 <?php
 
 /**
- * Plugin Name: OurRootsCMS
- * Description: OurRootsCMS
+ * Plugin Name: OurRootsDatabase
+ * Description: Databases for genealogy societies
  * Author: OurRoots.org
  * Version: 1.0
  * Text Domain: jwto

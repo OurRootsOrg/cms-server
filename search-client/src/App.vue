@@ -56,10 +56,19 @@ export default {
 .smallCheckbox .v-checkbox {
   color: #607d8b !important;
 }
-
 .smallCheckbox i {
   font-size: 17px !important;
   color: #607d8b !important;
   margin-top: -3px;
+}
+
+.v-text-field__slot input {
+  border: none;
+}
+.v-select__slot input {
+  border: none;
+}
+#view > div.col-md-12.col-12 > div > h1 {
+  margin: 25px 0 12px;
 }
 </style>

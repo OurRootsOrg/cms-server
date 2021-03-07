@@ -153,7 +153,7 @@ import { mapState } from "vuex";
 import NProgress from "nprogress";
 import { getAuthLevelName, getAuthLevelOptions } from "@/utils/authLevels";
 
-const invitationURLPrefix = "https://cms.ourroots.org?code=";
+const invitationURLPrefix = "https://db.ourroots.org?code=";
 
 function getContent(next) {
   Promise.all([store.dispatch("invitationsGetAll"), store.dispatch("usersGetAll")])

@@ -4,8 +4,8 @@
     require_once( OURROOTS_PATH . 'hd-wp-settings-api/class-hd-wp-settings-api.php' ); // Settings API
 
     $jwto_options = array(
-        'page_title'  => __( 'OurRootsCMS', 'zipf' ),
-        'menu_title'  => __( 'OurRootsCMS', 'zipf' ),
+        'page_title'  => __( 'OurRootsDatabase', 'zipf' ),
+        'menu_title'  => __( 'OurRootsDatabase', 'zipf' ),
         'menu_slug'   => OURROOTS_OPTIONS_SLUG,
         'capability'  => 'manage_options',
         'icon'        => 'dashicons-admin-generic',

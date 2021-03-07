@@ -1,6 +1,6 @@
 <template>
   <v-container fluid class="home">
-    <h2>A content management system for genealogy societies!</h2>
+    <h2>A database management system for genealogy societies!</h2>
     <div v-if="users.user">
       <p class="intro">Select a society</p>
       <p class="intro" v-if="societySummaries.societySummariesList.length == 1">
@@ -47,6 +47,16 @@
           </v-card-actions>
         </v-card>
       </v-dialog>
+      <h3 style="margin-top: 48px">Now that you've signed in, watch this tutorial</h3>
+      <iframe
+        style="margin: 24px 0"
+        width="560"
+        height="315"
+        src="https://www.youtube.com/embed/WsJGYQk_lB4"
+        frameborder="0"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        allowfullscreen
+      ></iframe>
     </div>
     <div v-else>
       <p class="intro">
@@ -73,6 +83,18 @@
       <div class="btn">
         <v-btn color="primary" @click="login">Register or Log in</v-btn>
       </div>
+      <h3>Quick overview of the OurRoots database management system</h3>
+      <p class="intro">
+        <iframe
+          style="margin-bottom: 16px"
+          width="560"
+          height="315"
+          src="https://www.youtube.com/embed/obsMYYCCbag"
+          frameborder="0"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowfullscreen
+        ></iframe>
+      </p>
     </div>
     <div class="intro">
       <strong>More information</strong>
