@@ -23,11 +23,7 @@ export const mutations = {
       state.post = post;
     }
     if (state.postsList) {
-      for (let i = 0; i < state.postsList.length; i++) {
-        if (state.postsList[i].id === post.id) {
-          state.postsList[i] = post;
-        }
-      }
+      state.postsList = state.postsList.map(p => (p.id === post.id ? post : p));
     }
   }
 };

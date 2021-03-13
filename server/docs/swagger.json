@@ -2263,7 +2263,7 @@
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/api.SocietyUserName"
+                                "$ref": "#/definitions/api.SocietyUserEmail"
                             }
                         }
                     },
@@ -2321,7 +2321,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.SocietyUserName"
+                            "$ref": "#/definitions/api.SocietyUserEmail"
                         }
                     }
                 ],
@@ -2329,7 +2329,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.SocietyUserName"
+                            "$ref": "#/definitions/api.SocietyUserEmail"
                         }
                     },
                     "415": {
@@ -2624,7 +2624,7 @@
                 }
             }
         },
-        "api.SocietyUserName": {
+        "api.SocietyUserEmail": {
             "type": "object",
             "required": [
                 "id",
@@ -2650,6 +2650,7 @@
                     "type": "integer"
                 },
                 "name": {
+                    "description": "override userName from user record",
                     "type": "string"
                 },
                 "societyId": {
@@ -3374,6 +3375,10 @@
                 },
                 "level": {
                     "type": "integer"
+                },
+                "name": {
+                    "description": "override userName from user record",
+                    "type": "string"
                 },
                 "societyId": {
                     "type": "integer"

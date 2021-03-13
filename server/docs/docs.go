@@ -2274,7 +2274,7 @@ var doc = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/api.SocietyUserName"
+                                "$ref": "#/definitions/api.SocietyUserEmail"
                             }
                         }
                     },
@@ -2332,7 +2332,7 @@ var doc = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.SocietyUserName"
+                            "$ref": "#/definitions/api.SocietyUserEmail"
                         }
                     }
                 ],
@@ -2340,7 +2340,7 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.SocietyUserName"
+                            "$ref": "#/definitions/api.SocietyUserEmail"
                         }
                     },
                     "415": {
@@ -2635,7 +2635,7 @@ var doc = `{
                 }
             }
         },
-        "api.SocietyUserName": {
+        "api.SocietyUserEmail": {
             "type": "object",
             "required": [
                 "id",
@@ -2661,6 +2661,7 @@ var doc = `{
                     "type": "integer"
                 },
                 "name": {
+                    "description": "override userName from user record",
                     "type": "string"
                 },
                 "societyId": {
@@ -3385,6 +3386,10 @@ var doc = `{
                 },
                 "level": {
                     "type": "integer"
+                },
+                "name": {
+                    "description": "override userName from user record",
+                    "type": "string"
                 },
                 "societyId": {
                     "type": "integer"

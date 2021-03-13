@@ -25,11 +25,7 @@ export const mutations = {
       state.collection = coll;
     }
     if (state.collectionsList) {
-      for (let i = 0; i < state.collectionsList.length; i++) {
-        if (state.collectionsList[i].id === coll.id) {
-          state.collectionsList[i] = coll;
-        }
-      }
+      state.collectionsList = state.collectionsList.map(c => (c.id === coll.id ? coll : c));
     }
   }
 };

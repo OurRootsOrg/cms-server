@@ -232,7 +232,7 @@
           <!--any place and birth year -->
           <v-row no-gutters v-if="!searchPerformed">
             <v-col cols="12" :md="searchPerformed ? 12 : 6" :class="searchPerformed ? '' : 'pr-3'">
-              <h4>Place your ancestor might have lived</h4>
+              <h5>Place your ancestor might have lived</h5>
               <v-row no-gutters>
                 <v-autocomplete
                   outlined

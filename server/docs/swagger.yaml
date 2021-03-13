@@ -84,7 +84,7 @@ definitions:
           $ref: '#/definitions/model.Record'
         type: array
     type: object
-  api.SocietyUserName:
+  api.SocietyUserEmail:
     properties:
       email:
         type: string
@@ -98,6 +98,7 @@ definitions:
       level:
         type: integer
       name:
+        description: override userName from user record
         type: string
       societyId:
         type: integer
@@ -587,6 +588,9 @@ definitions:
         type: string
       level:
         type: integer
+      name:
+        description: override userName from user record
+        type: string
       societyId:
         type: integer
       userId:
@@ -2074,7 +2078,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/api.SocietyUserName'
+              $ref: '#/definitions/api.SocietyUserEmail'
             type: array
         "500":
           description: Server error
@@ -2139,14 +2143,14 @@ paths:
         name: society
         required: true
         schema:
-          $ref: '#/definitions/api.SocietyUserName'
+          $ref: '#/definitions/api.SocietyUserEmail'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/api.SocietyUserName'
+            $ref: '#/definitions/api.SocietyUserEmail'
         "415":
           description: Bad Content-Type
           schema:

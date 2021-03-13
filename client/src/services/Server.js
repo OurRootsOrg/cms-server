@@ -6,7 +6,7 @@ export default {
     return post(`/societies/${societyId}/categories`, category);
   },
   categoriesUpdate(societyId, cat) {
-    return put(`/societies/${societyId}/categories/${cat.id}`);
+    return put(`/societies/${societyId}/categories/${cat.id}`, cat);
   },
   categoriesDelete(societyId, id) {
     return del(`/societies/${societyId}/categories/${id}`);
@@ -107,19 +107,19 @@ export default {
   societyUsersGetCurrent(societyId) {
     return get(`/societies/${societyId}/current_user`);
   },
+  societyUsersGetAll(societyId) {
+    return get(`/societies/${societyId}/users`);
+  },
+  societyUsersUpdate(societyId, user) {
+    return put(`/societies/${societyId}/users/${user.id}`, user);
+  },
+  societyUsersDelete(societyId, id) {
+    return del(`/societies/${societyId}/users/${id}`);
+  },
   societiesGetOne(societyId) {
     return get(`/societies/${societyId}`);
   },
   societiesUpdate(society) {
     return put(`/societies/${society.id}`, society);
-  },
-  usersGetAll(societyId) {
-    return get(`/societies/${societyId}/users`);
-  },
-  usersUpdate(societyId, user) {
-    return put(`/societies/${societyId}/users/${user.id}`, user);
-  },
-  usersDelete(societyId, id) {
-    return del(`/societies/${societyId}/users/${id}`);
   }
 };

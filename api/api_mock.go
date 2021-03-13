@@ -159,11 +159,11 @@ func (a *ApiMock) UpdateSociety(ctx context.Context, in model.Society) (*model.S
 func (a *ApiMock) DeleteSociety(ctx context.Context) error {
 	return a.Errors
 }
-func (a *ApiMock) GetSocietyUserNames(ctx context.Context) ([]SocietyUserName, error) {
-	return a.Result.([]SocietyUserName), a.Errors
+func (a *ApiMock) GetSocietyUserNames(ctx context.Context) ([]SocietyUserEmail, error) {
+	return a.Result.([]SocietyUserEmail), a.Errors
 }
-func (a *ApiMock) UpdateSocietyUserName(ctx context.Context, id uint32, in SocietyUserName) (*SocietyUserName, error) {
-	return a.Result.(*SocietyUserName), a.Errors
+func (a *ApiMock) UpdateSocietyUserEmail(ctx context.Context, id uint32, in SocietyUserEmail) (*SocietyUserEmail, error) {
+	return a.Result.(*SocietyUserEmail), a.Errors
 }
 func (a *ApiMock) GetSocietyUserByUser(ctx context.Context, userID uint32) (*model.SocietyUser, error) {
 	return a.Result.(*model.SocietyUser), a.Errors

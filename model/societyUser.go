@@ -35,7 +35,8 @@ type SocietyUserPersister interface {
 
 // SocietyUserBody is the JSON part of the SocietyUser object
 type SocietyUserBody struct {
-	Level AuthLevel `json:"level" validate:"required"`
+	UserName string    `json:"name"` // override userName from user record
+	Level    AuthLevel `json:"level" validate:"required"`
 }
 
 // Value makes SocietyUserBody implement the driver.Valuer interface.

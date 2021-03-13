@@ -17,7 +17,7 @@ import (
 // @tags societyUsers
 // @id getUsers
 // @produce application/json
-// @success 200 {array} api.SocietyUserName "OK"
+// @success 200 {array} api.SocietyUserEmail "OK"
 // @failure 500 {object} api.Error "Server error"
 // @Security OAuth2Implicit[cms,openid,profile,email]
 // @Security OAuth2AuthCode[cms,openid,profile,email]
@@ -72,10 +72,10 @@ func (app App) GetCurrentSocietyUser(w http.ResponseWriter, req *http.Request) {
 // @tags societyUsers
 // @id updateSocietyUser
 // @Param id path integer true "SocietyUser ID"
-// @Param society body api.SocietyUserName true "Update SocietyUser"
+// @Param society body api.SocietyUserEmail true "Update SocietyUser"
 // @accept application/json
 // @produce application/json
-// @success 200 {object} api.SocietyUserName "OK"
+// @success 200 {object} api.SocietyUserEmail "OK"
 // @failure 415 {object} api.Error "Bad Content-Type"
 // @failure 500 {object} api.Error "Server error"
 // @Security OAuth2Implicit[cms,openid,profile,email]
@@ -87,14 +87,14 @@ func (app App) PutSocietyUserName(w http.ResponseWriter, req *http.Request) {
 		ErrorResponse(w, http.StatusUnsupportedMediaType, msg)
 		return
 	}
-	var in api.SocietyUserName
+	var in api.SocietyUserEmail
 	err = json.NewDecoder(req.Body).Decode(&in)
 	if err != nil {
 		msg := fmt.Sprintf("Bad request: %v", err.Error())
 		ErrorResponse(w, http.StatusBadRequest, msg)
 		return
 	}
-	society, errors := app.api.UpdateSocietyUserName(req.Context(), in.ID, in)
+	society, errors := app.api.UpdateSocietyUserEmail(req.Context(), in.ID, in)
 	if errors != nil {
 		ErrorsResponse(w, errors)
 		return

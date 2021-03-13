@@ -10,13 +10,12 @@ import (
 	"github.com/ourrootsorg/cms-server/model"
 )
 
-type SocietyUserName struct {
+type SocietyUserEmail struct {
 	model.SocietyUser
-	UserName  string `json:"name"`
 	UserEmail string `json:"email"`
 }
 
-func (api API) GetSocietyUserNames(ctx context.Context) ([]SocietyUserName, error) {
+func (api API) GetSocietyUserNames(ctx context.Context) ([]SocietyUserEmail, error) {
 	// get society users
 	societyUsers, err := api.societyUserPersister.SelectSocietyUsers(ctx)
 	if err != nil {
@@ -32,16 +31,20 @@ func (api API) GetSocietyUserNames(ctx context.Context) ([]SocietyUserName, erro
 		return nil, err
 	}
 	// join
-	var societyUserNames []SocietyUserName
+	var societyUserNames []SocietyUserEmail
 outer:
 	for _, societyUser := range societyUsers {
 		for _, user := range users {
 			if user.ID == societyUser.UserID {
-				societyUserNames = append(societyUserNames, SocietyUserName{
+				societyUserEmail := SocietyUserEmail{
 					SocietyUser: societyUser,
-					UserName:    user.Name,
 					UserEmail:   user.Email,
-				})
+				}
+				// default to name from user record
+				if societyUserEmail.UserName == "" {
+					societyUserEmail.UserName = user.Name
+				}
+				societyUserNames = append(societyUserNames, societyUserEmail)
 				continue outer
 			}
 		}
@@ -49,27 +52,34 @@ outer:
 	return societyUserNames, nil
 }
 
-func (api API) UpdateSocietyUserName(ctx context.Context, id uint32, in SocietyUserName) (*SocietyUserName, error) {
+func (api API) UpdateSocietyUserEmail(ctx context.Context, id uint32, in SocietyUserEmail) (*SocietyUserEmail, error) {
 	err := api.validate.Struct(in)
 	if err != nil {
 		return nil, NewError(err)
 	}
 
-	// can't update yourself
 	user, err := utils.GetUserFromContext(ctx)
 	if err != nil {
 		return nil, NewError(err)
 	}
-	if user.ID == in.UserID {
-		return nil, NewHTTPError(fmt.Errorf("cannot delete yourself"), http.StatusBadRequest)
+	oldSocietyUser, err := api.societyUserPersister.SelectOneSocietyUser(ctx, id)
+	if err != nil {
+		return nil, NewError(err)
+	}
+	// cant update your own level
+	if user.ID == in.UserID && oldSocietyUser.Level != in.Level {
+		return nil, NewHTTPError(fmt.Errorf("cannot update your own level"), http.StatusBadRequest)
+	}
+	// handle overriding user name
+	if in.UserName == user.Name {
+		in.UserName = ""
 	}
 	societyUser, err := api.societyUserPersister.UpdateSocietyUser(ctx, id, in.SocietyUser)
 	if err != nil {
 		return nil, NewError(err)
 	}
-	return &SocietyUserName{
+	return &SocietyUserEmail{
 		SocietyUser: *societyUser,
-		UserName:    in.UserName,
 		UserEmail:   in.UserEmail,
 	}, nil
 }

@@ -23,11 +23,7 @@ export const mutations = {
       state.category = cat;
     }
     if (state.categoriesList) {
-      for (let i = 0; i < state.categoriesList.length; i++) {
-        if (state.categoriesList[i].id === cat.id) {
-          state.categoriesList[i] = cat;
-        }
-      }
+      state.categoriesList = state.categoriesList.map(c => (c.id === cat.id ? cat : c));
     }
   }
 };
@@ -54,8 +50,8 @@ export const actions = {
         throw error;
       });
   },
-  categoriesUpdate({ commit, dispatch, rootGetters }, coll) {
-    return Server.categoriesUpdate(rootGetters.currentSocietyId, coll)
+  categoriesUpdate({ commit, dispatch, rootGetters }, cat) {
+    return Server.categoriesUpdate(rootGetters.currentSocietyId, cat)
       .then(response => {
         commit("CATEGORY_UPDATE", response.data);
         const notification = {

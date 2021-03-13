@@ -10,8 +10,8 @@
       <v-col cols="12">
         <h3 style="margin-top: 16px;">Users</h3>
         <v-data-table
-          :headers="userColumns"
-          :items="usersList"
+          :headers="societyUserColumns"
+          :items="societyUsersList"
           item-key="id"
           :show-select="false"
           :disable-pagination="true"
@@ -19,18 +19,18 @@
           v-columns-resizable
         >
           <template v-slot:body>
-            <tr v-for="user in usersList" :key="user.id">
-              <td>{{ user.name }}</td>
-              <td>{{ user.email }}</td>
-              <td>{{ user.levelName }}</td>
+            <tr v-for="societyUser in societyUsersList" :key="societyUser.id">
+              <td>{{ societyUser.name }}</td>
+              <td>{{ societyUser.email }}</td>
+              <td>{{ societyUser.levelName }}</td>
               <td>
-                <v-icon v-if="notMe(user)" small @click="editUser(user)" class="mr-3">mdi-pencil</v-icon>
-                <v-icon v-if="notMe(user)" small @click="deleteUser(user.id)">mdi-delete</v-icon>
+                <v-icon small @click="editSocietyUser(societyUser)" class="mr-3">mdi-pencil</v-icon>
+                <v-icon v-if="notMe(societyUser)" small @click="deleteSocietyUser(societyUser.id)">mdi-delete</v-icon>
               </td>
             </tr>
           </template>
         </v-data-table>
-        <v-dialog v-model="dialogUser" max-width="600px">
+        <v-dialog v-model="dialogSocietyUser" max-width="600px">
           <v-card>
             <v-card-title class="pb-5 mb-0">User</v-card-title>
             <v-card-text>
@@ -39,7 +39,7 @@
                   <v-col cols="12">
                     <v-text-field
                       dense
-                      v-model="editedUser.name"
+                      v-model="editedSocietyUser.name"
                       label="Name"
                       placeholder="Name of the person to invite"
                     >
@@ -47,11 +47,12 @@
                   </v-col>
                   <v-col cols="12">
                     <v-select
-                      v-model="editedUser.level"
+                      v-model="editedSocietyUser.level"
                       label="Authorization level (Editor or Admin)"
                       :items="authLevels"
                       item-text="name"
                       item-value="id"
+                      :disabled="!notMe(editedSocietyUser)"
                     >
                     </v-select>
                   </v-col>
@@ -60,8 +61,13 @@
             </v-card-text>
             <v-card-actions class="pb-5 pr-5">
               <v-spacer></v-spacer>
-              <v-btn color="primary" text @click="closeUser" class="mr-5">Cancel</v-btn>
-              <v-btn color="primary" @click="saveUser" :disabled="!editedUser.name || !editedUser.level">Save</v-btn>
+              <v-btn color="primary" text @click="closeSocietyUser" class="mr-5">Cancel</v-btn>
+              <v-btn
+                color="primary"
+                @click="saveSocietyUser"
+                :disabled="!editedSocietyUser.name || !editedSocietyUser.level"
+                >Save</v-btn
+              >
             </v-card-actions>
           </v-card>
         </v-dialog>
@@ -156,7 +162,7 @@ import { getAuthLevelName, getAuthLevelOptions } from "@/utils/authLevels";
 const invitationURLPrefix = "https://db.ourroots.org?code=";
 
 function getContent(next) {
-  Promise.all([store.dispatch("invitationsGetAll"), store.dispatch("usersGetAll")])
+  Promise.all([store.dispatch("invitationsGetAll"), store.dispatch("societyUsersGetAll")])
     .then(() => {
       next();
     })
@@ -176,16 +182,16 @@ export default {
   },
   data() {
     return {
-      // start of data for users table
-      dialogUser: false,
-      editedUser: {},
-      defaultUser: {
+      // start of data for society users table
+      dialogSocietyUser: false,
+      editedSocietyUser: {},
+      defaultSocietyUser: {
         id: 0,
         name: "",
         level: 0,
         levelName: ""
       },
-      userColumns: [
+      societyUserColumns: [
         {
           text: "Name",
           value: "name"
@@ -244,19 +250,13 @@ export default {
       val || this.closeInvitation();
     },
     dialogUser(val) {
-      val || this.closeUser();
+      val || this.closeSocietyUser();
     }
   },
   computed: {
-    usersList() {
-      return this.users.usersList.map(user => {
-        return {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          level: user.level,
-          levelName: getAuthLevelName(user.level)
-        };
+    societyUsersList() {
+      return this.societyUsers.societyUsersList.map(societyUser => {
+        return Object.assign({ levelName: getAuthLevelName(societyUser.level) }, societyUser);
       });
     },
     invitationsList() {
@@ -271,21 +271,21 @@ export default {
         };
       });
     },
-    ...mapState(["invitations", "users"])
+    ...mapState(["invitations", "societyUsers"])
   },
   methods: {
     //methods for users
-    notMe(user) {
-      return user.id !== store.getters.userId;
+    notMe(societyUser) {
+      return societyUser.userId !== store.getters.userId;
     },
-    editUser(user) {
-      this.editedUser = Object.assign({}, user);
-      this.dialogUser = true;
+    editSocietyUser(societyUser) {
+      this.editedSocietyUser = Object.assign({}, societyUser);
+      this.dialogSocietyUser = true;
     },
-    deleteUser(id) {
+    deleteSocietyUser(id) {
       NProgress.start();
       this.$store
-        .dispatch("usersDelete", id)
+        .dispatch("societyUsersDelete", id)
         .then(() => {
           NProgress.done();
         })
@@ -293,20 +293,20 @@ export default {
           NProgress.done();
         });
     },
-    closeUser() {
-      this.dialogUser = false;
+    closeSocietyUser() {
+      this.dialogSocietyUser = false;
       this.$nextTick(() => {
-        this.editedUser = Object.assign({}, this.defaultUser);
+        this.editedSocietyUser = Object.assign({}, this.defaultSocietyUser);
       });
     },
-    saveUser() {
-      let user = Object.assign({}, this.editedUser);
+    saveSocietyUser() {
+      let societyUser = Object.assign({}, this.editedSocietyUser);
       NProgress.start();
       this.$store
-        .dispatch("usersUpdate", user)
+        .dispatch("societyUsersUpdate", societyUser)
         .then(() => {
           NProgress.done();
-          this.closeUser();
+          this.closeSocietyUser();
         })
         .catch(() => {
           NProgress.done();

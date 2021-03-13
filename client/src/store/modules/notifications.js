@@ -23,6 +23,12 @@ export const actions = {
       notification.message = "Please log in";
       notification.type = "blue";
     }
+    if (notification.type === "error") {
+      notification.type = "#C00000";
+    }
+    if (notification.error && notification.error.response && notification.error.response.status === 409) {
+      notification.message = "Edit conflict - please refresh and try again";
+    }
     commit("NOTIFICATIONS_PUSH", notification);
   },
   notificationsRemove({ commit }, id) {

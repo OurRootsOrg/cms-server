@@ -73,8 +73,8 @@ type LocalAPI interface {
 	AddSociety(ctx context.Context, in model.SocietyIn) (*model.Society, error)
 	UpdateSociety(ctx context.Context, in model.Society) (*model.Society, error)
 	DeleteSociety(ctx context.Context) error
-	GetSocietyUserNames(ctx context.Context) ([]SocietyUserName, error)
-	UpdateSocietyUserName(ctx context.Context, id uint32, in SocietyUserName) (*SocietyUserName, error)
+	GetSocietyUserNames(ctx context.Context) ([]SocietyUserEmail, error)
+	UpdateSocietyUserEmail(ctx context.Context, id uint32, in SocietyUserEmail) (*SocietyUserEmail, error)
 	GetSocietyUserByUser(ctx context.Context, userID uint32) (*model.SocietyUser, error)
 	AddSocietyUser(ctx context.Context, body model.SocietyUserBody) (*model.SocietyUser, error)
 	DeleteSocietyUser(ctx context.Context, id uint32) error

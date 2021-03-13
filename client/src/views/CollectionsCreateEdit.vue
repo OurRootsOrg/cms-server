@@ -578,7 +578,6 @@ export default {
   },
   computed: {
     warnChanges() {
-      console.log("!!! warnChanges", this.editedFields);
       return this.postsForCollection.length > 0 && this.warnChangesFields.some(fld => this.editedFields.includes(fld));
     },
     headers() {
