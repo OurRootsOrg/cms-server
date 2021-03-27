@@ -568,9 +568,10 @@ func getDataForRole(mappings []model.CollectionMapping, record *model.Record, ro
 	data := map[string]string{}
 
 	for _, mapping := range mappings {
-		// get marriage data for spouse too
 		if record.Data[mapping.Header] != "" &&
-			(mapping.IxRole == string(role) || (isSpouseRole(mapping.IxRole, role) && isMarriageField(mapping.IxField))) {
+			(mapping.IxRole == string(role) || // get data for this role
+				mapping.IxField == "keywords" || // add keywords to everyone
+				(isSpouseRole(mapping.IxRole, role) && isMarriageField(mapping.IxField))) { // get marriage data for spouse too
 			data[mapping.IxField] = record.Data[mapping.Header]
 			if strings.HasSuffix(mapping.IxField, "Date") {
 				data[mapping.IxField+stddate.StdSuffix] = record.Data[mapping.Header+stddate.StdSuffix]

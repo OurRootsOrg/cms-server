@@ -224,7 +224,7 @@ func TestPostImage(t *testing.T) {
 
 	// post the content
 	client := &http.Client{}
-	req, err := http.NewRequest("PUT", contentRequest.PutURL, bytes.NewReader(zipBytes))
+	req, err := http.NewRequest("PUT", contentRequest.SignedURL, bytes.NewReader(zipBytes))
 	assert.NoError(t, err)
 	req.Header.Set("Content-Type", "application/zip")
 	res, err := client.Do(req)

@@ -1,8 +1,8 @@
 <template>
   <v-container class="posts-list">
-    <h1>Posts</h1>
+    <h1>Record sets</h1>
     <v-btn small color="primary" class="mt-2" :to="{ name: 'posts-create' }">
-      Create a new post
+      Create a new record set
     </v-btn>
     <v-row class="d-flex justify-end">
       <v-col cols="12" md="2">

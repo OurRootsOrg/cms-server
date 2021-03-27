@@ -104,7 +104,7 @@ export default {
       { icon: "mdi-home", text: "", link: "society-home", authLevel: AUTH_LEVEL_READER },
       { icon: "mdi-shape", text: "Categories", link: "categories-list", authLevel: AUTH_LEVEL_READER },
       { icon: "mdi-book-open-variant", text: "Collections", link: "collections-list", authLevel: AUTH_LEVEL_READER },
-      { icon: "mdi-cloud-upload", text: "Posts", link: "posts-list", authLevel: AUTH_LEVEL_READER },
+      { icon: "mdi-cloud-upload", text: "Record sets", link: "posts-list", authLevel: AUTH_LEVEL_READER },
       { icon: "mdi-account-circle", text: "Users", link: "users-list", authLevel: AUTH_LEVEL_ADMIN },
       // { icon: "mdi-open-in-new", text: "Search", link: process.env.VUE_APP_SEARCH_URL, external: true },
       { icon: "mdi-cog", text: "Settings", link: "settings", authLevel: AUTH_LEVEL_ADMIN }

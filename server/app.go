@@ -372,6 +372,10 @@ func (app App) NewRouter() *mux.Router {
 	r.Handle(app.baseURL.Path+"/societies/{society}/content", app.setSociety(app.verifyToken(app.authenticate(model.AuthEditor,
 		http.HandlerFunc(app.PostContentRequest))))).Methods("POST")
 
+	r.Handle(app.baseURL.Path+"/societies/{society}/content/{dir}/{key}", http.HandlerFunc(app.OptionsNoop)).Methods("OPTIONS")
+	r.Handle(app.baseURL.Path+"/societies/{society}/content/{dir}/{key}", app.setSociety(app.verifyToken(app.authenticate(model.AuthReader,
+		http.HandlerFunc(app.GetContentRequest))))).Methods("GET")
+
 	r.Handle(app.baseURL.Path+"/societies/{society}/posts", http.HandlerFunc(app.OptionsNoop)).Methods("OPTIONS")
 	r.Handle(app.baseURL.Path+"/societies/{society}/posts", app.setSociety(app.verifyToken(app.authenticate(model.AuthReader,
 		http.HandlerFunc(app.GetPosts))))).Methods("GET")

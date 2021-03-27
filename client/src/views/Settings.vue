@@ -77,14 +77,14 @@
       <v-row>
         <v-col cols="12">
           <h3>
-            Define custom post fields
+            Custom metadata fields for record sets
             <v-tooltip bottom maxWidth="600px">
               <template v-slot:activator="{ on, attrs }">
                 <v-icon v-bind="attrs" v-on="on" small>mdi-information</v-icon>
               </template>
               <span
-                >The fields you add here will be available for post metadata (data about the data within the post).
-                Metadata <em>does not</em> appear in search results.</span
+                >The fields you add here will be available for describing record-sets; e.g., who donated or transcribed
+                the records. Metadata <em>does not</em> appear in search results.</span
               >
             </v-tooltip>
           </h3>

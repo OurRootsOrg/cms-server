@@ -1,6 +1,16 @@
 <template>
   <v-container class="collections-create">
     <h1>{{ collection.id ? "Edit" : "Create" }} Collection</h1>
+    <v-btn
+      v-if="collection.id"
+      title="Use this collection as a template for a new collection"
+      outlined
+      color="primary"
+      class="ml-4 mt-4 mb-4"
+      :to="{ name: 'collection-edit', query: { clone: true } }"
+    >
+      Clone collection
+    </v-btn>
     <v-form @submit.prevent="save">
       <h3>Give your collection a name (step 1 of 8)</h3>
       <v-text-field
@@ -86,7 +96,7 @@
       <v-row no-gutters>
         <v-col cols="12">
           <h3 style="margin-top: 16px;">
-            Define spreadsheet columns
+            Enter spreadsheet columns
             <v-tooltip bottom maxWidth="600px">
               <template v-slot:activator="{ on, attrs }">
                 <v-icon v-bind="attrs" v-on="on" small>mdi-information</v-icon>
@@ -130,7 +140,7 @@
               <v-toolbar flat class="ml-n3">
                 <v-dialog v-model="dialogMapping" max-width="600px">
                   <template v-slot:activator="{ on, attrs }">
-                    <v-btn class="secondary primary--text mr-3" v-bind="attrs" v-on="on" small>Add a row</v-btn>
+                    <v-btn class="secondary primary--text mr-3" v-bind="attrs" v-on="on" small>Add a column</v-btn>
                     <span v-if="collection.mappings.length === 0"
                       >(you need at least one row defining at least one column in your spreadsheet)</span
                     >
@@ -314,9 +324,9 @@
       </div>
 
       <div v-if="warnChanges" class="errorMessage" style="margin-bottom: 16px">
-        The changes made to the collection will not affect posts that have already been uploaded, even if the posts have
-        not yet been published. If you want your changes to affect posts that have already been uploaded, you need to
-        delete the posts and re-upload them after changing the collection.
+        The changes made to the collection will not affect record sets that have already been uploaded, even if the
+        record sets have not yet been published. If you want your changes to affect record sets that have already been
+        uploaded, you need to delete the record sets and re-upload them after changing the collection.
       </div>
       <div class="d-flex justify-space-between">
         <v-btn
@@ -333,7 +343,9 @@
           v-if="collection.id"
           class="mt-2"
           buttonClass="danger"
-          :title="postsForCollection.length > 0 ? 'Collections with posts cannot be deleted' : 'Cannot be undone!'"
+          :title="
+            postsForCollection.length > 0 ? 'Collections with record sets cannot be deleted' : 'Cannot be undone!'
+          "
           @click="del()"
           :disabled="postsForCollection.length > 0"
           >Delete Collection
@@ -346,7 +358,7 @@
 
     <v-row class="pt-5">
       <v-col>
-        <h3 class="mt-4" v-if="collection.id">Posts</h3>
+        <h3 class="mt-4" v-if="collection.id">Record sets</h3>
         <v-data-table
           v-if="collection.id"
           :items="postsForCollection"
@@ -366,7 +378,7 @@
         </v-data-table>
 
         <v-btn v-if="collection.id" outlined color="primary" class="mt-4" :to="{ name: 'posts-create' }">
-          Create a new post
+          Create a new record set
         </v-btn>
       </v-col>
     </v-row>
@@ -400,7 +412,7 @@ function getContent(cid, next) {
     });
 }
 
-function setup() {
+function setup(query) {
   this.collection = {
     ...this.collections.collection,
     categories: this.collections.collection.categories.map(catId =>
@@ -416,6 +428,10 @@ function setup() {
   this.collection.householdRelationshipHeader = this.collection.householdRelationshipHeader || "";
   this.collection.genderHeader = this.collection.genderHeader || "";
   this.editedFields.length = 0;
+  if (query.clone) {
+    this.collection.id = 0;
+    this.collection.name += " (copy)";
+  }
 }
 
 export default {
@@ -430,7 +446,7 @@ export default {
   },
   created() {
     if (this.$route.params && this.$route.params.cid) {
-      setup.bind(this)();
+      setup.bind(this)(this.$route.query);
     }
     this.editedMappingItem = Object.assign({}, this.defaultMappingItem);
   },
@@ -776,6 +792,7 @@ export default {
       const index = this.collection.mappings.indexOf(item);
       if (confirm("Are you sure you want to delete this item?")) {
         this.collection.mappings.splice(index, 1);
+        this.touch("mappings");
       }
     },
     closeMapping() {

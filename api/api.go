@@ -48,6 +48,7 @@ type LocalAPI interface {
 	DeletePost(ctx context.Context, id uint32) error
 	PostContentRequest(ctx context.Context, contentRequest ContentRequest) (*ContentResult, error)
 	GetContent(ctx context.Context, key string) ([]byte, error)
+	GetContentRequest(ctx context.Context, key string) (*ContentResult, error)
 	RetrieveUser(ctx context.Context, provider OIDCProvider, token *oidc.IDToken, rawToken string) (*model.User, bool, error)
 	GetRecordsForPost(ctx context.Context, postid uint32) (*RecordsResult, error)
 	GetRecordsByID(ctx context.Context, ids []uint32, enforceContextSocietyMatch bool) ([]model.Record, error)

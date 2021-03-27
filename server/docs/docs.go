@@ -645,7 +645,7 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/model.Category"
+                            "$ref": "#/definitions/api.ContentResult"
                         }
                     },
                     "415": {
@@ -699,6 +699,53 @@ var doc = `{
                             "items": {
                                 "$ref": "#/definitions/model.Place"
                             }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/downloads": {
+            "get": {
+                "security": [
+                    {
+                        "OAuth2Implicit": [
+                            "cms",
+                            "openid",
+                            "profile",
+                            "email"
+                        ]
+                    },
+                    {
+                        "OAuth2AuthCode": [
+                            "cms",
+                            "openid",
+                            "profile",
+                            "email"
+                        ]
+                    }
+                ],
+                "tags": [
+                    "content"
+                ],
+                "summary": "redirects to a URL for downloading content",
+                "operationId": "downloadContent",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.ContentResult"
+                        }
+                    },
+                    "415": {
+                        "description": "Bad Content-Type",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
                         }
                     },
                     "500": {
@@ -2515,6 +2562,17 @@ var doc = `{
             "type": "object",
             "properties": {
                 "contentType": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.ContentResult": {
+            "type": "object",
+            "properties": {
+                "key": {
+                    "type": "string"
+                },
+                "signedURL": {
                     "type": "string"
                 }
             }

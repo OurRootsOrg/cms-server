@@ -66,7 +66,7 @@ export default {
       headers: [
         { text: "Name", value: "name" },
         { text: "Location", value: "location" },
-        { text: "# Posts", value: "postsCount" },
+        { text: "# Record sets", value: "postsCount" },
         { text: "Categories", value: "categoryNames" },
         { text: "", value: "icon", align: "right", width: "15px" }
       ],

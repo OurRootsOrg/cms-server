@@ -1,10 +1,10 @@
 <template>
   <v-container class="posts-create">
-    <h1>{{ post.id ? "Edit" : "Create" }} Post</h1>
+    <h1>{{ post.id ? "Edit" : "Create" }} Record set</h1>
     <v-form @submit.prevent="save">
-      <h3>Give your post a name</h3>
+      <h3>Give your record set a name</h3>
       <v-text-field
-        label="Post Name"
+        label="Record-set Name"
         v-model="post.name"
         type="text"
         placeholder="Name"
@@ -42,31 +42,45 @@
         </template>
       </div>
       <div v-if="post.id" class="postStatusWrapper">
-        <h3>Post status</h3>
-        <div class="postStatus">
-          <strong>{{ post.postStatus }}:</strong>
-          <span> Records {{ !post.recordsKey ? "Missing" : post.recordsStatus || "Loaded" }}</span>
-          <span v-if="this.collections.collection.imagePathHeader">
-            <span
-              >; Images
-              {{ !post.imagesKeys || post.imagesKeys.length === 0 ? "Missing" : post.imagesStatus || "Loaded" }}</span
-            >
-          </span>
-        </div>
-        <div v-if="post.postError"><strong>Post Error</strong>: {{ cleanError(post.postError) }}</div>
-        <div v-if="post.recordsError"><strong>Records Error</strong>: {{ cleanError(post.recordsError) }}</div>
-        <div v-if="post.imagesError"><strong>Images Error</strong>: {{ cleanError(post.imagesError) }}</div>
+        <h3>Status</h3>
+        <ul>
+          <li>
+            Records:
+            <span v-if="post.recordsError"><strong>error</strong> - {{ cleanError(post.recordsError) }}</span>
+            <span v-else-if="!post.recordsKey">Missing</span>
+            <span v-else>
+              <router-link :to="{ name: 'downloads', params: { key: post.recordsKey } }">
+                {{ post.recordsStatus || "Loaded" }}
+              </router-link>
+            </span>
+          </li>
+          <li v-if="this.collections.collection.imagePathHeader">
+            Images:
+            <span v-if="post.imagesError"><strong>error</strong> - {{ cleanError(post.imagesError) }}</span>
+            <span v-else-if="!post.imagesKeys || post.imagesKeys.length === 0">Missing</span>
+            <span v-else>
+              <router-link :to="{ name: 'downloads', params: { key: post.imagesKeys[0] } }">
+                {{ post.imagesStatus || "Loaded" }}
+              </router-link>
+            </span>
+          </li>
+          <li>
+            Visibility:
+            <span v-if="post.postError"><strong>error</strong> - {{ cleanError(post.postError) }}</span>
+            <span v-else>{{ post.postStatus }}</span>
+          </li>
+        </ul>
       </div>
       <div v-if="societySummaries.societySummary.postMetadata.length > 0">
         <h3>
-          Custom fields (metadata) for this post
+          Custom fields (metadata) for this record set
           <v-tooltip bottom>
             <template v-slot:activator="{ on, attrs }">
               <v-icon small v-bind="attrs" v-on="on">mdi-information</v-icon>
             </template>
             <span
-              >Information specific to <em>this particular post</em> such as the transcription date, translator, etc.
-              which might be different from other posts in this collection</span
+              >Information specific to <em>this particular record set</em> such as the transcription date, translator,
+              etc. which might be different from other record sets in this collection</span
             >
           </v-tooltip>
         </h3>
@@ -138,17 +152,17 @@
             v-if="isPublishable"
             @click="publish"
             color="primary"
-            title="Publish the post to make it searchable"
+            title="Publish the record set to make it searchable"
             class="ml-4"
-            >Publish Post</v-btn
+            >Publish Record set</v-btn
           >
           <v-btn
             v-if="isUnpublishable"
             @click="unpublish"
             color="primary"
-            title="Unpublish the post to remove it from the index"
+            title="Unpublish the record set to remove it from the index"
             class="ml-4"
-            >Unpublish Post</v-btn
+            >Unpublish Record set</v-btn
           >
           <v-dialog v-if="isRecordsImportable" v-model="importRecordsDlg" persistent max-width="320">
             <template v-slot:activator="{ on, attrs }">
@@ -260,14 +274,14 @@
 
           <v-spacer></v-spacer>
 
-          <v-btn :disabled="!isDeletable" @click="del" class="warning">Delete Post</v-btn>
+          <v-btn :disabled="!isDeletable" @click="del" class="warning">Delete Record set</v-btn>
         </v-col>
       </v-row>
     </v-form>
 
     <v-row class="pt-5" v-if="post.id && post.recordsKey && post.recordsStatus === ''">
       <v-col>
-        <h3 class="pl-1">Post data</h3>
+        <h3 class="pl-1">Records</h3>
         <v-data-table
           :items="
             records.recordsList.map(r => {
@@ -496,7 +510,7 @@ export default {
         return Server.contentPostRequest(store.getters.currentSocietyId, "application/zip").then(result => {
           console.log("contentPostRequest", result.data);
           this.imagesPostRequestResultData = result.data;
-          newFile.putAction = result.data.putURL;
+          newFile.putAction = result.data.signedURL;
         });
       }
     },
@@ -546,7 +560,7 @@ export default {
         return Server.contentPostRequest(store.getters.currentSocietyId, "text/csv").then(result => {
           console.log("contentPostRequest", result.data);
           this.recordsPostRequestResultData = result.data;
-          newFile.putAction = result.data.putURL;
+          newFile.putAction = result.data.signedURL;
         });
       }
     },

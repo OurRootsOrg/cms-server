@@ -63,7 +63,7 @@
             <div v-for="(lv, $ix) in search.searchResult.record" :key="$ix">{{ lv.label }}:</div>
           </v-col>
           <v-col cols="9">
-            <div v-for="(lv, $ix) in search.searchResult.record" :key="$ix">{{ lv.value }}</div>
+            <div v-for="(lv, $ix) in search.searchResult.record" :key="$ix" v-html="linkify(lv.value)"></div>
           </v-col>
         </v-row>
       </v-col>
@@ -157,6 +157,11 @@ export default {
   },
   computed: mapState(["search"]),
   methods: {
+    linkify(value) {
+      value = this.$sanitize(value);
+      value = value.replace(/(https?:\/\/[^ ]+)/gi, '<a href="$1">$1</a>');
+      return value;
+    },
     getRecordValue(record, header) {
       let lv = record.find(lv => lv.label === header);
       return lv ? lv.value : "";

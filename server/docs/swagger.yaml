@@ -5,6 +5,13 @@ definitions:
       contentType:
         type: string
     type: object
+  api.ContentResult:
+    properties:
+      key:
+        type: string
+      signedURL:
+        type: string
+    type: object
   api.Error:
     type: object
   api.HeaderLabel:
@@ -1010,7 +1017,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/model.Category'
+            $ref: '#/definitions/api.ContentResult'
         "415":
           description: Bad Content-Type
           schema:
@@ -1063,6 +1070,36 @@ paths:
       summary: returns the current user
       tags:
       - users
+  /downloads:
+    get:
+      operationId: downloadContent
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.ContentResult'
+        "415":
+          description: Bad Content-Type
+          schema:
+            $ref: '#/definitions/api.Error'
+        "500":
+          description: Server error
+          schema:
+            $ref: '#/definitions/api.Error'
+      security:
+      - OAuth2Implicit:
+        - cms
+        - openid
+        - profile
+        - email
+      - OAuth2AuthCode:
+        - cms
+        - openid
+        - profile
+        - email
+      summary: redirects to a URL for downloading content
+      tags:
+      - content
   /invitations/{code}:
     get:
       operationId: getInvitation

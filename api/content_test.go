@@ -30,7 +30,7 @@ func TestContent(t *testing.T) {
 
 	// post the content
 	client := &http.Client{}
-	req, err := http.NewRequest("PUT", contentRequest.PutURL, strings.NewReader(content))
+	req, err := http.NewRequest("PUT", contentRequest.SignedURL, strings.NewReader(content))
 	assert.NoError(t, err)
 	req.Header.Set("Content-Type", "text/csv")
 	res, err := client.Do(req)

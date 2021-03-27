@@ -32,6 +32,9 @@ export default {
   collectionsGetOne(societyId, id) {
     return get(`/societies/${societyId}/collections/${id}`);
   },
+  contentGetRequest(societyId, key) {
+    return get(`/societies/${societyId}/content/${key}`);
+  },
   contentPostRequest(societyId, contentType) {
     return post(`/societies/${societyId}/content`, { contentType });
   },

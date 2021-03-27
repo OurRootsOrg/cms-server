@@ -75,19 +75,25 @@ const routes = [
         component: () => import(/* webpackChunkName: "about" */ "../views/Image.vue")
       },
       {
-        path: "posts",
+        path: "record-sets",
         name: "posts-list",
         meta: { requiresAuth: true },
         component: () => import(/* webpackChunkName: "about" */ "../views/PostsList.vue")
       },
       {
-        path: "posts/create",
+        path: "downloads/:key",
+        name: "downloads",
+        meta: { requiresAuth: true },
+        component: () => import(/* webpackChunkName: "about" */ "../views/Downloads.vue")
+      },
+      {
+        path: "record-sets/create",
         name: "posts-create",
         meta: { requiresAuth: true },
         component: () => import(/* webpackChunkName: "about" */ "../views/PostsCreateEdit.vue")
       },
       {
-        path: "posts/:pid",
+        path: "record-sets/:pid",
         name: "post-edit",
         meta: { requiresAuth: true },
         component: () => import(/* webpackChunkName: "about" */ "../views/PostsCreateEdit.vue")
