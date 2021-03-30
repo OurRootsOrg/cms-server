@@ -1463,6 +1463,7 @@ export default {
     }
   },
   created() {
+    console.log("created", window.ourroots);
     if (this.$route.query && Object.keys(this.$route.query).length > 0) {
       this.searchPerformed = true;
       this.query = Object.assign(this.query, this.$route.query);
@@ -1621,7 +1622,10 @@ export default {
       placeOptionsMenu: false,
       birthOptionsMenu: false,
       birthOptionsMenu2: false,
-      fields: (window.ourroots.fields || "given surname events relationships keywords").split(/\s+/)
+      fields: (typeof window.ourroots.fields === "string" && window.ourroots.fields.length > 0
+        ? window.ourroots.fields
+        : "given,surname,events,relationships,keywords"
+      ).split(/\s*,\s*/)
     };
   },
   computed: {

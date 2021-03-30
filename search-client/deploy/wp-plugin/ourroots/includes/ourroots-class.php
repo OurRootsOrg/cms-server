@@ -12,7 +12,7 @@ if(!class_exists('OURROOTS')){
 
         public function load_scripts(){
             global $post;
-            if ( isset($post->post_content) && strpos($post->post_content, '[our-roots]') !== false ) {
+            if ( isset($post->post_content) && strpos($post->post_content, '[our-roots') !== false ) {
                 wp_enqueue_style('jwto-fonts', OURROOTS_URL . '/css/ourroots.css', array(), time());
                 wp_enqueue_style('jwto-icons', OURROOTS_URL . '/css/materialdesignicons.min.css', array(), time());
                 wp_enqueue_style('jwto-css-chunk-vendors', OURROOTS_URL . '/css/chunk-vendors.css', array(), time());
@@ -41,11 +41,6 @@ if(!class_exists('OURROOTS')){
 		        'fields' => '',
 		        'category' => '',
 		    ), $atts );
-
-		    $fields = array();
-		    if(!empty($attributes['fields'])){
-		    	$fields = explode(",", $attributes['fields']);
-		    }
 
         	$jwto_secret = get_option('jwto_secret');
         	$jwto_society_id = get_option('jwto_society_id');
@@ -79,7 +74,7 @@ if(!class_exists('OURROOTS')){
 
         	$js_array = array(
         		'jwt' => $token,
-        		'fields' => $fields,
+        		'fields' => $attributes['fields'],
         		'category' => $attributes['category'],
         		'societyId' => $society_id,
         		'images_directory' => OURROOTS_URL . '/',
