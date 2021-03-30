@@ -60,6 +60,8 @@ type SearchRequest struct {
 	AnyPlaceFuzziness       int    `schema:"anyPlaceFuzziness"`
 	// other
 	Keywords string `schema:"keywords"`
+	Title    string `schema:"title"`
+	Author   string `schema:"author"`
 	// facets and filters
 	CollectionPlace1Facet bool   `schema:"collectionPlace1Facet"`
 	CollectionPlace1      string `schema:"collectionPlace1"`
@@ -328,6 +330,8 @@ func (api API) constructSearchQuery(ctx context.Context, req *SearchRequest) (*S
 
 	// other
 	mustQueries = append(mustQueries, constructTextQueries("keywords", req.Keywords)...)
+	mustQueries = append(mustQueries, constructTextQueries("book_title", req.Title)...)
+	mustQueries = append(mustQueries, constructTextQueries("book_author", req.Author)...)
 
 	// filters
 	filterQueries = append(filterQueries, constructFilterQueries("societyId", float64(societyID))...) // convert to float64 so tests pass
@@ -693,16 +697,54 @@ func constructTextQueries(label, value string) []Query {
 	if len(value) == 0 {
 		return nil
 	}
-	return []Query{
-		{
-			Match: map[string]MatchQuery{
-				label: {
-					Query:    value,
-					Operator: "AND",
+	if !strings.ContainsAny(value, "~*?") {
+		return []Query{
+			{
+				Match: map[string]MatchQuery{
+					label: {
+						Query:    value,
+						Operator: "AND",
+					},
 				},
 			},
-		},
+		}
 	}
+	// support wildcards within words or ~word, which means to fuzzy-match word
+	var queries []Query
+	for _, v := range splitWord(value) {
+		v := stdtext.AsciiFold(strings.ToLower(v))
+		if strings.HasPrefix(v, "~") && !strings.ContainsAny(v, "*?") {
+			queries = append(queries, Query{
+				Fuzzy: map[string]FuzzyQuery{
+					label: {
+						Value:     v[1:],
+						Fuzziness: "AUTO",
+						Rewrite:   "constant_score_boolean",
+					},
+				},
+			})
+			continue
+		}
+		v = strings.ReplaceAll(v, "~", "")
+		if strings.ContainsAny(v, "*?") {
+			queries = append(queries, Query{
+				Wildcard: map[string]TermQuery{
+					label: {
+						Value: v,
+					},
+				},
+			})
+			continue
+		}
+		queries = append(queries, Query{
+			Term: map[string]TermQuery{
+				label: {
+					Value: v,
+				},
+			},
+		})
+	}
+	return queries
 }
 
 func constructFilterQueries(label string, value interface{}) []Query {

@@ -304,14 +304,20 @@ func indexRecord(record *model.Record, householdRecords []*model.Record, society
 		if suffix != "" {
 			suffix = "_" + suffix
 		}
+		if collection.CollectionType == model.CollectionTypeCatalog && role != "principal" {
+			continue
+		}
+
 		// get data for role
 		data := getDataForRole(collection.Mappings, record, role)
 
 		// populate the record to index
 		ixRecord := map[string]interface{}{}
+
+		// get principal name
 		ixRecord["given"] = data["given"]
 		ixRecord["surname"] = data["surname"]
-		if ixRecord["given"] == "" && ixRecord["surname"] == "" {
+		if collection.CollectionType == model.CollectionTypeRecords && ixRecord["given"] == "" && ixRecord["surname"] == "" {
 			if role == "principal" {
 				log.Printf("[DEBUG] No given name or surname found for record %#v, mappings %#v, role %s",
 					record, collection.Mappings, role)
@@ -368,8 +374,10 @@ func indexRecord(record *model.Record, householdRecords []*model.Record, society
 			}
 		}
 
-		// keywords
+		// keywords, title, author
 		ixRecord["keywords"] = data["keywords"]
+		ixRecord["book_title"] = data["title"]
+		ixRecord["book_author"] = data["author"]
 
 		// get other data
 		var catNames []string

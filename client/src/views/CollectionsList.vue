@@ -65,6 +65,7 @@ export default {
     return {
       headers: [
         { text: "Name", value: "name" },
+        { text: "Type", value: "type" },
         { text: "Location", value: "location" },
         { text: "# Record sets", value: "postsCount" },
         { text: "Categories", value: "categoryNames" },
@@ -80,6 +81,7 @@ export default {
         return {
           id: c.id,
           name: c.name,
+          type: c.type,
           location: c.location,
           postsCount: this.posts.postsList.filter(post => post.collection === c.id).length,
           categoryNames: this.categories.categoriesList

@@ -2768,7 +2768,8 @@ var doc = `{
             "required": [
                 "categories",
                 "id",
-                "name"
+                "name",
+                "type"
             ],
             "properties": {
                 "categories": {
@@ -2822,6 +2823,9 @@ var doc = `{
                 },
                 "privacyLevel": {
                     "type": "integer"
+                },
+                "type": {
+                    "type": "string"
                 }
             }
         },
@@ -2837,7 +2841,8 @@ var doc = `{
             "type": "object",
             "required": [
                 "categories",
-                "name"
+                "name",
+                "type"
             ],
             "properties": {
                 "categories": {
@@ -2881,6 +2886,9 @@ var doc = `{
                 },
                 "privacyLevel": {
                     "type": "integer"
+                },
+                "type": {
+                    "type": "string"
                 }
             }
         },
@@ -3216,6 +3224,9 @@ var doc = `{
                     "type": "string"
                 },
                 "collectionName": {
+                    "type": "string"
+                },
+                "collectionType": {
                     "type": "string"
                 },
                 "household": {

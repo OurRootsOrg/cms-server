@@ -95,6 +95,7 @@ type SearchHit struct {
 	Record             SearchRecord   `json:"record,omitempty"` // only returned on search by id
 	CollectionID       uint32         `json:"collection"`
 	CollectionName     string         `json:"collectionName"`
+	CollectionType     CollectionType `json:"collectionType"`
 	ImagePath          string         `json:"imagePath,omitempty"`
 	PostID             uint32         `json:"post,omitempty"`
 	CollectionLocation string         `json:"collectionLocation,omitempty"` // only returned on search by id

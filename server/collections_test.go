@@ -228,7 +228,8 @@ func TestDeleteCollection(t *testing.T) {
 func makeCollectionIn(t *testing.T, categoryID uint32) (model.CollectionIn, *bytes.Buffer) {
 	in := model.CollectionIn{
 		CollectionBody: model.CollectionBody{
-			Name: "First",
+			Name:           "First",
+			CollectionType: model.CollectionTypeRecords,
 		},
 		Categories: []uint32{},
 	}

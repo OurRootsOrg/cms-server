@@ -13,14 +13,15 @@
       <v-col cols="12" md="3">
         <div v-for="(event, $ix) in result.person.events" :key="$ix">
           <p class="ma-0 pa-0">
-            <span class="text-first-caps">{{ event.type }}</span
-            >: {{ event.date }} <span v-if="event.place">,</span> {{ event.place }}
+            <span class="text-first-caps" v-if="event.type">{{ event.type }}:</span>
+            {{ event.date }} <span v-if="event.date && event.place">,</span> {{ event.place }}
           </p>
         </div>
       </v-col>
       <v-col cols="12" md="4">
         <div v-for="(relationship, $ix) in result.person.relationships" :key="$ix">
-          <span class="text-first-caps">{{ relationship.type }}: {{ relationship.name }}</span>
+          <span class="text-first-caps" v-if="relationship.type">{{ relationship.type }}:</span>
+          {{ relationship.name }}
         </div>
       </v-col>
       <v-col cols="1" class="d-flex justify-center">

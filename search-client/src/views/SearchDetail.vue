@@ -45,8 +45,8 @@
       <v-col cols="12" md="8" v-else>
         <v-row v-if="search.searchResult.person.role !== 'principal'" no-gutters>
           <v-col>
-            <div>Name: {{ search.searchResult.person.name }}</div>
-            <div>Role: {{ search.searchResult.person.role }}</div>
+            <div>{{ nameLabel }}: {{ search.searchResult.person.name }}</div>
+            <div>{{ roleLabel }}: {{ search.searchResult.person.role }}</div>
           </v-col>
         </v-row>
         <v-row no-gutters>
@@ -155,7 +155,15 @@ export default {
       householdRecords: []
     };
   },
-  computed: mapState(["search"]),
+  computed: {
+    nameLabel() {
+      return this.search.searchResult.collectionType === "Records" ? "Name" : "Title";
+    },
+    roleLabel() {
+      return this.search.searchResult.collectionType === "Records" ? "Role" : "Author";
+    },
+    ...mapState(["search"])
+  },
   methods: {
     linkify(value) {
       value = this.$sanitize(value);

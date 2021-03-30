@@ -309,8 +309,11 @@ func makeCategory(t *testing.T) model.Category {
 
 func makeCollectionIn(t *testing.T) model.CollectionIn {
 	in := model.CollectionIn{
-		CollectionBody: model.CollectionBody{Name: "Test Collection"},
-		Categories:     []uint32{1},
+		CollectionBody: model.CollectionBody{
+			Name:           "Test Collection",
+			CollectionType: model.CollectionTypeRecords,
+		},
+		Categories: []uint32{1},
 	}
 	return in
 }

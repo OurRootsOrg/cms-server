@@ -176,10 +176,13 @@ definitions:
         type: string
       privacyLevel:
         type: integer
+      type:
+        type: string
     required:
     - categories
     - id
     - name
+    - type
     type: object
   model.CollectionField:
     properties:
@@ -216,9 +219,12 @@ definitions:
         type: string
       privacyLevel:
         type: integer
+      type:
+        type: string
     required:
     - categories
     - name
+    - type
     type: object
   model.CollectionMapping:
     properties:
@@ -447,6 +453,8 @@ definitions:
         description: only returned on search by id
         type: string
       collectionName:
+        type: string
+      collectionType:
         type: string
       household:
         description: only returned on search by id

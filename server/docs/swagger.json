@@ -2757,7 +2757,8 @@
             "required": [
                 "categories",
                 "id",
-                "name"
+                "name",
+                "type"
             ],
             "properties": {
                 "categories": {
@@ -2811,6 +2812,9 @@
                 },
                 "privacyLevel": {
                     "type": "integer"
+                },
+                "type": {
+                    "type": "string"
                 }
             }
         },
@@ -2826,7 +2830,8 @@
             "type": "object",
             "required": [
                 "categories",
-                "name"
+                "name",
+                "type"
             ],
             "properties": {
                 "categories": {
@@ -2870,6 +2875,9 @@
                 },
                 "privacyLevel": {
                     "type": "integer"
+                },
+                "type": {
+                    "type": "string"
                 }
             }
         },
@@ -3205,6 +3213,9 @@
                     "type": "string"
                 },
                 "collectionName": {
+                    "type": "string"
+                },
+                "collectionType": {
                     "type": "string"
                 },
                 "household": {

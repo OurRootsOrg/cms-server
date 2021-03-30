@@ -21,6 +21,13 @@ const (
 	PrivacyPrivateSearchDetailImages
 )
 
+type CollectionType string
+
+const (
+	CollectionTypeRecords CollectionType = "Records"
+	CollectionTypeCatalog CollectionType = "Catalog"
+)
+
 func (l PrivacyLevel) String() string {
 	return [...]string{"Public", "PrivateImages", "PrivateDetail", "PrivateDetailImages", "PrivateSearch",
 		"PrivateSearchImages", "PrivateSearchDetail", "PrivateSearchDetailImages"}[l]
@@ -40,6 +47,7 @@ type CollectionPersister interface {
 type CollectionBody struct {
 	Name                        string              `json:"name" validate:"required" dynamodbav:"altSort"`
 	Location                    string              `json:"location,omitempty"`
+	CollectionType              CollectionType      `json:"type" validate:"required"`
 	Fields                      []CollectionField   `json:"fields"`
 	Mappings                    []CollectionMapping `json:"mappings"`
 	CitationTemplate            string              `json:"citation_template,omitempty"`
@@ -72,7 +80,12 @@ func (cb *CollectionBody) Scan(value interface{}) error {
 	if !ok {
 		return errors.New("type assertion to []byte failed")
 	}
-	return json.Unmarshal(b, &cb)
+	err := json.Unmarshal(b, &cb)
+	// default records type
+	if cb.CollectionType == "" {
+		cb.CollectionType = CollectionTypeRecords
+	}
+	return err
 }
 
 // CollectionIn is the payload to create or update a Collection

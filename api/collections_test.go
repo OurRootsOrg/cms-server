@@ -69,7 +69,8 @@ func doCollectionsTests(t *testing.T, catP model.CategoryPersister, colP model.C
 	// Add a Collection
 	in := model.CollectionIn{
 		CollectionBody: model.CollectionBody{
-			Name: "Test Collection",
+			Name:           "Test Collection",
+			CollectionType: model.CollectionTypeRecords,
 		},
 		Categories: []uint32{testCategory.ID},
 	}

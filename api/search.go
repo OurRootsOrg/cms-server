@@ -180,6 +180,7 @@ func (api API) SearchByID(ctx context.Context, id string) (*model.SearchHit, err
 				ID:                 hitData.ID,
 				SocietyID:          hitData.SocietyID,
 				CollectionName:     collection.Name,
+				CollectionType:     collection.CollectionType,
 				CollectionID:       collection.ID,
 				CollectionLocation: collection.Location,
 				Private:            true,
@@ -211,12 +212,19 @@ func (api API) SearchByID(ctx context.Context, id string) (*model.SearchHit, err
 			}
 		}
 	}
+	var searchPerson model.SearchPerson
+	if collection.CollectionType == model.CollectionTypeRecords {
+		searchPerson = constructRecordSearchPerson(collection.Mappings, hitData.Role, &recordDetail.Record, false)
+	} else {
+		searchPerson = constructCatalogSearchPerson(collection.Mappings, hitData.Role, &recordDetail.Record, false)
+	}
 	return &model.SearchHit{
 		ID:                 hitData.ID,
 		SocietyID:          hitData.SocietyID,
-		Person:             constructSearchPerson(collection.Mappings, hitData.Role, &recordDetail.Record, false),
+		Person:             searchPerson,
 		Record:             constructSearchRecord(collection.Mappings, &recordDetail.Record),
 		CollectionName:     collection.Name,
+		CollectionType:     collection.CollectionType,
 		CollectionID:       collection.ID,
 		CollectionLocation: collection.Location,
 		Citation:           recordDetail.GetCitation(collection.CitationTemplate),
@@ -441,11 +449,18 @@ func (api API) Search(ctx context.Context, req *SearchRequest) (*model.SearchRes
 		// mask details on private records when the user is not logged in
 		maskDetails := collection.PrivacyLevel&model.PrivacyPrivateDetail > 0 && userID == 0
 		// construct search hit
+		var searchPerson model.SearchPerson
+		if collection.CollectionType == model.CollectionTypeRecords {
+			searchPerson = constructRecordSearchPerson(collection.Mappings, hitData.Role, &record, maskDetails)
+		} else {
+			searchPerson = constructCatalogSearchPerson(collection.Mappings, hitData.Role, &record, maskDetails)
+		}
 		hits = append(hits, model.SearchHit{
 			ID:             hitData.ID,
 			SocietyID:      hitData.SocietyID,
-			Person:         constructSearchPerson(collection.Mappings, hitData.Role, &record, maskDetails),
+			Person:         searchPerson,
 			CollectionName: collection.Name,
+			CollectionType: collection.CollectionType,
 			CollectionID:   collection.ID,
 			PostID:         record.Post,
 			ImagePath:      record.Data[collection.ImagePathHeader],
@@ -507,7 +522,7 @@ func getHitData(r ESSearchHit) (*HitData, error) {
 	}, nil
 }
 
-func constructSearchPerson(mappings []model.CollectionMapping, role model.Role, record *model.Record, maskDetails bool) model.SearchPerson {
+func constructRecordSearchPerson(mappings []model.CollectionMapping, role model.Role, record *model.Record, maskDetails bool) model.SearchPerson {
 	data := getDataForRole(mappings, record, role)
 
 	// populate events
@@ -541,6 +556,37 @@ func constructSearchPerson(mappings []model.CollectionMapping, role model.Role, 
 	return model.SearchPerson{
 		Name:          fmt.Sprintf("%s %s", data["given"], data["surname"]),
 		Role:          role,
+		Events:        events,
+		Relationships: relationships,
+	}
+}
+
+func constructCatalogSearchPerson(mappings []model.CollectionMapping, role model.Role, record *model.Record, maskDetails bool) model.SearchPerson {
+	data := getDataForRole(mappings, record, role)
+
+	// populate events
+	events := []model.SearchEvent{}
+	if !maskDetails && data[string(model.OtherEvent)+"Place"] != "" {
+		events = append(events, model.SearchEvent{
+			Place: data[string(model.OtherEvent)+"Place"],
+		})
+	}
+
+	// populate relationships
+	relationships := []model.SearchRelationship{}
+	if !maskDetails && data["surname"] != "" {
+		relationships = append(relationships, model.SearchRelationship{
+			Name: data["surname"],
+		})
+	}
+
+	author := "Book"
+	if data["author"] != "" {
+		author = data["author"]
+	}
+	return model.SearchPerson{
+		Name:          data["title"],
+		Role:          model.Role(author),
 		Events:        events,
 		Relationships: relationships,
 	}

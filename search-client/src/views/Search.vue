@@ -130,10 +130,50 @@
         <h1 v-if="!searchPerformed">Search</h1>
         <h3 v-if="searchPerformed" class="mt-0 pt-0">Refine your search</h3>
         <v-form @submit.prevent="go">
+          <!--Title-->
+          <v-row no-gutters class="mt-4" v-if="hasField('title')">
+            <v-col cols="3">
+              <h4 class="mt-2">Title:</h4>
+            </v-col>
+            <v-col cols="9">
+              <v-text-field
+                outlined
+                dense
+                v-model="query.title"
+                type="text"
+                placeholder="Title"
+                class="ma-0 mb-n2"
+              ></v-text-field>
+            </v-col>
+          </v-row>
+          <!--Author-->
+          <v-row no-gutters class="mt-4" v-if="hasField('author')">
+            <v-col cols="3">
+              <h4 class="mt-2">Author:</h4>
+            </v-col>
+            <v-col cols="9">
+              <v-text-field
+                outlined
+                dense
+                v-model="query.author"
+                type="text"
+                placeholder="Author"
+                class="ma-0 mb-n2"
+              ></v-text-field>
+            </v-col>
+          </v-row>
           <!--name row-->
-          <v-row no-gutters>
-            <v-col cols="12" :md="searchPerformed ? 12 : 6" :class="searchPerformed ? 'mt-3' : 'pr-3 mt-3'">
-              <h4>First &amp; Middle Name(s)</h4>
+          <v-row no-gutters v-if="hasField('given') || hasField('surname')">
+            <v-col cols="3" v-if="!hasField('surname')">
+              <h4 class="mt-5">First name:</h4>
+            </v-col>
+            <v-col
+              cols="12"
+              :md="searchPerformed ? 12 : 6"
+              :class="searchPerformed ? 'mt-3' : 'pr-3 mt-3'"
+              v-if="hasField('given')"
+            >
+              <h4 v-if="hasField('surname')">First &amp; Middle Name(s)</h4>
               <v-row no-gutters>
                 <v-text-field
                   outlined
@@ -183,12 +223,20 @@
                 </v-menu>
               </v-row>
             </v-col>
-            <v-col cols="12" :md="searchPerformed ? 12 : 6" class="mt-3">
-              <h4>Last Name</h4>
+            <v-col cols="3" v-else>
+              <h4 class="mt-5">Surname:</h4>
+            </v-col>
+            <v-col
+              cols="12"
+              :md="hasField('given') ? (searchPerformed ? 12 : 6) : 9"
+              class="mt-3"
+              v-if="hasField('surname')"
+            >
+              <h4 v-if="hasField('given')">Last Name</h4>
               <v-row no-gutters>
                 <v-text-field dense outlined v-model="query.surname" type="text" placeholder="Surname"></v-text-field>
               </v-row>
-              <v-row no-gutters class="mt-n5" v-if="query.surname">
+              <v-row no-gutters class="mt-n5 mb-1" v-if="query.surname">
                 <v-menu offset-x :close-on-content-click="false" v-model="surnameOptionsMenu">
                   <template v-slot:activator="{ on, attrs }">
                     <v-btn
@@ -230,8 +278,8 @@
             </v-col>
           </v-row>
           <!--any place and birth year -->
-          <v-row no-gutters v-if="!searchPerformed">
-            <v-col cols="12" :md="searchPerformed ? 12 : 6" :class="searchPerformed ? '' : 'pr-3'">
+          <v-row no-gutters v-if="!searchPerformed && hasField('events')">
+            <v-col cols="12" md="6" class="pr-3 mt-1">
               <h5>Place your ancestor might have lived</h5>
               <v-row no-gutters>
                 <v-autocomplete
@@ -308,7 +356,7 @@
             </v-col>
           </v-row>
           <!--Event buttons-->
-          <v-row no-gutters :class="searchPerformed ? '' : 'mt-5'">
+          <v-row no-gutters :class="searchPerformed ? '' : 'mt-5'" v-if="hasField('events')">
             <v-col cols="12" :md="searchPerformed ? 12 : 3" :class="searchPerformed ? 'mt-3' : ''">
               <strong>Add event details:</strong>
             </v-col>
@@ -777,7 +825,11 @@
             </v-col>
           </v-row>
           <!--Any-->
-          <v-row no-gutters :class="searchPerformed ? 'ma-0 pa-0 d-flex' : 'my-3'" v-if="showEvent.any">
+          <v-row
+            no-gutters
+            :class="searchPerformed ? 'ma-0 pa-0 d-flex' : 'my-3'"
+            v-if="showEvent.any && hasField('events')"
+          >
             <v-col :cols="searchPerformed ? 3 : 2" class="order-1" :class="searchPerformed ? 'pt-2' : 'pl-5 pt-3'">
               <h4>Any event</h4>
             </v-col>
@@ -879,7 +931,7 @@
             </v-col>
           </v-row>
           <!--Relative buttons-->
-          <v-row no-gutters class="mt-5">
+          <v-row no-gutters class="mt-5" v-if="hasField('relationships')">
             <v-col cols="12" :md="searchPerformed ? 12 : 3">
               <strong>Add family member:</strong>
             </v-col>
@@ -1238,18 +1290,66 @@
               >
             </v-col>
           </v-row>
-          <!--Keywords-->
-          <v-row no-gutters class="mt-5">
-            <h4 class="mt-2 mr-2">Keyword:</h4>
-            <v-text-field
-              outlined
-              dense
-              v-model="query.keywords"
-              type="text"
-              placeholder="Other text"
-              class="ma-0 mb-n2"
-            ></v-text-field>
+          <!--Place-->
+          <v-row no-gutters class="mt-2 mb-6" v-if="hasField('place')">
+            <v-col cols="3">
+              <h4 class="mt-2">Place:</h4>
+            </v-col>
+            <v-col :cols="searchPerformed ? 7 : 8" class="ma-0 pa-0">
+              <v-autocomplete
+                outlined
+                dense
+                v-model="query.anyPlace"
+                :loading="anyPlaceLoading"
+                :items="anyPlaceItems"
+                :search-input.sync="anyPlaceSearch"
+                no-filter
+                auto-select-first
+                clearable
+                flat
+                hide-no-data
+                hide-details
+                solo
+                placeholder="Any place"
+                :menu-props="{ nudgeTop: autocompleteOffset }"
+                @change="anyPlaceChanged()"
+              ></v-autocomplete>
+            </v-col>
+            <v-col
+              v-if="query.anyPlace"
+              cols="1"
+              class="exactCheck d-flex flex-row ml-0 pl-0"
+              :class="searchPerformed ? 'mt-1' : 'mt-1'"
+            >
+              <v-checkbox
+                v-model="query.anyPlaceFuzziness"
+                :value="1"
+                class="shrink mr-2 mt-0 smallCheckbox"
+                dense
+                primary
+                hide-details="true"
+              >
+              </v-checkbox
+              ><span class="mt-2 ml-n3 primary--text">Exact</span>
+            </v-col>
           </v-row>
+          <!--Keywords-->
+          <v-row no-gutters class="mt-4" v-if="hasField('keywords')">
+            <v-col cols="3">
+              <h4 class="mt-2">Keywords:</h4>
+            </v-col>
+            <v-col cols="9">
+              <v-text-field
+                outlined
+                dense
+                v-model="query.keywords"
+                type="text"
+                placeholder="Other text"
+                class="ma-0 mb-n2"
+              ></v-text-field>
+            </v-col>
+          </v-row>
+          <!--Buttons-->
           <v-row class="d-flex flex-row">
             <v-btn class="mt-2 mb-4 ml-3" type="submit" color="primary"
               ><span v-if="!searchPerformed">Search</span><span v-if="searchPerformed">Update</span></v-btn
@@ -1289,10 +1389,10 @@
                   Name
                 </v-col>
                 <v-col cols="12" md="3">
-                  Events
+                  {{ eventsLabel }}
                 </v-col>
                 <v-col cols="12" md="4">
-                  Relationship
+                  {{ relationshipsLabel }}
                 </v-col>
                 <v-col cols="12" md="1">
                   View
@@ -1436,6 +1536,8 @@ export default {
         otherGiven: "",
         otherSurname: "",
         keywords: "",
+        title: "",
+        author: "",
         from: 0,
         size: 0,
         birthDateFuzziness: 0,
@@ -1518,7 +1620,8 @@ export default {
       surnameOptionsMenu: false,
       placeOptionsMenu: false,
       birthOptionsMenu: false,
-      birthOptionsMenu2: false
+      birthOptionsMenu2: false,
+      fields: (window.ourroots.fields || "given surname events relationships keywords").split(/\s+/)
     };
   },
   computed: {
@@ -1571,6 +1674,12 @@ export default {
         ? "Exactness"
         : this.dateRanges.find(d => d.value === this.query.birthDateFuzziness).text;
     },
+    eventsLabel() {
+      return this.hasField("title") || this.hasField("author") ? "Places" : "Events";
+    },
+    relationshipsLabel() {
+      return this.hasField("title") || this.hasField("author") ? "Surnames" : "Relationships";
+    },
     ...mapState(["search"])
   },
   watch: {
@@ -1594,6 +1703,9 @@ export default {
     }
   },
   methods: {
+    hasField(fld) {
+      return this.fields.includes(fld);
+    },
     clearRelative(relative) {
       this.showRelative[relative] = false;
       this.query[relative + "Given"] = null;
