@@ -289,6 +289,7 @@ func doInternalSearchTests(t *testing.T,
 				Given:            "Fred",
 				Surname:          "Flintstone",
 				SurnameFuzziness: FuzzyNameExact,
+				Size:             10,
 			},
 			query: `{"query":{"bool":{"must":[
 					  {"bool":{"must":[
@@ -314,6 +315,7 @@ func doInternalSearchTests(t *testing.T,
 				GivenFuzziness:   FuzzyNameExact | FuzzyNameVariants,
 				Surname:          "Flintstone",
 				SurnameFuzziness: FuzzyNameExact,
+				Size:             10,
 			},
 			query: `{"query":{"bool":{"must":[
 					  {"bool":{"must":[
@@ -334,6 +336,7 @@ func doInternalSearchTests(t *testing.T,
 				GivenFuzziness:   FuzzyNameExact | FuzzyNameSoundsLikeNarrow,
 				Surname:          "Flintstone",
 				SurnameFuzziness: FuzzyNameExact,
+				Size:             10,
 			},
 			query: `{"query":{"bool":{"must":[
 					  {"bool":{"must":[
@@ -355,6 +358,7 @@ func doInternalSearchTests(t *testing.T,
 				BirthDate:          "1900",
 				BirthDateFuzziness: FuzzyDateTwo,
 				DeathDate:          "1995",
+				Size:               10,
 			},
 			query: `{"query":{"bool":{"must":[
 					  {"bool":{"must":[
@@ -381,6 +385,7 @@ func doInternalSearchTests(t *testing.T,
 				BirthDate:          "1900",
 				BirthDateFuzziness: FuzzyDateOne,
 				DeathDate:          "1995",
+				Size:               10,
 			},
 			query: `{"query":{"bool":{"must":[
 					  {"bool":{"must":[
@@ -405,6 +410,7 @@ func doInternalSearchTests(t *testing.T,
 				Surname:          "Flintstone",
 				SurnameFuzziness: FuzzyNameExact,
 				BirthPlace:       "Autauga, Alabama, United States",
+				Size:             10,
 			},
 			query: `{"query":{"bool":{"must":[
 					  {"bool":{"must":[
@@ -427,6 +433,7 @@ func doInternalSearchTests(t *testing.T,
 				SurnameFuzziness:    FuzzyNameExact,
 				BirthPlace:          "Autauga, Alabama, United States",
 				BirthPlaceFuzziness: FuzzyPlaceExact,
+				Size:                10,
 			},
 			query: `{"query":{"bool":{"must":[
 					  {"bool":{"must":[
@@ -447,6 +454,7 @@ func doInternalSearchTests(t *testing.T,
 				SurnameFuzziness:      FuzzyNameExact,
 				CollectionPlace1:      "United States",
 				CollectionPlace2Facet: true,
+				Size:                  10,
 			},
 			query: `{"query":{"bool":{"must":[
 					  {"bool":{"must":[

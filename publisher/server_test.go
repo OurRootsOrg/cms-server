@@ -91,6 +91,7 @@ func TestPublisher(t *testing.T) {
 		SocietyID:          1,
 		BirthDate:          "1900",
 		BirthDateFuzziness: 1,
+		Size:               10,
 	})
 	assert.NoError(t, err, "Search result error")
 	assert.Equal(t, 2, searchResult.Total)
@@ -98,6 +99,7 @@ func TestPublisher(t *testing.T) {
 		SocietyID:          1,
 		BirthDate:          "1901",
 		BirthDateFuzziness: 1,
+		Size:               10,
 	})
 	assert.Equal(t, 1, searchResult.Total)
 	assert.Equal(t, "Wilma Slaghoople", searchResult.Hits[0].Person.Name)
@@ -107,12 +109,14 @@ func TestPublisher(t *testing.T) {
 		SocietyID:           1,
 		BirthPlace:          "Alabama, United States",
 		BirthPlaceFuzziness: 1,
+		Size:                10,
 	})
 	assert.Equal(t, 2, searchResult.Total)
 	searchResult, err = testAPI.Search(ctx, &api.SearchRequest{
 		SocietyID:           1,
 		BirthPlace:          "Autauga, Alabama, United States",
 		BirthPlaceFuzziness: 1,
+		Size:                10,
 	})
 	assert.Equal(t, 1, searchResult.Total)
 	assert.Equal(t, "Fred Flintstone", searchResult.Hits[0].Person.Name)

@@ -245,6 +245,7 @@ func (api API) SearchDeleteByPost(ctx context.Context, id uint32) error {
 				},
 			},
 		},
+		Size: 1, // need to pass size > 0 or we won't delete any records
 	}
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(search); err != nil {
