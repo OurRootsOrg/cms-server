@@ -119,6 +119,7 @@ func doSearchTests(t *testing.T,
 		Given:                 "Fred",
 		CollectionPlace1:      "United States",
 		CollectionPlace2Facet: true,
+		Size:                  10,
 	})
 	assert.Nil(t, errs, "Error searching")
 	assert.GreaterOrEqual(t, res.Total, 1)
@@ -139,6 +140,7 @@ func doSearchTests(t *testing.T,
 		GivenFuzziness:       api.FuzzyNameExact,
 		SpouseGiven:          "Fred",
 		SpouseGivenFuzziness: api.FuzzyNameExact,
+		Size:                 10,
 	})
 	assert.Nil(t, errs, "Error searching")
 	assert.GreaterOrEqual(t, len(res.Hits), 1)
@@ -152,6 +154,7 @@ func doSearchTests(t *testing.T,
 		FatherGivenFuzziness: api.FuzzyNameExact,
 		MotherGiven:          "Wilma",
 		MotherGivenFuzziness: api.FuzzyNameExact,
+		Size:                 10,
 	})
 	assert.Nil(t, errs, "Error searching")
 	assert.GreaterOrEqual(t, len(res.Hits), 1)
@@ -163,6 +166,7 @@ func doSearchTests(t *testing.T,
 		GivenFuzziness:       api.FuzzyNameExact,
 		FatherGiven:          "Imposter",
 		FatherGivenFuzziness: api.FuzzyNameExact,
+		Size:                 10,
 	})
 	assert.Nil(t, errs, "Error searching")
 	assert.Equal(t, len(res.Hits), 0)

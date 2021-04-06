@@ -84,7 +84,7 @@ type Search struct {
 	Aggs   map[string]Agg `json:"aggs,omitempty"`
 	Source []string       `json:"_source,omitempty"`
 	From   int            `json:"from,omitempty"`
-	Size   int            `json:"size,omitempty"`
+	Size   int            `json:"size"`
 }
 type Query struct {
 	Bool     *BoolQuery            `json:"bool,omitempty"`
@@ -361,7 +361,7 @@ func (api API) constructSearchQuery(ctx context.Context, req *SearchRequest) (*S
 	size := req.Size
 	if size > MaxSize {
 		size = MaxSize
-	} else if size <= 0 {
+	} else if size < 0 {
 		size = DefaultSize
 	}
 
