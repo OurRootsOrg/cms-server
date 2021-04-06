@@ -47,20 +47,63 @@
           </v-card-actions>
         </v-card>
       </v-dialog>
-      <h3 style="margin-top: 48px">Now that you've signed in, watch this tutorial</h3>
-      <iframe
-        style="margin: 24px 0"
-        width="560"
-        height="315"
-        src="https://www.youtube.com/embed/WsJGYQk_lB4"
-        frameborder="0"
-        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-        allowfullscreen
-      ></iframe>
+      <h3 style="margin-top: 48px">Now that you've signed in, watch these videos</h3>
+      <p style="margin-top: 24px">About the sandbox society</p>
+      <div>
+        <iframe
+          style="margin: 0"
+          width="560"
+          height="315"
+          src="https://www.youtube.com/embed/vQ5wM5QZhCU"
+          frameborder="0"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowfullscreen
+        ></iframe>
+      </div>
+      <p style="margin-top: 24px">Make vital records searchable</p>
+      <div>
+        <iframe
+          style="margin: 0"
+          width="560"
+          height="315"
+          src="https://www.youtube.com/embed/Hf3bazriQOY"
+          frameborder="0"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowfullscreen
+        ></iframe>
+      </div>
+      <p style="margin-top: 24px">Make census records searchable</p>
+      <div>
+        <iframe
+          style="margin: 0"
+          width="560"
+          height="315"
+          src="https://www.youtube.com/embed/-FhajEuC3UU"
+          frameborder="0"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowfullscreen
+        ></iframe>
+      </div>
+      <p style="margin-top: 24px">Make library catalogs searchable</p>
+      <div>
+        <iframe
+          style="margin: 0"
+          width="560"
+          height="315"
+          src="https://www.youtube.com/embed/s8qTPWZ9r9E"
+          frameborder="0"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowfullscreen
+        ></iframe>
+      </div>
     </div>
     <div v-else>
       <p class="intro">
-        Upload your genealogy records and media and make it searchable on your wordpress-based website.
+        Upload your genealogy records, media, and books and make them searchable on your society website.
+      </p>
+      <p class="intro">
+        <strong>Integrations:</strong> A search plugin is available for wordpress-based websites. Integration with other
+        websites is also possible; contact dallan@ourroots.org for details.
       </p>
       <p class="intro">
         <strong>Privacy:</strong> You can either make your records public, limit search to members only, or make your

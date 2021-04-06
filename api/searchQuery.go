@@ -774,7 +774,7 @@ func addTermsAgg(aggs map[string]Agg, label string, cond bool) {
 	}
 }
 
-var wordRegexp = regexp.MustCompile("[^\\pL*?~]+") // keep ~*? for fuzzy and wildcards
+var wordRegexp = regexp.MustCompile("[^\\pL\\d*?~]+") // keep ~*? for fuzzy and wildcards
 func splitWord(name string) []string {
 	return wordRegexp.Split(name, -1)
 }
