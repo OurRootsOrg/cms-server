@@ -531,7 +531,7 @@ Resources:
       Handler: recordswriter/recordswriter.lambda
       CodeUri: recordswriter.lambda.zip
       Runtime: go1.x
-      MemorySize: 128
+      MemorySize: 1024
       Policies:
         - AWSLambdaBasicExecutionRole
         - AWSLambdaVPCAccessExecutionRole
@@ -586,7 +586,7 @@ Resources:
         SubnetIds:
           - !Ref "PrivateSubnet1"
           - !Ref "PrivateSubnet2"
-      Timeout: 60
+      Timeout: 900
       Environment:
         Variables:
           # This variable tells our server code what domain name and path prefix is in use
@@ -621,7 +621,7 @@ Resources:
       Handler: imageswriter/imageswriter.lambda
       CodeUri: imageswriter.lambda.zip
       Runtime: go1.x
-      MemorySize: 256
+      MemorySize: 1024
       Policies:
         - AWSLambdaBasicExecutionRole
         - AWSLambdaVPCAccessExecutionRole
@@ -676,7 +676,7 @@ Resources:
         SubnetIds:
           - !Ref "PrivateSubnet1"
           - !Ref "PrivateSubnet2"
-      Timeout: 60
+      Timeout: 900
       Environment:
         Variables:
           # This variable tells our server code what domain name and path prefix is in use
@@ -711,7 +711,7 @@ Resources:
       Handler: publisher/publisher.lambda
       CodeUri: publisher.lambda.zip
       Runtime: go1.x
-      MemorySize: 128
+      MemorySize: 1024
       Policies:
         - AWSLambdaBasicExecutionRole
         - AWSLambdaVPCAccessExecutionRole
@@ -769,7 +769,7 @@ Resources:
         SubnetIds:
           - !Ref "PrivateSubnet1"
           - !Ref "PrivateSubnet2"
-      Timeout: 60
+      Timeout: 900
       Environment:
         Variables:
           # This variable tells our server code what domain name and path prefix is in use

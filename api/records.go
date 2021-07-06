@@ -26,10 +26,10 @@ type HeaderLabel struct {
 	Label  string `json:"label"`
 }
 
-// GetRecordsForPost holds the business logic around getting all Records for a post
-func (api API) GetRecordsForPost(ctx context.Context, postID uint32) (*RecordsResult, error) {
+// GetRecordsForPost holds the business logic around getting up to limit Records for a post
+func (api API) GetRecordsForPost(ctx context.Context, postID uint32, limit int) (*RecordsResult, error) {
 	// TODO: handle search criteria and paged results
-	records, err := api.recordPersister.SelectRecordsForPost(ctx, postID)
+	records, err := api.recordPersister.SelectRecordsForPost(ctx, postID, limit)
 	if err != nil {
 		return nil, NewError(err)
 	}
@@ -124,7 +124,7 @@ func (api API) AddRecord(ctx context.Context, in model.RecordIn) (*model.Record,
 	if e != nil {
 		return nil, NewError(e)
 	}
-	log.Printf("[DEBUG] Added record ID %d", record.ID)
+	//log.Printf("[DEBUG] Added record ID %d", record.ID)
 	return record, nil
 }
 

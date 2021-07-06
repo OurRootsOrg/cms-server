@@ -59,12 +59,10 @@
           <v-col cols="12">
             <h4 class="recordDetailSectionHead">Record Details</h4>
           </v-col>
-          <v-col cols="3" class="d-flex justify-right flex-column">
-            <div v-for="(lv, $ix) in search.searchResult.record" :key="$ix">{{ lv.label }}:</div>
-          </v-col>
-          <v-col cols="9">
-            <div v-for="(lv, $ix) in search.searchResult.record" :key="$ix" v-html="linkify(lv.value)"></div>
-          </v-col>
+        </v-row>
+        <v-row v-for="(lv, $ix) in search.searchResult.record" :key="$ix">
+          <v-col cols="3" class="d-flex justify-right flex-column recordDetailRow">{{ lv.label }}:</v-col>
+          <v-col cols="9" class="recordDetailRow" v-html="linkify(lv.value)"></v-col>
         </v-row>
       </v-col>
     </v-row>
@@ -185,5 +183,9 @@ export default {
 }
 .recordDetailSectionHead {
   text-transform: uppercase;
+}
+.recordDetailRow {
+  padding-top: 0;
+  padding-bottom: 0;
 }
 </style>

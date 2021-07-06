@@ -173,6 +173,10 @@
             <v-card>
               <v-card-title class="headline">Select file to import</v-card-title>
               <v-card-text>
+                <p>
+                  Files up to 100,000 records are supported. If you have more than 100,000 records, split them into
+                  multiple files.
+                </p>
                 <file-upload
                   class="btn btn-primary"
                   post-action="/"
@@ -281,7 +285,7 @@
 
     <v-row class="pt-5" v-if="post.id && post.recordsKey && post.recordsStatus === ''">
       <v-col>
-        <h3 class="pl-1">Records</h3>
+        <h3 class="pl-1">Records <span v-if="records.recordsList.length >= 2000">(showing the first 2,000)</span></h3>
         <v-data-table
           :items="
             records.recordsList.map(r => {
@@ -405,10 +409,21 @@ export default {
       );
     },
     isDeletable() {
+      let oldPost = false;
+      if (this.post.last_update_time) {
+        let postDate = new Date(this.post.last_update_time);
+        let now = new Date();
+        let postAgeSeconds = (now.getTime() - postDate.getTime()) / 1000;
+        oldPost = postAgeSeconds > 1800;
+      }
       return (
         this.post.id &&
-        (this.post.recordsStatus === "" || this.post.recordsStatus === "Error") &&
-        (this.post.imagesStatus === "" || this.post.imagesStatus === "Error") &&
+        (this.post.recordsStatus === "" ||
+          this.post.recordsStatus === "Error" ||
+          (this.post.recordsStatus === "Loading" && oldPost)) &&
+        (this.post.imagesStatus === "" ||
+          this.post.imagesStatus === "Error" ||
+          (this.post.imagesStatus === "Loading" && oldPost)) &&
         (this.post.postStatus === "Draft" || this.post.postStatus === "Error")
       );
     },

@@ -8,7 +8,9 @@ import (
 	"strconv"
 )
 
-// GetRecords returns all records for a post
+const maxRecords = 2000
+
+// GetRecords returns up to max records for a post
 // @summary returns all records
 // @router /records [get]
 // @tags records
@@ -25,10 +27,10 @@ func (app App) GetRecords(w http.ResponseWriter, req *http.Request) {
 		ErrorResponse(w, http.StatusBadRequest, fmt.Sprintf("Missing or invalid post query parameter '%s'", postStr))
 		return
 	}
-	log.Printf("[DEBUG] Get records for post ID: %d", postID)
+	log.Printf("[DEBUG] Get up to %d records for post ID: %d", maxRecords, postID)
 	enc := json.NewEncoder(w)
 	w.Header().Set("Content-Type", contentType)
-	cols, errors := app.api.GetRecordsForPost(req.Context(), uint32(postID))
+	cols, errors := app.api.GetRecordsForPost(req.Context(), uint32(postID), maxRecords)
 	if errors != nil {
 		ErrorsResponse(w, errors)
 		return

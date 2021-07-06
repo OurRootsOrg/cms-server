@@ -73,7 +73,7 @@ func doRecordsTests(t *testing.T,
 	testPost := createTestPost(ctx, t, postP, testCollection.ID)
 	defer deleteTestPost(ctx, t, postP, testPost)
 
-	empty, err := testApi.GetRecordsForPost(ctx, testPost.ID)
+	empty, err := testApi.GetRecordsForPost(ctx, testPost.ID, 100)
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(empty.Records), "Expected empty slice, got %#v", empty)
 
@@ -98,7 +98,7 @@ func doRecordsTests(t *testing.T,
 	assert.Equal(t, model.ErrBadReference, err.(*api.Error).Errs()[0].Code, "err.(*api.Error).Errs()[0]: %#v", err.(*api.Error).Errs()[0])
 
 	// GET /records should now return the created Record
-	ret, err := testApi.GetRecordsForPost(ctx, testPost.ID)
+	ret, err := testApi.GetRecordsForPost(ctx, testPost.ID, 100)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(ret.Records))
 	assert.Equal(t, *created, ret.Records[0])

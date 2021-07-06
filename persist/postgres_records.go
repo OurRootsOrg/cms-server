@@ -3,6 +3,7 @@ package persist
 import (
 	"context"
 	"database/sql"
+	"math"
 	"strconv"
 
 	"github.com/ourrootsorg/cms-server/utils"
@@ -11,14 +12,17 @@ import (
 	"github.com/ourrootsorg/cms-server/model"
 )
 
-// SelectRecordsForPost selects all records for a post
-func (p PostgresPersister) SelectRecordsForPost(ctx context.Context, postID uint32) ([]model.Record, error) {
+// SelectRecordsForPost selects limit records for a post
+func (p PostgresPersister) SelectRecordsForPost(ctx context.Context, postID uint32, limit int) ([]model.Record, error) {
 	societyID, err := utils.GetSocietyIDFromContext(ctx)
 	if err != nil {
 		return nil, err
 	}
+	if limit == 0 {
+		limit = math.MaxInt32
+	}
 	rows, err := p.db.QueryContext(ctx, "SELECT id, post_id, body, ix_hash, insert_time, last_update_time FROM record "+
-		"WHERE society_id=$1 AND post_id=$2", societyID, postID)
+		"WHERE society_id=$1 AND post_id=$2 LIMIT $3", societyID, postID, limit)
 	if err != nil {
 		return nil, translateError(err, &postID, nil, "")
 	}

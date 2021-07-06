@@ -41,7 +41,8 @@ func (p Persister) SelectRecordsByID(ctx context.Context, ids []uint32, enforceC
 
 // SelectRecordsForPost selects all records for a Post
 // This is not currently part of the persist interface, but it's here when we need it
-func (p Persister) SelectRecordsForPost(ctx context.Context, postID uint32) ([]model.Record, error) {
+func (p Persister) SelectRecordsForPost(ctx context.Context, postID uint32, limit int) ([]model.Record, error) {
+	// TODO limit number of records
 	qi := &dynamodb.QueryInput{
 		TableName:              p.tableName,
 		IndexName:              aws.String(gsiName),
@@ -330,7 +331,7 @@ func (p Persister) DeleteRecord(ctx context.Context, id uint32) error {
 
 // DeleteRecordsForPost deletes the Records associated with a Post
 func (p Persister) DeleteRecordsForPost(ctx context.Context, postID uint32) error {
-	records, err := p.SelectRecordsForPost(ctx, postID)
+	records, err := p.SelectRecordsForPost(ctx, postID, 0)
 	if err != nil {
 		return err
 	}

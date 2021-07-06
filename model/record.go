@@ -13,7 +13,7 @@ import (
 
 // RecordPersister defines methods needed to persist records
 type RecordPersister interface {
-	SelectRecordsForPost(ctx context.Context, postID uint32) ([]Record, error)
+	SelectRecordsForPost(ctx context.Context, postID uint32, limit int) ([]Record, error)
 	SelectRecordsByID(ctx context.Context, ids []uint32, enforceContextSocietyMatch bool) ([]Record, error)
 	SelectOneRecord(ctx context.Context, id uint32) (*Record, error)
 	InsertRecord(ctx context.Context, in RecordIn) (*Record, error)

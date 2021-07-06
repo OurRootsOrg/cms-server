@@ -84,7 +84,7 @@ func (a *ApiMock) RetrieveUser(ctx context.Context, provider OIDCProvider, token
 	return a.Result.(*model.User), false, a.Errors
 }
 
-func (a *ApiMock) GetRecordsForPost(ctx context.Context, postid uint32) (*RecordsResult, error) {
+func (a *ApiMock) GetRecordsForPost(ctx context.Context, postid uint32, limit int) (*RecordsResult, error) {
 	return a.Result.(*RecordsResult), a.Errors
 }
 func (a *ApiMock) GetRecordsByID(ctx context.Context, ids []uint32, enforceContextSocietyMatch bool) ([]model.Record, error) {

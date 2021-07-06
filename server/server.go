@@ -229,7 +229,8 @@ func main() {
 			log.Printf("[DEBUG] Start %s %s, request: %#v", req.HTTPMethod, req.Path, req)
 			// If no name is provided in the HTTP request body, throw an error
 			resp, err := adapter.ProxyWithContext(ctx, req)
-			log.Printf("[DEBUG] End %s %s status %d, response: %#v", req.HTTPMethod, req.Path, resp.StatusCode, resp)
+			//log.Printf("[DEBUG] End %s %s status %d, response: %#v", req.HTTPMethod, req.Path, resp.StatusCode, resp)
+			log.Printf("[DEBUG] End %s %s status %d response length %d", req.HTTPMethod, req.Path, resp.StatusCode, len(resp.Body))
 			return resp, err
 		})
 		log.Fatal("Lambda exiting...")

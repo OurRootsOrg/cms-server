@@ -97,7 +97,7 @@ func TestRecordsWriter(t *testing.T) {
 	assert.Equal(t, model.RecordsStatusDefault, post.RecordsStatus, "Expected records status to be empty, got %s", post.RecordsStatus)
 
 	// read records for post
-	records, errors := testAPI.GetRecordsForPost(ctx, testPost.ID)
+	records, errors := testAPI.GetRecordsForPost(ctx, testPost.ID, 100)
 	assert.Nil(t, errors)
 	assert.Equal(t, 3, len(records.Records), "Expected three records, got %#v", records)
 
@@ -141,7 +141,7 @@ func TestRecordsWriter(t *testing.T) {
 	assert.Nil(t, errors)
 
 	// records should be removed
-	records, errors = testAPI.GetRecordsForPost(ctx, testPost.ID)
+	records, errors = testAPI.GetRecordsForPost(ctx, testPost.ID, 100)
 	assert.Nil(t, errors)
 	assert.Equal(t, 0, len(records.Records), "Expected empty slice, got %#v", records)
 }

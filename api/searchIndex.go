@@ -21,7 +21,7 @@ import (
 	"github.com/ourrootsorg/cms-server/utils"
 )
 
-const numWorkers = 5
+const numWorkers = 2
 
 type GivenSurname struct {
 	given   string
@@ -211,7 +211,7 @@ func (api API) IndexPost(ctx context.Context, post *model.Post) error {
 		return errs
 	}
 	// read records for post
-	records, errs := api.GetRecordsForPost(ctx, post.ID)
+	records, errs := api.GetRecordsForPost(ctx, post.ID, 0)
 	if errs != nil {
 		log.Printf("[ERROR] GetRecordsForPost %v\n", errs)
 		return errs
@@ -435,7 +435,7 @@ func indexRecord(record *model.Record, householdRecords []*model.Record, society
 					if err != nil {
 						log.Printf("[ERROR]: %s", err)
 					} else {
-						log.Printf("[ERROR]: %s: %s", res.Error.Type, res.Error.Reason)
+						log.Printf("[ERROR]: %s: %s %#v", res.Error.Type, res.Error.Type, res.Error.Cause)
 					}
 				},
 			},

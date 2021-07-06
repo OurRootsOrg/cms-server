@@ -50,7 +50,7 @@ type LocalAPI interface {
 	GetContent(ctx context.Context, key string) ([]byte, error)
 	GetContentRequest(ctx context.Context, key string) (*ContentResult, error)
 	RetrieveUser(ctx context.Context, provider OIDCProvider, token *oidc.IDToken, rawToken string) (*model.User, bool, error)
-	GetRecordsForPost(ctx context.Context, postid uint32) (*RecordsResult, error)
+	GetRecordsForPost(ctx context.Context, postid uint32, limit int) (*RecordsResult, error)
 	GetRecordsByID(ctx context.Context, ids []uint32, enforceContextSocietyMatch bool) ([]model.Record, error)
 	GetRecord(ctx context.Context, includeDetails bool, id uint32) (*RecordDetail, error)
 	AddRecord(ctx context.Context, in model.RecordIn) (*model.Record, error)

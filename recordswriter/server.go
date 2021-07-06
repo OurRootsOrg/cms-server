@@ -251,7 +251,7 @@ func loadRecords(ctx context.Context, ap *api.API, post *model.Post) error {
 					}
 				}
 
-				log.Printf("[DEBUG] Processing data: %#v", msg.data)
+				//log.Printf("[DEBUG] Processing data: %#v", msg.data)
 				record, errs := ap.AddRecord(ctx, model.RecordIn{
 					RecordBody: model.RecordBody{
 						Data: msg.data,

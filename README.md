@@ -81,4 +81,6 @@ daitch_mokotoff, caverphone1, caverphone2, cologne, koelnerphonetik, and haaseph
 
 ## Deploying
 
+First, see "Building" above
+
 See deploy/awslambda/README.md to deploy the server and client, and search-client/README.md to deploy the search client
