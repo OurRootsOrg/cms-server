@@ -456,10 +456,12 @@ func (api API) DeletePost(ctx context.Context, id uint32) error {
 		log.Printf("[ERROR] reading post %d error=%v", id, err)
 		return NewError(err)
 	}
-	// allow deleting posts only when post is draft or error, and when records and images are default or error
+	// allow deleting posts only when post is draft or error, and when records and images are default or error,
+	// or post has been stuck in loading status for awhile
+	oldPost := time.Since(post.LastUpdateTime).Seconds() > 1800
 	if (post.PostStatus != model.PostStatusDraft && post.PostStatus != model.PostStatusError) ||
-		(post.RecordsStatus != model.RecordsStatusDefault && post.RecordsStatus != model.RecordsStatusError) ||
-		(post.ImagesStatus != model.ImagesStatusDefault && post.ImagesStatus != model.ImagesStatusError) {
+		(post.RecordsStatus != model.RecordsStatusDefault && post.RecordsStatus != model.RecordsStatusError && !(oldPost && post.RecordsStatus == model.RecordsStatusLoading)) ||
+		(post.ImagesStatus != model.ImagesStatusDefault && post.ImagesStatus != model.ImagesStatusError && !(oldPost && post.ImagesStatus == model.ImagesStatusLoading)) {
 		return NewError(fmt.Errorf("post %d status must be Draft or Error, and records and images statuses must be empty or Error; "+
 			"post status is %s, records status is %s, and images status is %s", post.ID, post.PostStatus, post.RecordsStatus, post.ImagesStatus))
 	}
