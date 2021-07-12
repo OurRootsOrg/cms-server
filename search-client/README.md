@@ -27,6 +27,8 @@ See [Configuration Reference](https://cli.vuejs.org/config/).
 
 ### Deploying the search client as a Wordpress plugin
 
+0. Update version in ourroots.php
+
 1. Run `npm run build` to build this project. This stores its output in a dist subdirectory of the project root.
 
 2. Copy the files from dist into the plugin directory

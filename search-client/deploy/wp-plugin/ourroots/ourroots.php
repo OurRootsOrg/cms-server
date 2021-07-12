@@ -4,7 +4,7 @@
  * Plugin Name: OurRootsDatabase
  * Description: Databases for genealogy societies
  * Author: OurRoots.org
- * Version: 1.0.6
+ * Version: 1.0.7
  * Text Domain: jwto
  */
 
