@@ -46,13 +46,7 @@
     <v-col cols="12" :md="searchPerformed ? 4 : 12" order-md="first" class="mt-7">
       <!--search result facets-->
       <v-row no-gutters class="ma-0 pa-0">
-        <v-col
-          cols="12"
-          :md="searchPerformed ? 12 : 3"
-          :order="searchPerformed ? 'first' : 'last'"
-          :offset-md="searchPerformed ? 0 : 1"
-          class="mt-4"
-        >
+        <v-col cols="12" :md="searchPerformed ? 12 : 3" class="mt-4">
           <v-row no-gutters class="mt-0 mb-1">
             <h4>Categories</h4>
           </v-row>
@@ -184,7 +178,7 @@
           </v-row>
         </v-col>
         <!--search form-->
-        <v-col cols="12" :md="searchPerformed ? 12 : 8" :order="searchPerformed ? 'last' : 'first'" class="search pa-0">
+        <v-col cols="12" :md="searchPerformed ? 12 : 8" :offset-md="searchPerformed ? 0 : 1" class="search pa-0">
           <v-divider v-if="searchPerformed" class="my-5"></v-divider>
           <h1 v-if="!searchPerformed">Search</h1>
           <h3 v-if="searchPerformed" class="pa-0 ma-0">Refine your search</h3>
@@ -243,7 +237,12 @@
                   ></v-text-field>
                 </v-row>
                 <v-row no-gutters class="mt-n5" v-if="query.given">
-                  <v-menu offset-x :close-on-content-click="false" v-model="givenOptionsMenu">
+                  <v-menu
+                    offset-x
+                    :close-on-content-click="false"
+                    v-model="givenOptionsMenu"
+                    :nudge-top="autocompleteOffset"
+                  >
                     <template v-slot:activator="{ on, attrs }">
                       <v-btn
                         color="primary"
@@ -296,7 +295,12 @@
                   <v-text-field dense outlined v-model="query.surname" type="text" placeholder="Surname"></v-text-field>
                 </v-row>
                 <v-row no-gutters class="mt-n5 mb-1" v-if="query.surname">
-                  <v-menu offset-x :close-on-content-click="false" v-model="surnameOptionsMenu">
+                  <v-menu
+                    offset-x
+                    :close-on-content-click="false"
+                    v-model="surnameOptionsMenu"
+                    :nudge-top="autocompleteOffset"
+                  >
                     <template v-slot:activator="{ on, attrs }">
                       <v-btn
                         color="primary"
@@ -365,10 +369,10 @@
                     <v-checkbox
                       v-model="query.anyPlaceFuzziness"
                       :value="1"
-                      class="mt-0 mr-1 ml-n1 primary--text shrink smallCheckbox"
+                      class="mt-0 ml-n1 primary--text shrink smallCheckbox"
                     >
                     </v-checkbox>
-                    <span class="mt-2 ml-n3 primary--text">Exact</span>
+                    <span class="mt-2 primary--text">Exact</span>
                   </v-col>
                 </v-row>
               </v-col>
@@ -385,7 +389,12 @@
                   ></v-text-field>
                 </v-row>
                 <v-row no-gutters class="mt-n5" v-if="query.birthDate">
-                  <v-menu offset-x :close-on-content-click="true" v-model="birthOptionsMenu">
+                  <v-menu
+                    offset-x
+                    :close-on-content-click="true"
+                    v-model="birthOptionsMenu"
+                    :nudge-top="autocompleteOffset"
+                  >
                     <template v-slot:activator="{ on, attrs }">
                       <v-btn color="primary" text x-small v-bind="attrs" v-on="on" class="pa-0 mt-0">
                         <v-icon v-if="query.birthDateFuzziness === 0" small class="mr-1"
@@ -488,7 +497,12 @@
                   ></v-text-field>
                 </v-col>
                 <v-col :class="!searchPerformed ? 'ma-0 pa-0 mt-1' : 'ma-0 pa-0 mt-2'" v-if="query.birthDate">
-                  <v-menu offset-x :close-on-content-click="true" v-model="birthOptionsMenu2">
+                  <v-menu
+                    offset-x
+                    :close-on-content-click="true"
+                    v-model="birthOptionsMenu2"
+                    :nudge-top="autocompleteOffset"
+                  >
                     <template v-slot:activator="{ on, attrs }">
                       <v-btn
                         color="primary"
@@ -552,13 +566,13 @@
                   <v-checkbox
                     v-model="query.birthPlaceFuzziness"
                     :value="1"
-                    class="shrink mr-2 mt-0 smallCheckbox"
+                    class="shrink mt-0 smallCheckbox"
                     dense
                     primary
                     hide-details="true"
                   >
                   </v-checkbox
-                  ><span class="mt-2 ml-n3 primary--text">Exact</span>
+                  ><span class="mt-2 primary--text">Exact</span>
                 </v-col>
               </v-col>
               <v-col
@@ -591,7 +605,12 @@
                   ></v-text-field>
                 </v-col>
                 <v-col :class="!searchPerformed ? 'ma-0 pa-0 mt-1' : 'ma-0 pa-0 mt-2'" v-if="query.marriageDate">
-                  <v-menu offset-x :close-on-content-click="true" v-model="marriageOptionsMenu2">
+                  <v-menu
+                    offset-x
+                    :close-on-content-click="true"
+                    v-model="marriageOptionsMenu2"
+                    :nudge-top="autocompleteOffset"
+                  >
                     <template v-slot:activator="{ on, attrs }">
                       <v-btn
                         color="primary"
@@ -655,13 +674,13 @@
                   <v-checkbox
                     v-model="query.marriagePlaceFuzziness"
                     :value="1"
-                    class="shrink mr-2 mt-0 smallCheckbox"
+                    class="shrink mt-0 smallCheckbox"
                     dense
                     primary
                     hide-details="true"
                   >
                   </v-checkbox
-                  ><span class="mt-2 ml-n3 primary--text">Exact</span>
+                  ><span class="mt-2 primary--text">Exact</span>
                 </v-col>
               </v-col>
               <v-col
@@ -698,7 +717,12 @@
                   ></v-text-field>
                 </v-col>
                 <v-col :class="!searchPerformed ? 'ma-0 pa-0 mt-1' : 'ma-0 pa-0 mt-2'" v-if="query.deathDate">
-                  <v-menu offset-x :close-on-content-click="true" v-model="deathOptionsMenu2">
+                  <v-menu
+                    offset-x
+                    :close-on-content-click="true"
+                    v-model="deathOptionsMenu2"
+                    :nudge-top="autocompleteOffset"
+                  >
                     <template v-slot:activator="{ on, attrs }">
                       <v-btn
                         color="primary"
@@ -762,13 +786,13 @@
                   <v-checkbox
                     v-model="query.deathPlaceFuzziness"
                     :value="1"
-                    class="shrink mr-2 mt-0 smallCheckbox"
+                    class="shrink mt-0 smallCheckbox"
                     dense
                     primary
                     hide-details="true"
                   >
                   </v-checkbox
-                  ><span class="mt-2 ml-n3 primary--text">Exact</span>
+                  ><span class="mt-2 primary--text">Exact</span>
                 </v-col>
               </v-col>
               <v-col
@@ -801,7 +825,12 @@
                   ></v-text-field>
                 </v-col>
                 <v-col :class="!searchPerformed ? 'ma-0 pa-0 mt-1' : 'ma-0 pa-0 mt-2'" v-if="query.residenceDate">
-                  <v-menu offset-x :close-on-content-click="true" v-model="residenceOptionsMenu2">
+                  <v-menu
+                    offset-x
+                    :close-on-content-click="true"
+                    v-model="residenceOptionsMenu2"
+                    :nudge-top="autocompleteOffset"
+                  >
                     <template v-slot:activator="{ on, attrs }">
                       <v-btn
                         color="primary"
@@ -865,13 +894,13 @@
                   <v-checkbox
                     v-model="query.residencePlaceFuzziness"
                     :value="1"
-                    class="shrink mr-2 mt-0 smallCheckbox"
+                    class="shrink mt-0 smallCheckbox"
                     dense
                     primary
                     hide-details="true"
                   >
                   </v-checkbox
-                  ><span class="mt-2 ml-n3 primary--text">Exact</span>
+                  ><span class="mt-2 primary--text">Exact</span>
                 </v-col>
               </v-col>
               <v-col
@@ -912,7 +941,12 @@
                   ></v-text-field>
                 </v-col>
                 <v-col :class="!searchPerformed ? 'ma-0 pa-0 mt-1' : 'ma-0 pa-0 mt-2'" v-if="query.anyDate">
-                  <v-menu offset-x :close-on-content-click="true" v-model="anyOptionsMenu2">
+                  <v-menu
+                    offset-x
+                    :close-on-content-click="true"
+                    v-model="anyOptionsMenu2"
+                    :nudge-top="autocompleteOffset"
+                  >
                     <template v-slot:activator="{ on, attrs }">
                       <v-btn
                         color="primary"
@@ -977,13 +1011,13 @@
                   <v-checkbox
                     v-model="query.anyPlaceFuzziness"
                     :value="1"
-                    class="shrink mr-2 mt-0 smallCheckbox"
+                    class="shrink mt-0 smallCheckbox"
                     dense
                     primary
                     hide-details="true"
                   >
                   </v-checkbox
-                  ><span class="mt-2 ml-n3 primary--text">Exact</span>
+                  ><span class="mt-2 primary--text">Exact</span>
                 </v-col>
               </v-col>
               <v-col
@@ -1065,13 +1099,14 @@
                     <v-checkbox
                       v-model="fuzziness.fatherGiven"
                       :value="1"
-                      class="shrink mr-2 mt-0 smallCheckbox"
+                      class="shrink mt-0 smallCheckbox"
                       dense
                       primary
                       hide-details="true"
+                      ripple="false"
                     >
                     </v-checkbox
-                    ><span class="mt-2 ml-n3 primary--text">Exact</span>
+                    ><span class="mt-2 primary--text">Exact</span>
                   </v-col>
                 </v-row>
               </v-col>
@@ -1096,13 +1131,13 @@
                   <v-checkbox
                     v-model="fuzziness.fatherSurname"
                     :value="1"
-                    class="shrink mr-2 mt-0 smallCheckbox"
+                    class="shrink mt-0 smallCheckbox"
                     dense
                     primary
                     hide-details="true"
                   >
                   </v-checkbox
-                  ><span v-show="query.fatherSurname" class="mt-2 ml-n3 primary--text">Exact</span>
+                  ><span v-show="query.fatherSurname" class="mt-2 primary--text">Exact</span>
                 </v-col>
               </v-col>
               <v-col
@@ -1144,13 +1179,13 @@
                     <v-checkbox
                       v-model="fuzziness.motherGiven"
                       :value="1"
-                      class="shrink mr-2 mt-0 smallCheckbox"
+                      class="shrink mt-0 smallCheckbox"
                       dense
                       primary
                       hide-details="true"
                     >
                     </v-checkbox
-                    ><span class="mt-2 ml-n3 primary--text">Exact</span>
+                    ><span class="mt-2 primary--text">Exact</span>
                   </v-col>
                 </v-row>
               </v-col>
@@ -1175,13 +1210,13 @@
                   <v-checkbox
                     v-model="fuzziness.motherSurname"
                     :value="1"
-                    class="shrink mr-2 mt-0 smallCheckbox"
+                    class="shrink mt-0 smallCheckbox"
                     dense
                     primary
                     hide-details="true"
                   >
                   </v-checkbox
-                  ><span class="mt-2 ml-n3 primary--text">Exact</span>
+                  ><span class="mt-2 primary--text">Exact</span>
                 </v-col>
               </v-col>
               <v-col
@@ -1223,13 +1258,13 @@
                     <v-checkbox
                       v-model="fuzziness.spouseGiven"
                       :value="1"
-                      class="shrink mr-2 mt-0 smallCheckbox"
+                      class="shrink mt-0 smallCheckbox"
                       dense
                       primary
                       hide-details="true"
                     >
                     </v-checkbox
-                    ><span class="mt-2 ml-n3 primary--text">Exact</span>
+                    ><span class="mt-2 primary--text">Exact</span>
                   </v-col>
                 </v-row>
               </v-col>
@@ -1254,13 +1289,13 @@
                   <v-checkbox
                     v-model="fuzziness.spouseSurname"
                     :value="1"
-                    class="shrink mr-2 mt-0 smallCheckbox"
+                    class="shrink mt-0 smallCheckbox"
                     dense
                     primary
                     hide-details="true"
                   >
                   </v-checkbox
-                  ><span class="mt-2 ml-n3 primary--text">Exact</span>
+                  ><span class="mt-2 primary--text">Exact</span>
                 </v-col>
               </v-col>
               <v-col
@@ -1302,13 +1337,13 @@
                     <v-checkbox
                       v-model="fuzziness.otherGiven"
                       :value="1"
-                      class="shrink mr-2 mt-0 smallCheckbox"
+                      class="shrink mt-0 smallCheckbox"
                       dense
                       primary
                       hide-details="true"
                     >
                     </v-checkbox
-                    ><span class="mt-2 ml-n3 primary--text">Exact</span>
+                    ><span class="mt-2 primary--text">Exact</span>
                   </v-col>
                 </v-row>
               </v-col>
@@ -1333,13 +1368,13 @@
                   <v-checkbox
                     v-model="fuzziness.otherSurname"
                     :value="1"
-                    class="shrink mr-2 mt-0 smallCheckbox"
+                    class="shrink mt-0 smallCheckbox"
                     dense
                     primary
                     hide-details="true"
                   >
                   </v-checkbox
-                  ><span class="mt-2 ml-n3 primary--text">Exact</span>
+                  ><span class="mt-2 primary--text">Exact</span>
                 </v-col>
               </v-col>
               <v-col
@@ -1389,13 +1424,13 @@
                 <v-checkbox
                   v-model="query.anyPlaceFuzziness"
                   :value="1"
-                  class="shrink mr-2 mt-0 smallCheckbox"
+                  class="shrink mt-0 smallCheckbox"
                   dense
                   primary
                   hide-details="true"
                 >
                 </v-checkbox
-                ><span class="mt-2 ml-n3 primary--text">Exact</span>
+                ><span class="mt-2 primary--text">Exact</span>
               </v-col>
             </v-row>
             <!--Keywords-->
@@ -1481,9 +1516,18 @@ export default {
   },
   mounted() {
     let mainHeader = document.getElementById("main-header");
+    let mainHeaderClientRect = null;
     if (mainHeader) {
+      mainHeaderClientRect = mainHeader.getBoundingClientRect();
       this.autocompleteOffset = Math.round(mainHeader.getBoundingClientRect().height);
     }
+    console.log("mainHeader", mainHeader, mainHeaderClientRect);
+    let app = document.getElementById("app");
+    let appClientRect = null;
+    if (app) {
+      appClientRect = app.getBoundingClientRect();
+    }
+    console.log("app", app, appClientRect);
   },
   created() {
     console.log("created", window.ourroots);
