@@ -62,7 +62,7 @@
         </v-row>
         <v-row v-for="(lv, $ix) in search.searchResult.record" :key="$ix">
           <v-col cols="3" class="d-flex justify-right flex-column recordDetailRow">{{ lv.label }}:</v-col>
-          <v-col cols="9" class="recordDetailRow" v-html="linkify(lv.value)"></v-col>
+          <v-col cols="9" class="recordDetailRow" v-html="sanitize(lv.value)"></v-col>
         </v-row>
       </v-col>
     </v-row>
@@ -86,7 +86,7 @@
       <v-col cols="12">
         <v-card class="pa-5">
           <h4 class="recordDetailSectionHead mb-3">How to cite this record</h4>
-          <div>{{ search.searchResult.citation }}</div>
+          <div v-html="sanitize(search.searchResult.citation)"></div>
         </v-card>
       </v-col>
     </v-row>
@@ -163,10 +163,8 @@ export default {
     ...mapState(["search"])
   },
   methods: {
-    linkify(value) {
-      value = this.$sanitize(value);
-      value = value.replace(/(https?:\/\/[^ ]+)/gi, '<a href="$1">$1</a>');
-      return value;
+    sanitize(value) {
+      return this.$sanitize(value);
     },
     getRecordValue(record, header) {
       let lv = record.find(lv => lv.label === header);

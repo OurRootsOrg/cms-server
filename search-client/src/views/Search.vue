@@ -59,6 +59,7 @@
                     x-small
                     icon
                     class="grey--text pr-2"
+                    v-if="!defaultCategory"
                   >
                     <v-icon>mdi-chevron-down</v-icon>
                   </v-btn>
@@ -72,6 +73,7 @@
                     x-small
                     icon
                     class="grey--text pr-2"
+                    v-if="!defaultCollection"
                   >
                     <v-icon>mdi-chevron-down</v-icon>
                   </v-btn>
@@ -1486,7 +1488,20 @@ function decodeFuzziness(f) {
   return result;
 }
 
-const defaultQuery = { size: 0, collectionPlace1Facet: true, categoryFacet: true };
+const defaultCategory =
+  typeof window.ourroots.category === "string" && window.ourroots.category.length > 0 ? window.ourroots.category : "";
+const defaultCollection =
+  typeof window.ourroots.collection === "string" && window.ourroots.collection.length > 0
+    ? window.ourroots.collection
+    : "";
+const defaultQuery = {
+  size: 0,
+  collectionPlace1Facet: true,
+  category: defaultCategory,
+  collection: defaultCollection,
+  categoryFacet: !defaultCategory,
+  collectionFacet: !!defaultCategory && !defaultCollection
+};
 
 export default {
   components: {
@@ -1515,19 +1530,20 @@ export default {
       });
   },
   mounted() {
-    let mainHeader = document.getElementById("main-header");
-    let mainHeaderClientRect = null;
-    if (mainHeader) {
-      mainHeaderClientRect = mainHeader.getBoundingClientRect();
-      this.autocompleteOffset = Math.round(mainHeader.getBoundingClientRect().height);
-    }
-    console.log("mainHeader", mainHeader, mainHeaderClientRect);
     let app = document.getElementById("app");
     let appClientRect = null;
     if (app) {
       appClientRect = app.getBoundingClientRect();
+      this.autocompleteOffset = Math.round(appClientRect.top + window.scrollY);
     }
-    console.log("app", app, appClientRect);
+    console.log(
+      "appClientRect",
+      appClientRect,
+      "window.scrollY",
+      window.scrollY,
+      "autocompleteOffset",
+      this.autocompleteOffset
+    );
   },
   created() {
     console.log("created", window.ourroots);
@@ -1559,6 +1575,8 @@ export default {
   },
   data() {
     return {
+      defaultCategory: defaultCategory,
+      defaultCollection: defaultCollection,
       autocompleteOffset: 0,
       editSearch: false,
       page: 1,
@@ -1578,8 +1596,8 @@ export default {
       },
       searchPerformed: false,
       query: {
-        category: "",
-        collection: "",
+        category: defaultCategory,
+        collection: defaultCollection,
         collectionPlace1: "",
         collectionPlace2: "",
         collectionPlace3: "",

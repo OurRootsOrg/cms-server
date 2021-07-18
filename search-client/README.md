@@ -45,7 +45,7 @@ See [Configuration Reference](https://cli.vuejs.org/config/).
     zip -r ourroots ourroots
     cd ../..
     ```
-4. Upload the zip file to your wordpress installation
+4. Upload deploy/wp-plugin/ourroots.zip to your wordpress installation
 
 ### Deploying the search client as a stand-alone application
 

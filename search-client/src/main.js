@@ -9,8 +9,8 @@ import VueSanitize from "vue-sanitize";
 
 Vue.use(VueColumnsResizableVuetify);
 let defaultOptions = {
-  allowedTags: ["li", "ol", "p", "ul", "b", "br", "em", "i", "small", "strong", "sub", "sup", "u"],
-  allowedAttributes: {}
+  allowedTags: ["a", "li", "ol", "p", "ul", "b", "br", "em", "i", "small", "strong", "sub", "sup", "u"],
+  allowedAttributes: { a: ["href"] }
 };
 Vue.use(VueSanitize, defaultOptions);
 

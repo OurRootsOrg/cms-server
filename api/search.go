@@ -356,11 +356,11 @@ func (api API) Search(ctx context.Context, req *SearchRequest) (*model.SearchRes
 	if res.IsError() {
 		var e ESErrorResponse
 		if err := json.NewDecoder(res.Body).Decode(&e); err != nil {
-			log.Printf("Error parsing the response body: %v", err)
+			log.Printf("Search Error parsing the error response body: %v", err)
 			return nil, NewError(err)
 		} else {
 			// Print the response status and error information.
-			msg := fmt.Sprintf("[%s] %s: %s", res.Status(), e.Error.Type, e.Error.Reason)
+			msg := fmt.Sprintf("[%s] Search %s: %s", res.Status(), e.Error.Type, e.Error.Reason)
 			log.Println(msg)
 			return nil, NewError(errors.New(msg))
 		}
@@ -369,13 +369,13 @@ func (api API) Search(ctx context.Context, req *SearchRequest) (*model.SearchRes
 	var buf2 bytes.Buffer
 	tee := io.TeeReader(res.Body, &buf2)
 	s, _ := ioutil.ReadAll(tee)
-	log.Printf("[DEBUG] %s\n", s)
+	log.Printf("[DEBUG] search response %s\n", s)
 	r2 := bytes.NewReader(buf2.Bytes())
 
 	// get hit datas
 	var r ESSearchResponse
 	if err := json.NewDecoder(r2).Decode(&r); err != nil {
-		log.Printf("Error parsing the response body: %s\n", err)
+		log.Printf("[DEBUG] Search Error parsing the search response body: %s\n", err)
 		return nil, NewError(err)
 	}
 	var hitDatas []HitData
@@ -384,10 +384,12 @@ func (api API) Search(ctx context.Context, req *SearchRequest) (*model.SearchRes
 	for _, hit := range r.Hits.Hits {
 		hitData, err := getHitData(hit)
 		if err != nil {
+			log.Printf("[DEBUG] Search.getHitData %v\n", err)
 			return nil, NewError(err)
 		}
 		if hitData.SocietyID != societyID { // shouldn't be necessary, but just to be sure
 			err = fmt.Errorf("search result SocietyID %d doesn't match context society ID %d", hitData.SocietyID, societyID)
+			log.Printf("[DEBUG] %v\n", err)
 			return nil, NewError(err)
 		}
 		hitDatas = append(hitDatas, *hitData)
@@ -407,10 +409,12 @@ func (api API) Search(ctx context.Context, req *SearchRequest) (*model.SearchRes
 	// read records and collections
 	records, errs := api.GetRecordsByID(ctx, recordIDs, false)
 	if errs != nil {
+		log.Printf("[DEBUG] Search.GetRecordsByID %v\n", errs)
 		return nil, errs
 	}
 	collections, errs := api.GetCollectionsByID(ctx, collectionIDs, false)
 	if errs != nil {
+		log.Printf("[DEBUG] Search.GetCollectionsByID %v\n", errs)
 		return nil, errs
 	}
 
@@ -428,8 +432,11 @@ func (api API) Search(ctx context.Context, req *SearchRequest) (*model.SearchRes
 			}
 		}
 		if !found {
-			msg := fmt.Sprintf("[ERROR] record %d not found\n", hitData.RecordID)
-			return nil, NewError(errors.New(msg))
+			msg := fmt.Sprintf("[DEBUG] Search record %d not found\n", hitData.RecordID)
+			log.Printf("%s\n", msg)
+			// nothing we can do about this
+			// return nil, NewError(errors.New(msg))
+			continue
 		}
 
 		// get collection
@@ -443,8 +450,11 @@ func (api API) Search(ctx context.Context, req *SearchRequest) (*model.SearchRes
 			}
 		}
 		if !found {
-			msg := fmt.Sprintf("[ERROR] collection %d not found\n", hitData.CollectionID)
-			return nil, NewError(errors.New(msg))
+			msg := fmt.Sprintf("[ERROR] Search collection %d not found\n", hitData.CollectionID)
+			log.Printf("%s\n", msg)
+			// nothing we can do about this
+			// return nil, NewError(errors.New(msg))
+			continue
 		}
 
 		// mask details on private records when the user is not logged in

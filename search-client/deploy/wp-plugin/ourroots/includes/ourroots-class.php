@@ -40,6 +40,7 @@ if(!class_exists('OURROOTS')){
         	$attributes = shortcode_atts( array(
 		        'fields' => '',
 		        'category' => '',
+		        'collection' => '',
 		    ), $atts );
 
         	$jwto_secret = get_option('jwto_secret');
@@ -76,6 +77,7 @@ if(!class_exists('OURROOTS')){
         		'jwt' => $token,
         		'fields' => $attributes['fields'],
         		'category' => $attributes['category'],
+        		'collection' => $attributes['collection'],
         		'societyId' => $society_id,
         		'images_directory' => OURROOTS_URL . '/',
         	);

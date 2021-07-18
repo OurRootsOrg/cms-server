@@ -10,7 +10,7 @@
         <v-row>
           <v-col>
             <div v-for="(label, $ix) in records.record.labels.filter(l => l.label)" :key="$ix">
-              {{ label.label }}: {{ getRecordValue(records.record, label.header) }}
+              {{ label.label }}: <span v-html="sanitize(getRecordValue(records.record, label.header))"></span>
             </div>
             <h4 v-if="records.record.labels.filter(l => !l.label).length > 0" class="omitted-labels">
               Omitted from search results page
@@ -22,7 +22,7 @@
               </v-tooltip>
             </h4>
             <div v-for="label in records.record.labels.filter(l => !l.label)" :key="label.header">
-              {{ label.header }}: {{ getRecordValue(records.record, label.header) }}
+              {{ label.header }}: <span v-html="sanitize(getRecordValue(records.record, label.header))"></span>
             </div>
           </v-col>
         </v-row>
@@ -54,7 +54,7 @@
     <v-row v-if="records.record.citation">
       <v-col>
         <h4>Citation</h4>
-        <div>{{ records.record.citation }}</div>
+        <div v-html="sanitize(records.record.citation)"></div>
       </v-col>
     </v-row>
     <v-row v-if="records.record.household && records.record.household.length > 0">
@@ -68,9 +68,11 @@
           </thead>
           <tbody>
             <tr v-for="(record, i) in records.record.household" :key="i">
-              <td v-for="(label, j) in records.record.labels.filter(l => l.label)" :key="j">
-                {{ getRecordValue(record, label.header) }}
-              </td>
+              <td
+                v-for="(label, j) in records.record.labels.filter(l => l.label)"
+                :key="j"
+                v-html="sanitize(getRecordValue(record, label.header))"
+              ></td>
             </tr>
           </tbody>
         </table>
@@ -125,6 +127,9 @@ export default {
   },
   computed: mapState(["records"]),
   methods: {
+    sanitize(value) {
+      return this.$sanitize(value);
+    },
     getRecordValue(record, header) {
       return record.data[header] || "";
     }
