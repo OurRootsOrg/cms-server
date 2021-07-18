@@ -59,7 +59,8 @@ func (p Persister) SelectCollections(ctx context.Context) ([]model.Collection, e
 }
 
 // SelectCollectionsByID selects many collections from a slice of IDs
-func (p Persister) SelectCollectionsByID(ctx context.Context, ids []uint32) ([]model.Collection, error) {
+func (p Persister) SelectCollectionsByID(ctx context.Context, ids []uint32, enforceContextSocietyMatch bool) ([]model.Collection, error) {
+	// TODO implement enforce society context match
 	colls := make([]model.Collection, 0)
 	if len(ids) == 0 {
 		return colls, nil

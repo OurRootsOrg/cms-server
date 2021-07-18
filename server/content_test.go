@@ -18,12 +18,12 @@ func TestPostContentRequest(t *testing.T) {
 	r := app.NewRouter()
 
 	am.Result = &api.ContentResult{
-		Key:    "path/key",
-		PutURL: "https://s3.example.com/bucket/path/key",
+		Key:       "path/key",
+		SignedURL: "https://s3.example.com/bucket/path/key",
 	}
 	am.Errors = nil
 
-	request, _ := http.NewRequest("POST", "/content", strings.NewReader("{\"contentType\": \"text/csv\"}"))
+	request, _ := http.NewRequest("POST", "/societies/1/content", strings.NewReader("{\"contentType\": \"text/csv\"}"))
 	request.Header.Add("Content-Type", contentType)
 
 	response := httptest.NewRecorder()
@@ -39,5 +39,5 @@ func TestPostContentRequest(t *testing.T) {
 		t.Errorf("Error parsing JSON: %v", err)
 	}
 	assert.NotEmpty(t, result.Key)
-	assert.NotEmpty(t, result.PutURL)
+	assert.NotEmpty(t, result.SignedURL)
 }

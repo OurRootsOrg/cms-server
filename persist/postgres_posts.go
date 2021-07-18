@@ -5,12 +5,19 @@ import (
 	"database/sql"
 	"strconv"
 
+	"github.com/ourrootsorg/cms-server/utils"
+
 	"github.com/ourrootsorg/cms-server/model"
 )
 
 // SelectPosts selects all posts
 func (p PostgresPersister) SelectPosts(ctx context.Context) ([]model.Post, error) {
-	rows, err := p.db.QueryContext(ctx, "SELECT id, collection_id, body, insert_time, last_update_time FROM post")
+	societyID, err := utils.GetSocietyIDFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	rows, err := p.db.QueryContext(ctx, "SELECT id, collection_id, body, insert_time, last_update_time FROM post "+
+		"WHERE society_id=$1", societyID)
 	if err != nil {
 		return nil, translateError(err, nil, nil, "")
 	}
@@ -29,8 +36,13 @@ func (p PostgresPersister) SelectPosts(ctx context.Context) ([]model.Post, error
 
 // SelectOnePost selects a single post
 func (p PostgresPersister) SelectOnePost(ctx context.Context, id uint32) (*model.Post, error) {
+	societyID, err := utils.GetSocietyIDFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
 	var post model.Post
-	err := p.db.QueryRowContext(ctx, "SELECT id, collection_id, body, insert_time, last_update_time FROM post WHERE id=$1", id).Scan(
+	err = p.db.QueryRowContext(ctx, "SELECT id, collection_id, body, insert_time, last_update_time FROM post "+
+		"WHERE society_id=$1 AND id=$2", societyID, id).Scan(
 		&post.ID,
 		&post.Collection,
 		&post.PostBody,
@@ -45,12 +57,16 @@ func (p PostgresPersister) SelectOnePost(ctx context.Context, id uint32) (*model
 
 // InsertPost inserts a PostBody into the database and returns the inserted Post
 func (p PostgresPersister) InsertPost(ctx context.Context, in model.PostIn) (*model.Post, error) {
+	societyID, err := utils.GetSocietyIDFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
 	var post model.Post
-	err := p.db.QueryRowContext(ctx,
-		`INSERT INTO post (collection_id, body)
-		 VALUES ($1, $2)
+	err = p.db.QueryRowContext(ctx,
+		`INSERT INTO post (society_id, collection_id, body)
+		 VALUES ($1, $2, $3)
 		 RETURNING id, collection_id, body, insert_time, last_update_time`,
-		in.Collection, in.PostBody).
+		societyID, in.Collection, in.PostBody).
 		Scan(
 			&post.ID,
 			&post.Collection,
@@ -63,12 +79,16 @@ func (p PostgresPersister) InsertPost(ctx context.Context, in model.PostIn) (*mo
 
 // UpdatePost updates a Post in the database and returns the updated Post
 func (p PostgresPersister) UpdatePost(ctx context.Context, id uint32, in model.Post) (*model.Post, error) {
+	societyID, err := utils.GetSocietyIDFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
 	var post model.Post
-	err := p.db.QueryRowContext(ctx,
+	err = p.db.QueryRowContext(ctx,
 		`UPDATE post SET body = $1, collection_id = $2, last_update_time = CURRENT_TIMESTAMP
-		 WHERE id = $3 AND last_update_time = $4
+		 WHERE society_id=$3 AND id = $4 AND last_update_time = $5
 		 RETURNING id, collection_id, body, insert_time, last_update_time`,
-		in.PostBody, in.Collection, id, in.LastUpdateTime).
+		in.PostBody, in.Collection, societyID, id, in.LastUpdateTime).
 		Scan(
 			&post.ID,
 			&post.Collection,
@@ -90,6 +110,10 @@ func (p PostgresPersister) UpdatePost(ctx context.Context, id uint32, in model.P
 
 // DeletePost deletes a Post
 func (p PostgresPersister) DeletePost(ctx context.Context, id uint32) error {
-	_, err := p.db.ExecContext(ctx, "DELETE FROM post WHERE id = $1", id)
+	societyID, err := utils.GetSocietyIDFromContext(ctx)
+	if err != nil {
+		return err
+	}
+	_, err = p.db.ExecContext(ctx, "DELETE FROM post WHERE society_id=$1 AND id = $2", societyID, id)
 	return translateError(err, nil, nil, "")
 }

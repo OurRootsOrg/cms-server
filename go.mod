@@ -13,6 +13,7 @@ require (
 	github.com/awslabs/aws-lambda-go-api-proxy v0.8.0
 	github.com/cenkalti/backoff/v4 v4.0.2
 	github.com/codingconcepts/env v0.0.0-20190614135724-bb4545dff6a4
+	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/disintegration/imaging v1.6.2
 	github.com/elastic/go-elasticsearch/v7 v7.7.0
 	github.com/go-openapi/spec v0.19.7 // indirect

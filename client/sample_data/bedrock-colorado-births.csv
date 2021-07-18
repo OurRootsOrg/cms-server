@@ -1,7 +1,6 @@
-"Given","Surname","BirthDate","BirthPlace","ImageFilename","Attribution"
-"Fred","Flintstone","27 July 1930","Bedrock, Colorado","Fred_Flintstone.jpg","William Tung / CC BY-SA (https://creativecommons.org/licenses/by-sa/2.0)"
-"Pebbles","Flintstone","Dec 1959","Bedrock, Colorado"
-"Sibling","Flintstone","Jan 1965","Bedrock, Colorado"
-"Wilma","Slaghoople","ABT 1930","Bedrock, Colorado","Fred_and_Wilma.jpg","Ryan Quick from Greenbelt, MD, USA / CC BY (https://creativecommons.org/licenses/by/2.0)"
-"Barney","Rubble","BTW 1931 AND 1934","Bedrock, Colorado"
-"Betty Jean","McBricker","18 Jan 1932/3","Bedrock, Colorado"
+Given,Surname,BirthDate,BirthPlace,FatherGiven,FatherSurname,MotherGiven,MotherSurname,ImageFilename,Attribution
+Fred,Flintstone,27 July 1930,"Bedrock, Colorado",Papa,Flintstone,Mama,Sandstone,Fred_Flintstone.jpg,William Tung / CC BY-SA (https://creativecommons.org/licenses/by-sa/2.0)
+Pebbles,Flintstone,Dec 1959,"Bedrock, Colorado",Fred,Flintstone,Wilma,Slaghoople,,
+Wilma,Slaghoople,ABT 1930,"Bedrock, Colorado",Dad,Slaghoople,Mom,Cavedweller,Fred_and_Wilma.jpg,"Ryan Quick from Greenbelt, MD, USA / CC BY (https://creativecommons.org/licenses/by/2.0)"
+Barney,Rubble,BTW 1931 AND 1934,"Bedrock, Colorado",Papa,Rubble,Mama,Gravel,,
+Betty Jean,McBricker,18 Jan 1932/3,"Bedrock, Colorado",Dad,McBricker,Mom,Stonecutter,,

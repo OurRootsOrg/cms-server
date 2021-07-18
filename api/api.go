@@ -26,15 +26,6 @@ import (
 	"github.com/ourrootsorg/cms-server/model"
 )
 
-// TokenKey is the key to the token property in the request context
-type TokenKey string
-
-// TokenProperty is the name of the token property in the request context
-const TokenProperty TokenKey = "token"
-
-// UserProperty is the name of the token property in the request context
-const UserProperty TokenKey = "user"
-
 // LocalAPI is an interface used for mocking API
 type LocalAPI interface {
 	GetCategories(context.Context) (*CategoryResult, error)
@@ -44,7 +35,7 @@ type LocalAPI interface {
 	UpdateCategory(ctx context.Context, id uint32, in model.Category) (*model.Category, error)
 	DeleteCategory(ctx context.Context, id uint32) error
 	GetCollections(ctx context.Context /* filter/search criteria */) (*CollectionResult, error)
-	GetCollectionsByID(ctx context.Context, ids []uint32) ([]model.Collection, error)
+	GetCollectionsByID(ctx context.Context, ids []uint32, enforceContextSocietyMatch bool) ([]model.Collection, error)
 	GetCollection(ctx context.Context, id uint32) (*model.Collection, error)
 	AddCollection(ctx context.Context, in model.CollectionIn) (*model.Collection, error)
 	UpdateCollection(ctx context.Context, id uint32, in model.Collection) (*model.Collection, error)
@@ -57,9 +48,10 @@ type LocalAPI interface {
 	DeletePost(ctx context.Context, id uint32) error
 	PostContentRequest(ctx context.Context, contentRequest ContentRequest) (*ContentResult, error)
 	GetContent(ctx context.Context, key string) ([]byte, error)
-	RetrieveUser(ctx context.Context, provider OIDCProvider, token *oidc.IDToken, rawToken string) (*model.User, error)
-	GetRecordsForPost(ctx context.Context, postid uint32) (*RecordsResult, error)
-	GetRecordsByID(ctx context.Context, ids []uint32) ([]model.Record, error)
+	GetContentRequest(ctx context.Context, key string) (*ContentResult, error)
+	RetrieveUser(ctx context.Context, provider OIDCProvider, token *oidc.IDToken, rawToken string) (*model.User, bool, error)
+	GetRecordsForPost(ctx context.Context, postid uint32, limit int) (*RecordsResult, error)
+	GetRecordsByID(ctx context.Context, ids []uint32, enforceContextSocietyMatch bool) ([]model.Record, error)
 	GetRecord(ctx context.Context, includeDetails bool, id uint32) (*RecordDetail, error)
 	AddRecord(ctx context.Context, in model.RecordIn) (*model.Record, error)
 	UpdateRecord(ctx context.Context, id uint32, in model.Record) (*model.Record, error)
@@ -71,12 +63,27 @@ type LocalAPI interface {
 	DeleteRecordHouseholdsForPost(ctx context.Context, postID uint32) error
 	Search(ctx context.Context, req *SearchRequest) (*model.SearchResult, error)
 	SearchByID(ctx context.Context, id string) (*model.SearchHit, error)
+	SearchImage(ctx context.Context, societyID, id uint32, filePath string, thumbnail bool, expireSeconds int) (*ImageMetadata, error)
 	SearchDeleteByID(ctx context.Context, id string) error
-	GetSettings(ctx context.Context) (*model.Settings, error)
-	UpdateSettings(ctx context.Context, in model.Settings) (*model.Settings, error)
 	StandardizePlace(ctx context.Context, text, defaultContainingPlace string) (*model.Place, error)
 	GetPlacesByPrefix(ctx context.Context, prefix string, count int) ([]model.Place, error)
 	GetNameVariants(ctx context.Context, nameType model.NameType, name string) (*model.NameVariants, error)
+	GetSocietySummariesForCurrentUser(ctx context.Context) ([]model.SocietySummary, error)
+	GetSocietySummary(ctx context.Context) (*model.SocietySummary, error)
+	GetSociety(ctx context.Context, id uint32) (*model.Society, error)
+	AddSociety(ctx context.Context, in model.SocietyIn) (*model.Society, error)
+	UpdateSociety(ctx context.Context, in model.Society) (*model.Society, error)
+	DeleteSociety(ctx context.Context) error
+	GetSocietyUserNames(ctx context.Context) ([]SocietyUserEmail, error)
+	UpdateSocietyUserEmail(ctx context.Context, id uint32, in SocietyUserEmail) (*SocietyUserEmail, error)
+	GetSocietyUserByUser(ctx context.Context, userID uint32) (*model.SocietyUser, error)
+	AddSocietyUser(ctx context.Context, body model.SocietyUserBody) (*model.SocietyUser, error)
+	DeleteSocietyUser(ctx context.Context, id uint32) error
+	GetInvitations(ctx context.Context) ([]model.Invitation, error)
+	AddInvitation(ctx context.Context, body model.InvitationBody) (*model.Invitation, error)
+	DeleteInvitation(ctx context.Context, id uint32) error
+	GetInvitationSocietyName(ctx context.Context, code string) (*InvitationSocietyName, error)
+	AcceptInvitation(ctx context.Context, code string) (*model.SocietyUser, error)
 }
 
 // API is the container for the apilication
@@ -88,12 +95,16 @@ type API struct {
 	userPersister            model.UserPersister
 	placePersister           model.PlacePersister
 	namePersister            model.NamePersister
-	settingsPersister        model.SettingsPersister
+	societyPersister         model.SocietyPersister
+	societyUserPersister     model.SocietyUserPersister
+	invitationPersister      model.InvitationPersister
 	validate                 *validator.Validate
 	blobStoreConfig          BlobStoreConfig
 	pubSubConfig             PubSubConfig
 	placeStandardizer        *stdplace.Standardizer
 	userCache                *lru.TwoQueueCache
+	societyCache             *lru.TwoQueueCache
+	societyUserCache         *lru.TwoQueueCache
 	nameVariantsCache        *lru.TwoQueueCache
 	rabbitmqTopicConn        *amqp.Connection
 	rabbitmqSubscriptionConn *amqp.Connection
@@ -126,6 +137,14 @@ func NewAPI() (*API, error) {
 	api.Validate(validator.New())
 	var err error
 	api.userCache, err = lru.New2Q(100)
+	if err != nil {
+		return nil, err
+	}
+	api.societyCache, err = lru.New2Q(100)
+	if err != nil {
+		return nil, err
+	}
+	api.societyUserCache, err = lru.New2Q(100)
 	if err != nil {
 		return nil, err
 	}
@@ -198,9 +217,21 @@ func (api *API) RecordPersister(cp model.RecordPersister) *API {
 	return api
 }
 
-// SettingsPersister sets the SettingsPersister for the api
-func (api *API) SettingsPersister(cp model.SettingsPersister) *API {
-	api.settingsPersister = cp
+// SocietyPersister sets the SocietyPersister for the api
+func (api *API) SocietyPersister(cp model.SocietyPersister) *API {
+	api.societyPersister = cp
+	return api
+}
+
+// SocietyUserPersister sets the SocietyUserPersister for the api
+func (api *API) SocietyUserPersister(cp model.SocietyUserPersister) *API {
+	api.societyUserPersister = cp
+	return api
+}
+
+// InvitationPersister sets the InvitationPersister for the api
+func (api *API) InvitationPersister(cp model.InvitationPersister) *API {
+	api.invitationPersister = cp
 	return api
 }
 

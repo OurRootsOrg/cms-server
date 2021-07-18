@@ -17,6 +17,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ourrootsorg/cms-server/stdtext"
+
+	"github.com/ourrootsorg/cms-server/utils"
+
 	"github.com/ourrootsorg/cms-server/stdplace"
 
 	"github.com/ourrootsorg/cms-server/stddate"
@@ -60,7 +64,7 @@ type recordIndex struct {
 }
 
 func cleanHeader(header string) string {
-	return strings.ToLower(strings.ReplaceAll(header, " ", ""))
+	return stdtext.AsciiFold(strings.ToLower(strings.ReplaceAll(header, " ", "")))
 }
 
 func findHeader(headers []string, value string) string {
@@ -69,8 +73,9 @@ func findHeader(headers []string, value string) string {
 			return header
 		}
 	}
+	cleanedValue := cleanHeader(value)
 	for _, header := range headers {
-		if cleanHeader(header) == cleanHeader(value) {
+		if cleanHeader(header) == cleanedValue {
 			return header
 		}
 	}
@@ -86,21 +91,28 @@ func containsString(haystack []string, needle string) bool {
 	return false
 }
 
-func sameHeaders(headers1 []string, headers2 []string) bool {
-	if len(headers1) != len(headers2) {
-		return false
-	}
-	for _, header := range headers1 {
-		if !containsString(headers2, header) {
-			return false
+func compareHeaders(collHeaders []string, postHeaders []string) ([]string, []string) {
+	extraHeaders := []string{}
+	missingHeaders := []string{}
+	for i, header := range collHeaders {
+		if !containsString(postHeaders, header) {
+			log.Printf("[DEBUG] missing header %d:%s in %s", i, header, strings.Join(postHeaders, ","))
+			for i := 0; i < len(header); i++ {
+				log.Printf("[DEBUG] header char %d %d", i, header[i])
+			}
+			missingHeaders = append(missingHeaders, header)
 		}
 	}
-	for _, header := range headers2 {
-		if !containsString(headers1, header) {
-			return false
+	for i, header := range postHeaders {
+		if !containsString(collHeaders, header) {
+			log.Printf("[DEBUG] extra header %d:%s in %s", i, header, strings.Join(collHeaders, ","))
+			for i := 0; i < len(header); i++ {
+				log.Printf("[DEBUG] header char %d %d", i, header[i])
+			}
+			extraHeaders = append(extraHeaders, header)
 		}
 	}
-	return true
+	return extraHeaders, missingHeaders
 }
 
 func loadRecords(ctx context.Context, ap *api.API, post *model.Post) error {
@@ -131,8 +143,16 @@ func loadRecords(ctx context.Context, ap *api.API, post *model.Post) error {
 	}
 	defer bucket.Close()
 
+	// get key
+	societyID, err := utils.GetSocietyIDFromContext(ctx)
+	if err != nil {
+		log.Printf("[ERROR] Missing society ID %v\n", err)
+		return api.NewError(err)
+	}
+	key := fmt.Sprintf("/%d/%s", societyID, post.RecordsKey)
+
 	// read datas
-	bs, err := bucket.ReadAll(ctx, post.RecordsKey)
+	bs, err := bucket.ReadAll(ctx, key)
 	if err != nil {
 		log.Printf("[ERROR] ReadAll %v\n", err)
 		return api.NewError(err)
@@ -158,17 +178,27 @@ func loadRecords(ctx context.Context, ap *api.API, post *model.Post) error {
 	for i, record := range records {
 		if i == 0 {
 			// header row
-			for _, field := range record {
+			for fieldPos, field := range record {
+				if fieldPos == 0 && stdtext.HasByteOrderMark(field) {
+					field = stdtext.RemoveByteOrderMark(field)
+				}
 				header := findHeader(collectionHeaders, field)
 				headers = append(headers, header)
 			}
-			log.Printf("[DEBUG] collectionHeaders %s\n", strings.Join(collectionHeaders, ", "))
-			log.Printf("[DEBUG] headers %s\n", strings.Join(headers, ", "))
-			log.Printf("[DEBUG] same %t\n", sameHeaders(collectionHeaders, headers))
-			if !sameHeaders(collectionHeaders, headers) {
-				err := fmt.Errorf("found headers: %s; but expected headers: %s\n",
-					strings.Join(headers, ", "),
-					strings.Join(collectionHeaders, ", "))
+			extraHeaders, missingHeaders := compareHeaders(collectionHeaders, headers)
+			if len(extraHeaders) > 0 || len(missingHeaders) > 0 {
+				var extraHeadersMsg, missingHeadersMsg string
+				if len(extraHeaders) > 0 {
+					extraHeadersMsg = fmt.Sprintf("found extra headers: %s", strings.Join(extraHeaders, ", "))
+				}
+				if len(missingHeaders) > 0 {
+					missingHeadersMsg = fmt.Sprintf("missing headers: %s", strings.Join(missingHeaders, ", "))
+				}
+				log.Printf("[DEBUG] collectionHeaders: %s", strings.Join(collectionHeaders, ","))
+				log.Printf("[DEBUG] headers: %s", strings.Join(headers, ","))
+				msg := fmt.Sprintf("%s %s", extraHeadersMsg, missingHeadersMsg)
+				log.Printf("[DEBUG] error: %s", msg)
+				err := fmt.Errorf(msg)
 				return api.NewHTTPError(err, http.StatusBadRequest)
 			}
 			continue
@@ -221,7 +251,7 @@ func loadRecords(ctx context.Context, ap *api.API, post *model.Post) error {
 					}
 				}
 
-				log.Printf("[DEBUG] Processing data: %#v", msg.data)
+				//log.Printf("[DEBUG] Processing data: %#v", msg.data)
 				record, errs := ap.AddRecord(ctx, model.RecordIn{
 					RecordBody: model.RecordBody{
 						Data: msg.data,
@@ -319,8 +349,10 @@ func processMessage(ctx context.Context, ap *api.API, rawMsg []byte) error {
 
 	log.Printf("[DEBUG] RecordsWriter Processing PostID: %d", msg.PostID)
 
+	sctx := utils.AddSocietyIDToContext(ctx, msg.SocietyID)
+
 	// read post
-	post, errs := ap.GetPost(ctx, msg.PostID)
+	post, errs := ap.GetPost(sctx, msg.PostID)
 	if errs != nil {
 		log.Printf("[ERROR] Error calling GetPost on %d: %v", msg.PostID, errs)
 		return errs
@@ -331,23 +363,29 @@ func processMessage(ctx context.Context, ap *api.API, rawMsg []byte) error {
 	}
 
 	post.RecordsStatus = model.RecordsStatusLoading
-	post, errs = ap.UpdatePost(ctx, msg.PostID, *post)
+	post, errs = ap.UpdatePost(sctx, msg.PostID, *post)
 	if errs != nil {
 		log.Printf("[ERROR] Error calling UpdatePost on %d: %v", msg.PostID, errs)
 		return errs
 	}
 
 	// do the work
-	errs = loadRecords(ctx, ap, post)
+	loadErrs := loadRecords(sctx, ap, post)
 
-	// update post
+	// get post again, in case there were any changes in the meantime
+	post, errs = ap.GetPost(sctx, msg.PostID)
 	if errs != nil {
+		log.Printf("[ERROR] Error calling GetPost on %d: %v", msg.PostID, errs)
+		return errs
+	}
+	// update post
+	if loadErrs != nil {
 		post.RecordsStatus = model.RecordsStatusLoadError
-		post.RecordsError = errs.Error()
+		post.RecordsError = loadErrs.Error()
 	} else {
 		post.RecordsStatus = model.RecordsStatusLoadComplete
 	}
-	_, err = ap.UpdatePost(ctx, post.ID, *post)
+	_, err = ap.UpdatePost(sctx, post.ID, *post)
 	if err != nil {
 		log.Printf("[ERROR] UpdatePost %v\n", err)
 		return err

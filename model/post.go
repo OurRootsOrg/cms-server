@@ -168,6 +168,7 @@ func UserAcceptedImagesStatus(status ImagesStatus) bool {
 
 // ImagesWriterMsg represents a message to initiate processing of an image upload
 type ImagesWriterMsg struct {
+	SocietyID uint32             `json:"societyId"`
 	PostID    uint32             `json:"postId"`
 	Action    ImagesWriterAction `json:"action"`
 	ImagePath string             `json:"imagePath"`
@@ -176,13 +177,15 @@ type ImagesWriterMsg struct {
 
 // RecordsWriterMsg represents a message to initiate processing of an uploaded recods CSV
 type RecordsWriterMsg struct {
-	PostID uint32 `json:"postId"`
+	SocietyID uint32 `json:"societyId"`
+	PostID    uint32 `json:"postId"`
 }
 
 // PublisherMsg represents a message to initiate publishing of a post
 type PublisherMsg struct {
-	Action PublisherAction `json:"action"`
-	PostID uint32          `json:"postId"`
+	Action    PublisherAction `json:"action"`
+	SocietyID uint32          `json:"societyId"`
+	PostID    uint32          `json:"postId"`
 }
 
 // StringSet represents a set of unique strings

@@ -104,7 +104,7 @@ func main() {
 		QueueConfig("recordswriter", env.PubSubRecordsWriterURL).
 		QueueConfig("imageswriter", env.PubSubImagesWriterURL).
 		ElasticsearchConfig(env.ElasticsearchURLString, esTransport)
-	app := NewApp().BaseURL(*env.BaseURL).API(ap).OIDC(env.OIDCAudience, env.OIDCDomain)
+	app := NewApp().BaseURL(*env.BaseURL).API(ap).OIDC(env.OIDCAudience, env.OIDCDomain).SandboxSociety(env.SandboxSociety)
 	if env.BaseURL.Scheme == "https" {
 		docs.SwaggerInfo.Schemes = []string{"https"}
 	} else {
@@ -171,7 +171,9 @@ func main() {
 			PostPersister(p).
 			RecordPersister(p).
 			UserPersister(p).
-			SettingsPersister(p).
+			SocietyPersister(p).
+			SocietyUserPersister(p).
+			InvitationPersister(p).
 			PlacePersister(p).
 			NamePersister(p)
 		log.Print("[INFO] Using PostgresPersister")
@@ -190,8 +192,11 @@ func main() {
 			CollectionPersister(p).
 			PostPersister(p).
 			RecordPersister(p).
-			SettingsPersister(p).
-			UserPersister(p).
+			// TODO implement
+			//UserPersister(p).
+			//SocietyPersister(p).
+			//SocietyUserPersister(p).
+			//InvitationPersister(p).
 			PlacePersister(p).
 			NamePersister(p)
 		log.Print("[INFO] Using DynamoDBPersister")
@@ -224,7 +229,8 @@ func main() {
 			log.Printf("[DEBUG] Start %s %s, request: %#v", req.HTTPMethod, req.Path, req)
 			// If no name is provided in the HTTP request body, throw an error
 			resp, err := adapter.ProxyWithContext(ctx, req)
-			log.Printf("[DEBUG] End %s %s status %d, response: %#v", req.HTTPMethod, req.Path, resp.StatusCode, resp)
+			//log.Printf("[DEBUG] End %s %s status %d, response: %#v", req.HTTPMethod, req.Path, resp.StatusCode, resp)
+			log.Printf("[DEBUG] End %s %s status %d response length %d", req.HTTPMethod, req.Path, resp.StatusCode, len(resp.Body))
 			return resp, err
 		})
 		log.Fatal("Lambda exiting...")
@@ -270,6 +276,7 @@ type Env struct {
 	OIDCAudience           string `env:"OIDC_AUDIENCE" validate:"omitempty"`
 	OIDCDomain             string `env:"OIDC_DOMAIN" validate:"omitempty"`
 	ElasticsearchURLString string `env:"ELASTICSEARCH_URL" validate:"required,url"`
+	SandboxSociety         uint32 `env:"SANDBOX_SOCIETY_ID" validate:"omitempty"`
 }
 
 // ParseEnv parses and validates environment variables and stores them in the Env structure

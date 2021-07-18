@@ -24,8 +24,8 @@ func (api API) GetCollections(ctx context.Context /* filter/search criteria */) 
 }
 
 // GetCollectionsByID holds the business logic around getting many Collections
-func (api API) GetCollectionsByID(ctx context.Context, ids []uint32) ([]model.Collection, error) {
-	colls, err := api.collectionPersister.SelectCollectionsByID(ctx, ids)
+func (api API) GetCollectionsByID(ctx context.Context, ids []uint32, enforceContextSocietyMatch bool) ([]model.Collection, error) {
+	colls, err := api.collectionPersister.SelectCollectionsByID(ctx, ids, enforceContextSocietyMatch)
 	if err != nil {
 		return nil, NewError(err)
 	}

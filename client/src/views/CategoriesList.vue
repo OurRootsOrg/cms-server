@@ -1,7 +1,7 @@
 <template>
   <v-container class="categories-list">
     <h1>Categories</h1>
-    <v-btn small color="primary" class="mt-2" to="/categories/create">
+    <v-btn small color="primary" class="mt-2" :to="{ name: 'categories-create' }">
       Create a new category
     </v-btn>
     <v-row fluid>
@@ -44,15 +44,24 @@
 import { mapState } from "vuex";
 import store from "@/store";
 
+function getContent(next) {
+  Promise.all([store.dispatch("categoriesGetAll"), store.dispatch("collectionsGetAll")])
+    .then(() => {
+      next();
+    })
+    .catch(() => {
+      next("/");
+    });
+}
+
 export default {
   beforeRouteEnter(routeTo, routeFrom, next) {
-    Promise.all([store.dispatch("categoriesGetAll"), store.dispatch("collectionsGetAll")])
-      .then(() => {
-        next();
-      })
-      .catch(() => {
-        next("/");
-      });
+    console.log("categoriesList.beforeRouteEnter");
+    getContent(next);
+  },
+  beforeRouteUpdate(routeTo, routeFrom, next) {
+    console.log("categoriesList.beforeRouteUpdate");
+    getContent(next);
   },
   data() {
     return {

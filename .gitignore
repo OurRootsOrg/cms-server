@@ -27,6 +27,14 @@ search-client/dist/
 client/node_modules/
 search-client/node_modules/
 
+# Wordpress plugin copied js, css, and img directories
+search-client/deploy/wp-plugin/ourroots/css/app.css
+search-client/deploy/wp-plugin/ourroots/css/chunk-vendors.css
+search-client/deploy/wp-plugin/ourroots/img
+search-client/deploy/wp-plugin/ourroots/js/app.js
+search-client/deploy/wp-plugin/ourroots/js/chunk-vendors.js
+search-client/deploy/wp-plugin/ourroots.zip
+
 # IDEs
 .idea/
 client/.idea/

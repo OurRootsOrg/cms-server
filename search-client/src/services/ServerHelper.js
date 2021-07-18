@@ -19,5 +19,11 @@ export function get(url, config) {
 }
 
 async function request(config) {
-  return await axiosClient.request(config);
+  return await axiosClient.request({
+    ...config,
+    headers: {
+      Authorization: `Bearer ${window.ourroots.jwt}`,
+      ...config.headers
+    }
+  });
 }

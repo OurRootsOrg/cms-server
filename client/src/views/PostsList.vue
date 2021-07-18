@@ -1,8 +1,8 @@
 <template>
   <v-container class="posts-list">
-    <h1>Posts</h1>
-    <v-btn small color="primary" class="mt-2" to="/posts/create">
-      Create a new post
+    <h1>Record sets</h1>
+    <v-btn small color="primary" class="mt-2" :to="{ name: 'posts-create' }">
+      Create a new record set
     </v-btn>
     <v-row class="d-flex justify-end">
       <v-col cols="12" md="2">
@@ -51,15 +51,24 @@ import { mapState } from "vuex";
 import store from "@/store";
 import { getMetadataColumn } from "../utils/metadata";
 
+function getContent(next) {
+  Promise.all([store.dispatch("collectionsGetAll"), store.dispatch("postsGetAll")])
+    .then(() => {
+      next();
+    })
+    .catch(() => {
+      next("/");
+    });
+}
+
 export default {
   beforeRouteEnter(routeTo, routeFrom, next) {
-    Promise.all([store.dispatch("collectionsGetAll"), store.dispatch("postsGetAll"), store.dispatch("settingsGet")])
-      .then(() => {
-        next();
-      })
-      .catch(() => {
-        next("/");
-      });
+    console.log("postsList.beforeRouteEnter");
+    getContent(next);
+  },
+  beforeRouteUpdate(routeTo, routeFrom, next) {
+    console.log("postsList.beforeRouteUpdate");
+    getContent(next);
   },
   data() {
     return {
@@ -73,7 +82,7 @@ export default {
       imagesStatusOptions: ["Loaded", "Loading", "Error", "Missing", "N/A"]
     };
   },
-  computed: mapState(["collections", "posts", "settings"]),
+  computed: mapState(["collections", "posts", "societySummaries"]),
   methods: {
     getPosts() {
       return this.posts.postsList.map(p => {
@@ -126,7 +135,7 @@ export default {
           value: "collectionName"
         }
       ];
-      cols.push(...this.settings.settings.postMetadata.map(pf => getMetadataColumn(pf)));
+      cols.push(...this.societySummaries.societySummary.postMetadata.map(pf => getMetadataColumn(pf)));
       cols.push({ text: "", value: "icon", align: "right" });
       return cols;
     },

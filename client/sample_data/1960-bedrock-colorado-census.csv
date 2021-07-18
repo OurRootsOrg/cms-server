@@ -1,0 +1,8 @@
+Household,Surname,Given,Relationship to head,Gender,Residence Date,Residence Place,Image,Attribution
+1,Flintstone,Fred,head,M,1960,"Bedrock, Colorado",flintstones.jpg,https://commons.wikimedia.org/wiki/File:Cambridge_Fun_Run_Scooby_Doo.jpg
+1,Flintstone,Wilma,spouse,F,1960,"Bedrock, Colorado",flintstones.jpg,https://commons.wikimedia.org/wiki/File:Cambridge_Fun_Run_Scooby_Doo.jpg
+1,Flintstone,Pebbles,daughter,F,1960,"Bedrock, Colorado",flintstones.jpg,https://commons.wikimedia.org/wiki/File:Cambridge_Fun_Run_Scooby_Doo.jpg
+2,Rubble,Barney,head,M,1960,"Bedrock, Colorado",,
+2,Rubble,Betty,spouse,F,1960,"Bedrock, Colorado",,
+2,Rubble,Bamm-Bamm,son,M,1960,"Bedrock, Colorado",,
+3,Slate,George,head,M,1960,"Paradox, Colorado",,

@@ -10,7 +10,8 @@ import (
 
 // UserPersister defines methods needed to persist categories
 type UserPersister interface {
-	RetrieveUser(ctx context.Context, in UserIn) (*User, error)
+	RetrieveUser(ctx context.Context, in UserIn) (*User, bool, error)
+	SelectUsersByID(ctx context.Context, ids []uint32) ([]User, error)
 	// SelectUsers(ctx context.Context) ([]User, error)
 	// SelectOneUser(ctx context.Context, id string) (User, error)
 	// InsertUser(ctx context.Context, in UserIn) (User, error)
@@ -69,7 +70,7 @@ func (cb *UserBody) Scan(value interface{}) error {
 	return json.Unmarshal(b, &cb)
 }
 
-// User represents a set of collections that all contain the same fields
+// User represents a user, which may belong to multiple societies
 type User struct {
 	ID      uint32 `json:"id,omitempty" example:"999" validate:"required,omitempty" dynamodbav:"pk,string"`
 	Type    string `json:"-" dynamodbav:"sk"`

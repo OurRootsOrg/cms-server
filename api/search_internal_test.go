@@ -7,6 +7,8 @@ import (
 	"os"
 	"testing"
 
+	"github.com/ourrootsorg/cms-server/utils"
+
 	"github.com/ourrootsorg/cms-server/model"
 	"github.com/ourrootsorg/cms-server/persist"
 	"gocloud.dev/postgres"
@@ -269,7 +271,9 @@ func TestSearchQuery(t *testing.T) {
 func doInternalSearchTests(t *testing.T,
 	nameP model.NamePersister,
 ) {
-	ctx := context.TODO()
+	ctx := utils.AddSocietyIDToContext(context.TODO(), 1)
+	ctx = utils.AddSearchUserIDToContext(ctx, 1)
+
 	testApi, err := NewAPI()
 	assert.NoError(t, err)
 	defer testApi.Close()
@@ -281,9 +285,11 @@ func doInternalSearchTests(t *testing.T,
 	}{
 		{
 			req: SearchRequest{
+				SocietyID:        1,
 				Given:            "Fred",
 				Surname:          "Flintstone",
 				SurnameFuzziness: FuzzyNameExact,
+				Size:             10,
 			},
 			query: `{"query":{"bool":{"must":[
 					  {"bool":{"must":[
@@ -298,14 +304,18 @@ func doInternalSearchTests(t *testing.T,
                       	  {"match":{"given":{"query":"F","boost":0.2}}}
                     	]}}
 					  ]}}
-					]}},"from":0,"size":10}`,
+					],
+                    "filter":[{"term":{"societyId":{"value":1}}}]
+					}},"from":0,"size":10}`,
 		},
 		{
 			req: SearchRequest{
+				SocietyID:        1,
 				Given:            "Fred",
 				GivenFuzziness:   FuzzyNameExact | FuzzyNameVariants,
 				Surname:          "Flintstone",
 				SurnameFuzziness: FuzzyNameExact,
+				Size:             10,
 			},
 			query: `{"query":{"bool":{"must":[
 					  {"bool":{"must":[
@@ -315,14 +325,18 @@ func doInternalSearchTests(t *testing.T,
                     	]}},
 						{"match":{"surname":{"query":"Flintstone","boost":1}}}
 					  ]}}
-					]}},"from":0,"size":10}`,
+					],
+                    "filter":[{"term":{"societyId":{"value":1}}}]
+					}},"from":0,"size":10}`,
 		},
 		{
 			req: SearchRequest{
+				SocietyID:        1,
 				Given:            "Fred",
 				GivenFuzziness:   FuzzyNameExact | FuzzyNameSoundsLikeNarrow,
 				Surname:          "Flintstone",
 				SurnameFuzziness: FuzzyNameExact,
+				Size:             10,
 			},
 			query: `{"query":{"bool":{"must":[
 					  {"bool":{"must":[
@@ -332,15 +346,19 @@ func doInternalSearchTests(t *testing.T,
                     	]}},
 						{"match":{"surname":{"query":"Flintstone","boost":1}}}
 					  ]}}
-					]}},"from":0,"size":10}`,
+					],
+                    "filter":[{"term":{"societyId":{"value":1}}}]
+					}},"from":0,"size":10}`,
 		},
 		{
 			req: SearchRequest{
+				SocietyID:          1,
 				Surname:            "Flintstone",
 				SurnameFuzziness:   FuzzyNameExact,
 				BirthDate:          "1900",
 				BirthDateFuzziness: FuzzyDateTwo,
 				DeathDate:          "1995",
+				Size:               10,
 			},
 			query: `{"query":{"bool":{"must":[
 					  {"bool":{"must":[
@@ -355,15 +373,19 @@ func doInternalSearchTests(t *testing.T,
 						{"term":{"deathYear":{"value":"1995","boost":0.7}}},
 						{"range":{"deathYear":{"gte":1990,"lte":2000,"boost":0.3}}}
 					  ]}}
-					]}},"from":0,"size":10}`,
+					],
+                    "filter":[{"term":{"societyId":{"value":1}}}]
+					}},"from":0,"size":10}`,
 		},
 		{
 			req: SearchRequest{
+				SocietyID:          1,
 				Surname:            "Flintstone",
 				SurnameFuzziness:   FuzzyNameExact,
 				BirthDate:          "1900",
 				BirthDateFuzziness: FuzzyDateOne,
 				DeathDate:          "1995",
+				Size:               10,
 			},
 			query: `{"query":{"bool":{"must":[
 					  {"bool":{"must":[
@@ -378,13 +400,17 @@ func doInternalSearchTests(t *testing.T,
 						{"term":{"deathYear":{"value":"1995","boost":0.7}}},
 						{"range":{"deathYear":{"gte":1990,"lte":2000,"boost":0.3}}}
 					  ]}}
-					]}},"from":0,"size":10}`,
+					],
+                    "filter":[{"term":{"societyId":{"value":1}}}]
+					}},"from":0,"size":10}`,
 		},
 		{
 			req: SearchRequest{
+				SocietyID:        1,
 				Surname:          "Flintstone",
 				SurnameFuzziness: FuzzyNameExact,
 				BirthPlace:       "Autauga, Alabama, United States",
+				Size:             10,
 			},
 			query: `{"query":{"bool":{"must":[
 					  {"bool":{"must":[
@@ -396,14 +422,18 @@ func doInternalSearchTests(t *testing.T,
 						{"term":{"birthPlace3":{"value":"United States,Alabama,Autauga,","boost":1.0}}},
 						{"term":{"birthPlace2":{"value":"United States,Alabama","boost":0.4}}}
 					  ]}}
-					]}},"from":0,"size":10}`,
+					],
+                    "filter":[{"term":{"societyId":{"value":1}}}]
+					}},"from":0,"size":10}`,
 		},
 		{
 			req: SearchRequest{
+				SocietyID:           1,
 				Surname:             "Flintstone",
 				SurnameFuzziness:    FuzzyNameExact,
 				BirthPlace:          "Autauga, Alabama, United States",
 				BirthPlaceFuzziness: FuzzyPlaceExact,
+				Size:                10,
 			},
 			query: `{"query":{"bool":{"must":[
 					  {"bool":{"must":[
@@ -413,21 +443,25 @@ func doInternalSearchTests(t *testing.T,
 						{"term":{"birthPlace3":{"value":"United States,Alabama,Autauga","boost":1.0}}},
 						{"term":{"birthPlace3":{"value":"United States,Alabama,Autauga,","boost":1.0}}}
 					  ]}}
-					]}},"from":0,"size":10}`,
+					],
+                    "filter":[{"term":{"societyId":{"value":1}}}]
+					}},"from":0,"size":10}`,
 		},
 		{
 			req: SearchRequest{
+				SocietyID:             1,
 				Surname:               "Flintstone",
 				SurnameFuzziness:      FuzzyNameExact,
 				CollectionPlace1:      "United States",
 				CollectionPlace2Facet: true,
+				Size:                  10,
 			},
 			query: `{"query":{"bool":{"must":[
 					  {"bool":{"must":[
 						{"match":{"surname":{"query":"Flintstone","boost":1}}}
 					  ]}}
 					],
-                    "filter":[{"term":{"collectionPlace1":{"value":"United States"}}}]
+                    "filter":[{"term":{"societyId":{"value":1}}},{"term":{"collectionPlace1":{"value":"United States"}}}]
 					}},
 					"aggs":{"collectionPlace2":{"terms":{"field":"collectionPlace2","size":250}}},
 					"from":0,"size":10}`,

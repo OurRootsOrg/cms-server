@@ -1,8 +1,18 @@
 <template>
   <v-container class="collections-create">
     <h1>{{ collection.id ? "Edit" : "Create" }} Collection</h1>
+    <v-btn
+      v-if="collection.id"
+      title="Use this collection as a template for a new collection"
+      outlined
+      color="primary"
+      class="ml-4 mt-4 mb-4"
+      :to="{ name: 'collection-edit', query: { clone: true } }"
+    >
+      Clone collection
+    </v-btn>
     <v-form @submit.prevent="save">
-      <h3>Give your collection a name (step 1 of 8)</h3>
+      <h3>Give your collection a name</h3>
       <v-text-field
         label="Collection Name"
         v-model="collection.name"
@@ -11,14 +21,34 @@
         :class="{ error: $v.collection.name.$error }"
         @change="touch('name')"
       ></v-text-field>
-
       <template v-if="$v.collection.name.$error">
         <p v-if="!$v.collection.name.required" class="errorMessage">
           Name is required.
         </p>
       </template>
 
-      <h3>Select one or more categories (step 2 of 8)</h3>
+      <h3>
+        Collection type
+        <v-tooltip bottom maxWidth="600px">
+          <template v-slot:activator="{ on, attrs }">
+            <v-icon v-bind="attrs" v-on="on" small>mdi-information</v-icon>
+          </template>
+          <span>Does this collection contain historical records or a book catalog?</span>
+        </v-tooltip>
+      </h3>
+      <div>
+        <v-select
+          label="Type"
+          :items="types"
+          item-text="name"
+          item-value="id"
+          v-model="collection.type"
+          :disabled="collection.mappings.length > 0"
+          @input="touch('type')"
+        ></v-select>
+      </div>
+
+      <h3>Select one or more categories</h3>
       <multiselect
         v-model="collection.categories"
         :options="categories.categoriesList"
@@ -42,8 +72,28 @@
         </p>
       </template>
 
-      <h3 style="margin-top: 16px;">What location does this collection cover? (step 3 of 8)</h3>
-      <div class="location">
+      <h3 style="margin-top: 24px;">
+        Privacy level
+        <v-tooltip bottom maxWidth="600px">
+          <template v-slot:activator="{ on, attrs }">
+            <v-icon v-bind="attrs" v-on="on" small>mdi-information</v-icon>
+          </template>
+          <span>Do you want search results, record details, or images to be available to members only?</span>
+        </v-tooltip>
+      </h3>
+      <div>
+        <v-select
+          label="Privacy level"
+          :items="privacyLevels"
+          item-text="name"
+          item-value="id"
+          v-model="collection.privacyLevel"
+          @input="touch('privacyLevel')"
+        ></v-select>
+      </div>
+
+      <h3 style="margin-top: 16px;">What location does this collection cover?</h3>
+      <div>
         <v-autocomplete
           outlined
           dense
@@ -63,111 +113,17 @@
         ></v-autocomplete>
       </div>
 
-      <h3>
-        Citation template
-        <v-tooltip bottom maxWidth="600px">
-          <template v-slot:activator="{ on, attrs }">
-            <v-icon v-bind="attrs" v-on="on" small>mdi-information</v-icon>
-          </template>
-          <span>You can include html and <span>{{</span>Spreadsheet header<span>}}</span> references</span>
-        </v-tooltip>
-        (step 4 of 8)
-      </h3>
-      <div class="citation">
-        <v-textarea
-          outlined
-          name="input-7-4"
-          v-model="collection.citation_template"
-          @change="touch('citation_template')"
-          placeholder="Citation template"
-        ></v-textarea>
-      </div>
-
       <v-row no-gutters>
         <v-col cols="12">
-          <h3>
-            Define spreadsheet columns
+          <h3 style="margin-top: 16px;">
+            Enter spreadsheet columns
             <v-tooltip bottom maxWidth="600px">
               <template v-slot:activator="{ on, attrs }">
                 <v-icon v-bind="attrs" v-on="on" small>mdi-information</v-icon>
               </template>
               <span>"Spreadsheet headers" are the names of the columns in the CSV you will be uploading.</span>
-            </v-tooltip>
-            (step 5 of 8)
-          </h3>
-          <v-data-table
-            :headers="fieldColumns"
-            :items="collection.fields"
-            item-key="id"
-            :show-select="false"
-            :disable-pagination="true"
-            dense
-            v-columns-resizable
-          >
-            <template v-slot:body>
-              <draggable :list="collection.fields" tag="tbody" @change="columnDefsDrag">
-                <tr v-for="(field, index) in collection.fields" :key="index">
-                  <td><v-icon small>mdi-drag-horizontal-variant</v-icon></td>
-                  <td>{{ field.header }}</td>
-                  <td>
-                    <v-icon small @click="editColumnDefs(field)" class="mr-3">mdi-pencil</v-icon>
-                    <v-icon small @click="deleteColumnDefs(field)">mdi-delete</v-icon>
-                  </td>
-                </tr>
-              </draggable>
-            </template>
-            <template v-slot:footer>
-              <v-toolbar flat class="ml-n3">
-                <v-dialog v-model="dialogColumnDefs" max-width="600px">
-                  <template v-slot:activator="{ on, attrs }">
-                    <v-btn class="secondary primary--text mr-3" v-bind="attrs" v-on="on" small>Add a row</v-btn>
-                    <span v-if="collection.fields.length === 0"
-                      >(you need at least one row defining at least one column in your spreadsheet)</span
-                    >
-                  </template>
-                  <v-card>
-                    <v-card-title class="pb-5 mb-0"> {{ formTitle }}</v-card-title>
-                    <v-card-text>
-                      <v-container class="pl-0">
-                        <v-row>
-                          <v-col cols="12" sm="7">
-                            <v-text-field
-                              dense
-                              v-model="editedItem.header"
-                              label="Spreadsheet header"
-                              placeholder="Column title in your spreadsheet"
-                            ></v-text-field>
-                          </v-col>
-                        </v-row>
-                      </v-container>
-                    </v-card-text>
-                    <v-card-actions class="pb-5 pr-5">
-                      <v-spacer></v-spacer>
-                      <v-btn color="primary" text @click="closeColumnDefs" class="mr-5">Cancel</v-btn>
-                      <v-btn color="primary" @click="saveColumnDefs">Save</v-btn>
-                    </v-card-actions>
-                  </v-card>
-                </v-dialog>
-              </v-toolbar>
-            </template>
-          </v-data-table>
-        </v-col>
-      </v-row>
-
-      <v-row no-gutters>
-        <v-col class="mt-0">
-          <h3>
-            Define how spreadsheet data is displayed and indexed
-            <v-tooltip bottom maxWidth="600px">
-              <template v-slot:activator="{ on, attrs }">
-                <v-icon v-bind="attrs" v-on="on" small>mdi-information</v-icon>
-              </template>
-              <span
-                >This mapping determines how your spreadsheet's columns and data will be indexed and shown in search
-                results.</span
               >
             </v-tooltip>
-            (step 6 of 8)
           </h3>
 
           <!--draggable mappings-->
@@ -182,7 +138,6 @@
             :show-select="false"
             :disable-pagination="true"
             dense
-            v-columns-resizable
           >
             <template v-slot:body>
               <draggable :list="collection.mappings" tag="tbody" @change="mappingDrag">
@@ -190,7 +145,7 @@
                   <td><v-icon small>mdi-drag-horizontal-variant</v-icon></td>
                   <td>{{ field.header }}</td>
                   <td>{{ field.dbField }}</td>
-                  <td>{{ ixRoleMap[field.ixRole] }}</td>
+                  <td v-if="isRecords">{{ ixRoleMap[field.ixRole] }}</td>
                   <td>{{ ixFieldMap[field.ixField] }}</td>
                   <td>
                     <v-icon small @click="editMapping(field)" class="mr-3">mdi-pencil</v-icon>
@@ -203,7 +158,7 @@
               <v-toolbar flat class="ml-n3">
                 <v-dialog v-model="dialogMapping" max-width="600px">
                   <template v-slot:activator="{ on, attrs }">
-                    <v-btn class="secondary primary--text mr-3" v-bind="attrs" v-on="on" small>Add a row</v-btn>
+                    <v-btn class="secondary primary--text mr-3" v-bind="attrs" v-on="on" small>Add a column</v-btn>
                     <span v-if="collection.mappings.length === 0"
                       >(you need at least one row defining at least one column in your spreadsheet)</span
                     >
@@ -214,13 +169,14 @@
                       <v-container class="pl-0">
                         <v-row>
                           <v-col cols="12" sm="6">
-                            <v-select
+                            <v-text-field
+                              dense
                               v-model="editedMappingItem.header"
                               label="Spreadsheet header"
-                              :items="spreadsheetColumnHeaders"
-                              dense
+                              placeholder="Column title in your spreadsheet"
+                              @change="spreadsheetHeaderChanged"
                             >
-                            </v-select>
+                            </v-text-field>
                           </v-col>
                           <v-col cols="12" sm="6">
                             <v-text-field
@@ -237,7 +193,7 @@
                               </v-tooltip>
                             </v-text-field>
                           </v-col>
-                          <v-col cols="12">
+                          <v-col cols="12" v-if="isRecords">
                             <v-select
                               v-model="editedMappingItem.ixRole"
                               label="Relationship of this information to the primary search person"
@@ -269,12 +225,7 @@
                     <v-card-actions class="pb-5 pr-5">
                       <v-spacer></v-spacer>
                       <v-btn color="primary" text @click="closeMapping" class="mr-5">Cancel</v-btn>
-                      <v-btn
-                        color="primary"
-                        @click="saveMapping"
-                        :disabled="editedMappingItem.ixRole !== 'na' && editedMappingItem.ixField === 'na'"
-                        >Save</v-btn
-                      >
+                      <v-btn color="primary" @click="saveMapping">Save</v-btn>
                     </v-card-actions>
                   </v-card>
                 </v-dialog>
@@ -293,7 +244,6 @@
           </template>
           <span>If the collection does not contain images, leave this blank</span>
         </v-tooltip>
-        (step 7 of 8)
       </h3>
       <v-select
         outlined
@@ -307,7 +257,7 @@
         Column containing image file names no longer appears in the list of spreadsheet columns.
       </div>
 
-      <h3 class="my-4">
+      <h3 class="my-4" v-if="isRecords">
         Columns containing household information
         <v-tooltip bottom maxWidth="600px">
           <template v-slot:activator="{ on, attrs }">
@@ -332,9 +282,9 @@
             relationship should be created when indexing the "head" record of a son, daughter, or child.
           </div>
         </v-tooltip>
-        (step 8 of 8)
       </h3>
       <v-select
+        v-if="isRecords"
         outlined
         label="Household number column"
         v-model="collection.householdNumberHeader"
@@ -346,6 +296,7 @@
         Column containing household numbers no longer appears in the list of spreadsheet columns.
       </div>
       <v-select
+        v-if="isRecords"
         outlined
         label="Relationship to head column"
         v-model="collection.householdRelationshipHeader"
@@ -358,6 +309,7 @@
         Column containing relationship to head no longer appears in the list of spreadsheet columns.
       </div>
       <v-select
+        v-if="isRecords"
         outlined
         label="Gender column"
         v-model="collection.genderHeader"
@@ -370,13 +322,35 @@
         Column containing gender no longer appears in the list of spreadsheet columns.
       </div>
 
+      <h3>
+        Citation template
+        <v-tooltip bottom maxWidth="600px">
+          <template v-slot:activator="{ on, attrs }">
+            <v-icon v-bind="attrs" v-on="on" small>mdi-information</v-icon>
+          </template>
+          <span>You can include html and <span>{{</span>Spreadsheet header<span>}}</span> references</span>
+        </v-tooltip>
+      </h3>
+      <div>
+        <v-textarea
+          outlined
+          name="input-7-4"
+          v-model="collection.citation_template"
+          @change="touch('citation_template')"
+          placeholder="Citation template"
+        ></v-textarea>
+      </div>
+
+      <div v-if="warnChanges" class="errorMessage" style="margin-bottom: 16px">
+        The changes made to the collection will not affect record sets that have already been uploaded, even if the
+        record sets have not yet been published. If you want your changes to affect record sets that have already been
+        uploaded, you need to delete the record sets and re-upload them after changing the collection.
+      </div>
       <div class="d-flex justify-space-between">
         <v-btn
           type="submit"
           color="primary"
-          :disabled="
-            $v.$anyError || collection.fields.length === 0 || collection.mappings.length === 0 || !$v.$anyDirty
-          "
+          :disabled="$v.$anyError || collection.mappings.length === 0 || !$v.$anyDirty"
         >
           <v-icon left small>
             mdi-alert
@@ -387,7 +361,9 @@
           v-if="collection.id"
           class="mt-2"
           buttonClass="danger"
-          :title="postsForCollection.length > 0 ? 'Collections with posts cannot be deleted' : 'Cannot be undone!'"
+          :title="
+            postsForCollection.length > 0 ? 'Collections with record sets cannot be deleted' : 'Cannot be undone!'
+          "
           @click="del()"
           :disabled="postsForCollection.length > 0"
           >Delete Collection
@@ -400,7 +376,7 @@
 
     <v-row class="pt-5">
       <v-col>
-        <h3 class="mt-4" v-if="collection.id">Posts</h3>
+        <h3 class="mt-4" v-if="collection.id">Record sets</h3>
         <v-data-table
           v-if="collection.id"
           :items="postsForCollection"
@@ -419,8 +395,8 @@
           </template>
         </v-data-table>
 
-        <v-btn v-if="collection.id" outlined color="primary" class="mt-4" to="/posts/create">
-          Create a new post
+        <v-btn v-if="collection.id" outlined color="primary" class="mt-4" :to="{ name: 'posts-create' }">
+          Create a new record set
         </v-btn>
       </v-col>
     </v-row>
@@ -438,13 +414,28 @@ import draggable from "vuedraggable";
 import Server from "@/services/Server";
 import { getMetadataColumn } from "../utils/metadata";
 
-function setup() {
+function getContent(cid, next) {
+  let routes = [store.dispatch("categoriesGetAll")];
+  if (cid) {
+    routes.push(store.dispatch("collectionsGetOne", cid));
+    routes.push(store.dispatch("collectionsGetAll"));
+    routes.push(store.dispatch("postsGetAll"));
+  }
+  Promise.all(routes)
+    .then(() => {
+      next();
+    })
+    .catch(() => {
+      next("/");
+    });
+}
+
+function setup(query) {
   this.collection = {
     ...this.collections.collection,
     categories: this.collections.collection.categories.map(catId =>
       this.categories.categoriesList.find(cat => cat.id === catId)
     ),
-    fields: lodash.cloneDeep(this.collections.collection.fields),
     mappings: lodash.cloneDeep(this.collections.collection.mappings)
   };
   if (this.collection.location) {
@@ -454,54 +445,50 @@ function setup() {
   this.collection.householdNumberHeader = this.collection.householdNumberHeader || "";
   this.collection.householdRelationshipHeader = this.collection.householdRelationshipHeader || "";
   this.collection.genderHeader = this.collection.genderHeader || "";
+  this.editedFields.length = 0;
+  if (query.clone) {
+    this.collection.id = 0;
+    this.collection.name += " (copy)";
+  }
 }
 
 export default {
   components: { Multiselect, draggable },
   beforeRouteEnter: function(routeTo, routeFrom, next) {
-    let routes = [store.dispatch("categoriesGetAll")];
-    if (routeTo.params && routeTo.params.cid) {
-      routes.push(store.dispatch("collectionsGetOne", routeTo.params.cid));
-      routes.push(store.dispatch("collectionsGetAll"));
-      routes.push(store.dispatch("postsGetAll"));
-      routes.push(store.dispatch("settingsGet"));
-    }
-    Promise.all(routes)
-      .then(() => {
-        next();
-      })
-      .catch(() => {
-        next("/");
-      });
+    console.log("collectionsCreateEdit.beforeRouteEnter");
+    getContent(routeTo.params.cid, next);
+  },
+  beforeRouteUpdate: function(routeTo, routeFrom, next) {
+    console.log("collectionsCreateEdit.beforeRouteUpdate");
+    getContent(routeTo.params.cid, next);
   },
   created() {
     if (this.$route.params && this.$route.params.cid) {
-      setup.bind(this)();
+      setup.bind(this)(this.$route.query);
     }
+    this.editedMappingItem = Object.assign({}, this.defaultMappingItem);
   },
   data() {
     return {
-      dialogColumnDefs: false,
       dialogMapping: false,
       editedIndex: -1,
-      editedItem: {
-        header: ""
-      },
-      editedMappingItem: {
-        header: "",
-        dbField: "",
-        ixRole: "",
-        ixField: ""
-      },
-      defaultItem: {
-        header: ""
-      },
+      editedMappingItem: {},
       defaultMappingItem: {
         header: "",
         dbField: "",
-        ixRole: "Don't index",
-        ixField: "Don't index"
+        ixRole: "principal",
+        ixField: "na"
       },
+      types: [
+        { id: "Records", name: "Records" },
+        { id: "Catalog", name: "Catalog" }
+      ],
+      privacyLevels: [
+        { id: 0, name: "Public" },
+        { id: 1, name: "Public search results and record details; Members-only media" },
+        { id: 3, name: "Public search results; Members-only record details and media" },
+        { id: 7, name: "Members-only search results, record details, and media" }
+      ],
       ixRoleMap: {
         na: "Don't index",
         principal: "Principal",
@@ -516,7 +503,7 @@ export default {
         groomMother: "Mother of the groom",
         other: "Other person"
       },
-      ixFieldMap: {
+      baseIxFieldMap: {
         na: "Don't index",
         given: "Given name",
         surname: "Surname",
@@ -529,7 +516,10 @@ export default {
         residenceDate: "Residence Date",
         residencePlace: "Residence Place",
         otherDate: "Other Date",
-        otherPlace: "Other Place"
+        otherPlace: "Other Place",
+        keywords: "Keywords",
+        title: "Title",
+        author: "Author"
       },
       //do it like this [{value: true, text: "Has data"}, {value: false, text: "No data"}]
       ixRoleMapOptions: [
@@ -546,7 +536,7 @@ export default {
         { value: "groomMother", text: "Mother of the groom" },
         { value: "other", text: "Other person" }
       ],
-      ixFieldMapOptions: [
+      ixFieldMapOptionsRecords: [
         { value: "na", text: "Don't index" },
         { value: "given", text: "Given name" },
         { value: "surname", text: "Surname" },
@@ -559,41 +549,34 @@ export default {
         { value: "residenceDate", text: "Residence Date" },
         { value: "residencePlace", text: "Residence Place" },
         { value: "otherDate", text: "Other Date" },
-        { value: "otherPlace", text: "Other Place" }
+        { value: "otherPlace", text: "Other Place" },
+        { value: "keywords", text: "Keywords" }
       ],
-      spreadsheetColumnOptions: [{ value: "get this from the columns", text: "Spreadsheet column" }],
+      ixFieldMapOptionsCatalog: [
+        { value: "na", text: "Don't index" },
+        { value: "title", text: "Title" },
+        { value: "author", text: "Author" },
+        { value: "surname", text: "Surname" },
+        { value: "otherPlace", text: "Place" },
+        { value: "keywords", text: "Keywords" }
+      ],
       //end of data for table
       collection: {
         id: null,
         name: null,
+        type: "Records",
+        privacyLevel: 0,
         location: null,
         citation_template: null,
         categories: [],
-        fields: [],
         mappings: []
       },
       locationLoading: false,
       locationTimeout: null,
       locationItems: [],
       locationSearch: "",
-      fieldColumns: [
-        {
-          text: "",
-          value: "handle",
-          align: "left",
-          width: 10
-        },
-        {
-          text: "Spreadsheet header",
-          value: "header"
-        },
-        {
-          text: "",
-          value: "actions",
-          align: "right"
-        }
-      ],
-      mappingColumns: [
+      editedFields: [],
+      baseMappingColumns: [
         {
           text: "",
           value: "handle",
@@ -609,10 +592,6 @@ export default {
           value: "dbField"
         },
         {
-          text: "Index Role",
-          value: "ixRole"
-        },
-        {
           text: "Index Field",
           value: "ixField"
         },
@@ -621,13 +600,20 @@ export default {
           value: "actions",
           align: "right"
         }
+      ],
+      warnChangesFields: [
+        "categories",
+        "privacyLevel",
+        "location",
+        "mappings",
+        "imagePathHeader",
+        "householdNumberHeader",
+        "householdRelationshipHeader",
+        "genderHeader"
       ]
     };
   },
   watch: {
-    dialogColumnDefs(val) {
-      val || this.closeColumnDefs();
-    },
     dialogMapping(val) {
       val || this.closeMapping();
     },
@@ -636,9 +622,35 @@ export default {
     }
   },
   computed: {
+    isRecords() {
+      return this.collection.type === "Records";
+    },
+    mappingColumns() {
+      let cols = [...this.baseMappingColumns];
+      if (this.isRecords) {
+        cols.splice(3, 0, {
+          text: "Index Role",
+          value: "ixRole"
+        });
+      }
+      return cols;
+    },
+    ixFieldMap() {
+      let m = Object.assign({}, this.baseIxFieldMap);
+      if (!this.ixRecords) {
+        m.otherPlace = "Place";
+      }
+      return m;
+    },
+    ixFieldMapOptions() {
+      return this.isRecords ? this.ixFieldMapOptionsRecords : this.ixFieldMapOptionsCatalog;
+    },
+    warnChanges() {
+      return this.postsForCollection.length > 0 && this.warnChangesFields.some(fld => this.editedFields.includes(fld));
+    },
     headers() {
       let headers = [{ text: "N/A", value: "" }].concat(
-        this.collection.fields.map(f => {
+        this.collection.mappings.map(f => {
           return {
             get text() {
               return f.header;
@@ -670,21 +682,19 @@ export default {
           };
         });
     },
-    spreadsheetColumnHeaders() {
-      return this.collection.fields.map(f => f.header);
-    },
     formTitle() {
-      return this.editedIndex === -1 ? "New Spreadsheet Item" : "Edit Spreadsheet Item";
+      return this.editedIndex === -1 ? "New Column" : "Edit Column";
     },
-    ...mapState(["collections", "categories", "posts", "settings"])
+    ...mapState(["collections", "categories", "posts", "societySummaries"])
   },
   validations: {
     collection: {
       name: { required },
+      type: { required },
+      privacyLevel: {},
       location: {},
       citation_template: {},
       categories: { required },
-      fields: {},
       mappings: {},
       imagePathHeader: {},
       householdNumberHeader: {},
@@ -715,6 +725,7 @@ export default {
       this.touch("householdNumberHeader");
     },
     touch(attr) {
+      this.editedFields.push(attr);
       if (this.$v.collection[attr].$dirty) {
         return;
       }
@@ -722,30 +733,9 @@ export default {
       if (attr === "categories") {
         value = value.map(v => v.id);
       }
-      if (
-        attr === "mappings" ||
-        attr === "fields" ||
-        !this.collection.id ||
-        !lodash.isEqual(value, this.collections.collection[attr])
-      ) {
+      if (attr === "mappings" || !this.collection.id || !lodash.isEqual(value, this.collections.collection[attr])) {
         this.$v.collection[attr].$touch();
       }
-    },
-    syncFieldsMappings(newValue, oldValue) {
-      if (newValue) {
-        if (oldValue) {
-          this.collection.mappings.forEach(m => {
-            if (m.header === oldValue) {
-              m.header = newValue;
-            }
-          });
-        } else {
-          this.collection.mappings.push({ header: newValue, dbField: newValue, ixRole: "na", ixField: "na" });
-        }
-      } else {
-        this.collection.mappings = this.collection.mappings.filter(m => m.header !== oldValue);
-      }
-      this.touch("mappings");
     },
     getPostColumns() {
       let cols = [
@@ -774,7 +764,7 @@ export default {
         title: "Collection",
         field: "collectionName"
       });
-      cols.push(...this.settings.settings.postMetadata.map(pf => getMetadataColumn(pf)));
+      cols.push(...this.societySummaries.societySummary.postMetadata.map(pf => getMetadataColumn(pf)));
       return cols;
     },
     postRowClicked(post) {
@@ -788,14 +778,11 @@ export default {
       return this.headers.findIndex(h => h.value === value) >= 0;
     },
     save() {
-      this.collection.fields = this.collection.fields.filter(f => f.header);
-      if (this.collection.fields.length === 0) {
-        return;
-      }
       this.collection.mappings = this.collection.mappings.filter(f => f.header);
       if (this.collection.mappings.length === 0) {
         return;
       }
+      this.collection.fields = this.collection.mappings.map(m => ({ header: m.header }));
       if (
         !this.isHeader(this.imagePathHeader) ||
         !this.isHeader(this.householdNumberHeader) ||
@@ -844,43 +831,7 @@ export default {
           NProgress.done();
         });
     },
-    //methods for the spreadsheet columns table
-    editColumnDefs(item) {
-      this.editedIndex = this.collection.fields.indexOf(item);
-      this.editedItem = Object.assign({}, item);
-      this.dialogColumnDefs = true;
-    },
-    deleteColumnDefs(item) {
-      const index = this.collection.fields.indexOf(item);
-      if (confirm("Are you sure you want to delete this item?")) {
-        this.collection.fields.splice(index, 1);
-        this.syncFieldsMappings(null, item.header);
-      }
-    },
-    closeColumnDefs() {
-      this.dialogColumnDefs = false;
-      this.$nextTick(() => {
-        this.editedItem = Object.assign({}, this.defaultItem);
-        this.editedIndex = -1;
-      });
-    },
-    saveColumnDefs() {
-      if (this.editedIndex > -1) {
-        if (this.editedItem.header !== this.collection.fields[this.editedIndex].header) {
-          this.syncFieldsMappings(this.editedItem.header, this.collection.fields[this.editedIndex].header);
-        }
-        Object.assign(this.collection.fields[this.editedIndex], this.editedItem);
-        this.touch("fields");
-      } else {
-        this.collection.fields.push(this.editedItem);
-        this.syncFieldsMappings(this.editedItem.header, null);
-      }
-      this.closeColumnDefs();
-    },
     // methods to touch fields after they've been dragged
-    columnDefsDrag() {
-      this.touch("fields");
-    },
     mappingDrag() {
       this.touch("mappings");
     },
@@ -894,7 +845,7 @@ export default {
       const index = this.collection.mappings.indexOf(item);
       if (confirm("Are you sure you want to delete this item?")) {
         this.collection.mappings.splice(index, 1);
-        this.syncFieldsMappings(null, item.header);
+        this.touch("mappings");
       }
     },
     closeMapping() {
@@ -905,17 +856,25 @@ export default {
       });
     },
     saveMapping() {
+      if (this.editedMappingItem.ixRole !== "na" && this.editedMappingItem.ixField === "na") {
+        this.editedMappingItem.ixRole = "na";
+      }
       if (this.editedIndex > -1) {
         Object.assign(this.collection.mappings[this.editedIndex], this.editedMappingItem);
-        this.touch("fields");
       } else {
         this.collection.mappings.push(this.editedMappingItem);
       }
+      this.touch("mappings");
       this.closeMapping();
     },
     ixRoleChanged() {
       if (this.editedMappingItem.ixRole === "na") {
         this.editedMappingItem.ixField = "na";
+      }
+    },
+    spreadsheetHeaderChanged() {
+      if (!this.editedMappingItem.dbField) {
+        this.editedMappingItem.dbField = this.editedMappingItem.header;
       }
     }
   }
@@ -923,7 +882,7 @@ export default {
 </script>
 
 <style src="vue-multiselect/dist/vue-multiselect.min.css"></style>
-<style scoped>
+<style>
 .multiselect__tag {
   color: #006064;
   line-height: 1;
@@ -934,65 +893,18 @@ export default {
   outline: none;
   color: #006064;
 }
+.multiselect__option.multiselect__option--selected.multiselect__option--highlight {
+  background: #b2ebf2;
+  outline: none;
+  color: #006064;
+}
 .multiselect__option--highlight:after {
   content: attr(data-select);
   background: #b2ebf2;
   color: #006064;
 }
-.spreadsheetColumnsTable >>> table > tbody > tr > td:nth-child(1),
-.spreadsheetColumnsTable >>> table > thead > tr > th:nth-child(1) {
-  left: 0;
-}
-.spreadsheetColumnsTable >>> table > tbody > tr > td:nth-child(2),
-.spreadsheetColumnsTable >>> table > thead > tr > th:nth-child(2) {
-  left: 50px;
-}
-.spreadsheetColumnsTable >>> table > tbody > tr > td:nth-child(3),
-.spreadsheetColumnsTable >>> table > thead > tr > th:nth-child(3) {
-  left: 140px;
-}
-.spreadsheetColumnsTable >>> table > tbody > tr > td:nth-child(4),
-.spreadsheetColumnsTable >>> table > thead > tr > th:nth-child(4) {
-  left: 260px;
-}
-.spreadsheetColumnsTable >>> table > thead > tr > th:nth-child(1)
-/* .spreadsheetColumnsTable >>> table > thead > tr > th:nth-child(2) */
- {
-  position: sticky !important;
-  position: -webkit-sticky !important;
-  /* z-index: 9999; */
-  background: white;
-}
-.spreadsheetColumnsTable >>> table > tbody > tr > td:nth-child(1)
-/* .spreadsheetColumnsTable >>> table > tbody > tr > td:nth-child(2) */
- {
-  position: sticky !important;
-  position: -webkit-sticky !important;
-  /* z-index: 9998; */
-  background: white;
-}
-.spreadsheetColumnsTable >>> table > tbody > tr > td:nth-child(1):hover {
-  background-color: #efefef;
-}
-
-.spreadsheetColumnsTable >>> table > tbody > tr > td {
-  padding: 0 8px;
-}
-.spreadsheetColumnsTable >>> thead .text-start {
-  vertical-align: top;
-  text-align: left;
-  padding-left: 8px;
-}
-.spreadsheetColumnsTable >>> thead .sortable {
-  vertical-align: top;
-  text-align: left;
-  padding-left: 8px;
-}
-.spreadsheetColumnsTable >>> .table-header-group {
-  vertical-align: top;
-  text-align: left;
-  padding-left: 8px;
-}
+</style>
+<style scoped>
 .location {
   margin-bottom: 24px;
 }

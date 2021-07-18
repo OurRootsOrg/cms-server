@@ -10,12 +10,14 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ourrootsorg/cms-server/utils"
+
 	"github.com/ourrootsorg/cms-server/model"
 	"gocloud.dev/blob"
 	"gocloud.dev/pubsub"
 )
 
-const ImagesPrefix = "/images/%d/"
+const ImagesPrefix = "images/%d/"
 
 // PostResult is a paged Post result
 type PostResult struct {
@@ -24,9 +26,11 @@ type PostResult struct {
 }
 
 type ImageMetadata struct {
-	URL    string `json:"url"`
-	Height int    `json:"height"`
-	Width  int    `json:"width"`
+	URL      string `json:"url"`
+	Height   int    `json:"height"`
+	Width    int    `json:"width"`
+	Private  bool   `json:"private"`
+	LoginURL string `json:"loginURL,omitempty"`
 }
 
 // GetPosts holds the business logic around getting many Posts
@@ -50,6 +54,10 @@ func (api API) GetPost(ctx context.Context, id uint32) (*model.Post, error) {
 
 // GetPostImage returns a signed S3 URL to return an image file
 func (api *API) GetPostImage(ctx context.Context, id uint32, filePath string, thumbnail bool, expireSeconds int) (*ImageMetadata, error) {
+	societyID, err := utils.GetSocietyIDFromContext(ctx)
+	if err != nil {
+		return nil, NewError(err)
+	}
 	// need an external bucket for signing so signed URLs can be used externally
 	signingBucket, err := api.OpenBucket(ctx, true)
 	if err != nil {
@@ -64,10 +72,12 @@ func (api *API) GetPostImage(ctx context.Context, id uint32, filePath string, th
 	defer bucket.Close()
 
 	key := fmt.Sprintf(ImagesPrefix, id) + filePath
+	fullKey := fmt.Sprintf("/%d/%s", societyID, key)
+
 	if thumbnail {
-		key += model.ImageThumbnailSuffix
+		fullKey += model.ImageThumbnailSuffix
 	}
-	dimensionsKey := key + model.ImageDimensionsSuffix
+	dimensionsKey := fullKey + model.ImageDimensionsSuffix
 
 	// read image dimensions
 	reader, err := bucket.NewReader(ctx, dimensionsKey, nil)
@@ -84,7 +94,7 @@ func (api *API) GetPostImage(ctx context.Context, id uint32, filePath string, th
 	}
 
 	// generate signed URL and return
-	signedURL, err := signingBucket.SignedURL(ctx, key, &blob.SignedURLOptions{
+	signedURL, err := signingBucket.SignedURL(ctx, fullKey, &blob.SignedURLOptions{
 		Expiry: time.Duration(expireSeconds) * time.Second,
 		Method: "GET",
 	})
@@ -100,7 +110,11 @@ func (api *API) GetPostImage(ctx context.Context, id uint32, filePath string, th
 
 // AddPost holds the business logic around adding a Post
 func (api API) AddPost(ctx context.Context, in model.PostIn) (*model.Post, error) {
-	err := api.validate.Struct(in)
+	societyID, err := utils.GetSocietyIDFromContext(ctx)
+	if err != nil {
+		return nil, NewError(err)
+	}
+	err = api.validate.Struct(in)
 	if err != nil {
 		log.Printf("[ERROR] Invalid post %v", err)
 		return nil, NewError(err)
@@ -143,7 +157,8 @@ func (api API) AddPost(ctx context.Context, in model.PostIn) (*model.Post, error
 	if in.RecordsKey != "" {
 		// send a message to write the records
 		msg := model.RecordsWriterMsg{
-			PostID: post.ID,
+			SocietyID: societyID,
+			PostID:    post.ID,
 		}
 		body, err := json.Marshal(msg)
 		if err != nil { // this had best never happen
@@ -162,9 +177,10 @@ func (api API) AddPost(ctx context.Context, in model.PostIn) (*model.Post, error
 	if len(in.ImagesKeys) > 0 {
 		// send a message to write the images
 		msg := model.ImagesWriterMsg{
-			Action:  model.ImagesWriterActionUnzip,
-			PostID:  post.ID,
-			NewZips: in.ImagesKeys,
+			Action:    model.ImagesWriterActionUnzip,
+			SocietyID: societyID,
+			PostID:    post.ID,
+			NewZips:   in.ImagesKeys,
 		}
 		body, err := json.Marshal(msg)
 		if err != nil { // this had best never happen
@@ -187,6 +203,11 @@ func (api API) AddPost(ctx context.Context, in model.PostIn) (*model.Post, error
 // UpdatePost holds the business logic around updating a Post
 func (api API) UpdatePost(ctx context.Context, id uint32, in model.Post) (*model.Post, error) {
 	err := api.validate.Struct(in)
+	if err != nil {
+		return nil, NewError(err)
+	}
+
+	societyID, err := utils.GetSocietyIDFromContext(ctx)
 	if err != nil {
 		return nil, NewError(err)
 	}
@@ -255,7 +276,8 @@ func (api API) UpdatePost(ctx context.Context, id uint32, in model.Post) (*model
 		in.RecordsStatus = model.RecordsStatusToLoad
 		in.RecordsError = ""
 		recordsMsg, err = json.Marshal(model.RecordsWriterMsg{
-			PostID: id,
+			SocietyID: societyID,
+			PostID:    id,
 		})
 		if err != nil {
 			log.Printf("[ERROR] Can't marshal message %v", err)
@@ -287,8 +309,9 @@ func (api API) UpdatePost(ctx context.Context, id uint32, in model.Post) (*model
 		in.ImagesStatus = model.ImagesStatusToLoad
 		in.ImagesError = ""
 		iwm := model.ImagesWriterMsg{
-			Action: model.ImagesWriterActionUnzip,
-			PostID: id,
+			Action:    model.ImagesWriterActionUnzip,
+			SocietyID: societyID,
+			PostID:    id,
 		}
 		for _, ik := range in.ImagesKeys {
 			if !currPost.ImagesKeys.Contains(ik) {
@@ -335,8 +358,9 @@ func (api API) UpdatePost(ctx context.Context, id uint32, in model.Post) (*model
 			action = model.PublisherActionUnindex
 		}
 		publisherMsg, err = json.Marshal(model.PublisherMsg{
-			Action: action,
-			PostID: id,
+			Action:    action,
+			SocietyID: societyID,
+			PostID:    id,
 		})
 		if err != nil {
 			log.Printf("[ERROR] Can't marshal message %v", err)
@@ -432,10 +456,12 @@ func (api API) DeletePost(ctx context.Context, id uint32) error {
 		log.Printf("[ERROR] reading post %d error=%v", id, err)
 		return NewError(err)
 	}
-	// allow deleting posts only when post is draft or error, and when records and images are default or error
+	// allow deleting posts only when post is draft or error, and when records and images are default or error,
+	// or post has been stuck in loading status for awhile
+	oldPost := time.Since(post.LastUpdateTime).Seconds() > 1800
 	if (post.PostStatus != model.PostStatusDraft && post.PostStatus != model.PostStatusError) ||
-		(post.RecordsStatus != model.RecordsStatusDefault && post.RecordsStatus != model.RecordsStatusError) ||
-		(post.ImagesStatus != model.ImagesStatusDefault && post.ImagesStatus != model.ImagesStatusError) {
+		(post.RecordsStatus != model.RecordsStatusDefault && post.RecordsStatus != model.RecordsStatusError && !(oldPost && post.RecordsStatus == model.RecordsStatusLoading)) ||
+		(post.ImagesStatus != model.ImagesStatusDefault && post.ImagesStatus != model.ImagesStatusError && !(oldPost && post.ImagesStatus == model.ImagesStatusLoading)) {
 		return NewError(fmt.Errorf("post %d status must be Draft or Error, and records and images statuses must be empty or Error; "+
 			"post status is %s, records status is %s, and images status is %s", post.ID, post.PostStatus, post.RecordsStatus, post.ImagesStatus))
 	}
@@ -481,13 +507,18 @@ func (api API) DeletePost(ctx context.Context, id uint32) error {
 }
 
 func (api API) deleteReferencedContent(ctx context.Context, key string) error {
+	societyID, err := utils.GetSocietyIDFromContext(ctx)
+	if err != nil {
+		return NewError(err)
+	}
 	// delete records data
 	bucket, err := api.OpenBucket(ctx, false)
 	if err != nil {
 		return err
 	}
 	defer bucket.Close()
-	if err := bucket.Delete(ctx, key); err != nil {
+	fullKey := fmt.Sprintf("/%d/%s", societyID, key)
+	if err := bucket.Delete(ctx, fullKey); err != nil {
 		return err
 	}
 	return nil
@@ -495,14 +526,20 @@ func (api API) deleteReferencedContent(ctx context.Context, key string) error {
 
 // deleteImagesForPost holds the business logic around deleting the images for a Post
 func (api API) deleteImages(ctx context.Context, postID uint32) error {
+	societyID, err := utils.GetSocietyIDFromContext(ctx)
+	if err != nil {
+		return NewError(err)
+	}
 	bucket, err := api.OpenBucket(ctx, false)
 	if err != nil {
 		return err
 	}
 	defer bucket.Close()
 	prefix := fmt.Sprintf(ImagesPrefix, postID)
+	fullPrefix := fmt.Sprintf("/%d/%s", societyID, prefix)
+
 	li := bucket.List(&blob.ListOptions{
-		Prefix: prefix,
+		Prefix: fullPrefix,
 	})
 	var errs []string
 	for {

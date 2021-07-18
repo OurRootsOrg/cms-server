@@ -24,27 +24,29 @@ export default {
   },
   mounted() {
     if (this.$route.params && this.$route.params.pid && this.$route.params.path) {
-      Server.postsGetImage(this.$route.params.pid, this.$route.params.path, false).then(result => {
-        let pyramid = {
-          type: "legacy-image-pyramid",
-          levels: [
-            {
-              url: result.data.url,
-              height: result.data.height,
-              width: result.data.width
-            }
-          ]
-        };
-        console.log("pyramid", pyramid);
-        this.osd = OpenSeadragon({
-          id: "openseadragon",
-          toolbar: "openseadragonToolbar",
-          tileSources: pyramid,
-          prefixUrl: "/img/seadragon/",
-          autoHideControls: false,
-          showRotationControl: true //ROTATION
-        });
-      });
+      Server.postsGetImage(this.$route.params.society, this.$route.params.pid, this.$route.params.path, false).then(
+        result => {
+          let pyramid = {
+            type: "legacy-image-pyramid",
+            levels: [
+              {
+                url: result.data.url,
+                height: result.data.height,
+                width: result.data.width
+              }
+            ]
+          };
+          console.log("pyramid", pyramid);
+          this.osd = OpenSeadragon({
+            id: "openseadragon",
+            toolbar: "openseadragonToolbar",
+            tileSources: pyramid,
+            prefixUrl: "/img/seadragon/",
+            autoHideControls: false,
+            showRotationControl: true //ROTATION
+          });
+        }
+      );
     }
   }
 };

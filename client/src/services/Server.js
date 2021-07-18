@@ -1,39 +1,42 @@
 import axios from "axios";
-import { get, post, put, del } from "./ServerHelper";
+import { get, post, put, del, getWithoutAccessToken } from "./ServerHelper";
 
 export default {
-  categoriesCreate(category) {
-    return post("/categories", category);
+  categoriesCreate(societyId, category) {
+    return post(`/societies/${societyId}/categories`, category);
   },
-  categoriesUpdate(cat) {
-    return put(`/categories/${cat.id}`);
+  categoriesUpdate(societyId, cat) {
+    return put(`/societies/${societyId}/categories/${cat.id}`, cat);
   },
-  categoriesDelete(id) {
-    return del(`/categories/${id}`);
+  categoriesDelete(societyId, id) {
+    return del(`/societies/${societyId}/categories/${id}`);
   },
-  categoriesGetAll() {
-    return get("/categories");
+  categoriesGetAll(societyId) {
+    return get(`/societies/${societyId}/categories`);
   },
-  categoriesGetOne(id) {
-    return get(`/categories/${id}`);
+  categoriesGetOne(societyId, id) {
+    return get(`/societies/${societyId}/categories/${id}`);
   },
-  collectionsCreate(collection) {
-    return post("/collections", collection);
+  collectionsCreate(societyId, collection) {
+    return post(`/societies/${societyId}/collections`, collection);
   },
-  collectionsUpdate(coll) {
-    return put(`/collections/${coll.id}`, coll);
+  collectionsUpdate(societyId, coll) {
+    return put(`/societies/${societyId}/collections/${coll.id}`, coll);
   },
-  collectionsDelete(id) {
-    return del(`/collections/${id}`);
+  collectionsDelete(societyId, id) {
+    return del(`/societies/${societyId}/collections/${id}`);
   },
-  collectionsGetAll() {
-    return get("/collections");
+  collectionsGetAll(societyId) {
+    return get(`/societies/${societyId}/collections`);
   },
-  collectionsGetOne(id) {
-    return get(`/collections/${id}`);
+  collectionsGetOne(societyId, id) {
+    return get(`/societies/${societyId}/collections/${id}`);
   },
-  contentPostRequest(contentType) {
-    return post("/content", { contentType });
+  contentGetRequest(societyId, key) {
+    return get(`/societies/${societyId}/content/${key}`);
+  },
+  contentPostRequest(societyId, contentType) {
+    return post(`/societies/${societyId}/content`, { contentType });
   },
   contentPut(url, contentType, data) {
     return axios.put(url, data, {
@@ -43,47 +46,83 @@ export default {
     });
   },
   currentUser() {
-    return get(`/currentuser`);
+    return get(`/current_user`);
+  },
+  invitationsCreate(societyId, invitation) {
+    return post(`/societies/${societyId}/invitations`, invitation);
+  },
+  invitationsDelete(societyId, id) {
+    return del(`/societies/${societyId}/invitations/${id}`);
+  },
+  invitationsGetAll(societyId) {
+    return get(`/societies/${societyId}/invitations`);
+  },
+  invitationGetForCode(code) {
+    return getWithoutAccessToken(`/invitations/${code}`);
+  },
+  invitationAccept(code) {
+    return post(`/invitations/${code}`, {});
   },
   placeSearch(prefix) {
     return get(`places`, {
       params: { prefix: prefix, count: 8 }
     });
   },
-  postsGetAll() {
-    return get("/posts");
+  postsGetAll(societyId) {
+    return get(`/societies/${societyId}/posts`);
   },
-  postsGetOne(id) {
-    return get(`/posts/${id}`);
+  postsGetOne(societyId, id) {
+    return get(`/societies/${societyId}/posts/${id}`);
   },
-  postsGetImage(postId, imagePath, thumbnail) {
-    let url = `/posts/${postId}/images/${imagePath}?noredirect=true`;
+  postsGetImage(societyId, postId, imagePath, thumbnail) {
+    let url = `/societies/${societyId}/posts/${postId}/images/${imagePath}?noredirect=true`;
     if (thumbnail) {
       url += `&thumbnail=${thumbnail}`;
     }
     return get(url);
   },
-  postsCreate(pst) {
-    return post("/posts", pst);
+  postsCreate(societyId, pst) {
+    return post(`/societies/${societyId}/posts`, pst);
   },
-  postsUpdate(pst) {
-    return put(`/posts/${pst.id}`, pst);
+  postsUpdate(societyId, pst) {
+    return put(`/societies/${societyId}/posts/${pst.id}`, pst);
   },
-  postsDelete(id) {
-    return del(`/posts/${id}`);
+  postsDelete(societyId, id) {
+    return del(`/societies/${societyId}/posts/${id}`);
   },
-  recordsGetDetail(id) {
-    return get(`/records/${id}?details=true`);
+  recordsGetDetail(societyId, id) {
+    return get(`/societies/${societyId}/records/${id}?details=true`);
   },
-  recordsGetForPost(postId) {
-    return get("/records", {
+  recordsGetForPost(societyId, postId) {
+    return get(`/societies/${societyId}/records`, {
       params: { post: postId }
     });
   },
-  settingsGet() {
-    return get(`/settings`);
+  societySummariesGetAll() {
+    return get(`/society_summaries`);
   },
-  settingsUpdate(post) {
-    return put(`/settings`, post);
+  societySummariesGetOne(societyId) {
+    return get(`/society_summaries/${societyId}`);
+  },
+  societiesCreate(society) {
+    return post(`/societies`, society);
+  },
+  societyUsersGetCurrent(societyId) {
+    return get(`/societies/${societyId}/current_user`);
+  },
+  societyUsersGetAll(societyId) {
+    return get(`/societies/${societyId}/users`);
+  },
+  societyUsersUpdate(societyId, user) {
+    return put(`/societies/${societyId}/users/${user.id}`, user);
+  },
+  societyUsersDelete(societyId, id) {
+    return del(`/societies/${societyId}/users/${id}`);
+  },
+  societiesGetOne(societyId) {
+    return get(`/societies/${societyId}`);
+  },
+  societiesUpdate(society) {
+    return put(`/societies/${society.id}`, society);
   }
 };

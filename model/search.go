@@ -87,11 +87,15 @@ type SearchResult struct {
 }
 type SearchHit struct {
 	ID                 string         `json:"id"`
+	SocietyID          uint32         `json:"societyId"`
+	Private            bool           `json:"private"`
+	LoginURL           string         `json:"loginURL,omitempty"`
 	Score              float64        `json:"score"`
 	Person             SearchPerson   `json:"person,omitempty"`
 	Record             SearchRecord   `json:"record,omitempty"` // only returned on search by id
 	CollectionID       uint32         `json:"collection"`
 	CollectionName     string         `json:"collectionName"`
+	CollectionType     CollectionType `json:"collectionType"`
 	ImagePath          string         `json:"imagePath,omitempty"`
 	PostID             uint32         `json:"post,omitempty"`
 	CollectionLocation string         `json:"collectionLocation,omitempty"` // only returned on search by id

@@ -24,7 +24,7 @@ func TestGetRecordsForPost(t *testing.T) {
 	am.Result = &cr
 	am.Errors = nil
 
-	request, _ := http.NewRequest("GET", "/records?post=1", nil)
+	request, _ := http.NewRequest("GET", "/societies/1/records?post=1", nil)
 	response := httptest.NewRecorder()
 	r.ServeHTTP(response, request)
 	assert.Equal(t, 200, response.Code, "OK response is expected")
@@ -53,7 +53,7 @@ func TestGetRecordsForPost(t *testing.T) {
 	}
 	am.Result = &cr
 	am.Errors = nil
-	request, _ = http.NewRequest("GET", "/records?post=1", nil)
+	request, _ = http.NewRequest("GET", "/societies/1/records?post=1", nil)
 	response = httptest.NewRecorder()
 	r.ServeHTTP(response, request)
 	assert.Equal(t, 200, response.Code, "OK response is expected")
@@ -71,7 +71,7 @@ func TestGetRecordsForPost(t *testing.T) {
 	// error result
 	am.Result = (*api.RecordsResult)(nil)
 	am.Errors = api.NewError(assert.AnError)
-	request, _ = http.NewRequest("GET", "/records?post=1", nil)
+	request, _ = http.NewRequest("GET", "/societies/1/records?post=1", nil)
 	response = httptest.NewRecorder()
 	r.ServeHTTP(response, request)
 	assert.Equal(t, 500, response.Code)

@@ -6,13 +6,11 @@ import (
 	"os"
 	"testing"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/credentials"
-	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/ourrootsorg/cms-server/utils"
+
 	"github.com/ourrootsorg/cms-server/api"
 	"github.com/ourrootsorg/cms-server/model"
 	"github.com/ourrootsorg/cms-server/persist"
-	"github.com/ourrootsorg/cms-server/persist/dynamo"
 	"github.com/ourrootsorg/go-oidc"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -45,21 +43,22 @@ func TestUsers(t *testing.T) {
 		p := persist.NewPostgresPersister(db)
 		doUserTests(t, p)
 	}
-	dynamoDBTableName := os.Getenv("DYNAMODB_TEST_TABLE_NAME")
-	if dynamoDBTableName != "" {
-		config := aws.Config{
-			Region:      aws.String("us-east-1"),
-			Endpoint:    aws.String("http://localhost:18000"),
-			DisableSSL:  aws.Bool(true),
-			Credentials: credentials.NewStaticCredentials("ACCESS_KEY", "SECRET", ""),
-		}
-		sess, err := session.NewSession(&config)
-		assert.NoError(t, err)
-		p, err := dynamo.NewPersister(sess, dynamoDBTableName)
-		assert.NoError(t, err)
-		doUserTests(t, p)
-	}
+	//dynamoDBTableName := os.Getenv("DYNAMODB_TEST_TABLE_NAME")
+	//if dynamoDBTableName != "" {
+	//	config := aws.Config{
+	//		Region:      aws.String("us-east-1"),
+	//		Endpoint:    aws.String("http://localhost:18000"),
+	//		DisableSSL:  aws.Bool(true),
+	//		Credentials: credentials.NewStaticCredentials("ACCESS_KEY", "SECRET", ""),
+	//	}
+	//	sess, err := session.NewSession(&config)
+	//	assert.NoError(t, err)
+	//	p, err := dynamo.NewPersister(sess, dynamoDBTableName)
+	//	assert.NoError(t, err)
+	//	doUserTests(t, p)
+	//}
 }
+
 func doUserTests(t *testing.T,
 	p model.UserPersister,
 ) {
@@ -80,7 +79,7 @@ func doUserTests(t *testing.T,
 			Enabled:        true,
 		},
 	}
-	ctx := context.TODO()
+	ctx := utils.AddSocietyIDToContext(context.TODO(), 1)
 	provider := mockProvider{}
 	token := oidc.IDToken{
 		Issuer:  "https://flybynight.com",
@@ -97,7 +96,7 @@ func doUserTests(t *testing.T,
 		TokenType:   "bearer",
 	})).Once().Return(&ui, nil)
 
-	user, errors := testApi.RetrieveUser(ctx, &provider, &token, rawToken)
+	user, _, errors := testApi.RetrieveUser(ctx, &provider, &token, rawToken)
 	assert.Nil(t, errors)
 	// assert.Equal(t, expectedUser.ID, user.ID)
 	assert.Equal(t, expectedUser.Name, user.Name)
@@ -109,7 +108,7 @@ func doUserTests(t *testing.T,
 	// provider.AssertExpectations(t)
 
 	// Second time through, in DB and cache
-	user, errors = testApi.RetrieveUser(ctx, &provider, &token, rawToken)
+	user, _, errors = testApi.RetrieveUser(ctx, &provider, &token, rawToken)
 	assert.Nil(t, errors)
 	// assert.Equal(t, expectedUser.ID, user.ID)
 	assert.Equal(t, expectedUser.Name, user.Name)
@@ -131,7 +130,7 @@ func doUserTests(t *testing.T,
 		TokenType:   "bearer",
 	})).Once().Return(&ui, nil)
 
-	user, errors = testApi.RetrieveUser(ctx, &provider, &token, rawToken)
+	user, _, errors = testApi.RetrieveUser(ctx, &provider, &token, rawToken)
 	assert.Nil(t, errors)
 	// assert.Equal(t, expectedUser.ID, user.ID)
 	assert.Equal(t, expectedUser.Name, user.Name)

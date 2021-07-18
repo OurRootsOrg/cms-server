@@ -151,6 +151,7 @@ services:
       # - OIDC_DOMAIN=https://cognito-idp.us-east-1.amazonaws.com/us-east-1_Ueg25pMGY
       # - OIDC_AUDIENCE=61n9ggblojaf6tfj1n4lre40g
       - ELASTICSEARCH_URL=http://elasticsearch:9200
+      - SANDBOX_SOCIETY_ID=1
     networks:
       - mynetwork
 

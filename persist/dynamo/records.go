@@ -21,7 +21,8 @@ const (
 )
 
 // SelectRecordsByID selects many records from a slice of IDs
-func (p Persister) SelectRecordsByID(ctx context.Context, ids []uint32) ([]model.Record, error) {
+func (p Persister) SelectRecordsByID(ctx context.Context, ids []uint32, enforceContextSocietyMatch bool) ([]model.Record, error) {
+	// TODO implement enforce context society match
 	// We can't do a query to select multiple Records, so just call SelectPlace in a loop
 	var records []model.Record
 	for _, id := range ids {
@@ -40,7 +41,8 @@ func (p Persister) SelectRecordsByID(ctx context.Context, ids []uint32) ([]model
 
 // SelectRecordsForPost selects all records for a Post
 // This is not currently part of the persist interface, but it's here when we need it
-func (p Persister) SelectRecordsForPost(ctx context.Context, postID uint32) ([]model.Record, error) {
+func (p Persister) SelectRecordsForPost(ctx context.Context, postID uint32, limit int) ([]model.Record, error) {
+	// TODO limit number of records
 	qi := &dynamodb.QueryInput{
 		TableName:              p.tableName,
 		IndexName:              aws.String(gsiName),
@@ -329,7 +331,7 @@ func (p Persister) DeleteRecord(ctx context.Context, id uint32) error {
 
 // DeleteRecordsForPost deletes the Records associated with a Post
 func (p Persister) DeleteRecordsForPost(ctx context.Context, postID uint32) error {
-	records, err := p.SelectRecordsForPost(ctx, postID)
+	records, err := p.SelectRecordsForPost(ctx, postID, 0)
 	if err != nil {
 		return err
 	}

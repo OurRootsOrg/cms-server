@@ -17,6 +17,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ourrootsorg/cms-server/utils"
+
 	"gocloud.dev/pubsub"
 
 	"github.com/disintegration/imaging"
@@ -46,8 +48,9 @@ const numWorkers = 10
 func processThumbnailMessage(ctx context.Context, ap *api.API, msg model.ImagesWriterMsg) error {
 	log.Printf("[DEBUG] ImagesWriter Generating Thumbnail PostID: %d Path %s", msg.PostID, msg.ImagePath)
 
-	dimensionsKey := msg.ImagePath + model.ImageDimensionsSuffix
-	thumbKey := msg.ImagePath + model.ImageThumbnailSuffix
+	fullImagePath := fmt.Sprintf("/%d/%s", msg.SocietyID, msg.ImagePath)
+	dimensionsKey := fullImagePath + model.ImageDimensionsSuffix
+	thumbKey := fullImagePath + model.ImageThumbnailSuffix
 	thumbDimensionsKey := thumbKey + model.ImageDimensionsSuffix
 
 	// open bucket
@@ -59,7 +62,7 @@ func processThumbnailMessage(ctx context.Context, ap *api.API, msg model.ImagesW
 	defer bucket.Close()
 
 	// read image
-	reader, err := bucket.NewReader(ctx, msg.ImagePath, nil)
+	reader, err := bucket.NewReader(ctx, fullImagePath, nil)
 	if err != nil {
 		log.Printf("[ERROR] processThumbnailMessage read image %#v\n", err)
 		return api.NewError(fmt.Errorf("processThumbnailMessage read image %v", err))
@@ -178,7 +181,8 @@ func unzipImages(ctx context.Context, ap *api.API, msg model.ImagesWriterMsg) er
 					continue
 				}
 				name := fmt.Sprintf(api.ImagesPrefix, msg.PostID) + f.Name
-				errs = bucket.WriteAll(ctx, name, fileBytes, nil)
+				fullName := fmt.Sprintf("/%d/%s", msg.SocietyID, name)
+				errs = bucket.WriteAll(ctx, fullName, fileBytes, nil)
 				if errs != nil {
 					out <- errs
 					continue
@@ -186,6 +190,7 @@ func unzipImages(ctx context.Context, ap *api.API, msg model.ImagesWriterMsg) er
 				// send a message to generate a thumbnail
 				msg := model.ImagesWriterMsg{
 					Action:    model.ImagesWriterActionGenerateThumbnail,
+					SocietyID: msg.SocietyID,
 					PostID:    msg.PostID,
 					ImagePath: name,
 				}
@@ -207,8 +212,9 @@ func unzipImages(ctx context.Context, ap *api.API, msg model.ImagesWriterMsg) er
 	}
 	var fileCount int
 	for _, zipName := range msg.NewZips {
+		fullZipName := fmt.Sprintf("/%d/%s", msg.SocietyID, zipName)
 		// Read zip file data
-		ra, err := NewBucketReaderAt(ctx, bucket, zipName)
+		ra, err := NewBucketReaderAt(ctx, bucket, fullZipName)
 		if err != nil {
 			log.Printf("[ERROR] Error opening zip file %s: %v\n", zipName, err)
 			return api.NewError(err)
@@ -263,12 +269,18 @@ func processUnzipMessage(ctx context.Context, ap *api.API, msg model.ImagesWrite
 	}
 
 	// do the work
-	errs = unzipImages(ctx, ap, msg)
+	unzipErrs := unzipImages(ctx, ap, msg)
 
-	// update post
+	// get post again, in case there were any changes in the meantime
+	post, errs = ap.GetPost(ctx, msg.PostID)
 	if errs != nil {
+		log.Printf("[ERROR] Error calling GetPost on %d: %v", msg.PostID, errs)
+		return errs
+	}
+	// update post
+	if unzipErrs != nil {
 		post.ImagesStatus = model.ImagesStatusLoadError
-		post.ImagesError = errs.Error()
+		post.ImagesError = unzipErrs.Error()
 	} else {
 		post.ImagesStatus = model.ImagesStatusLoadComplete
 	}
@@ -289,11 +301,13 @@ func processMessage(ctx context.Context, ap *api.API, rawMsg []byte) error {
 		return nil // Don't return an error, because parsing will never succeed
 	}
 
+	sctx := utils.AddSocietyIDToContext(ctx, msg.SocietyID)
+
 	switch msg.Action {
 	case model.ImagesWriterActionUnzip:
-		return processUnzipMessage(ctx, ap, msg)
+		return processUnzipMessage(sctx, ap, msg)
 	case model.ImagesWriterActionGenerateThumbnail:
-		return processThumbnailMessage(ctx, ap, msg)
+		return processThumbnailMessage(sctx, ap, msg)
 	default:
 		log.Printf("[ERROR] Discarding message with unknown action '%s': %v", string(rawMsg), err)
 		return nil // Don't return an error, because parsing will never succeed

@@ -29,6 +29,9 @@ export const actions = {
       commit("SEARCH_RESET");
       return Promise.resolve();
     }
+    if (window.ourroots.societyId) {
+      query.societyId = window.ourroots.societyId;
+    }
     return Server.search(query)
       .then(response => {
         commit("SEARCH_SET", response.data);

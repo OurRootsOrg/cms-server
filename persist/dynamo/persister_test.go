@@ -363,32 +363,32 @@ func TestRecord(t *testing.T) {
 	assert.Contains(t, fnv.Variants, "slaghoople")
 }
 
-func TestSettings(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skipping tests in short mode")
-	}
-	p, teardown := setupTestCase(t)
-	defer teardown(t)
-	s, err := p.SelectSettings(context.TODO())
-	// assert.Error(t, err)
-	// assert.Nil(t, s)
-	var in model.Settings
-	if s != nil {
-		in = *s
-	}
-
-	in.PostMetadata = append(in.PostMetadata, model.SettingsPostMetadata{
-		Name:    "First",
-		Type:    "string",
-		Tooltip: "Tooltip 1",
-	})
-	s, err = p.UpsertSettings(context.TODO(), in)
-	assert.NoError(t, err)
-	in = *s
-	s, err = p.SelectSettings(context.TODO())
-	assert.NoError(t, err)
-	assert.Equal(t, in.PostMetadata, s.PostMetadata)
-}
+//func TestSettings(t *testing.T) {
+//	if testing.Short() {
+//		t.Skip("skipping tests in short mode")
+//	}
+//	p, teardown := setupTestCase(t)
+//	defer teardown(t)
+//	s, err := p.SelectSettings(context.TODO())
+//	// assert.Error(t, err)
+//	// assert.Nil(t, s)
+//	var in model.Settings
+//	if s != nil {
+//		in = *s
+//	}
+//
+//	in.PostMetadata = append(in.PostMetadata, model.SettingsPostMetadata{
+//		Name:    "First",
+//		Type:    "string",
+//		Tooltip: "Tooltip 1",
+//	})
+//	s, err = p.UpsertSettings(context.TODO(), in)
+//	assert.NoError(t, err)
+//	in = *s
+//	s, err = p.SelectSettings(context.TODO())
+//	assert.NoError(t, err)
+//	assert.Equal(t, in.PostMetadata, s.PostMetadata)
+//}
 
 func TestSequences(t *testing.T) {
 	if testing.Short() {

@@ -15,6 +15,7 @@ import (
 func TestSearchByID(t *testing.T) {
 	am := &api.ApiMock{}
 	app := NewApp().API(am)
+	app.authDisabled = true
 	r := app.NewRouter()
 
 	// Empty result
@@ -42,6 +43,7 @@ func TestSearchByID(t *testing.T) {
 func TestSearch(t *testing.T) {
 	am := &api.ApiMock{}
 	app := NewApp().API(am)
+	app.authDisabled = true
 	r := app.NewRouter()
 
 	// Empty result

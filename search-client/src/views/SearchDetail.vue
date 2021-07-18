@@ -1,5 +1,6 @@
 <template>
   <v-col class="search-detail" cols="12">
+    <v-btn text class="pl-0 ml-0 primary--text" @click="$router.go(-1)"><v-icon>mdi-chevron-left</v-icon> Back</v-btn>
     <h1>Record detail for</h1>
     <h2>{{ search.searchResult.person.name }} in {{ search.searchResult.collectionName }}</h2>
     <v-row class="recordDetail d-flex">
@@ -10,6 +11,7 @@
             :to="{
               name: 'image',
               params: {
+                societyId: search.searchResult.societyId,
                 pid: search.searchResult.post,
                 path: search.searchResult.imagePath
               }
@@ -22,7 +24,11 @@
             class="primary--text mx-5"
             :to="{
               name: 'image',
-              params: { pid: search.searchResult.post, path: search.searchResult.imagePath }
+              params: {
+                societyId: search.searchResult.societyId,
+                pid: search.searchResult.post,
+                path: search.searchResult.imagePath
+              }
             }"
           >
             Larger image<v-icon right>mdi-chevron-right</v-icon>
@@ -30,11 +36,17 @@
         </div>
       </v-col>
       <!--individual transcript-->
-      <v-col cols="12" md="8">
+      <v-col cols="12" md="8" v-if="search.searchResult.private">
+        <p>
+          This record is available to members of the society.
+          <a v-if="search.searchResult.loginURL" :href="search.searchResult.loginURL">Click here to become a member</a>
+        </p>
+      </v-col>
+      <v-col cols="12" md="8" v-else>
         <v-row v-if="search.searchResult.person.role !== 'principal'" no-gutters>
           <v-col>
-            <div>Name: {{ search.searchResult.person.name }}</div>
-            <div>Role: {{ search.searchResult.person.role }}</div>
+            <div>{{ nameLabel }}: {{ search.searchResult.person.name }}</div>
+            <div>{{ roleLabel }}: {{ search.searchResult.person.role }}</div>
           </v-col>
         </v-row>
         <v-row no-gutters>
@@ -47,12 +59,10 @@
           <v-col cols="12">
             <h4 class="recordDetailSectionHead">Record Details</h4>
           </v-col>
-          <v-col cols="3" class="d-flex justify-right flex-column">
-            <div v-for="(lv, $ix) in search.searchResult.record" :key="$ix">{{ lv.label }}:</div>
-          </v-col>
-          <v-col cols="9">
-            <div v-for="(lv, $ix) in search.searchResult.record" :key="$ix">{{ lv.value }}</div>
-          </v-col>
+        </v-row>
+        <v-row v-for="(lv, $ix) in search.searchResult.record" :key="$ix">
+          <v-col cols="3" class="d-flex justify-right flex-column recordDetailRow">{{ lv.label }}:</v-col>
+          <v-col cols="9" class="recordDetailRow" v-html="sanitize(lv.value)"></v-col>
         </v-row>
       </v-col>
     </v-row>
@@ -76,7 +86,7 @@
       <v-col cols="12">
         <v-card class="pa-5">
           <h4 class="recordDetailSectionHead mb-3">How to cite this record</h4>
-          <div>{{ search.searchResult.citation }}</div>
+          <div v-html="sanitize(search.searchResult.citation)"></div>
         </v-card>
       </v-col>
     </v-row>
@@ -105,7 +115,12 @@ export default {
     console.log("searchResult", this.search.searchResult);
     // get image path
     if (this.search.searchResult.imagePath) {
-      Server.postsGetImage(this.search.searchResult.post, this.search.searchResult.imagePath, true).then(result => {
+      Server.postsGetImage(
+        this.search.searchResult.societyId,
+        this.search.searchResult.post,
+        this.search.searchResult.imagePath,
+        true
+      ).then(result => {
         this.thumbURL = result.data.url;
       });
     }
@@ -138,8 +153,19 @@ export default {
       householdRecords: []
     };
   },
-  computed: mapState(["search"]),
+  computed: {
+    nameLabel() {
+      return this.search.searchResult.collectionType === "Records" ? "Name" : "Title";
+    },
+    roleLabel() {
+      return this.search.searchResult.collectionType === "Records" ? "Role" : "Author";
+    },
+    ...mapState(["search"])
+  },
   methods: {
+    sanitize(value) {
+      return this.$sanitize(value);
+    },
     getRecordValue(record, header) {
       let lv = record.find(lv => lv.label === header);
       return lv ? lv.value : "";
@@ -155,5 +181,9 @@ export default {
 }
 .recordDetailSectionHead {
   text-transform: uppercase;
+}
+.recordDetailRow {
+  padding-top: 0;
+  padding-bottom: 0;
 }
 </style>
