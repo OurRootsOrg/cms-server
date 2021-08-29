@@ -1,10 +1,10 @@
 <template>
   <v-container class="posts-create">
-    <h1>{{ post.id ? "Edit" : "Create" }} Post</h1>
+    <h1>{{ post.id ? "Edit" : "Create" }} Record set</h1>
     <v-form @submit.prevent="save">
-      <h3>Give your post a name</h3>
+      <h3>Give your record set a name</h3>
       <v-text-field
-        label="Post Name"
+        label="Record-set Name"
         v-model="post.name"
         type="text"
         placeholder="Name"
@@ -42,34 +42,49 @@
         </template>
       </div>
       <div v-if="post.id" class="postStatusWrapper">
-        <h3>Post status</h3>
-        <div class="postStatus">
-          <strong>{{ post.postStatus }}:</strong>
-          <span> Records {{ !post.recordsKey ? "Missing" : post.recordsStatus || "Loaded" }}</span>
-          <span v-if="this.collections.collection.imagePathHeader">
-            <span
-              >; Images
-              {{ !post.imagesKeys || post.imagesKeys.length === 0 ? "Missing" : post.imagesStatus || "Loaded" }}</span
-            >
-          </span>
-        </div>
-        <div v-if="post.recordsError"><strong>Records Error</strong>: {{ cleanError(post.recordsError) }}</div>
-        <div v-if="post.imagesError"><strong>Images Error</strong>: {{ cleanError(post.imagesError) }}</div>
+        <h3>Status</h3>
+        <ul>
+          <li>
+            Records:
+            <span v-if="post.recordsError"><strong>error</strong> - {{ cleanError(post.recordsError) }}</span>
+            <span v-else-if="!post.recordsKey">Missing</span>
+            <span v-else>
+              <router-link :to="{ name: 'downloads', params: { key: post.recordsKey } }">
+                {{ post.recordsStatus || "Loaded" }}
+              </router-link>
+            </span>
+          </li>
+          <li v-if="this.collections.collection.imagePathHeader">
+            Images:
+            <span v-if="post.imagesError"><strong>error</strong> - {{ cleanError(post.imagesError) }}</span>
+            <span v-else-if="!post.imagesKeys || post.imagesKeys.length === 0">Missing</span>
+            <span v-else>
+              <router-link :to="{ name: 'downloads', params: { key: post.imagesKeys[0] } }">
+                {{ post.imagesStatus || "Loaded" }}
+              </router-link>
+            </span>
+          </li>
+          <li>
+            Visibility:
+            <span v-if="post.postError"><strong>error</strong> - {{ cleanError(post.postError) }}</span>
+            <span v-else>{{ post.postStatus }}</span>
+          </li>
+        </ul>
       </div>
-      <div v-if="settings.settings.postMetadata.length > 0">
+      <div v-if="societySummaries.societySummary.postMetadata.length > 0">
         <h3>
-          Custom fields (metadata) for this post
+          Custom fields (metadata) for this record set
           <v-tooltip bottom>
             <template v-slot:activator="{ on, attrs }">
               <v-icon small v-bind="attrs" v-on="on">mdi-information</v-icon>
             </template>
             <span
-              >Information specific to <em>this particular post</em> such as the transcription date, translator, etc.
-              which might be different from other posts in this collection</span
+              >Information specific to <em>this particular record set</em> such as the transcription date, translator,
+              etc. which might be different from other record sets in this collection</span
             >
           </v-tooltip>
         </h3>
-        <v-row no-gutter v-for="(item, index) in settings.settings.postMetadata" :key="index">
+        <v-row no-gutter v-for="(item, index) in societySummaries.societySummary.postMetadata" :key="index">
           <v-col cols="12" md="5" class="py-0" v-if="item.type === 'string'">
             <v-text-field
               :placeholder="item.tooltip"
@@ -137,17 +152,17 @@
             v-if="isPublishable"
             @click="publish"
             color="primary"
-            title="Publish the post to make it searchable"
+            title="Publish the record set to make it searchable"
             class="ml-4"
-            >Publish Post</v-btn
+            >Publish Record set</v-btn
           >
           <v-btn
             v-if="isUnpublishable"
             @click="unpublish"
             color="primary"
-            title="Unpublish the post to remove it from the index"
+            title="Unpublish the record set to remove it from the index"
             class="ml-4"
-            >Unpublish Post</v-btn
+            >Unpublish Record set</v-btn
           >
           <v-dialog v-if="isRecordsImportable" v-model="importRecordsDlg" persistent max-width="320">
             <template v-slot:activator="{ on, attrs }">
@@ -158,11 +173,16 @@
             <v-card>
               <v-card-title class="headline">Select file to import</v-card-title>
               <v-card-text>
+                <p>
+                  Files up to 100,000 records are supported. If you have more than 100,000 records, split them into
+                  multiple files.
+                </p>
                 <file-upload
                   class="btn btn-primary"
                   post-action="/"
                   extensions="csv"
                   accept="text/csv"
+                  :headers="{ 'Content-Type': 'text/csv' }"
                   :multiple="false"
                   :size="1024 * 1024 * 1024"
                   v-model="recordFiles"
@@ -216,6 +236,7 @@
                   post-action="/"
                   extensions="zip"
                   accept="application/zip"
+                  :headers="{ 'Content-Type': 'application/zip' }"
                   :multiple="false"
                   :size="1024 * 1024 * 1024 * 10"
                   v-model="imageFiles"
@@ -257,14 +278,14 @@
 
           <v-spacer></v-spacer>
 
-          <v-btn :disabled="!isDeletable" @click="del" class="warning">Delete Post</v-btn>
+          <v-btn :disabled="!isDeletable" @click="del" class="warning">Delete Record set</v-btn>
         </v-col>
       </v-row>
     </v-form>
 
     <v-row class="pt-5" v-if="post.id && post.recordsKey && post.recordsStatus === ''">
       <v-col>
-        <h3 class="pl-1">Post data</h3>
+        <h3 class="pl-1">Records <span v-if="records.recordsList.length >= 2000">(showing the first 2,000)</span></h3>
         <v-data-table
           :items="
             records.recordsList.map(r => {
@@ -302,6 +323,29 @@ import Server from "@/services/Server.js";
 import NProgress from "nprogress";
 import lodash from "lodash";
 
+function getContent(pid, next) {
+  let routes = [];
+  if (pid) {
+    routes.push(store.dispatch("postsGetOne", pid));
+    routes.push(store.dispatch("recordsGetForPost", pid));
+  } else {
+    routes.push(store.dispatch("collectionsGetAll"));
+  }
+  Promise.all(routes)
+    .then(() => {
+      if (pid) {
+        store.dispatch("collectionsGetOne", store.state.posts.post.collection).then(() => {
+          next();
+        });
+      } else {
+        next();
+      }
+    })
+    .catch(() => {
+      next("/");
+    });
+}
+
 function setup() {
   this.post = {
     ...this.posts.post
@@ -311,26 +355,12 @@ function setup() {
 export default {
   components: { FileUpload },
   beforeRouteEnter: function(routeTo, routeFrom, next) {
-    let routes = [store.dispatch("settingsGet")];
-    if (routeTo.params && routeTo.params.pid) {
-      routes.push(store.dispatch("postsGetOne", routeTo.params.pid));
-      routes.push(store.dispatch("recordsGetForPost", routeTo.params.pid));
-    } else {
-      routes.push(store.dispatch("collectionsGetAll"));
-    }
-    Promise.all(routes)
-      .then(() => {
-        if (routeTo.params && routeTo.params.pid) {
-          store.dispatch("collectionsGetOne", store.state.posts.post.collection).then(() => {
-            next();
-          });
-        } else {
-          next();
-        }
-      })
-      .catch(() => {
-        next("/");
-      });
+    console.log("postsCreateEdit.beforeRouteEnter");
+    getContent(routeTo.params.pid, next);
+  },
+  beforeRouteUpdate: function(routeTo, routeFrom, next) {
+    console.log("postsCreateEdit.beforeRouteUpdate");
+    getContent(routeTo.params.pid, next);
   },
   created() {
     if (this.$route.params && this.$route.params.pid) {
@@ -379,10 +409,21 @@ export default {
       );
     },
     isDeletable() {
+      let oldPost = false;
+      if (this.post.last_update_time) {
+        let postDate = new Date(this.post.last_update_time);
+        let now = new Date();
+        let postAgeSeconds = (now.getTime() - postDate.getTime()) / 1000;
+        oldPost = postAgeSeconds > 1800;
+      }
       return (
         this.post.id &&
-        (this.post.recordsStatus === "" || this.post.recordsStatus === "Error") &&
-        (this.post.imagesStatus === "" || this.post.imagesStatus === "Error") &&
+        (this.post.recordsStatus === "" ||
+          this.post.recordsStatus === "Error" ||
+          (this.post.recordsStatus === "Loading" && oldPost)) &&
+        (this.post.imagesStatus === "" ||
+          this.post.imagesStatus === "Error" ||
+          (this.post.imagesStatus === "Loading" && oldPost)) &&
         (this.post.postStatus === "Draft" || this.post.postStatus === "Error")
       );
     },
@@ -404,7 +445,7 @@ export default {
         this.post.postStatus === "Published"
       );
     },
-    ...mapState(["collections", "posts", "records", "settings", "user"])
+    ...mapState(["collections", "posts", "records", "societySummaries", "users"])
   },
   validations: {
     post: {
@@ -423,7 +464,7 @@ export default {
       }
     },
     cleanError(err) {
-      for (let errPrefix of ["Errors:", "Error OTHER:", "Unknown error:"]) {
+      for (let errPrefix of ["[ERROR] ", "Errors:", "Error OTHER:", "Unknown error:"]) {
         if (err.startsWith(errPrefix)) {
           err = err.substr(errPrefix.length).trim();
         }
@@ -481,10 +522,10 @@ export default {
           this.imagesError = "Please put your images into a ZIP file; You need to select a file ending in .zip";
           return prevent();
         }
-        return Server.contentPostRequest("application/zip").then(result => {
+        return Server.contentPostRequest(store.getters.currentSocietyId, "application/zip").then(result => {
           console.log("contentPostRequest", result.data);
           this.imagesPostRequestResultData = result.data;
-          newFile.putAction = result.data.putURL;
+          newFile.putAction = result.data.signedURL;
         });
       }
     },
@@ -502,18 +543,25 @@ export default {
       this.imageFiles = [];
       this.importImagesDlg = false;
       this.imagesUploading = false;
-      let post = this.getPostFromForm();
       this.$v.$touch();
       NProgress.start();
-      post.imagesKeys = [this.imagesPostRequestResultData.key];
-      console.log("emdImagesUpload", post, this.imagesPostRequestResultData);
+      // re-read post to avoid 409 conflict
       this.$store
-        .dispatch("postsUpdate", post)
-        .then(() => {
-          setup.bind(this)();
-          this.$v.$reset();
+        .dispatch("postsGetOne", this.post.id)
+        .then(post => {
+          post.imagesKeys = [this.imagesPostRequestResultData.key];
+          console.log("emdImagesUpload", post, this.imagesPostRequestResultData);
+          this.$store
+            .dispatch("postsUpdate", post)
+            .then(() => {
+              setup.bind(this)();
+              this.$v.$reset();
+            })
+            .finally(() => {
+              NProgress.done();
+            });
         })
-        .finally(() => {
+        .catch(() => {
           NProgress.done();
         });
     },
@@ -524,10 +572,10 @@ export default {
           this.recordsError = "Please save your data as a CSV file; You need to select a file ending in .csv";
           return prevent();
         }
-        return Server.contentPostRequest("text/csv").then(result => {
+        return Server.contentPostRequest(store.getters.currentSocietyId, "text/csv").then(result => {
           console.log("contentPostRequest", result.data);
           this.recordsPostRequestResultData = result.data;
-          newFile.putAction = result.data.putURL;
+          newFile.putAction = result.data.signedURL;
         });
       }
     },
@@ -545,18 +593,25 @@ export default {
       this.recordFiles = [];
       this.importRecordsDlg = false;
       this.recordsUploading = false;
-      let post = this.getPostFromForm();
       this.$v.$touch();
       NProgress.start();
-      post.recordsKey = this.recordsPostRequestResultData.key;
-      console.log("emdRecordsUpload", post, this.recordsPostRequestResultData);
+      // re-read post to avoid 409 conflict
       this.$store
-        .dispatch("postsUpdate", post)
-        .then(() => {
-          setup.bind(this)();
-          this.$v.$reset();
+        .dispatch("postsGetOne", this.post.id)
+        .then(post => {
+          post.recordsKey = this.recordsPostRequestResultData.key;
+          console.log("endRecordsUpload", post, this.recordsPostRequestResultData);
+          this.$store
+            .dispatch("postsUpdate", post)
+            .then(() => {
+              setup.bind(this)();
+              this.$v.$reset();
+            })
+            .finally(() => {
+              NProgress.done();
+            });
         })
-        .finally(() => {
+        .catch(() => {
           NProgress.done();
         });
     },

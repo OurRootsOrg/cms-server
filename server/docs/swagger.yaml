@@ -5,6 +5,13 @@ definitions:
       contentType:
         type: string
     type: object
+  api.ContentResult:
+    properties:
+      key:
+        type: string
+      signedURL:
+        type: string
+    type: object
   api.Error:
     type: object
   api.HeaderLabel:
@@ -13,6 +20,32 @@ definitions:
         type: string
       label:
         type: string
+    type: object
+  api.InvitationSocietyName:
+    properties:
+      code:
+        type: string
+      id:
+        example: 999
+        type: integer
+      insert_time:
+        type: string
+      last_update_time:
+        type: string
+      level:
+        type: integer
+      name:
+        type: string
+      societyId:
+        type: integer
+      societyName:
+        type: string
+    required:
+    - code
+    - id
+    - level
+    - name
+    - societyId
     type: object
   api.RecordDetail:
     properties:
@@ -57,6 +90,32 @@ definitions:
         items:
           $ref: '#/definitions/model.Record'
         type: array
+    type: object
+  api.SocietyUserEmail:
+    properties:
+      email:
+        type: string
+      id:
+        example: 999
+        type: integer
+      insert_time:
+        type: string
+      last_update_time:
+        type: string
+      level:
+        type: integer
+      name:
+        description: override userName from user record
+        type: string
+      societyId:
+        type: integer
+      userId:
+        type: integer
+    required:
+    - id
+    - level
+    - societyId
+    - userId
     type: object
   model.Category:
     properties:
@@ -115,10 +174,15 @@ definitions:
         type: array
       name:
         type: string
+      privacyLevel:
+        type: integer
+      type:
+        type: string
     required:
     - categories
     - id
     - name
+    - type
     type: object
   model.CollectionField:
     properties:
@@ -153,9 +217,14 @@ definitions:
         type: array
       name:
         type: string
+      privacyLevel:
+        type: integer
+      type:
+        type: string
     required:
     - categories
     - name
+    - type
     type: object
   model.CollectionMapping:
     properties:
@@ -178,6 +247,46 @@ definitions:
         items:
           type: string
         type: array
+    type: object
+  model.Invitation:
+    properties:
+      code:
+        type: string
+      id:
+        example: 999
+        type: integer
+      insert_time:
+        type: string
+      last_update_time:
+        type: string
+      level:
+        type: integer
+      name:
+        type: string
+      societyId:
+        type: integer
+    required:
+    - code
+    - id
+    - level
+    - name
+    - societyId
+    type: object
+  model.InvitationIn:
+    properties:
+      code:
+        type: string
+      level:
+        type: integer
+      name:
+        type: string
+      societyId:
+        type: integer
+    required:
+    - code
+    - level
+    - name
+    - societyId
     type: object
   model.Place:
     properties:
@@ -345,6 +454,8 @@ definitions:
         type: string
       collectionName:
         type: string
+      collectionType:
+        type: string
       household:
         description: only returned on search by id
         items:
@@ -354,17 +465,23 @@ definitions:
         type: string
       imagePath:
         type: string
+      loginURL:
+        type: string
       person:
         $ref: '#/definitions/model.SearchPerson'
         type: object
       post:
         type: integer
+      private:
+        type: boolean
       record:
         $ref: '#/definitions/model.SearchRecord'
         description: only returned on search by id
         type: object
       score:
         type: number
+      societyId:
+        type: integer
     type: object
   model.SearchLabelValue:
     properties:
@@ -414,17 +531,6 @@ definitions:
       total:
         type: integer
     type: object
-  model.Settings:
-    properties:
-      insert_time:
-        type: string
-      last_update_time:
-        type: string
-      postMetadata:
-        items:
-          $ref: '#/definitions/model.SettingsPostMetadata'
-        type: array
-    type: object
   model.SettingsPostMetadata:
     properties:
       name:
@@ -433,6 +539,82 @@ definitions:
         type: string
       type:
         type: string
+    type: object
+  model.Society:
+    properties:
+      id:
+        example: 999
+        type: integer
+      insert_time:
+        type: string
+      last_update_time:
+        type: string
+      loginURL:
+        type: string
+      name:
+        type: string
+      postMetadata:
+        items:
+          $ref: '#/definitions/model.SettingsPostMetadata'
+        type: array
+      secretKey:
+        type: string
+    required:
+    - id
+    - name
+    type: object
+  model.SocietyIn:
+    properties:
+      loginURL:
+        type: string
+      name:
+        type: string
+      postMetadata:
+        items:
+          $ref: '#/definitions/model.SettingsPostMetadata'
+        type: array
+      secretKey:
+        type: string
+    required:
+    - name
+    type: object
+  model.SocietySummary:
+    properties:
+      id:
+        example: 999
+        type: integer
+      insert_time:
+        type: string
+      name:
+        type: string
+      postMetadata:
+        items:
+          $ref: '#/definitions/model.SettingsPostMetadata'
+        type: array
+    type: object
+  model.SocietyUser:
+    properties:
+      id:
+        example: 999
+        type: integer
+      insert_time:
+        type: string
+      last_update_time:
+        type: string
+      level:
+        type: integer
+      name:
+        description: override userName from user record
+        type: string
+      societyId:
+        type: integer
+      userId:
+        type: integer
+    required:
+    - id
+    - level
+    - societyId
+    - userId
     type: object
   model.StringSet:
     items:
@@ -843,7 +1025,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/model.Category'
+            $ref: '#/definitions/api.ContentResult'
         "415":
           description: Bad Content-Type
           schema:
@@ -896,6 +1078,97 @@ paths:
       summary: returns the current user
       tags:
       - users
+  /downloads:
+    get:
+      operationId: downloadContent
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.ContentResult'
+        "415":
+          description: Bad Content-Type
+          schema:
+            $ref: '#/definitions/api.Error'
+        "500":
+          description: Server error
+          schema:
+            $ref: '#/definitions/api.Error'
+      security:
+      - OAuth2Implicit:
+        - cms
+        - openid
+        - profile
+        - email
+      - OAuth2AuthCode:
+        - cms
+        - openid
+        - profile
+        - email
+      summary: redirects to a URL for downloading content
+      tags:
+      - content
+  /invitations/{code}:
+    get:
+      operationId: getInvitation
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.InvitationSocietyName'
+        "404":
+          description: Not found
+          schema:
+            $ref: '#/definitions/api.Error'
+        "500":
+          description: Server error
+          schema:
+            $ref: '#/definitions/api.Error'
+      security:
+      - OAuth2Implicit:
+        - cms
+        - openid
+        - profile
+        - email
+      - OAuth2AuthCode:
+        - cms
+        - openid
+        - profile
+        - email
+      summary: gets an Invitation
+      tags:
+      - invitations
+    post:
+      consumes:
+      - application/json
+      operationId: acceptInvitation
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.SocietyUser'
+        "500":
+          description: Server error
+          schema:
+            $ref: '#/definitions/api.Error'
+      security:
+      - OAuth2Implicit:
+        - cms
+        - openid
+        - profile
+        - email
+      - OAuth2AuthCode:
+        - cms
+        - openid
+        - profile
+        - email
+      summary: accept an invitation
+      tags:
+      - invitations
   /places:
     get:
       operationId: getPlacesByPrefix
@@ -1484,6 +1757,51 @@ paths:
       summary: returns search results
       tags:
       - search
+  /search-images/{society}/{id}/{filePath}:
+    get:
+      operationId: getSearchImage
+      parameters:
+      - description: Post ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Image file path
+        in: path
+        name: imageFile
+        required: true
+        type: string
+      - description: return thumbnail
+        in: query
+        name: thumbnail
+        type: boolean
+      responses:
+        "307":
+          description: Temporary Redirect
+          schema:
+            type: header
+        "404":
+          description: Not found
+          schema:
+            $ref: '#/definitions/api.Error'
+        "500":
+          description: Server error
+          schema:
+            $ref: '#/definitions/api.Error'
+      security:
+      - OAuth2Implicit:
+        - cms
+        - openid
+        - profile
+        - email
+      - OAuth2AuthCode:
+        - cms
+        - openid
+        - profile
+        - email
+      summary: Returns an image URL
+      tags:
+      - search
   /search/{id}:
     get:
       operationId: searchByID
@@ -1511,25 +1829,25 @@ paths:
       summary: returns a single search result
       tags:
       - search
-  /settings:
-    put:
+  /societies:
+    post:
       consumes:
       - application/json
-      operationId: updateSettings
+      operationId: addSociety
       parameters:
-      - description: Update Settings
+      - description: Add Society
         in: body
-        name: post
+        name: society
         required: true
         schema:
-          $ref: '#/definitions/model.Settings'
+          $ref: '#/definitions/model.SocietyIn'
       produces:
       - application/json
       responses:
-        "200":
+        "201":
           description: OK
           schema:
-            $ref: '#/definitions/model.Settings'
+            $ref: '#/definitions/model.Society'
         "415":
           description: Bad Content-Type
           schema:
@@ -1549,9 +1867,425 @@ paths:
         - openid
         - profile
         - email
-      summary: updates settings
+      summary: adds a new Society
       tags:
-      - settings
+      - societies
+  /societies/{id}:
+    delete:
+      operationId: deleteSociety
+      parameters:
+      - description: Society ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: OK
+        "500":
+          description: Server error
+          schema:
+            $ref: '#/definitions/api.Error'
+      security:
+      - OAuth2Implicit:
+        - cms
+        - openid
+        - profile
+        - email
+      - OAuth2AuthCode:
+        - cms
+        - openid
+        - profile
+        - email
+      summary: deletes a Society
+      tags:
+      - societies
+    put:
+      consumes:
+      - application/json
+      operationId: updateSociety
+      parameters:
+      - description: Society ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Update Society
+        in: body
+        name: society
+        required: true
+        schema:
+          $ref: '#/definitions/model.Society'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Society'
+        "415":
+          description: Bad Content-Type
+          schema:
+            $ref: '#/definitions/api.Error'
+        "500":
+          description: Server error
+          schema:
+            $ref: '#/definitions/api.Error'
+      security:
+      - OAuth2Implicit:
+        - cms
+        - openid
+        - profile
+        - email
+      - OAuth2AuthCode:
+        - cms
+        - openid
+        - profile
+        - email
+      summary: updates a Society
+      tags:
+      - societies
+  /societies/{society}:
+    get:
+      operationId: getSociety
+      parameters:
+      - description: Society ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Society'
+        "404":
+          description: Not found
+          schema:
+            $ref: '#/definitions/api.Error'
+        "500":
+          description: Server error
+          schema:
+            $ref: '#/definitions/api.Error'
+      security:
+      - OAuth2Implicit:
+        - cms
+        - openid
+        - profile
+        - email
+      - OAuth2AuthCode:
+        - cms
+        - openid
+        - profile
+        - email
+      summary: gets a Society
+      tags:
+      - societies
+  /societies/{society}/current_user:
+    get:
+      operationId: getCurrentSocietyUser
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.SocietyUser'
+            type: array
+        "500":
+          description: Server error
+          schema:
+            $ref: '#/definitions/api.Error'
+      security:
+      - OAuth2Implicit:
+        - cms
+        - openid
+        - profile
+        - email
+      - OAuth2AuthCode:
+        - cms
+        - openid
+        - profile
+        - email
+      summary: returns the current SocietyUser
+      tags:
+      - societyUsers
+  /societies/{society}/invitations:
+    get:
+      operationId: getInvitations
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.Invitation'
+            type: array
+        "500":
+          description: Server error
+          schema:
+            $ref: '#/definitions/api.Error'
+      security:
+      - OAuth2Implicit:
+        - cms
+        - openid
+        - profile
+        - email
+      - OAuth2AuthCode:
+        - cms
+        - openid
+        - profile
+        - email
+      summary: returns all invitations
+      tags:
+      - invitations
+    post:
+      consumes:
+      - application/json
+      operationId: addInvitation
+      parameters:
+      - description: Add Invitation
+        in: body
+        name: society
+        required: true
+        schema:
+          $ref: '#/definitions/model.InvitationIn'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Invitation'
+        "415":
+          description: Bad Content-Type
+          schema:
+            $ref: '#/definitions/api.Error'
+        "500":
+          description: Server error
+          schema:
+            $ref: '#/definitions/api.Error'
+      security:
+      - OAuth2Implicit:
+        - cms
+        - openid
+        - profile
+        - email
+      - OAuth2AuthCode:
+        - cms
+        - openid
+        - profile
+        - email
+      summary: adds a new Invitation
+      tags:
+      - invitations
+  /societies/{society}/invitations/{id}:
+    delete:
+      operationId: deleteInvitation
+      parameters:
+      - description: Invitation ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: OK
+        "500":
+          description: Server error
+          schema:
+            $ref: '#/definitions/api.Error'
+      security:
+      - OAuth2Implicit:
+        - cms
+        - openid
+        - profile
+        - email
+      - OAuth2AuthCode:
+        - cms
+        - openid
+        - profile
+        - email
+      summary: deletes an Invitation
+      tags:
+      - invitations
+  /societies/{society}/users:
+    get:
+      operationId: getUsers
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/api.SocietyUserEmail'
+            type: array
+        "500":
+          description: Server error
+          schema:
+            $ref: '#/definitions/api.Error'
+      security:
+      - OAuth2Implicit:
+        - cms
+        - openid
+        - profile
+        - email
+      - OAuth2AuthCode:
+        - cms
+        - openid
+        - profile
+        - email
+      summary: returns all users
+      tags:
+      - societyUsers
+  /societies/{society}/users/{id}:
+    delete:
+      operationId: deleteSocietyUSer
+      parameters:
+      - description: SocietyUser ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: OK
+        "500":
+          description: Server error
+          schema:
+            $ref: '#/definitions/api.Error'
+      security:
+      - OAuth2Implicit:
+        - cms
+        - openid
+        - profile
+        - email
+      - OAuth2AuthCode:
+        - cms
+        - openid
+        - profile
+        - email
+      summary: deletes a SocietyUser
+      tags:
+      - societyUsers
+    put:
+      consumes:
+      - application/json
+      operationId: updateSocietyUser
+      parameters:
+      - description: SocietyUser ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Update SocietyUser
+        in: body
+        name: society
+        required: true
+        schema:
+          $ref: '#/definitions/api.SocietyUserEmail'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.SocietyUserEmail'
+        "415":
+          description: Bad Content-Type
+          schema:
+            $ref: '#/definitions/api.Error'
+        "500":
+          description: Server error
+          schema:
+            $ref: '#/definitions/api.Error'
+      security:
+      - OAuth2Implicit:
+        - cms
+        - openid
+        - profile
+        - email
+      - OAuth2AuthCode:
+        - cms
+        - openid
+        - profile
+        - email
+      summary: updates a SocietyUser
+      tags:
+      - societyUsers
+  /society_summaries:
+    get:
+      operationId: getSocietySummaries
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.SocietySummary'
+            type: array
+        "500":
+          description: Server error
+          schema:
+            $ref: '#/definitions/api.Error'
+      security:
+      - OAuth2Implicit:
+        - cms
+        - openid
+        - profile
+        - email
+      - OAuth2AuthCode:
+        - cms
+        - openid
+        - profile
+        - email
+      summary: returns all society summaries for the current user
+      tags:
+      - societies
+  /society_summaries/{society}:
+    get:
+      operationId: getSocietySummary
+      parameters:
+      - description: Society ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.SocietySummary'
+        "404":
+          description: Not found
+          schema:
+            $ref: '#/definitions/api.Error'
+        "500":
+          description: Server error
+          schema:
+            $ref: '#/definitions/api.Error'
+      security:
+      - OAuth2Implicit:
+        - cms
+        - openid
+        - profile
+        - email
+      - OAuth2AuthCode:
+        - cms
+        - openid
+        - profile
+        - email
+      summary: gets a SocietySummary
+      tags:
+      - societies
 schemes:
 - http
 - https

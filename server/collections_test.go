@@ -24,7 +24,7 @@ func TestGetAllCollections(t *testing.T) {
 	am.Result = &cr
 	am.Errors = nil
 
-	request, _ := http.NewRequest("GET", "/collections", nil)
+	request, _ := http.NewRequest("GET", "/societies/1/collections", nil)
 	response := httptest.NewRecorder()
 	r.ServeHTTP(response, request)
 	assert.Equal(t, 200, response.Code, "OK response is expected")
@@ -53,7 +53,7 @@ func TestGetAllCollections(t *testing.T) {
 	}
 	am.Result = &cr
 	am.Errors = nil
-	request, _ = http.NewRequest("GET", "/collections", nil)
+	request, _ = http.NewRequest("GET", "/societies/1/collections", nil)
 	response = httptest.NewRecorder()
 	r.ServeHTTP(response, request)
 	assert.Equal(t, 200, response.Code, "OK response is expected")
@@ -71,7 +71,7 @@ func TestGetAllCollections(t *testing.T) {
 	// error result
 	am.Result = (*api.CollectionResult)(nil)
 	am.Errors = api.NewError(assert.AnError)
-	request, _ = http.NewRequest("GET", "/collections", nil)
+	request, _ = http.NewRequest("GET", "/societies/1/collections", nil)
 	response = httptest.NewRecorder()
 	r.ServeHTTP(response, request)
 	assert.Equal(t, 500, response.Code)
@@ -102,7 +102,7 @@ func TestGetCollection(t *testing.T) {
 	am.Errors = nil
 	var ret model.Collection
 
-	request, _ := http.NewRequest("GET", "/collections/1", nil)
+	request, _ := http.NewRequest("GET", "/societies/1/collections/1", nil)
 	response := httptest.NewRecorder()
 	r.ServeHTTP(response, request)
 	assert.Equal(t, http.StatusOK, response.Code)
@@ -116,7 +116,7 @@ func TestGetCollection(t *testing.T) {
 	am.Result = collection
 	am.Errors = api.NewError(model.NewError(model.ErrNotFound, "1"))
 
-	request, _ = http.NewRequest("GET", "/collections/1", nil)
+	request, _ = http.NewRequest("GET", "/societies/1/collections/1", nil)
 	response = httptest.NewRecorder()
 	r.ServeHTTP(response, request)
 	assert.Equal(t, http.StatusNotFound, response.Code)
@@ -149,7 +149,7 @@ func TestPostCollection(t *testing.T) {
 	}
 	am.Errors = nil
 
-	request, _ := http.NewRequest("POST", "/collections", buf)
+	request, _ := http.NewRequest("POST", "/societies/1/collections", buf)
 	request.Header.Add("Content-Type", contentType)
 
 	response := httptest.NewRecorder()
@@ -188,7 +188,7 @@ func TestPutCollection(t *testing.T) {
 	am.Result = &coll
 	am.Errors = nil
 
-	request, _ := http.NewRequest("PUT", "/collections/1", buf)
+	request, _ := http.NewRequest("PUT", "/societies/1/collections/1", buf)
 	request.Header.Add("Content-Type", contentType)
 
 	response := httptest.NewRecorder()
@@ -219,7 +219,7 @@ func TestDeleteCollection(t *testing.T) {
 	am.Result = nil
 	am.Errors = nil
 
-	request, _ := http.NewRequest("DELETE", "/collections/1", nil)
+	request, _ := http.NewRequest("DELETE", "/societies/1/collections/1", nil)
 	response := httptest.NewRecorder()
 	r.ServeHTTP(response, request)
 	assert.Equal(t, http.StatusNoContent, response.Code, "Response: %s", string(response.Body.Bytes()))
@@ -228,7 +228,8 @@ func TestDeleteCollection(t *testing.T) {
 func makeCollectionIn(t *testing.T, categoryID uint32) (model.CollectionIn, *bytes.Buffer) {
 	in := model.CollectionIn{
 		CollectionBody: model.CollectionBody{
-			Name: "First",
+			Name:           "First",
+			CollectionType: model.CollectionTypeRecords,
 		},
 		Categories: []uint32{},
 	}

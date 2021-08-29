@@ -7,6 +7,8 @@ import (
 	"log"
 	"testing"
 
+	"github.com/ourrootsorg/cms-server/utils"
+
 	"github.com/stretchr/testify/assert"
 )
 
@@ -14,7 +16,7 @@ func TestBlobService(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping tests in short mode")
 	}
-	ctx := context.TODO()
+	ctx := utils.AddSocietyIDToContext(context.TODO(), 1)
 
 	ap, err := NewAPI()
 	if err != nil {

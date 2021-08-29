@@ -194,7 +194,7 @@ func (app App) PutPost(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	if !model.UserAcceptedPostStatus(in.PostStatus) {
-		msg := fmt.Sprintf("Invalid records status: %s", in.PostStatus)
+		msg := fmt.Sprintf("Invalid post status: %s", in.PostStatus)
 		ErrorResponse(w, http.StatusBadRequest, msg)
 		return
 	}
@@ -204,7 +204,7 @@ func (app App) PutPost(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	if !model.UserAcceptedImagesStatus(in.ImagesStatus) {
-		msg := fmt.Sprintf("Invalid records status: %s", in.ImagesStatus)
+		msg := fmt.Sprintf("Invalid images status: %s", in.ImagesStatus)
 		ErrorResponse(w, http.StatusBadRequest, msg)
 		return
 	}

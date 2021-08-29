@@ -23,18 +23,14 @@ export const mutations = {
       state.category = cat;
     }
     if (state.categoriesList) {
-      for (let i = 0; i < state.categoriesList.length; i++) {
-        if (state.categoriesList[i].id === cat.id) {
-          state.categoriesList[i] = cat;
-        }
-      }
+      state.categoriesList = state.categoriesList.map(c => (c.id === cat.id ? cat : c));
     }
   }
 };
 
 export const actions = {
-  categoriesCreate({ commit, dispatch }, category) {
-    return Server.categoriesCreate(category)
+  categoriesCreate({ commit, dispatch, rootGetters }, category) {
+    return Server.categoriesCreate(rootGetters.currentSocietyId, category)
       .then(response => {
         commit("CATEGORIES_ADD", response.data);
         const notification = {
@@ -54,8 +50,8 @@ export const actions = {
         throw error;
       });
   },
-  categoriesUpdate({ commit, dispatch }, coll) {
-    return Server.categoriesUpdate(coll)
+  categoriesUpdate({ commit, dispatch, rootGetters }, cat) {
+    return Server.categoriesUpdate(rootGetters.currentSocietyId, cat)
       .then(response => {
         commit("CATEGORY_UPDATE", response.data);
         const notification = {
@@ -75,8 +71,8 @@ export const actions = {
         throw error;
       });
   },
-  categoriesGetAll({ commit, dispatch }) {
-    return Server.categoriesGetAll()
+  categoriesGetAll({ commit, dispatch, rootGetters }) {
+    return Server.categoriesGetAll(rootGetters.currentSocietyId)
       .then(response => {
         commit("CATEGORIES_SET", response.data.categories);
         return response.data.categories;
@@ -91,8 +87,8 @@ export const actions = {
         throw error;
       });
   },
-  categoriesGetOne({ commit, dispatch }, id) {
-    return Server.categoriesGetOne(id)
+  categoriesGetOne({ commit, dispatch, rootGetters }, id) {
+    return Server.categoriesGetOne(rootGetters.currentSocietyId, id)
       .then(response => {
         commit("CATEGORY_SET", response.data);
         return response.data;
@@ -107,8 +103,8 @@ export const actions = {
         throw error;
       });
   },
-  categoriesDelete({ commit, dispatch }, id) {
-    return Server.categoriesDelete(id)
+  categoriesDelete({ commit, dispatch, rootGetters }, id) {
+    return Server.categoriesDelete(rootGetters.currentSocietyId, id)
       .then(() => {
         commit("CATEGORIES_REMOVE", id);
         const notification = {

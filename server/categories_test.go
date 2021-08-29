@@ -24,7 +24,7 @@ func TestGetAllCategories(t *testing.T) {
 	am.Result = &cr
 	am.Errors = nil
 
-	request, _ := http.NewRequest("GET", "/categories", nil)
+	request, _ := http.NewRequest("GET", "/societies/1/categories", nil)
 	response := httptest.NewRecorder()
 	r.ServeHTTP(response, request)
 	assert.Equal(t, 200, response.Code, "OK response is expected")
@@ -54,7 +54,7 @@ func TestGetAllCategories(t *testing.T) {
 	}
 	am.Result = &cr
 	am.Errors = nil
-	request, _ = http.NewRequest("GET", "/categories", nil)
+	request, _ = http.NewRequest("GET", "/societies/1/categories", nil)
 	response = httptest.NewRecorder()
 	r.ServeHTTP(response, request)
 	assert.Equal(t, 200, response.Code, "OK response is expected")
@@ -72,7 +72,7 @@ func TestGetAllCategories(t *testing.T) {
 	// error result
 	am.Result = (*api.CategoryResult)(nil)
 	am.Errors = api.NewError(assert.AnError)
-	request, _ = http.NewRequest("GET", "/categories", nil)
+	request, _ = http.NewRequest("GET", "/societies/1/categories", nil)
 	response = httptest.NewRecorder()
 	r.ServeHTTP(response, request)
 	assert.Equal(t, 500, response.Code)
@@ -104,7 +104,7 @@ func TestGetCategory(t *testing.T) {
 	am.Errors = nil
 	var ret model.Category
 
-	request, _ := http.NewRequest("GET", "/categories/1", nil)
+	request, _ := http.NewRequest("GET", "/societies/1/categories/1", nil)
 	response := httptest.NewRecorder()
 	r.ServeHTTP(response, request)
 	assert.Equal(t, http.StatusOK, response.Code)
@@ -118,7 +118,7 @@ func TestGetCategory(t *testing.T) {
 	am.Result = category
 	am.Errors = api.NewError(model.NewError(model.ErrNotFound, "1"))
 
-	request, _ = http.NewRequest("GET", "/categories/1", nil)
+	request, _ = http.NewRequest("GET", "/societies/1/categories/1", nil)
 	response = httptest.NewRecorder()
 	r.ServeHTTP(response, request)
 	assert.Equal(t, http.StatusNotFound, response.Code)
@@ -151,7 +151,7 @@ func TestPostCategory(t *testing.T) {
 	}
 	am.Errors = nil
 
-	request, _ := http.NewRequest("POST", "/categories", buf)
+	request, _ := http.NewRequest("POST", "/societies/1/categories", buf)
 	request.Header.Add("Content-Type", contentType)
 
 	response := httptest.NewRecorder()
@@ -187,7 +187,7 @@ func TestPutCategory(t *testing.T) {
 	am.Result = &cat
 	am.Errors = nil
 
-	request, _ := http.NewRequest("PUT", "/categories/1", buf)
+	request, _ := http.NewRequest("PUT", "/societies/1/categories/1", buf)
 	request.Header.Add("Content-Type", contentType)
 
 	response := httptest.NewRecorder()
@@ -215,7 +215,7 @@ func TestDeleteCategory(t *testing.T) {
 	am.Result = nil
 	am.Errors = nil
 
-	request, _ := http.NewRequest("DELETE", "/categories/1", nil)
+	request, _ := http.NewRequest("DELETE", "/societies/1/categories/1", nil)
 	response := httptest.NewRecorder()
 	r.ServeHTTP(response, request)
 	assert.Equal(t, http.StatusNoContent, response.Code, "Response: %s", string(response.Body.Bytes()))

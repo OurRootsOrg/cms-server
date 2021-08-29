@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/gorilla/mux"
 
@@ -134,5 +135,51 @@ func (app App) SearchByID(w http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		serverError(w, err)
 		return
+	}
+}
+
+// SearchImage returns an image URL
+// @summary Returns an image URL
+// @router /search-images/{society}/{id}/{filePath} [get]
+// @tags search
+// @id getSearchImage
+// @Param id path integer true "Post ID"
+// @Param imageFile path string true "Image file path"
+// @param thumbnail query bool false "return thumbnail"
+// @success 307 {header} string
+// @failure 404 {object} api.Error "Not found"
+// @failure 500 {object} api.Error "Server error"
+// @Security OAuth2Implicit[cms,openid,profile,email]
+// @Security OAuth2AuthCode[cms,openid,profile,email]
+func (app App) SearchImage(w http.ResponseWriter, req *http.Request) {
+	const expireSeconds = 3600
+	societyID, errors := getSocietyIDFromRequest(req)
+	if errors != nil {
+		ErrorsResponse(w, errors)
+		return
+	}
+	postID, errors := getIDFromRequest(req)
+	if errors != nil {
+		ErrorsResponse(w, errors)
+		return
+	}
+	filePath := mux.Vars(req)["filePath"]
+	if filePath == "" {
+		ErrorResponse(w, http.StatusNotFound, "Not Found")
+	}
+	thumbnail, _ := strconv.ParseBool(req.URL.Query().Get("thumbnail"))
+	imageMetadata, errors := app.api.SearchImage(req.Context(), societyID, postID, filePath, thumbnail, expireSeconds)
+	if errors != nil {
+		ErrorsResponse(w, errors)
+		return
+	}
+	// and a javascript GET request must always follow redirects, which we don't want
+	enc := json.NewEncoder(w)
+	enc.SetEscapeHTML(false)
+	w.Header().Set("Content-Type", contentType)
+	w.Header().Set("Cache-Control", fmt.Sprintf("max-age=%d", expireSeconds))
+	err := enc.Encode(imageMetadata)
+	if err != nil {
+		serverError(w, err)
 	}
 }

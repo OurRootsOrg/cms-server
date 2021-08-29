@@ -77,3 +77,11 @@ func AsciiFold(s string) string {
 	}
 	return result
 }
+
+func HasByteOrderMark(s string) bool {
+	return len(s) > 3 && s[0] == 0xEF && s[1] == 0xBB && s[2] == 0xBF
+}
+
+func RemoveByteOrderMark(s string) string {
+	return s[3:]
+}

@@ -5,8 +5,14 @@ import store from "./store";
 import "nprogress/nprogress.css";
 import vuetify from "./plugins/vuetify";
 import VueColumnsResizableVuetify from "vue-columns-resizable-vuetify";
+import VueSanitize from "vue-sanitize";
 
 Vue.use(VueColumnsResizableVuetify);
+let defaultOptions = {
+  allowedTags: ["a", "li", "ol", "p", "ul", "b", "br", "em", "i", "small", "strong", "sub", "sup", "u"],
+  allowedAttributes: { a: ["href"] }
+};
+Vue.use(VueSanitize, defaultOptions);
 
 Vue.config.productionTip = false;
 

@@ -8,6 +8,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/ourrootsorg/cms-server/utils"
+
 	"github.com/gorilla/mux"
 	"github.com/ourrootsorg/cms-server/api"
 	"github.com/ourrootsorg/cms-server/model"
@@ -83,8 +85,8 @@ func TestAuth(t *testing.T) {
 	request.Header.Add("Authorization", "Bearer Abc")
 	r.ServeHTTP(response, request)
 	if assert.Equal(t, http.StatusOK, response.Code) {
-		user := requestContext.Value(api.UserProperty)
-		actualUser := user.(*model.User)
+		actualUser, err := utils.GetUserFromContext(requestContext)
+		assert.Nil(t, err)
 		assert.Equal(t, expectedUser, *actualUser)
 	}
 	m.AssertExpectations(t)

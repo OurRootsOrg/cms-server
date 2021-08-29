@@ -1,9 +1,16 @@
 <template>
   <v-container>
-    <v-btn text class="pl-0 ml-0 primary--text" @click="$router.go(-1)"
-      ><v-icon>mdi-chevron-left</v-icon> Back to record details</v-btn
-    >
-    <div class="wrapper">
+    <div>
+      <v-btn text class="pl-0 ml-0 primary--text" @click="$router.go(-1)"><v-icon>mdi-chevron-left</v-icon> Back</v-btn>
+      <v-progress-circular v-if="loading" :size="24" indeterminate></v-progress-circular>
+    </div>
+    <div v-if="isPrivate">
+      <p style="margin: 32px 8px;">
+        The full image is available to members of the society.
+        <a v-if="loginURL" :href="loginURL">Click here to become a member</a>
+      </p>
+    </div>
+    <div v-else class="wrapper">
       <div id="openseadragonToolbar" class="toolbar"></div>
       <div id="openseadragon" class="openseadragon"></div>
     </div>
@@ -23,29 +30,47 @@ export default {
     }
   },
   mounted() {
-    if (this.$route.params && this.$route.params.pid && this.$route.params.path) {
-      Server.postsGetImage(this.$route.params.pid, this.$route.params.path, false).then(result => {
-        let pyramid = {
-          type: "legacy-image-pyramid",
-          levels: [
-            {
-              url: result.data.url,
-              height: result.data.height,
-              width: result.data.width
-            }
-          ]
-        };
-        console.log("pyramid", pyramid);
-        this.osd = OpenSeadragon({
-          id: "openseadragon",
-          toolbar: "openseadragonToolbar",
-          tileSources: pyramid,
-          prefixUrl: (window.ourroots_image_directory || "") + "img/seadragon/",
-          autoHideControls: false,
-          showRotationControl: true //ROTATION
-        });
-      });
+    if ((this.$route.params && this.$route.params.societyId, this.$route.params.pid && this.$route.params.path)) {
+      Server.postsGetImage(this.$route.params.societyId, this.$route.params.pid, this.$route.params.path, false).then(
+        result => {
+          if (result.data.private) {
+            this.isPrivate = true;
+            this.loginURL = result.data.loginURL;
+          } else {
+            let pyramid = {
+              type: "legacy-image-pyramid",
+              levels: [
+                {
+                  url: result.data.url,
+                  height: result.data.height,
+                  width: result.data.width
+                }
+              ]
+            };
+            console.log("pyramid", pyramid);
+            this.osd = OpenSeadragon({
+              id: "openseadragon",
+              toolbar: "openseadragonToolbar",
+              tileSources: pyramid,
+              prefixUrl: (window.ourroots.images_directory || "") + "img/seadragon/",
+              autoHideControls: false,
+              showRotationControl: true //ROTATION
+            });
+            this.loading = true;
+            this.osd.addOnceHandler("tile-drawn", () => {
+              this.loading = false;
+            });
+          }
+        }
+      );
     }
+  },
+  data() {
+    return {
+      loading: false,
+      isPrivate: false,
+      loginURL: ""
+    };
   }
 };
 </script>

@@ -14,6 +14,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ourrootsorg/cms-server/utils"
+
 	"github.com/ourrootsorg/cms-server/model"
 	"github.com/ourrootsorg/cms-server/persist"
 	"gocloud.dev/blob"
@@ -27,8 +29,7 @@ func TestImagesWriter(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping tests in short mode")
 	}
-	ctx := context.TODO()
-
+	ctx := utils.AddSocietyIDToContext(context.TODO(), 1)
 	// create test api
 	db, err := postgres.Open(ctx, os.Getenv("DATABASE_URL"))
 	if err != nil {
@@ -69,8 +70,9 @@ func TestImagesWriter(t *testing.T) {
 	}
 
 	// write an object
-	imagesKey := "/2020-08-10/2020-08-10T00:00:00.000000000Z"
-	w, err := bucket.NewWriter(ctx, imagesKey, nil)
+	imagesKey := "2020-08-10/2020-08-10T00:00:00.000000000Z"
+	fullImagesKey := fmt.Sprintf("/%d/%s", 1, imagesKey)
+	w, err := bucket.NewWriter(ctx, fullImagesKey, nil)
 	assert.NoError(t, err)
 	_, err = io.Copy(w, bytes.NewBuffer(zipBytes))
 	assert.NoError(t, err)
@@ -79,8 +81,9 @@ func TestImagesWriter(t *testing.T) {
 	log.Printf("[DEBUG] Wrote object %s", imagesKey)
 
 	// write a second object
-	imagesKey2 := "/2020-08-11/2020-08-11T00:00:00.000000000Z"
-	w, err = bucket.NewWriter(ctx, imagesKey2, nil)
+	imagesKey2 := "2020-08-11/2020-08-11T00:00:00.000000000Z"
+	fullImagesKey2 := fmt.Sprintf("/%d/%s", 1, imagesKey2)
+	w, err = bucket.NewWriter(ctx, fullImagesKey2, nil)
 	assert.NoError(t, err)
 	_, err = io.Copy(w, bytes.NewBuffer(zipBytes))
 	assert.NoError(t, err)
@@ -89,10 +92,10 @@ func TestImagesWriter(t *testing.T) {
 	log.Printf("[DEBUG] Wrote object %s", imagesKey2)
 
 	// Add a test category and test collection and test post for referential integrity
-	testCategory := createTestCategory(t, p)
-	defer deleteTestCategory(t, p, testCategory)
-	testCollection := createTestCollection(t, p, testCategory.ID)
-	defer deleteTestCollection(t, p, testCollection)
+	testCategory := createTestCategory(ctx, t, p)
+	defer deleteTestCategory(ctx, t, p, testCategory)
+	testCollection := createTestCollection(ctx, t, p, testCategory.ID)
+	defer deleteTestCollection(ctx, t, p, testCollection)
 
 	// Add a Post
 	in := model.PostIn{
@@ -175,7 +178,7 @@ func TestPostImage(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping tests in short mode")
 	}
-	ctx := context.TODO()
+	ctx := utils.AddSocietyIDToContext(context.TODO(), 1)
 
 	// create test api
 	db, err := postgres.Open(ctx, os.Getenv("DATABASE_URL"))
@@ -221,17 +224,17 @@ func TestPostImage(t *testing.T) {
 
 	// post the content
 	client := &http.Client{}
-	req, err := http.NewRequest("PUT", contentRequest.PutURL, bytes.NewReader(zipBytes))
+	req, err := http.NewRequest("PUT", contentRequest.SignedURL, bytes.NewReader(zipBytes))
 	assert.NoError(t, err)
 	req.Header.Set("Content-Type", "application/zip")
 	res, err := client.Do(req)
 	assert.Equal(t, 200, res.StatusCode)
 
 	// Add a test category and test collection and test post for referential integrity
-	testCategory := createTestCategory(t, p)
-	defer deleteTestCategory(t, p, testCategory)
-	testCollection := createTestCollection(t, p, testCategory.ID)
-	defer deleteTestCollection(t, p, testCollection)
+	testCategory := createTestCategory(ctx, t, p)
+	defer deleteTestCategory(ctx, t, p, testCategory)
+	testCollection := createTestCollection(ctx, t, p, testCategory.ID)
+	defer deleteTestCollection(ctx, t, p, testCollection)
 
 	// Add a Post
 	in := model.PostIn{
@@ -296,27 +299,27 @@ func TestPostImage(t *testing.T) {
 	assert.Nil(t, errors)
 }
 
-func createTestCategory(t *testing.T, p model.CategoryPersister) *model.Category {
+func createTestCategory(ctx context.Context, t *testing.T, p model.CategoryPersister) *model.Category {
 	in, err := model.NewCategoryIn("Test")
 	assert.NoError(t, err)
-	created, e := p.InsertCategory(context.TODO(), in)
+	created, e := p.InsertCategory(ctx, in)
 	assert.Nil(t, e)
 	return created
 }
 
-func deleteTestCategory(t *testing.T, p model.CategoryPersister, category *model.Category) {
-	e := p.DeleteCategory(context.TODO(), category.ID)
+func deleteTestCategory(ctx context.Context, t *testing.T, p model.CategoryPersister, category *model.Category) {
+	e := p.DeleteCategory(ctx, category.ID)
 	assert.Nil(t, e)
 }
 
-func createTestCollection(t *testing.T, p model.CollectionPersister, categoryID uint32) *model.Collection {
+func createTestCollection(ctx context.Context, t *testing.T, p model.CollectionPersister, categoryID uint32) *model.Collection {
 	in := model.NewCollectionIn("Test", []uint32{categoryID})
-	created, e := p.InsertCollection(context.TODO(), in)
+	created, e := p.InsertCollection(ctx, in)
 	assert.Nil(t, e)
 	return created
 }
 
-func deleteTestCollection(t *testing.T, p model.CollectionPersister, collection *model.Collection) {
-	e := p.DeleteCollection(context.TODO(), collection.ID)
+func deleteTestCollection(ctx context.Context, t *testing.T, p model.CollectionPersister, collection *model.Collection) {
+	e := p.DeleteCollection(ctx, collection.ID)
 	assert.Nil(t, e)
 }

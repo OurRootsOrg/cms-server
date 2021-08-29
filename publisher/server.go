@@ -13,6 +13,8 @@ import (
 	"reflect"
 	"time"
 
+	"github.com/ourrootsorg/cms-server/utils"
+
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go/aws/credentials"
@@ -117,13 +119,14 @@ func processMessage(ctx context.Context, ap *api.API, rawMsg []byte) error {
 		return nil // Don't return an error, because parsing will never succeed
 	}
 
-	log.Printf("[DEBUG] processing %s id=%d\n", msg.Action, msg.PostID)
+	log.Printf("[DEBUG] processing %s society=%d id=%d\n", msg.Action, msg.SocietyID, msg.PostID)
+	sctx := utils.AddSocietyIDToContext(ctx, msg.SocietyID)
 
 	switch msg.Action {
 	case model.PublisherActionIndex:
-		return indexPost(ctx, ap, msg)
+		return indexPost(sctx, ap, msg)
 	case model.PublisherActionUnindex:
-		return unindexPost(ctx, ap, msg)
+		return unindexPost(sctx, ap, msg)
 	default:
 		return api.NewError(fmt.Errorf("Unknown action %s", msg.Action))
 	}

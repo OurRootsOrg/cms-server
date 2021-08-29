@@ -37,6 +37,13 @@ export function get(url, config) {
   });
 }
 
+export function getWithoutAccessToken(url) {
+  return axiosClient.request({
+    method: "GET",
+    url: url
+  });
+}
+
 export function del(url, config) {
   return request({
     method: "DELETE",

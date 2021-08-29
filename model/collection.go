@@ -8,10 +8,35 @@ import (
 	"time"
 )
 
+type PrivacyLevel int
+
+const (
+	PrivacyPublic = iota
+	PrivacyPrivateImages
+	PrivacyPrivateDetail
+	PrivacyPrivateDetailImages
+	PrivacyPrivateSearch
+	PrivacyPrivateSearchImages
+	PrivacyPrivateSearchDetail
+	PrivacyPrivateSearchDetailImages
+)
+
+type CollectionType string
+
+const (
+	CollectionTypeRecords CollectionType = "Records"
+	CollectionTypeCatalog CollectionType = "Catalog"
+)
+
+func (l PrivacyLevel) String() string {
+	return [...]string{"Public", "PrivateImages", "PrivateDetail", "PrivateDetailImages", "PrivateSearch",
+		"PrivateSearchImages", "PrivateSearchDetail", "PrivateSearchDetailImages"}[l]
+}
+
 // CollectionPersister defines methods needed to persist categories
 type CollectionPersister interface {
 	SelectCollections(ctx context.Context) ([]Collection, error)
-	SelectCollectionsByID(ctx context.Context, ids []uint32) ([]Collection, error)
+	SelectCollectionsByID(ctx context.Context, ids []uint32, enforceContextSocietyMatch bool) ([]Collection, error)
 	SelectOneCollection(ctx context.Context, id uint32) (*Collection, error)
 	InsertCollection(ctx context.Context, in CollectionIn) (*Collection, error)
 	UpdateCollection(ctx context.Context, id uint32, in Collection) (*Collection, error)
@@ -22,6 +47,7 @@ type CollectionPersister interface {
 type CollectionBody struct {
 	Name                        string              `json:"name" validate:"required" dynamodbav:"altSort"`
 	Location                    string              `json:"location,omitempty"`
+	CollectionType              CollectionType      `json:"type" validate:"required"`
 	Fields                      []CollectionField   `json:"fields"`
 	Mappings                    []CollectionMapping `json:"mappings"`
 	CitationTemplate            string              `json:"citation_template,omitempty"`
@@ -29,6 +55,7 @@ type CollectionBody struct {
 	HouseholdNumberHeader       string              `json:"householdNumberHeader,omitempty"`
 	HouseholdRelationshipHeader string              `json:"householdRelationshipHeader,omitempty"`
 	GenderHeader                string              `json:"genderHeader,omitempty"`
+	PrivacyLevel                PrivacyLevel        `json:"privacyLevel"`
 }
 
 type CollectionField struct {
@@ -53,7 +80,12 @@ func (cb *CollectionBody) Scan(value interface{}) error {
 	if !ok {
 		return errors.New("type assertion to []byte failed")
 	}
-	return json.Unmarshal(b, &cb)
+	err := json.Unmarshal(b, &cb)
+	// default records type
+	if cb.CollectionType == "" {
+		cb.CollectionType = CollectionTypeRecords
+	}
+	return err
 }
 
 // CollectionIn is the payload to create or update a Collection

@@ -8,6 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ourrootsorg/cms-server/utils"
+
 	"github.com/ourrootsorg/cms-server/model"
 	"github.com/ourrootsorg/cms-server/persist"
 	"gocloud.dev/postgres"
@@ -20,7 +22,7 @@ func TestRecordsWriter(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping tests in short mode")
 	}
-	ctx := context.TODO()
+	ctx := utils.AddSocietyIDToContext(context.TODO(), 1)
 
 	// create test api
 	db, err := postgres.Open(ctx, os.Getenv("DATABASE_URL"))
@@ -53,8 +55,9 @@ func TestRecordsWriter(t *testing.T) {
 				"H1","fred","flintstone","19 Mar 1900","Autaugaville, AL"
 				"H1","wilma","slaghoople","Abt 1900","AL"
 				"H2","barney","rubble","",""`
-	recordsKey := "/2020-05-30/2020-05-30T00:00:00.000000000Z"
-	w, err := bucket.NewWriter(ctx, recordsKey, nil)
+	recordsKey := "2020-05-30/2020-05-30T00:00:00.000000000Z"
+	fullRecordsKey := fmt.Sprintf("/%d/%s", 1, recordsKey)
+	w, err := bucket.NewWriter(ctx, fullRecordsKey, nil)
 	assert.NoError(t, err)
 	_, err = fmt.Fprint(w, content)
 	assert.NoError(t, err)
@@ -62,10 +65,10 @@ func TestRecordsWriter(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Add a test category and test collection and test post for referential integrity
-	testCategory := createTestCategory(t, p)
-	defer deleteTestCategory(t, p, testCategory)
-	testCollection := createTestCollection(t, p, testCategory.ID)
-	defer deleteTestCollection(t, p, testCollection)
+	testCategory := createTestCategory(ctx, t, p)
+	defer deleteTestCategory(ctx, t, p, testCategory)
+	testCollection := createTestCollection(ctx, t, p, testCategory.ID)
+	defer deleteTestCollection(ctx, t, p, testCollection)
 
 	// Add a Post
 	in := model.PostIn{
@@ -94,7 +97,7 @@ func TestRecordsWriter(t *testing.T) {
 	assert.Equal(t, model.RecordsStatusDefault, post.RecordsStatus, "Expected records status to be empty, got %s", post.RecordsStatus)
 
 	// read records for post
-	records, errors := testAPI.GetRecordsForPost(ctx, testPost.ID)
+	records, errors := testAPI.GetRecordsForPost(ctx, testPost.ID, 100)
 	assert.Nil(t, errors)
 	assert.Equal(t, 3, len(records.Records), "Expected three records, got %#v", records)
 
@@ -138,25 +141,25 @@ func TestRecordsWriter(t *testing.T) {
 	assert.Nil(t, errors)
 
 	// records should be removed
-	records, errors = testAPI.GetRecordsForPost(ctx, testPost.ID)
+	records, errors = testAPI.GetRecordsForPost(ctx, testPost.ID, 100)
 	assert.Nil(t, errors)
 	assert.Equal(t, 0, len(records.Records), "Expected empty slice, got %#v", records)
 }
 
-func createTestCategory(t *testing.T, p model.CategoryPersister) *model.Category {
+func createTestCategory(ctx context.Context, t *testing.T, p model.CategoryPersister) *model.Category {
 	in, err := model.NewCategoryIn("Test")
 	assert.NoError(t, err)
-	created, e := p.InsertCategory(context.TODO(), in)
+	created, e := p.InsertCategory(ctx, in)
 	assert.Nil(t, e)
 	return created
 }
 
-func deleteTestCategory(t *testing.T, p model.CategoryPersister, category *model.Category) {
-	e := p.DeleteCategory(context.TODO(), category.ID)
+func deleteTestCategory(ctx context.Context, t *testing.T, p model.CategoryPersister, category *model.Category) {
+	e := p.DeleteCategory(ctx, category.ID)
 	assert.Nil(t, e)
 }
 
-func createTestCollection(t *testing.T, p model.CollectionPersister, categoryID uint32) *model.Collection {
+func createTestCollection(ctx context.Context, t *testing.T, p model.CollectionPersister, categoryID uint32) *model.Collection {
 	in := model.NewCollectionIn("Test", []uint32{categoryID})
 	in.Fields = []model.CollectionField{
 		{
@@ -198,12 +201,12 @@ func createTestCollection(t *testing.T, p model.CollectionPersister, categoryID 
 		},
 	}
 	in.HouseholdNumberHeader = "household"
-	created, e := p.InsertCollection(context.TODO(), in)
+	created, e := p.InsertCollection(ctx, in)
 	assert.Nil(t, e)
 	return created
 }
 
-func deleteTestCollection(t *testing.T, p model.CollectionPersister, collection *model.Collection) {
-	e := p.DeleteCollection(context.TODO(), collection.ID)
+func deleteTestCollection(ctx context.Context, t *testing.T, p model.CollectionPersister, collection *model.Collection) {
+	e := p.DeleteCollection(ctx, collection.ID)
 	assert.Nil(t, e)
 }

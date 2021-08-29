@@ -205,6 +205,27 @@ Resources:
       IntegrationMethod: GET
       PayloadFormatVersion: "1.0"
 
+  StaticRoute:
+    Type: "AWS::ApiGatewayV2::Route"
+    Properties:
+      ApiId: !Ref OurRootsCMSApi
+      RouteKey: "GET /static/{proxy+}"
+      AuthorizationType: NONE
+      Target: !Join
+        - /
+        - - integrations
+          - !Ref StaticIntegration
+
+  StaticIntegration:
+    Type: "AWS::ApiGatewayV2::Integration"
+    Properties:
+      ApiId: !Ref OurRootsCMSApi
+      Description: Site Bucket static Integration
+      IntegrationType: HTTP_PROXY
+      IntegrationUri: !Join [ '/', [ !Ref CMSSiteBucketURL , 'static', '{proxy}' ] ]
+      IntegrationMethod: GET
+      PayloadFormatVersion: "1.0"
+
   SearchCSSRoute:
     Type: "AWS::ApiGatewayV2::Route"
     Properties:
@@ -486,6 +507,7 @@ Resources:
           PUB_SUB_PUBLISHER_URL: !Ref "CMSPublisherQueueURL"
           OIDC_DOMAIN: 'https://ourroots.auth0.com/'
           OIDC_AUDIENCE: 'https://api.ourroots.org/preprod'
+          SANDBOX_SOCIETY_ID: '1'
           ELASTICSEARCH_URL: !Join
             - ''
             -
@@ -509,7 +531,7 @@ Resources:
       Handler: recordswriter/recordswriter.lambda
       CodeUri: recordswriter.lambda.zip
       Runtime: go1.x
-      MemorySize: 128
+      MemorySize: 1024
       Policies:
         - AWSLambdaBasicExecutionRole
         - AWSLambdaVPCAccessExecutionRole
@@ -564,7 +586,7 @@ Resources:
         SubnetIds:
           - !Ref "PrivateSubnet1"
           - !Ref "PrivateSubnet2"
-      Timeout: 60
+      Timeout: 900
       Environment:
         Variables:
           # This variable tells our server code what domain name and path prefix is in use
@@ -599,7 +621,7 @@ Resources:
       Handler: imageswriter/imageswriter.lambda
       CodeUri: imageswriter.lambda.zip
       Runtime: go1.x
-      MemorySize: 256
+      MemorySize: 1024
       Policies:
         - AWSLambdaBasicExecutionRole
         - AWSLambdaVPCAccessExecutionRole
@@ -654,7 +676,7 @@ Resources:
         SubnetIds:
           - !Ref "PrivateSubnet1"
           - !Ref "PrivateSubnet2"
-      Timeout: 60
+      Timeout: 900
       Environment:
         Variables:
           # This variable tells our server code what domain name and path prefix is in use
@@ -689,7 +711,7 @@ Resources:
       Handler: publisher/publisher.lambda
       CodeUri: publisher.lambda.zip
       Runtime: go1.x
-      MemorySize: 128
+      MemorySize: 1024
       Policies:
         - AWSLambdaBasicExecutionRole
         - AWSLambdaVPCAccessExecutionRole
@@ -747,7 +769,7 @@ Resources:
         SubnetIds:
           - !Ref "PrivateSubnet1"
           - !Ref "PrivateSubnet2"
-      Timeout: 60
+      Timeout: 900
       Environment:
         Variables:
           # This variable tells our server code what domain name and path prefix is in use

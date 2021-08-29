@@ -5,10 +5,18 @@ import store from "./store";
 import "nprogress/nprogress.css";
 import Vuelidate from "vuelidate";
 import vuetify from "./plugins/vuetify";
+import VueSanitize from "vue-sanitize";
 import VueColumnsResizableVuetify from "vue-columns-resizable-vuetify";
+import VueCookies from "vue-cookies";
 
 Vue.use(Vuelidate);
 Vue.use(VueColumnsResizableVuetify);
+Vue.use(VueCookies);
+let defaultOptions = {
+  allowedTags: ["a", "li", "ol", "p", "ul", "b", "br", "em", "i", "small", "strong", "sub", "sup", "u"],
+  allowedAttributes: {"a": ["href"]}
+};
+Vue.use(VueSanitize, defaultOptions);
 
 Vue.config.productionTip = false;
 

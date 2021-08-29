@@ -15,8 +15,8 @@ export const mutations = {
 };
 
 export const actions = {
-  recordsGetForPost({ commit, dispatch }, postId) {
-    return Server.recordsGetForPost(postId)
+  recordsGetForPost({ commit, dispatch, rootGetters }, postId) {
+    return Server.recordsGetForPost(rootGetters.currentSocietyId, postId)
       .then(response => {
         commit("RECORDS_SET", response.data.records);
         return response.data.records;
@@ -31,8 +31,8 @@ export const actions = {
         throw error;
       });
   },
-  recordsGetDetail({ commit, dispatch }, recordId) {
-    return Server.recordsGetDetail(recordId)
+  recordsGetDetail({ commit, dispatch, rootGetters }, recordId) {
+    return Server.recordsGetDetail(rootGetters.currentSocietyId, recordId)
       .then(response => {
         commit("RECORD_SET", response.data);
         return response.data;

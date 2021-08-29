@@ -4,8 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/ourrootsorg/cms-server/api"
-	"github.com/ourrootsorg/cms-server/model"
+	"github.com/ourrootsorg/cms-server/utils"
 )
 
 // GetCurrentUser returns the current user
@@ -21,8 +20,12 @@ import (
 func (app App) GetCurrentUser(w http.ResponseWriter, req *http.Request) {
 	enc := json.NewEncoder(w)
 	w.Header().Set("Content-Type", contentType)
-	user := req.Context().Value(api.UserProperty).(*model.User)
-	err := enc.Encode(user)
+	user, err := utils.GetUserFromContext(req.Context())
+	if err != nil {
+		serverError(w, err)
+		return
+	}
+	err = enc.Encode(user)
 	if err != nil {
 		serverError(w, err)
 		return

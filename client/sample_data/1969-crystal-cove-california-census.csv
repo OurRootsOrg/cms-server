@@ -1,0 +1,6 @@
+Household,Surname,Given,Relationship to head,Gender,Residence Date,Residence Place,Image,Attribution
+1,Jones,Fred,head,M,1969,"Crystal Cove, California",scoobydoo.jpg,https://commons.wikimedia.org/wiki/File:Cambridge_Fun_Run_Scooby_Doo.jpg
+2,Blake,Daphne,head,F,1969,"Crystal Cove, California",scoobydoo.jpg,https://commons.wikimedia.org/wiki/File:Cambridge_Fun_Run_Scooby_Doo.jpg
+3,Dinkley,Velma,head,F,1969,"Crystal Cove, California",scoobydoo.jpg,https://commons.wikimedia.org/wiki/File:Cambridge_Fun_Run_Scooby_Doo.jpg
+4,Rogers,Shaggy,head,M,1969,"Crystal Cove, California",scoobydoo.jpg,https://commons.wikimedia.org/wiki/File:Cambridge_Fun_Run_Scooby_Doo.jpg
+4,Doo,Scooby Dooby,pet,M,1969,"Crystal Cove, California",scoobydoo.jpg,https://commons.wikimedia.org/wiki/File:Cambridge_Fun_Run_Scooby_Doo.jpg
