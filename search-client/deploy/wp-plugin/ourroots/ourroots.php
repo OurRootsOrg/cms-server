@@ -1,11 +1,16 @@
 <?php
 
 /**
- * Plugin Name: OurRootsDatabase
- * Description: Databases for genealogy societies
- * Author: OurRoots.org
- * Version: 1.0.9
- * Text Domain: jwto
+ * Plugin Name:       OurRootsDatabase
+ * Description:       Integrate the OurRoots genealogical records database management system (https://db.ourroots.org) into WordPress.
+ * Version:           1.0.9
+ * Requires at least: 5.7
+ * Requires PHP:      7.0
+ * Author:            dallanq
+ * Author URI:        https://www.linkedin.com/in/dallan-quass-7059/
+ * License:           GPL v2 or later
+ * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
+ * Text Domain:       jwto
  */
 
 // Define plugin constants
