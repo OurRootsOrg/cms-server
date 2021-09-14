@@ -83,7 +83,7 @@ if(!class_exists('OURROOTS')){
         	);
         	?>
 			<!-- Custom styles can go here. In this example we are overriding a style from our wordpress theme. -->
-			<style type="text/css"><?php echo $jwto_custom_css; ?></style>
+			<style type="text/css"><?php echo esc_html($jwto_custom_css); ?></style>
 			<div id="app"></div>
 			<script type="text/javascript">
 				window.ourroots = JSON.parse('<?php echo json_encode($js_array) ?>');
