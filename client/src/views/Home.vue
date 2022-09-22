@@ -1,6 +1,6 @@
 <template>
   <v-container fluid class="home">
-    <h2>A database management system for genealogy societies!</h2>
+    <h2>A database management system for genealogy societies</h2>
     <div v-if="users.user">
       <p class="intro">Select a society</p>
       <p class="intro" v-if="societySummaries.societySummariesList.length == 1">
@@ -100,52 +100,11 @@
     <div v-else>
       <p class="intro">
         Upload your genealogy records, media, and books and make them searchable on your society website.
-      </p>
-      <p class="intro">
-        <strong>Integrations:</strong> A search plugin is available for wordpress-based websites. Integration with other
-        websites is also possible; contact dallan@ourroots.org for details.
-      </p>
-      <p class="intro">
-        <strong>Privacy:</strong> You can either make your records public, limit search to members only, or make your
-        records publicly searchable but limit record details or media to members only. It's your choice. Non-society
-        members wanting to view members-only content get directed to your society registration page.
-      </p>
-      <p class="intro">
-        <strong>Pricing:</strong> You can have up to 500,000 records and 20Gb of media for $15/month. Additional media
-        storage is $0.10/Gb/month, and additional records are $1/500,000 records/month.
-      </p>
-      <p class="intro">
-        <strong>Free trial:</strong> The first 30 days are free. Go ahead and register below. There's no obligation.
-      </p>
-      <p class="intro">
-        <strong>Who we are:</strong> We are a group of software engineers interested in helping genealogy societies. Do
-        you have development skills? If so, please join us! OurRoots is completely
-        <a href="https://github.com/OurRootsOrg/cms-server">open source</a>. You can host it yourself if you want. We
-        welcome volunteers!
+        <a href="https://www.ourroots.org">Click here for more information.</a>
       </p>
       <div class="btn">
         <v-btn color="primary" @click="login">Register or Log in</v-btn>
       </div>
-      <h3>Quick overview of the OurRoots database management system</h3>
-      <p class="intro">
-        <iframe
-          style="margin-bottom: 16px"
-          width="560"
-          height="315"
-          src="https://www.youtube.com/embed/obsMYYCCbag"
-          frameborder="0"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          allowfullscreen
-        ></iframe>
-      </p>
-    </div>
-    <div class="intro">
-      <strong>More information</strong>
-      <ul>
-        <li><a href="https://www.facebook.com/groups/546537972928277">Facebook group</a></li>
-        <li><a href="https://ourroots.org/knowledge-base/">Knowledge base</a></li>
-        <li><a href="https://ourroots.org/ticket-desk/">Support desk</a></li>
-      </ul>
     </div>
     <v-footer paddless fixed style="background-color: #fafafa">
       <v-col cols="12">
