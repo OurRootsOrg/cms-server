@@ -25,6 +25,7 @@ AWS_REGION=<aws-region> go run dbconfig/dbconfig.go <env-name>
 ENVIRONMENT_NAME=<env-name> DOMAIN_NAME="<domain-name>" CERTIFICATE_ARN="<cert-arn>" ./deploy.sh
 # TODO: Add instructions for db_load_full.sh against the RDS database
 ```
+<!--- The DynamoDB code hasn't been updated to work with the latest features
 
 To deploy to AWS using DynamoDB as a database, execute the following commands:
 ```
@@ -33,6 +34,7 @@ USE_POSTGRES=false ENVIRONMENT_NAME=<env-name> DOMAIN_NAME="<domain-name>" CERTI
 cd ../../db/dynamo/ddbloader
 AWS_REGION=<aws-region> ENVIRONMENT_NAME=<env-name> ./ddb_load_full.sh
 ```
+-->
 
 After those commands complete without errors, you will need to configure a DNS CNAME. Go to [https://console.aws.amazon.com/apigateway/main/publish/domain-names] and select the entry for the domain name you selected above. Make a record of the "API Gateway domain name" on the details page. It should look like `x-xxxxxxxxxx.execute-api.us-east-1.amazonaws.com`. At your DNS provider, create a CNAME record pointing your domain name (i.e. `app.ourroots.org`) to the API Gateway domain name. Once that is done and the DNS has propagated, you should be able to see the home page of the app at your domain. (Example: `https://app.ourroots.org`).
 
