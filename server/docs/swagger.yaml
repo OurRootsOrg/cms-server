@@ -1,4 +1,6 @@
 basePath: /
+consumes:
+- application/json
 definitions:
   api.ContentRequest:
     properties:
@@ -237,17 +239,6 @@ definitions:
       ixRole:
         type: string
     type: object
-  model.Error:
-    properties:
-      code:
-        type: string
-      message:
-        type: string
-      params:
-        items:
-          type: string
-        type: array
-    type: object
   model.Invitation:
     properties:
       code:
@@ -291,11 +282,13 @@ definitions:
   model.Place:
     properties:
       alsoLocatedInIds:
-        $ref: '#/definitions/model.Uint32Slice'
-        type: object
+        items:
+          type: integer
+        type: array
       altNames:
-        $ref: '#/definitions/model.StringSlice'
-        type: object
+        items:
+          type: string
+        type: array
       count:
         type: integer
       countryId:
@@ -319,8 +312,9 @@ definitions:
       name:
         type: string
       types:
-        $ref: '#/definitions/model.StringSlice'
-        type: object
+        items:
+          type: string
+        type: array
     type: object
   model.Post:
     properties:
@@ -333,8 +327,9 @@ definitions:
       imagesError:
         type: string
       imagesKeys:
-        $ref: '#/definitions/model.StringSet'
-        type: object
+        items:
+          type: string
+        type: array
       imagesStatus:
         type: string
       insert_time:
@@ -369,8 +364,9 @@ definitions:
       imagesError:
         type: string
       imagesKeys:
-        $ref: '#/definitions/model.StringSet'
-        type: object
+        items:
+          type: string
+        type: array
       imagesStatus:
         type: string
       metadata:
@@ -459,7 +455,10 @@ definitions:
       household:
         description: only returned on search by id
         items:
-          $ref: '#/definitions/model.SearchRecord'
+          description: only returned on search by id
+          items:
+            $ref: '#/definitions/model.SearchLabelValue'
+          type: array
         type: array
       id:
         type: string
@@ -469,15 +468,15 @@ definitions:
         type: string
       person:
         $ref: '#/definitions/model.SearchPerson'
-        type: object
       post:
         type: integer
       private:
         type: boolean
       record:
-        $ref: '#/definitions/model.SearchRecord'
         description: only returned on search by id
-        type: object
+        items:
+          $ref: '#/definitions/model.SearchLabelValue'
+        type: array
       score:
         type: number
       societyId:
@@ -505,10 +504,6 @@ definitions:
       role:
         type: string
     type: object
-  model.SearchRecord:
-    items:
-      $ref: '#/definitions/model.SearchLabelValue'
-    type: array
   model.SearchRelationship:
     properties:
       name:
@@ -616,18 +611,6 @@ definitions:
     - societyId
     - userId
     type: object
-  model.StringSet:
-    items:
-      type: string
-    type: array
-  model.StringSlice:
-    items:
-      type: string
-    type: array
-  model.Uint32Slice:
-    items:
-      type: integer
-    type: array
 host: api.ourroots.org
 info:
   contact:
@@ -2286,6 +2269,8 @@ paths:
       summary: gets a SocietySummary
       tags:
       - societies
+produces:
+- application/json
 schemes:
 - http
 - https

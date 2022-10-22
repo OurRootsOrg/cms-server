@@ -340,6 +340,7 @@ func (h lambdaHandler) handler(ctx context.Context, sqsEvent events.SQSEvent) er
 
 func main() {
 	ctx := context.Background()
+	log.Println("[DEBUG] Starting")
 
 	// parse environment
 	env, err := ParseEnv()
@@ -401,7 +402,7 @@ func main() {
 		p := persist.NewPostgresPersister(db)
 		ap.
 			PostPersister(p)
-			// ImagePersister(p)
+		// ImagePersister(p)
 		log.Print("[INFO] Using PostgresPersister")
 	} else {
 		sess, err := session.NewSession()
@@ -414,14 +415,16 @@ func main() {
 		}
 		ap.
 			PostPersister(p)
-			// ImagePersister(p)
+		// ImagePersister(p)
 		log.Print("[INFO] Using DynamoDBPersister")
 	}
 
 	if env.IsLambda {
+		log.Println("[DEBUG] using lambdaHandler")
 		h := lambdaHandler{ap: ap}
 		lambda.Start(h.handler)
 	} else {
+		log.Println("[DEBUG] Listening to queue")
 		// subscribe to imageswriter queue
 		sub, err := ap.OpenSubscription(ctx, "imageswriter")
 		if err != nil {

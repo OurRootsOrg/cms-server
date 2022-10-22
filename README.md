@@ -1,6 +1,6 @@
 # ourroots
 
-To build and run this API, you will need a [Go 1.14+ installation](https://golang.org/dl/). 
+To build and run this API, you will need a [Go 1.19+ installation](https://golang.org/dl/). 
 
 ## Getting Started
 
@@ -15,7 +15,7 @@ git clone https://github.com/ourrootsorg/cms-server.git
 ```
 install swag                    # https://github.com/swaggo/swag#getting-started
 install migrate                 # https://github.com/golang-migrate/migrate/tree/master/cmd/migrate
-install docker                  # https://www.docker.com/ 
+install docker                  # https://www.docker.com/ (don't use the snap version)
 install docker-compose          # https://docs.docker.com/compose/install/
                                   # no need to install docker-compose on mac since mac docker includes compose
 install tilt                    # https://tilt.dev/
@@ -33,9 +33,9 @@ docker volume create cms_esdata # do this once to create a persistent elasticsea
 tilt up                         # run the server and dependencies
                                   # make sure you don't already have a postgres process running
                                   # alternatively, run docker-compose up --build
-cd db && ./db_setup.sh && cd .. # do this once to set up the database
+cd db && ./db_setup.sh && ./db_load_core.sh && cd .. # do this once to set up the database
                                   # make sure you have psql (postgres client) available on your path
-open http://localhost:9000      # launch the minio browser and create a bucket named "cmsbucket" -- do this once
+open http://localhost:19001     # launch the minio browser and create a bucket named "cmsbucket" -- do this once
 cd elasticsearch && ./es_setup.sh && cd ..   # do this once to set up elasticsearch
 tilt down                       # now that everything is set up, take everything down
 
@@ -52,6 +52,8 @@ tilt down                       # clean up docker images when done
 ## Building 
 
 In the `ourroots` directory, run `make` to run unit tests and build.
+
+Tests have broken; I'm not sure why; need to investigate. 
 
 ## Saving and restoring elasticsearch volume data
 ### creates /tmp/cms_esdata.tar.bz2 from cms_esdata

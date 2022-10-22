@@ -1,4 +1,10 @@
 {
+    "consumes": [
+        "application/json"
+    ],
+    "produces": [
+        "application/json"
+    ],
     "schemes": [
         "http",
         "https"
@@ -2898,23 +2904,6 @@
                 }
             }
         },
-        "model.Error": {
-            "type": "object",
-            "properties": {
-                "code": {
-                    "type": "string"
-                },
-                "message": {
-                    "type": "string"
-                },
-                "params": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                }
-            }
-        },
         "model.Invitation": {
             "type": "object",
             "required": [
@@ -2976,12 +2965,16 @@
             "type": "object",
             "properties": {
                 "alsoLocatedInIds": {
-                    "type": "object",
-                    "$ref": "#/definitions/model.Uint32Slice"
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
                 },
                 "altNames": {
-                    "type": "object",
-                    "$ref": "#/definitions/model.StringSlice"
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 },
                 "count": {
                     "type": "integer"
@@ -3017,8 +3010,10 @@
                     "type": "string"
                 },
                 "types": {
-                    "type": "object",
-                    "$ref": "#/definitions/model.StringSlice"
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 }
             }
         },
@@ -3042,8 +3037,10 @@
                     "type": "string"
                 },
                 "imagesKeys": {
-                    "type": "object",
-                    "$ref": "#/definitions/model.StringSet"
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 },
                 "imagesStatus": {
                     "type": "string"
@@ -3093,8 +3090,10 @@
                     "type": "string"
                 },
                 "imagesKeys": {
-                    "type": "object",
-                    "$ref": "#/definitions/model.StringSet"
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 },
                 "imagesStatus": {
                     "type": "string"
@@ -3222,7 +3221,11 @@
                     "description": "only returned on search by id",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/model.SearchRecord"
+                        "description": "only returned on search by id",
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/definitions/model.SearchLabelValue"
+                        }
                     }
                 },
                 "id": {
@@ -3235,7 +3238,6 @@
                     "type": "string"
                 },
                 "person": {
-                    "type": "object",
                     "$ref": "#/definitions/model.SearchPerson"
                 },
                 "post": {
@@ -3246,8 +3248,10 @@
                 },
                 "record": {
                     "description": "only returned on search by id",
-                    "type": "object",
-                    "$ref": "#/definitions/model.SearchRecord"
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.SearchLabelValue"
+                    }
                 },
                 "score": {
                     "type": "number"
@@ -3289,12 +3293,6 @@
                 "role": {
                     "type": "string"
                 }
-            }
-        },
-        "model.SearchRecord": {
-            "type": "array",
-            "items": {
-                "$ref": "#/definitions/model.SearchLabelValue"
             }
         },
         "model.SearchRelationship": {
@@ -3455,24 +3453,6 @@
                 "userId": {
                     "type": "integer"
                 }
-            }
-        },
-        "model.StringSet": {
-            "type": "array",
-            "items": {
-                "type": "string"
-            }
-        },
-        "model.StringSlice": {
-            "type": "array",
-            "items": {
-                "type": "string"
-            }
-        },
-        "model.Uint32Slice": {
-            "type": "array",
-            "items": {
-                "type": "integer"
             }
         }
     },

@@ -3,7 +3,7 @@ Contributors: dallanq
 Tags: genealogy
 Requires at least: 5.7
 Tested up to: 5.8
-Stable tag: 1.0.10
+Stable tag: 1.0.11
 Requires PHP: 7.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -46,3 +46,7 @@ No upgrades necessary.
 * Prepare to publish plugin on WordPress plugins directory
 = 1.0.10 =
 * Minor changes to satisfy WordPress plugins directory requirements
+= 1.0.11 =
+* Sort category/collection facets alphabetically
+* New global settings flag to display names as surname, given
+* allow span with style tags to pass sanitization

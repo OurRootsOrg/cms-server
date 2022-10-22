@@ -1,10 +1,11 @@
-FROM golang:1.14
+FROM golang:1.19
 EXPOSE 8000
 WORKDIR /cms/imageswriter
 COPY go.mod /cms
 COPY go.sum /cms
 RUN go mod download
-RUN go get -u github.com/swaggo/swag/cmd/swag
+# RUN go get -u github.com/swaggo/swag/cmd/swag
+RUN go install github.com/swaggo/swag/cmd/swag@latest
 COPY . /cms
 RUN go generate && go build -o server
 CMD ./server

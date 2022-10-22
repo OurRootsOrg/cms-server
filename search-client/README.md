@@ -39,13 +39,22 @@ See [Configuration Reference](https://cli.vuejs.org/config/).
     cp dist/css/app*.css deploy/wp-plugin/ourroots/css/app.css
     cp dist/css/chunk-vendors*.css deploy/wp-plugin/ourroots/css/chunk-vendors.css
     ```
-3. Create the plugin zip file
+3. Either Create the plugin zip file and upload deploy/wp-plugin/ourroots.zip to your wordpress installation
     ```
     cd deploy/wp-plugin
     zip -r ourroots ourroots
     cd ../..
     ```
-4. Upload deploy/wp-plugin/ourroots.zip to your wordpress installation
+4. Or copy the files to the wordpress-plugin directory
+   ```
+   cp deploy/wp-plugin/ourroots/readme.txt ../../wordpress-plugin/trunk/
+   cp deploy/wp-plugin/ourroots/ourroots.php ../../wordpress-plugin/trunk/
+   cp deploy/wp-plugin/ourroots/includes/ourroots-class.php ../../wordpress-plugin/trunk/includes/
+   cp deploy/wp-plugin/ourroots/css/* ../../wordpress-plugin/trunk/css/
+   cd ../../wordpress-plugin
+   svn ci -m '<version>' --username <username> --password <password>
+   ```
+
 
 ### Deploying the search client as a stand-alone application
 

@@ -61,6 +61,13 @@ if(!class_exists('OURROOTS')){
 								</td>
 							</tr>
 							<tr>
+								<th scope="row"><?php echo __('Display names as surname, given', 'jwto'); ?></th>
+								<td>
+									<input type="text" name="jwto_surname_first" id="jwto_surname_first" value="<?php echo ((!empty($jwto_settings) && !empty($jwto_settings['jwto_surname_first'])) ? $jwto_settings['jwto_surname_first'] : '' ); ?>" class="regular-text">
+									<p class="description"><?php echo __('True to display surname first; leave empty to display surname last', 'jwto'); ?></p>
+								</td>
+							</tr>
+							<tr>
 								<th scope="row"><?php echo __('Custom styles', 'jwto'); ?></th>
 								<td>
 									<textarea name="jwto_custom_css" id="jwto_custom_css" rows="5" cols="40"><?php echo ((!empty($jwto_settings) && !empty($jwto_settings['jwto_custom_css'])) ? $jwto_settings['jwto_custom_css'] : '' ); ?></textarea>
@@ -136,6 +143,7 @@ if(!class_exists('OURROOTS')){
         	$jwto_society_id = $jwto_settings['jwto_society_id'];
         	$jwto_custom_css = $jwto_settings['jwto_custom_css'];
         	$jwto_token_expire = $jwto_settings['jwto_token_expire'];
+        	$jwto_surname_first = $jwto_settings['jwto_surname_first'];
         	$expiration = date(strtotime(' +' . $jwto_token_expire . ' days'));
 
         	$user_id = 0;
@@ -167,6 +175,7 @@ if(!class_exists('OURROOTS')){
         		'fields' => $attributes['fields'],
         		'category' => $attributes['category'],
         		'collection' => $attributes['collection'],
+        		'surnameFirst' => $jwto_surname_first,
         		'societyId' => $society_id,
         		'images_directory' => OURROOTS_URL . '/',
         	);

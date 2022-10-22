@@ -3,7 +3,7 @@
 /**
  * Plugin Name:       OurRootsDatabase
  * Description:       Integrate the OurRoots genealogical records database management system (https://db.ourroots.org) into WordPress.
- * Version:           1.0.10
+ * Version:           1.0.11
  * Requires at least: 5.7
  * Requires PHP:      7.0
  * Author:            dallanq

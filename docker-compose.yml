@@ -1,7 +1,7 @@
 version: "3.0"
 services:
   postgres:
-    image: postgres:10.7
+    image: postgres:11.13
     ports:
       - "5432:5432"
     volumes:
@@ -14,15 +14,16 @@ services:
       - mynetwork
 
   minio:
-    image: minio/minio
+    image: minio/minio:latest
     ports:
       - "9000:9000"
+      - "9001:9001"
     volumes:
       - cms_s3data:/data
     environment:
-      MINIO_ACCESS_KEY: minioaccess
-      MINIO_SECRET_KEY: miniosecret
-    command: server /data
+      MINIO_ROOT_USER: minioaccess
+      MINIO_ROOT_PASSWORD: miniosecret
+    command: server --console-address ":9001" /data
     networks:
       - mynetwork
 

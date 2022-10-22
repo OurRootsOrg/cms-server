@@ -14,7 +14,7 @@ Vue.use(VueColumnsResizableVuetify);
 Vue.use(VueCookies);
 let defaultOptions = {
   allowedTags: ["a", "li", "ol", "p", "ul", "b", "br", "em", "i", "small", "strong", "sub", "sup", "u"],
-  allowedAttributes: {"a": ["href"]}
+  allowedAttributes: { a: ["href"] }
 };
 Vue.use(VueSanitize, defaultOptions);
 

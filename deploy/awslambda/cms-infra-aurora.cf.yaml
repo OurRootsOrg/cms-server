@@ -350,7 +350,7 @@ Resources:
       DBClusterIdentifier: !Sub "${EnvironmentName}-cms"
       Engine: aurora-postgresql
       EngineMode: serverless
-      EngineVersion: "10.7"
+      EngineVersion: "11.13"
       MasterUsername:
         !Join ['', ['{{resolve:secretsmanager:', !Ref AuroraMasterSecret, ':SecretString:username}}' ]]
       MasterUserPassword:

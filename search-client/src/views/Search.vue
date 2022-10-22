@@ -1494,13 +1494,16 @@ const defaultCollection =
   typeof window.ourroots.collection === "string" && window.ourroots.collection.length > 0
     ? window.ourroots.collection
     : "";
+const surnameFirst = typeof window.ourroots.surnameFirst === "string" && window.ourroots.surnameFirst.length > 0;
+
 const defaultQuery = {
   size: 0,
   collectionPlace1Facet: true,
   category: defaultCategory,
   collection: defaultCollection,
   categoryFacet: !defaultCategory,
-  collectionFacet: !!defaultCategory && !defaultCollection
+  collectionFacet: !!defaultCategory && !defaultCollection,
+  surnameFirst: surnameFirst
 };
 
 export default {
@@ -1581,6 +1584,7 @@ export default {
       editSearch: false,
       page: 1,
       pageSize: 10,
+      surnameFirst: surnameFirst,
       showRelative: {
         father: false,
         mother: false,
@@ -1626,6 +1630,7 @@ export default {
         author: "",
         from: 0,
         size: 0,
+        surnameFirst: surnameFirst,
         birthDateFuzziness: 0,
         marriageDateFuzziness: 0,
         residenceDateFuzziness: 0,
@@ -1744,7 +1749,12 @@ export default {
       } else if (this.search.searchFacets.collection) {
         key = "collection";
       }
-      return key ? { key, buckets: this.search.searchFacets[key].buckets } : null;
+      let buckets = [...this.search.searchFacets[key].buckets];
+      let sortFn = (a, b) => {
+        return a.label < b.label ? -1 : a.label > b.label ? 1 : 0;
+      };
+      buckets.sort(sortFn);
+      return key ? { key, buckets } : null;
     },
     givenSpellingOptions() {
       if (this.fuzziness.given.length === 1 && this.fuzziness.given[0] === 0) {
@@ -1952,6 +1962,7 @@ export default {
 
       query.from = (this.page - 1) * this.pageSize;
       query.size = this.pageSize;
+      query.surnameFirst = surnameFirst;
 
       return query;
     },

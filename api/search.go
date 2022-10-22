@@ -214,7 +214,7 @@ func (api API) SearchByID(ctx context.Context, id string) (*model.SearchHit, err
 	}
 	var searchPerson model.SearchPerson
 	if collection.CollectionType == model.CollectionTypeRecords {
-		searchPerson = constructRecordSearchPerson(collection.Mappings, hitData.Role, &recordDetail.Record, false)
+		searchPerson = constructRecordSearchPerson(collection.Mappings, hitData.Role, &recordDetail.Record, false, false)
 	} else {
 		searchPerson = constructCatalogSearchPerson(collection.Mappings, hitData.Role, &recordDetail.Record, false)
 	}
@@ -462,7 +462,7 @@ func (api API) Search(ctx context.Context, req *SearchRequest) (*model.SearchRes
 		// construct search hit
 		var searchPerson model.SearchPerson
 		if collection.CollectionType == model.CollectionTypeRecords {
-			searchPerson = constructRecordSearchPerson(collection.Mappings, hitData.Role, &record, maskDetails)
+			searchPerson = constructRecordSearchPerson(collection.Mappings, hitData.Role, &record, maskDetails, req.SurnameFirst)
 		} else {
 			searchPerson = constructCatalogSearchPerson(collection.Mappings, hitData.Role, &record, maskDetails)
 		}
@@ -533,7 +533,7 @@ func getHitData(r ESSearchHit) (*HitData, error) {
 	}, nil
 }
 
-func constructRecordSearchPerson(mappings []model.CollectionMapping, role model.Role, record *model.Record, maskDetails bool) model.SearchPerson {
+func constructRecordSearchPerson(mappings []model.CollectionMapping, role model.Role, record *model.Record, maskDetails, surnameFirst bool) model.SearchPerson {
 	data := getDataForRole(mappings, record, role)
 
 	// populate events
@@ -564,8 +564,15 @@ func constructRecordSearchPerson(mappings []model.CollectionMapping, role model.
 		}
 	}
 
+	var name string
+	if surnameFirst {
+		name = fmt.Sprintf("%s, %s", data["surname"], data["given"])
+	} else {
+		name = fmt.Sprintf("%s %s", data["given"], data["surname"])
+	}
+
 	return model.SearchPerson{
-		Name:          fmt.Sprintf("%s %s", data["given"], data["surname"]),
+		Name:          name,
 		Role:          role,
 		Events:        events,
 		Relationships: relationships,

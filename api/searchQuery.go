@@ -73,9 +73,10 @@ type SearchRequest struct {
 	Category              string `schema:"category"`
 	CollectionFacet       bool   `schema:"collectionFacet"`
 	Collection            string `schema:"collection"`
-	// from and size
-	From int `schema:"from"`
-	Size int `schema:"size"`
+	// from and size and surname first (vs last)
+	From         int  `schema:"from"`
+	Size         int  `schema:"size"`
+	SurnameFirst bool `schema:"surnameFirst"`
 }
 
 // int
