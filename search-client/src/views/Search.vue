@@ -1749,12 +1749,15 @@ export default {
       } else if (this.search.searchFacets.collection) {
         key = "collection";
       }
+      if (key === null) {
+        return null;
+      }
       let buckets = [...this.search.searchFacets[key].buckets];
       let sortFn = (a, b) => {
         return a.label < b.label ? -1 : a.label > b.label ? 1 : 0;
       };
       buckets.sort(sortFn);
-      return key ? { key, buckets } : null;
+      return { key, buckets };
     },
     givenSpellingOptions() {
       if (this.fuzziness.given.length === 1 && this.fuzziness.given[0] === 0) {
