@@ -51,6 +51,9 @@ See [Configuration Reference](https://cli.vuejs.org/config/).
    cp deploy/wp-plugin/ourroots/ourroots.php ../../wordpress-plugin/trunk/
    cp deploy/wp-plugin/ourroots/includes/ourroots-class.php ../../wordpress-plugin/trunk/includes/
    cp deploy/wp-plugin/ourroots/css/* ../../wordpress-plugin/trunk/css/
+   cp deploy/wp-plugin/ourroots/js/* ../../wordpress-plugin/trunk/js/
+   cp -r deploy/wp-plugin/ourroots/img/* ../../wordpress-plugin/trunk/img/
+   cp deploy/wp-plugin/ourroots/fonts/* ../../wordpress-plugin/trunk/fonts/
    cd ../../wordpress-plugin
    svn ci -m '<version>' --username <username> --password <password>
    ```

@@ -2,8 +2,8 @@
 Contributors: dallanq
 Tags: genealogy
 Requires at least: 5.7
-Tested up to: 6.0
-Stable tag: 1.0.12
+Tested up to: 6.1
+Stable tag: 1.0.14
 Requires PHP: 7.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -52,3 +52,7 @@ No upgrades necessary.
 * allow span with style tags to pass sanitization
 = 1.0.12 =
 * Fix faceting bug
+= 1.0.13 =
+* Previous update didn't include the fix for some reason
+= 1.0.14 =
+* Update wordpress-tested version to 6.1; include fix from 1.0.12
