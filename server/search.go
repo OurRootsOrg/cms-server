@@ -116,6 +116,7 @@ func (app App) Search(w http.ResponseWriter, req *http.Request) {
 // @tags search
 // @id searchByID
 // @Param id path string true "Search Result ID"
+// @param surnameFirst query bool false "return surname first"
 // @produce application/json
 // @success 200 {object} model.SearchHit "OK"
 // @failure 404 {object} api.Error "Not found"
@@ -123,7 +124,14 @@ func (app App) Search(w http.ResponseWriter, req *http.Request) {
 func (app App) SearchByID(w http.ResponseWriter, req *http.Request) {
 	vars := mux.Vars(req)
 
-	result, errors := app.api.SearchByID(req.Context(), vars["id"])
+	var searchByIDRequest api.SearchByIDRequest
+	err := decoder.Decode(&searchByIDRequest, req.URL.Query())
+	if err != nil {
+		msg := fmt.Sprintf("Bad request: %v", err.Error())
+		ErrorResponse(w, http.StatusBadRequest, msg)
+		return
+	}
+	result, errors := app.api.SearchByID(req.Context(), vars["id"], &searchByIDRequest)
 	if errors != nil {
 		ErrorsResponse(w, errors)
 		return
@@ -131,7 +139,7 @@ func (app App) SearchByID(w http.ResponseWriter, req *http.Request) {
 
 	enc := json.NewEncoder(w)
 	w.Header().Set("Content-Type", contentType)
-	err := enc.Encode(result)
+	err = enc.Encode(result)
 	if err != nil {
 		serverError(w, err)
 		return

@@ -1794,6 +1794,10 @@ paths:
         name: id
         required: true
         type: string
+      - description: return surname first
+        in: query
+        name: surnameFirst
+        type: boolean
       produces:
       - application/json
       responses:

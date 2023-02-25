@@ -1819,6 +1819,12 @@ const docTemplate = `{
                         "name": "id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "return surname first",
+                        "name": "surnameFirst",
+                        "in": "query"
                     }
                 ],
                 "responses": {

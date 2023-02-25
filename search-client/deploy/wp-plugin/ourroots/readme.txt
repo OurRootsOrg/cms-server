@@ -3,7 +3,7 @@ Contributors: dallanq
 Tags: genealogy
 Requires at least: 5.7
 Tested up to: 6.1
-Stable tag: 1.0.14
+Stable tag: 1.0.16
 Requires PHP: 7.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -56,3 +56,7 @@ No upgrades necessary.
 * Previous update didn't include the fix for some reason
 = 1.0.14 =
 * Update wordpress-tested version to 6.1; include fix from 1.0.12
+= 1.0.15 =
+* Apply flag to display names as surname, given to record detail page
+= 1.0.16 =
+* Previous update didn't include the fix

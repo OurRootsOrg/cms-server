@@ -11,6 +11,7 @@ deploy/awslambda/*.lambda.zip
 *.dll
 *.so
 *.dylib
+.tool-versions
 uglyui/dist/
 output-*.cf.yaml
 client/dist/

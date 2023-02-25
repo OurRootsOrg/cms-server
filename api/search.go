@@ -113,7 +113,7 @@ type HitData struct {
 	CollectionID uint32
 }
 
-func (api API) SearchByID(ctx context.Context, id string) (*model.SearchHit, error) {
+func (api API) SearchByID(ctx context.Context, id string, req *SearchByIDRequest) (*model.SearchHit, error) {
 	res, err := api.es.Get("records", id,
 		api.es.Get.WithContext(ctx),
 	)
@@ -214,7 +214,7 @@ func (api API) SearchByID(ctx context.Context, id string) (*model.SearchHit, err
 	}
 	var searchPerson model.SearchPerson
 	if collection.CollectionType == model.CollectionTypeRecords {
-		searchPerson = constructRecordSearchPerson(collection.Mappings, hitData.Role, &recordDetail.Record, false, false)
+		searchPerson = constructRecordSearchPerson(collection.Mappings, hitData.Role, &recordDetail.Record, false, req.SurnameFirst)
 	} else {
 		searchPerson = constructCatalogSearchPerson(collection.Mappings, hitData.Role, &recordDetail.Record, false)
 	}

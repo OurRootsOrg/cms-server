@@ -62,7 +62,7 @@ type LocalAPI interface {
 	AddRecordHousehold(ctx context.Context, in model.RecordHouseholdIn) (*model.RecordHousehold, error)
 	DeleteRecordHouseholdsForPost(ctx context.Context, postID uint32) error
 	Search(ctx context.Context, req *SearchRequest) (*model.SearchResult, error)
-	SearchByID(ctx context.Context, id string) (*model.SearchHit, error)
+	SearchByID(ctx context.Context, id string, req *SearchByIDRequest) (*model.SearchHit, error)
 	SearchImage(ctx context.Context, societyID, id uint32, filePath string, thumbnail bool, expireSeconds int) (*ImageMetadata, error)
 	SearchDeleteByID(ctx context.Context, id string) error
 	StandardizePlace(ctx context.Context, text, defaultContainingPlace string) (*model.Place, error)

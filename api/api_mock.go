@@ -122,7 +122,7 @@ func (a *ApiMock) Search(ctx context.Context, searchRequest *SearchRequest) (*mo
 	a.Request = searchRequest
 	return a.Result.(*model.SearchResult), a.Errors
 }
-func (a *ApiMock) SearchByID(ctx context.Context, id string) (*model.SearchHit, error) {
+func (a *ApiMock) SearchByID(ctx context.Context, id string, searchByIDRequest *SearchByIDRequest) (*model.SearchHit, error) {
 	return a.Result.(*model.SearchHit), a.Errors
 }
 func (a *ApiMock) SearchImage(ctx context.Context, societyID, id uint32, filePath string, thumbnail bool, expireSeconds int) (*ImageMetadata, error) {

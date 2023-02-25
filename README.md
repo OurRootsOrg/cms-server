@@ -21,7 +21,7 @@ install docker-compose          # https://docs.docker.com/compose/install/
 install tilt                    # https://tilt.dev/
                                   # optional but makes rebuilds much faster
                                   # ignore kubernetes and kubectl; you just need the one-line curl install
-install npm                     # https://nodejs.org/en/ 
+install npm                     # https://nodejs.org/en/  # v14.21.1 works, v19.2.0 does not
                                   # node includes npm
 install psql                    # https://blog.timescale.com/tutorials/how-to-install-psql-on-mac-ubuntu-debian-windows/
 npm install -g @vue/cli         # the client uses vue
@@ -53,7 +53,7 @@ tilt down                       # clean up docker images when done
 
 In the `ourroots` directory, run `make` to run unit tests and build.
 
-Tests have broken; I'm not sure why; need to investigate. 
+TODO: Tests have broken; I'm not sure why; need to investigate. 
 
 ## Saving and restoring elasticsearch volume data
 ### creates /tmp/cms_esdata.tar.bz2 from cms_esdata

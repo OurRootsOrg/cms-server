@@ -18,7 +18,9 @@ export default {
       params: query
     });
   },
-  searchGetResult(id) {
-    return get(`/search/${id}`);
+  searchGetResult(id, surnameFirst) {
+    return get(`/search/${id}`, {
+      params: { surnameFirst: surnameFirst }
+    });
   }
 };

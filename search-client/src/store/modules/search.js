@@ -46,8 +46,8 @@ export const actions = {
         throw error;
       });
   },
-  searchGetResult({ commit, dispatch }, id) {
-    return Server.searchGetResult(id)
+  searchGetResult({ commit, dispatch }, req) {
+    return Server.searchGetResult(req.id, req.surnameFirst)
       .then(response => {
         commit("SEARCH_RESULT_SET", response.data);
       })

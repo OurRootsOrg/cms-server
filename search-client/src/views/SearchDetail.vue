@@ -99,11 +99,13 @@ import store from "@/store";
 import Server from "@/services/Server.js";
 // import draggable from "vuedraggable";
 
+const surnameFirst = typeof window.ourroots.surnameFirst === "string" && window.ourroots.surnameFirst.length > 0;
+
 export default {
   // components: { draggable },
   beforeRouteEnter(routeTo, routeFrom, next) {
     store
-      .dispatch("searchGetResult", routeTo.params.rid)
+      .dispatch("searchGetResult", {id: routeTo.params.rid, surnameFirst: surnameFirst})
       .then(() => {
         next();
       })

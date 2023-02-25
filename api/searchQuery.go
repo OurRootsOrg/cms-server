@@ -12,6 +12,11 @@ import (
 	"github.com/ourrootsorg/cms-server/utils"
 )
 
+// SearchByIDRequest contains the possible search by id request parameters
+type SearchByIDRequest struct {
+	SurnameFirst bool `schema:"surnameFirst"`
+}
+
 // SearchRequest contains the possible search request parameters
 type SearchRequest struct {
 	SocietyID uint32 `schema:"societyId"`
