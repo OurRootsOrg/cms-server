@@ -3,7 +3,7 @@ Contributors: dallanq
 Tags: genealogy
 Requires at least: 5.7
 Tested up to: 6.1
-Stable tag: 1.0.16
+Stable tag: 1.0.17
 Requires PHP: 7.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -60,3 +60,9 @@ No upgrades necessary.
 * Apply flag to display names as surname, given to record detail page
 = 1.0.16 =
 * Previous update didn't include the fix
+= 1.0.17 =
+* Show html in given and surnames
+* Avoid error when there are no search results
+* Make category names clickable to close them when they are opened
+* Add gutter space between events and relationships in search results
+* Ensure date range checkbox always shows up

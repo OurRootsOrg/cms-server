@@ -63,7 +63,9 @@
                   >
                     <v-icon>mdi-chevron-down</v-icon>
                   </v-btn>
-                  <span>{{ query.category }}</span>
+                  <router-link :to="{ name: 'search', query: getQuery('category', null) }">{{
+                    query.category
+                  }}</router-link>
                 </v-col>
               </v-row>
               <v-row v-if="query.collection" no-gutters>
@@ -77,7 +79,9 @@
                   >
                     <v-icon>mdi-chevron-down</v-icon>
                   </v-btn>
-                  <span>{{ query.collection }}</span>
+                  <router-link :to="{ name: 'search', query: getQuery('collection', null) }">{{
+                    query.collection
+                  }}</router-link>
                 </v-col>
               </v-row>
               <v-row v-if="categoryFacet" no-gutters>
@@ -1553,6 +1557,13 @@ export default {
     if (this.$route.query && Object.keys(this.$route.query).length > 0) {
       this.searchPerformed = true;
       this.query = Object.assign(this.query, this.$route.query);
+      // convert fuzziness to integer
+      for (let e of ["birth", "marriage", "death", "residence", "any"]) {
+        for (let f of ["Date", "Place"]) {
+          let item = e + f + "Fuzziness";
+          this.query[item] = +this.query[item];
+        }
+      }
       for (let f in this.fuzziness) {
         this.fuzziness[f] = decodeFuzziness(this.query[f + "Fuzziness"]);
       }
@@ -1752,7 +1763,7 @@ export default {
       if (key === null) {
         return null;
       }
-      let buckets = [...this.search.searchFacets[key].buckets];
+      let buckets = !this.search.searchFacets[key].buckets ? [] : [...this.search.searchFacets[key].buckets];
       let sortFn = (a, b) => {
         return a.label < b.label ? -1 : a.label > b.label ? 1 : 0;
       };

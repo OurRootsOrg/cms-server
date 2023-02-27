@@ -3,14 +3,15 @@
     <v-row no-gutters class="no-underline">
       <v-col cols="12" md="4" class="d-flex flex-column">
         <strong
-          ><router-link :to="{ name: 'search-detail', params: { rid: result.id } }">{{
-            result.person.name
-          }}</router-link></strong
-        >
+          ><router-link
+            :to="{ name: 'search-detail', params: { rid: result.id } }"
+            v-html="sanitize(result.person.name)"
+          ></router-link>
+        </strong>
         <span class="text-first-caps resultRole">{{ result.person.role }}</span>
         <span>In {{ result.collectionName }} </span>
       </v-col>
-      <v-col cols="12" md="3">
+      <v-col cols="12" md="3" class="event-column">
         <div v-for="(event, $ix) in result.person.events" :key="$ix">
           <p class="ma-0 pa-0">
             <span class="text-first-caps" v-if="event.type">{{ event.type }}:</span>
@@ -18,13 +19,13 @@
           </p>
         </div>
       </v-col>
-      <v-col cols="12" md="4">
+      <v-col cols="12" md="4" class="rel-column">
         <div v-for="(relationship, $ix) in result.person.relationships" :key="$ix">
           <span class="text-first-caps" v-if="relationship.type">{{ relationship.type }}:</span>
           {{ relationship.name }}
         </div>
       </v-col>
-      <v-col cols="1" class="d-flex justify-center">
+      <v-col cols="1" class="justify-center d-flex">
         <div class="view-column">
           <v-btn icon x-small class="primary--text" :to="{ name: 'search-detail', params: { rid: result.id } }"
             ><v-icon title="View record details">mdi-file-document</v-icon></v-btn
@@ -47,6 +48,11 @@
 export default {
   props: {
     result: Object
+  },
+  methods: {
+    sanitize(value) {
+      return this.$sanitize(value);
+    }
   }
 };
 </script>
@@ -58,6 +64,13 @@ export default {
 .view-column {
   margin-left: 4px;
   min-width: 48px;
+}
+.event-column {
+  padding-right: 4px;
+}
+.rel-column {
+  border-left: #ddd solid 1px;
+  padding-left: 4px;
 }
 .resultRole {
   font-size: 75%;
