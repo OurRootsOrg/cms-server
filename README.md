@@ -86,3 +86,16 @@ daitch_mokotoff, caverphone1, caverphone2, cologne, koelnerphonetik, and haaseph
 First, see "Building" above
 
 See deploy/awslambda/README.md to deploy the server and client, and search-client/README.md to deploy the search client
+
+## Hosting this software on your AWS account
+
+If you want to host this for your society, you need to
+* Create an AWS account, and choose an AWS region
+* Create a DNS Hosted Zone for the admin domain hosted on AWS Route53
+* Create an Auth0 account
+* Make the following changes to this software
+  * Update OIDC_DOMAIN and OIDC_AUDIENCE in cms-aurora.cf.yaml
+    * OIDC_DOMAIN comes from Auth0
+    * OIDC_AUDIENCE can be anything you want; it doesn't even have to exist
+* Run `make` to build the software
+* Follow the instructions in deploy/awslambda/README.md, replacing app.sbgen-ourroots.com with your admin domain

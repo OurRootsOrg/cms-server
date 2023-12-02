@@ -78,8 +78,9 @@
       <v-col cols="12">
         <h3 style="margin-top: 16px;">Invitations</h3>
         <p class="caption">
-          OurRoots does not send invitations automatically. After adding an invitation, send the URL in the
-          &quot;Invitation URL&quot; column to the invitee and ask them to click on it.
+          Invitations are not sent automatically. After adding an invitation, replace OURROOTS_ADMIN_DOMAIN in the
+          &quot;Invitation URL&quot; column with the domain name of this website,
+          send it to the invitee, and ask them to click on it.
         </p>
         <v-data-table
           :headers="invitationColumns"
@@ -159,7 +160,8 @@ import { mapState } from "vuex";
 import NProgress from "nprogress";
 import { getAuthLevelName, getAuthLevelOptions } from "@/utils/authLevels";
 
-const invitationURLPrefix = "https://db.ourroots.org?code=";
+// const invitationURLPrefix = "https://db.ourroots.org?code=";
+const invitationURLPrefix = "https://OURROOTS_ADMIN_DOMAIN?code=";
 
 function getContent(next) {
   Promise.all([store.dispatch("invitationsGetAll"), store.dispatch("societyUsersGetAll")])

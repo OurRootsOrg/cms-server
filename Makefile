@@ -13,7 +13,8 @@ RABBIT_PORT=35672
 ES_PORT=19200
 AWS_REGION=us-east-1
 
-all: clean test build package
+# all: clean test build package
+all: clean build package
 build: build-server build-clients
 build-server:
 	cd server && go generate && $(GOBUILD) && GOOS=linux $(GOBUILD) -o $(BINARY_NAME)

@@ -100,17 +100,17 @@
     <div v-else>
       <p class="intro">
         Upload your genealogy records, media, and books and make them searchable on your society website.
-        <a href="https://www.ourroots.org">Click here for more information.</a>
+<!--        <a href="https://www.ourroots.org">Click here for more information.</a>-->
       </p>
       <div class="btn">
-        <v-btn color="primary" @click="login">Register or Log in</v-btn>
+        <v-btn color="primary" @click="login">Log in</v-btn>
       </div>
     </div>
     <v-footer paddless fixed style="background-color: #fafafa">
       <v-col cols="12">
-        <a style="padding-right: 8px;" href="/static/privacy.html">Privacy policy</a>
-        <a style="padding-right: 8px;" href="/static/terms.html">Terms of service</a>
-        <a style="padding-right: 8px;" href="/static/cookie.html">Cookie policy</a>
+<!--        <a style="padding-right: 8px;" href="/static/privacy.html">Privacy policy</a>-->
+<!--        <a style="padding-right: 8px;" href="/static/terms.html">Terms of service</a>-->
+<!--        <a style="padding-right: 8px;" href="/static/cookie.html">Cookie policy</a>-->
       </v-col>
     </v-footer>
   </v-container>

@@ -11,8 +11,8 @@
       <v-btn color="primary" @click="accept">Accept Invitation</v-btn>
     </div>
     <div v-else>
-      <p>Before you can accept the invitation, you need to register or log in</p>
-      <v-btn color="primary" @click="login">Register or Log in</v-btn>
+      <p>Before you can accept the invitation, you need to log in</p>
+      <v-btn color="primary" @click="login">Log in</v-btn>
     </div>
   </v-container>
 </template>

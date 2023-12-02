@@ -213,8 +213,12 @@ func (api API) SearchByID(ctx context.Context, id string, req *SearchByIDRequest
 		}
 	}
 	var searchPerson model.SearchPerson
+	surnameFirst := false
+	if req != nil {
+		surnameFirst = req.SurnameFirst
+	}
 	if collection.CollectionType == model.CollectionTypeRecords {
-		searchPerson = constructRecordSearchPerson(collection.Mappings, hitData.Role, &recordDetail.Record, false, req.SurnameFirst)
+		searchPerson = constructRecordSearchPerson(collection.Mappings, hitData.Role, &recordDetail.Record, false, surnameFirst)
 	} else {
 		searchPerson = constructCatalogSearchPerson(collection.Mappings, hitData.Role, &recordDetail.Record, false)
 	}

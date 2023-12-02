@@ -17,13 +17,15 @@ then
 else
   template_file="cms-infra-dynamodb.cf.yaml"
 fi
-echo Processing CloudFormation...
+echo CloudFormation Package...
 aws cloudformation package --template-file "${template_file}" --output-template-file output-cms-infra.cf.yaml --s3-bucket $s3_bucket_name
+echo CloudFormation Deploy...
 aws cloudformation deploy --template-file output-cms-infra.cf.yaml --stack-name "${ENVIRONMENT_NAME}-infra" --parameter-overrides "EnvironmentName=${ENVIRONMENT_NAME}" "ESAdminCIDR=${ES_ADMIN_CIDR}" --capabilities CAPABILITY_IAM
 
 if [ "${USE_POSTGRES}" == "true" ]
 then
   # Enable Data API
+  echo RDS ModifyDbCluster
   aws rds modify-db-cluster --db-cluster-identifier "${ENVIRONMENT_NAME}-cms" --enable-http-endpoint --apply-immediately
 fi
 echo Done

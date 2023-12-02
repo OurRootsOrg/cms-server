@@ -3,18 +3,17 @@ Contributors: dallanq
 Tags: genealogy
 Requires at least: 5.7
 Tested up to: 6.1
-Stable tag: 1.0.17
+Stable tag: 1.0.18
 Requires PHP: 7.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Integrate the OurRoots genealogical records database management system (https://db.ourroots.org) into WordPress.
+Integrate the OurRoots genealogical records database management system into WordPress.
 
 == Description ==
 
-OurRoots.org provides WordPress-based website hosting for genealogy societies as well as a database management system for genealogical records.
+OurRoots is a database management system for genealogical records.
 The database management system is open-source and hosted on [GitHub](https://github.com/ourrootsorg/cms-server).
-You can either run it yourself, or you can have OurRoots host it for you at https://db.ourroots.org.
 This WordPress plugin defines an our-roots short-code that embeds the search client from the database management system into a WordPress-based website.
 
 == Frequently Asked Questions ==
@@ -23,7 +22,13 @@ This WordPress plugin defines an our-roots short-code that embeds the search cli
 
 Videos are available on [YouTube](https://www.youtube.com/channel/UCy2gjiHmtgovMDl0rV4h2VA)
 
+= How can I use this plugin? =
+
+In order to use this plugin you need to host the back-end on your AWS account. This costs about $150/month.
+If you are interested, please contact dallan at ourroots.org.
+
 = How can I get support? =
+
 Email dallan at ourroots.org
 
 = How can I modify the search client? =
@@ -34,7 +39,7 @@ Buf if you want to do more - if you want to view or modify the unminified javasc
 
 == Screenshots ==
 
-1. Screenshot showing the database search form embedded in WordPress using this plugin.
+No screenshots are available.
 
 == Upgrade Notice ==
 
@@ -66,3 +71,5 @@ No upgrades necessary.
 * Make category names clickable to close them when they are opened
 * Add gutter space between events and relationships in search results
 * Ensure date range checkbox always shows up
+= 1.0.18 =
+* Update documentation that hosting is no longer available. Societies can use this plugin if they host the back-end on AWS.

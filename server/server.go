@@ -59,7 +59,7 @@ const (
 // @schemes http https
 
 // @securitydefinitions.oauth2.implicit OAuth2Implicit
-// @authorizationurl https://ourroots.auth0.com/authorize?audience=https%3A%2F%2Fapi.ourroots.org%2Fpreprod
+// @authorizationurl https://dev-0s6r65gs.auth0.com/authorize?audience=https%3A%2F%2Fapp.sbgen-ourroots.com%2Fapi
 // @scope.cms Grants read and write access to the CMS
 // @scope.openid Indicates that the application intends to use OIDC to verify the user's identity
 // @scope.profile Grants access to OIDC user profile attributes

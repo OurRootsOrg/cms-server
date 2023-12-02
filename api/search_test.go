@@ -97,7 +97,7 @@ func doSearchTests(t *testing.T,
 
 	// search by id
 	searchID := strconv.Itoa(int(records[0].ID))
-	hit, errs := testApi.SearchByID(ctx, searchID)
+	hit, errs := testApi.SearchByID(ctx, searchID, nil)
 	assert.Nil(t, errs, "Error searching by id")
 	assert.Equal(t, searchID, hit.ID)
 	assert.Equal(t, model.PrincipalRole, hit.Person.Role)

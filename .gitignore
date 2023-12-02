@@ -45,6 +45,8 @@ search-client/.idea/
 client/src/.DS_Store
 search-client/src/.DS_Store
 
-#ignore local env
+#ignore env's
 client/.env.development.local
+client/.env.development
 search-client/.env.development.local
+client/.env.production
