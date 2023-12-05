@@ -3,7 +3,7 @@ Contributors: dallanq
 Tags: genealogy
 Requires at least: 5.7
 Tested up to: 6.1
-Stable tag: 1.0.19
+Stable tag: 1.0.20
 Requires PHP: 7.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -73,5 +73,7 @@ No upgrades necessary.
 * Ensure date range checkbox always shows up
 = 1.0.18 =
 * Update documentation that hosting is no longer available. Societies can use this plugin if they host the back-end on AWS.
-= 1.0.19 -
-* Revert APT_BASE_URL to https://db.ourroots.org/api
+= 1.0.19 =
+* Revert API_BASE_URL to https://db.ourroots.org/api
+= 1.0.20 =
+* API_BASE_URL can be specified by the user as Admin Domain in plugin settings

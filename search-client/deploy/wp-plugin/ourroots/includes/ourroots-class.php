@@ -40,6 +40,13 @@ if(!class_exists('OURROOTS')){
 								</td>
 							</tr>
 							<tr>
+								<th scope="row"><?php echo __('Admin Domain', 'jwto'); ?></th>
+								<td>
+									<input type="text" name="jwto_admin_domain" id="jwto_admin_domain" value="<?php echo ((!empty($jwto_settings) && !empty($jwto_settings['jwto_admin_domain'])) ? $jwto_settings['jwto_admin_domain'] : '' ); ?>" class="regular-text">
+									<p class="description"><?php echo __('Admin domain (e.g., https://db.ourroots.org)', 'jwto'); ?></p>
+								</td>
+							</tr>							
+							<tr>
 								<th scope="row"><?php echo __('Society ID', 'jwto'); ?></th>
 								<td>
 									<input type="number" name="jwto_society_id" id="jwto_society_id" value="<?php echo ((!empty($jwto_settings) && !empty($jwto_settings['jwto_society_id'])) ? $jwto_settings['jwto_society_id'] : '' ); ?>" min="1" max="9999" class="regular-text">
@@ -140,6 +147,7 @@ if(!class_exists('OURROOTS')){
 		    ), $atts );
 
         	$jwto_secret = $jwto_settings['jwto_secret'];
+			$twto_admin_domain = $jwto_settings['jwto_admin_domain'];
         	$jwto_society_id = $jwto_settings['jwto_society_id'];
         	$jwto_custom_css = $jwto_settings['jwto_custom_css'];
         	$jwto_token_expire = $jwto_settings['jwto_token_expire'];
@@ -176,6 +184,7 @@ if(!class_exists('OURROOTS')){
         		'category' => $attributes['category'],
         		'collection' => $attributes['collection'],
         		'surnameFirst' => $jwto_surname_first,
+				'adminDomain' => $jwto_admin_domain,
         		'societyId' => $society_id,
         		'images_directory' => OURROOTS_URL . '/',
         	);

@@ -1,7 +1,15 @@
 import axios from "axios";
 import axiosRetry from "axios-retry";
+
+function getAPIBaseURL() {
+  if (window.ourroots.adminDomain) {
+    return window.ourroots.adminDomain.replace(/\/$/, "") + "/api";
+  }
+  return process.env.VUE_APP_API_BASE_URL;
+}
+
 const axiosClient = axios.create({
-  baseURL: process.env.VUE_APP_API_BASE_URL,
+  baseURL: getAPIBaseURL(),
   withCredentials: false, // This is the default
   headers: {
     Accept: "application/json",
