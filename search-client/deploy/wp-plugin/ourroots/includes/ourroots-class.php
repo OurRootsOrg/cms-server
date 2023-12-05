@@ -147,7 +147,7 @@ if(!class_exists('OURROOTS')){
 		    ), $atts );
 
         	$jwto_secret = $jwto_settings['jwto_secret'];
-			$twto_admin_domain = $jwto_settings['jwto_admin_domain'];
+			$jwto_admin_domain = $jwto_settings['jwto_admin_domain'];
         	$jwto_society_id = $jwto_settings['jwto_society_id'];
         	$jwto_custom_css = $jwto_settings['jwto_custom_css'];
         	$jwto_token_expire = $jwto_settings['jwto_token_expire'];
