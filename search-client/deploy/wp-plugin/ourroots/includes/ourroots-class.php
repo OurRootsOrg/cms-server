@@ -152,7 +152,13 @@ if(!class_exists('OURROOTS')){
         	$jwto_custom_css = $jwto_settings['jwto_custom_css'];
         	$jwto_token_expire = $jwto_settings['jwto_token_expire'];
         	$jwto_surname_first = $jwto_settings['jwto_surname_first'];
-        	$expiration = date(strtotime(' +' . $jwto_token_expire . ' days'));
+			$date_modifier = ' +' . $jwto_token_expire . ' days';
+			$exp_date = strtotime($date_modifier);
+        	$expiration = date($exp_date);
+
+			$datetime = new DateTime();
+			$datetime->modify($date_modifier);
+			$expiration2 = $datetime->format('U');
 
         	$user_id = 0;
         	if(is_user_logged_in()){
@@ -179,6 +185,11 @@ if(!class_exists('OURROOTS')){
             $token = "$headers_encoded.$payload_encoded.$signature_encoded";
 
         	$js_array = array(
+				'jwto_token_expire' => $jwto_token_expire,
+				'date_modifier' => $date_modifier,
+				'exp_date' => $exp_date,
+				'expiration' => $expiration,
+				'expiration2' => $expiration2,
         		'jwt' => $token,
         		'fields' => $attributes['fields'],
         		'category' => $attributes['category'],
