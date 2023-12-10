@@ -69,12 +69,36 @@ docker run --rm -v cms_esdata:/volume -v /tmp:/backup alpine sh -c "rm -rf /volu
 
 ### Populating the database tables
 
-To populate the place and name-variants dictionaries, run the following script:
+To populate the place and name-variants dictionaries, launch a micro instance,
+give the micro instance's security group to the database security group,
+copy the files in the db drectory to the micro instance, and run the following. You can get the postgres user and password from the secrets manager under postgres/cms/master
+
+First, install the postgres client
+
 ```
-cd db && ./db_load_full.sh <postgres-user> <postgres-password> <postgres-host> <postgres-port>
+sudo dnf install postgresql15
 ```
 
-### Populating the ElasticSearch index
+Next install the migrations tool
+
+```
+curl -L https://github.com/golang-migrate/migrate/releases/download/v4.16.2/migrate.linux-amd64.tar.gz | tar xvz
+```
+
+Next run migrations
+```
+./migrate -database "postgres://ourroots_schema:POSTGRES_PASSWORD@POSTGRES_HOST:5432/cms?sslmode=disable" -path migrations up
+```
+
+Finally populate the database
+
+```
+./db_load_full.sh ourroots_schema POSTGRES_PASSWORD POSTGRES_HOST
+```
+
+Don't forget to stop the micro instance when you are finished.
+
+### Populating the ElasticSearch index mapping
 
 First, go to your new Elasticsearch index in AWS, select Security Settings, edit the Access Policy, and temporarily add the following so you can access the ES instance from your local machine. 
 
@@ -127,3 +151,4 @@ If you want to host this for your society, you need to
     * OIDC_AUDIENCE can be anything you want; it doesn't even have to exist
 * Run `make` to build the software
 * Follow the instructions in deploy/awslambda/README.md, replacing app.sbgen-ourroots.com with your admin domain
+* Populate the database tables and the elasticsearch index mapping as described above.
