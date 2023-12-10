@@ -63,7 +63,7 @@ if(!class_exists('OURROOTS')){
 							<tr>
 								<th scope="row"><?php echo __('Token expiration days', 'jwto'); ?></th>
 								<td>
-									<input type="number" name="jwto_token_expire" id="jwto_token_expire" value="<?php echo ((!empty($jwto_settings) && !empty($jwto_settings['jwto_token_expire'])) ? $jwto_settings['jwto_token_expire'] : '' ); ?>" min="1" max="14" class="regular-text">
+									<input type="number" name="jwto_token_expire" id="jwto_token_expire" value="<?php echo ((!empty($jwto_settings) && !empty($jwto_settings['jwto_token_expire'])) ? $jwto_settings['jwto_token_expire'] : '7' ); ?>" min="1" max="14" class="regular-text">
 									<p class="description"><?php echo __('Token expiration days', 'jwto'); ?></p>
 								</td>
 							</tr>
@@ -151,14 +151,17 @@ if(!class_exists('OURROOTS')){
         	$jwto_society_id = $jwto_settings['jwto_society_id'];
         	$jwto_custom_css = $jwto_settings['jwto_custom_css'];
         	$jwto_token_expire = $jwto_settings['jwto_token_expire'];
+			if (empty($jwto_token_expire)){
+				$jwto_token_expire = '7';
+			}
         	$jwto_surname_first = $jwto_settings['jwto_surname_first'];
 			$date_modifier = ' +' . $jwto_token_expire . ' days';
 			$exp_date = strtotime($date_modifier);
         	$expiration = date($exp_date);
 
-			$datetime = new DateTime();
-			$datetime->modify($date_modifier);
-			$expiration2 = $datetime->format('U');
+			// $datetime = new DateTime();
+			// $datetime->modify($date_modifier);
+			// $expiration2 = $datetime->format('U');
 
         	$user_id = 0;
         	if(is_user_logged_in()){
@@ -189,7 +192,7 @@ if(!class_exists('OURROOTS')){
 				'date_modifier' => $date_modifier,
 				'exp_date' => $exp_date,
 				'expiration' => $expiration,
-				'expiration2' => $expiration2,
+				// 'expiration2' => $expiration2,
         		'jwt' => $token,
         		'fields' => $attributes['fields'],
         		'category' => $attributes['category'],

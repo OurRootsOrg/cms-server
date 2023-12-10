@@ -74,6 +74,34 @@ To populate the place and name-variants dictionaries, run the following script:
 cd db && ./db_load_full.sh <postgres-user> <postgres-password> <postgres-host> <postgres-port>
 ```
 
+### Populating the ElasticSearch index
+
+First, go to your new Elasticsearch index in AWS, select Security Settings, edit the Access Policy, and temporarily add the following so you can access the ES instance from your local machine. 
+
+```
+ {
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": "*"
+      },
+      "Action": "es:ESHttp*",
+      "Resource": "ELASTICSEARCH_DOMAIN/*",
+      "Condition": {
+        "IpAddress": {
+          "aws:SourceIp": "YOUR_LOCAL_IP_GOES_HERE/32"
+        }
+      }
+    }
+```
+
+Next, run 
+
+```
+curl -X PUT "ELASTICSEARHCH_DOMAIN_ENDPOINT/records" -H 'Content-Type: application/json' -d @elasticsearch/elasticsearch_schema.json
+```
+
+Finally, remove what you added to the Elasticsearch Access Policy.
+
 ### Customizing the search index
 
 By default, the narrow name coder is NYSIIS, and the broad name coder is Soundex. You can change this by editing 
