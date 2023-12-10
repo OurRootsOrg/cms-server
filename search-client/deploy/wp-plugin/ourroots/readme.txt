@@ -3,7 +3,7 @@ Contributors: dallanq
 Tags: genealogy
 Requires at least: 5.7
 Tested up to: 6.1
-Stable tag: 1.0.23
+Stable tag: 1.0.24
 Requires PHP: 7.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -83,4 +83,6 @@ No upgrades necessary.
 * Add logging
 = 1.0.23 =
 * Default token expiration to 7 days
+= 1.0.24 =
+* Correct version
 
