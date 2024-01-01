@@ -3469,7 +3469,7 @@ const docTemplate = `{
         "OAuth2Implicit": {
             "type": "oauth2",
             "flow": "implicit",
-            "authorizationUrl": "https://dev-0s6r65gs.auth0.com/authorize?audience=https%3A%2F%2Fapp.sbgen-ourroots.com%2F",
+            "authorizationUrl": "https://dev-0s6r65gs.auth0.com/authorize?audience=https%3A%2F%2Fapp.sbgen-ourroots.com%2Fapi",
             "scopes": {
                 "cms": " Grants read and write access to the CMS",
                 "email": " Grants access to OIDC email attributes",

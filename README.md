@@ -100,7 +100,7 @@ Don't forget to stop the micro instance when you are finished.
 
 ### Populating the ElasticSearch index mapping
 
-First, go to your new Elasticsearch index in AWS, select Security Settings, edit the Access Policy, and temporarily add the following so you can access the ES instance from your local machine. 
+First, go to your new Elasticsearch index in AWS, select Security Configuration, edit the Access Policy, and temporarily add the following statement so you can access the ES instance from your local machine. 
 
 ```
  {
@@ -109,7 +109,7 @@ First, go to your new Elasticsearch index in AWS, select Security Settings, edit
         "AWS": "*"
       },
       "Action": "es:ESHttp*",
-      "Resource": "ELASTICSEARCH_DOMAIN/*",
+      "Resource": "ELASTICSEARCH_DOMAIN_ARN/*",
       "Condition": {
         "IpAddress": {
           "aws:SourceIp": "YOUR_LOCAL_IP_GOES_HERE/32"
@@ -145,10 +145,11 @@ If you want to host this for your society, you need to
 * Create an AWS account, and choose an AWS region
 * Create a DNS Hosted Zone for the admin domain hosted on AWS Route53
 * Create an Auth0 account
+  * Create an Application, an API, and set the default audience to your API audience in Settings
 * Make the following changes to this software
   * Update OIDC_DOMAIN and OIDC_AUDIENCE in cms-aurora.cf.yaml
     * OIDC_DOMAIN comes from Auth0
-    * OIDC_AUDIENCE can be anything you want; it doesn't even have to exist
+    * OIDC_AUDIENCE also comes from Auth0; it can be anything you want; it doesn't even have to exist
 * Run `make` to build the software
 * Follow the instructions in deploy/awslambda/README.md, replacing app.sbgen-ourroots.com with your admin domain
 * Populate the database tables and the elasticsearch index mapping as described above.

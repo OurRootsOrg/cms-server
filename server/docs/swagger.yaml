@@ -2280,7 +2280,7 @@ schemes:
 - https
 securityDefinitions:
   OAuth2Implicit:
-    authorizationUrl: https://dev-0s6r65gs.auth0.com/authorize?audience=https%3A%2F%2Fapp.sbgen-ourroots.com%2F
+    authorizationUrl: https://dev-0s6r65gs.auth0.com/authorize?audience=https%3A%2F%2Fapp.sbgen-ourroots.com%2Fapi
     flow: implicit
     scopes:
       cms: ' Grants read and write access to the CMS'

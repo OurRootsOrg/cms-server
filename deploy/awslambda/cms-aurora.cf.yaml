@@ -505,8 +505,8 @@ Resources:
           PUB_SUB_RECORDSWRITER_URL: !Ref "CMSRecordsWriterQueueURL"
           PUB_SUB_IMAGESWRITER_URL: !Ref "CMSImagesWriterQueueURL"
           PUB_SUB_PUBLISHER_URL: !Ref "CMSPublisherQueueURL"
-          OIDC_DOMAIN: 'https://dev-0s6r65gs.auth0.com/'
-          OIDC_AUDIENCE: 'https://app.sbgen-ourroots.com/api'
+          OIDC_DOMAIN: 'https://dev-exewh6tl77fs60l0.us.auth0.com/'
+          OIDC_AUDIENCE: 'https://app.topekatech.org/api'
           SANDBOX_SOCIETY_ID: '1'
           ELASTICSEARCH_URL: !Join
             - ''
