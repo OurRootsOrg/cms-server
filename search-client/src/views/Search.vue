@@ -104,7 +104,7 @@
                         bucket.label
                       }}</router-link>
                       <v-spacer></v-spacer>
-                      {{ bucket.count }}
+                      {{  new Intl.NumberFormat('en-US', { style: 'decimal' }).format(bucket.count) }}
                     </v-col>
                   </v-row>
                 </v-col>
@@ -175,7 +175,7 @@
                         bucket.label
                       }}</router-link>
                       <v-spacer></v-spacer>
-                      {{ bucket.count }}
+                      {{  new Intl.NumberFormat('en-US', { style: 'decimal' }).format(bucket.count) }}
                     </v-col>
                   </v-row>
                 </v-col>
@@ -242,7 +242,7 @@
                     placeholder="First &amp; Middle Name(s)"
                   ></v-text-field>
                 </v-row>
-                <v-row no-gutters class="mt-n5" v-if="query.given">
+                <v-row no-gutters class="mt-n3" v-if="query.given">
                   <v-menu
                     offset-x
                     :close-on-content-click="false"
@@ -300,7 +300,7 @@
                 <v-row no-gutters>
                   <v-text-field dense outlined v-model="query.surname" type="text" placeholder="Surname"></v-text-field>
                 </v-row>
-                <v-row no-gutters class="mt-n5 mb-1" v-if="query.surname">
+                <v-row no-gutters class="mt-n3 mb-1" v-if="query.surname">
                   <v-menu
                     offset-x
                     :close-on-content-click="false"

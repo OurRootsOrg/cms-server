@@ -86,7 +86,7 @@
       <v-col cols="12">
         <v-card class="pa-5">
           <h4 class="recordDetailSectionHead mb-3">How to cite this record</h4>
-          <div v-html="sanitize(search.searchResult.citation)"></div>
+          <div v-html="sanitize(setToday(search.searchResult.citation))"></div>
         </v-card>
       </v-col>
     </v-row>
@@ -171,6 +171,14 @@ export default {
     getRecordValue(record, header) {
       let lv = record.find(lv => lv.label === header);
       return lv ? lv.value : "";
+    },
+    setToday(citation) {
+      const d = new Date();
+      let day = new Intl.DateTimeFormat('en', { day: 'numeric' }).format(d);
+      let month = new Intl.DateTimeFormat('en', { month: 'short' }).format(d);
+      let year = new Intl.DateTimeFormat('en', { year: 'numeric' }).format(d);
+      const today = `${day}-${month}-${year}`;
+      return citation.replace(/\$\$today\$\$/g, today);
     }
   }
 };
