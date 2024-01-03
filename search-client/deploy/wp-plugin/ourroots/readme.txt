@@ -3,7 +3,7 @@ Contributors: dallanq
 Tags: genealogy
 Requires at least: 5.7
 Tested up to: 6.1
-Stable tag: 1.0.24
+Stable tag: 1.0.25
 Requires PHP: 7.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -85,4 +85,8 @@ No upgrades necessary.
 * Default token expiration to 7 days
 = 1.0.24 =
 * Correct version
+= 1.0.25 =
+* add thousands separator
+* more margin above name search options
+* add $$today$$ citation keyword
 
