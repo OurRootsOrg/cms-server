@@ -6,7 +6,6 @@ replace github.com/awslabs/aws-lambda-go-api-proxy v0.8.0 => github.com/jancona/
 
 require (
 	github.com/DATA-DOG/go-sqlmock v1.4.1
-	github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751
 	github.com/aws/aws-lambda-go v1.18.0
 	github.com/aws/aws-sdk-go v1.32.2
 	github.com/awslabs/aws-lambda-go-api-proxy v0.8.0
@@ -28,11 +27,11 @@ require (
 	github.com/streadway/amqp v0.0.0-20200108173154-1c71cc93ed71
 	github.com/stretchr/testify v1.8.0
 	github.com/swaggo/http-swagger v0.0.0-20200308142732-58ac5e232fba
-	github.com/swaggo/swag v1.8.7
+	github.com/swaggo/swag v1.6.7
 	gocloud.dev v0.19.0
 	gocloud.dev/pubsub/rabbitpubsub v0.19.0
 	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d
-	golang.org/x/text v0.4.0
+	golang.org/x/text v0.3.7
 )
 
 require (
@@ -64,10 +63,10 @@ require (
 	go.opencensus.io v0.22.3 // indirect
 	golang.org/x/crypto v0.0.0-20200302210943-78000ba7a073 // indirect
 	golang.org/x/image v0.0.0-20191009234506-e7c1f5e7dbb8 // indirect
-	golang.org/x/net v0.1.0 // indirect
+	golang.org/x/net v0.0.0-20200226121028-0de0cce0169b // indirect
 	golang.org/x/sync v0.0.0-20190911185100-cd5d95a43a6e // indirect
 	golang.org/x/sys v0.1.0 // indirect
-	golang.org/x/tools v0.2.0 // indirect
+	golang.org/x/tools v0.0.0-20200213224642-88e652f7a869 // indirect
 	golang.org/x/xerrors v0.0.0-20191204190536-9bdfabe68543 // indirect
 	google.golang.org/appengine v1.6.5 // indirect
 	google.golang.org/genproto v0.0.0-20200212174721-66ed5ce911ce // indirect
